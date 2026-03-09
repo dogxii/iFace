@@ -710,57 +710,81 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 				<div
 					style={{
 						display: "flex",
-						gap: 4,
-						padding: "10px 20px",
+						gap: 2,
+						padding: "8px 12px",
 						borderBottom: "1px solid var(--border-subtle)",
 						flexShrink: 0,
 					}}
 				>
 					{(["ai", "study", "data", "sync"] as Tab[]).map((t) => {
-							const labels: Record<Tab, string> = { ai: "AI 助手", study: "刷题偏好", data: "数据管理", sync: "云同步" };
-							const icons: Record<Tab, React.ReactNode> = {
-								ai: <IconAI />,
-								study: (
-									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-										<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-										<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-									</svg>
-								),
-								data: <IconData />,
-								sync: (
-									<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-										<polyline points="23 4 23 10 17 10" />
-										<polyline points="1 20 1 14 7 14" />
-										<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-									</svg>
-								),
-							};
+						const labels: Record<Tab, string> = { ai: "AI 助手", study: "刷题偏好", data: "数据管理", sync: "云同步" };
+						const icons: Record<Tab, React.ReactNode> = {
+							ai: <IconAI />,
+							study: (
+								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+									<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+								</svg>
+							),
+							data: <IconData />,
+							sync: (
+								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<polyline points="23 4 23 10 17 10" />
+									<polyline points="1 20 1 14 7 14" />
+									<path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+								</svg>
+							),
+						};
 						const active = tab === t;
+						const showSyncDot = t === "sync" && isLoggedIn && !active;
 						return (
 							<button
 								key={t}
 								onClick={() => setTab(t)}
+								title={labels[t]}
 								style={{
+									position: "relative",
 									display: "flex",
 									alignItems: "center",
-									gap: 6,
-									padding: "6px 12px",
+									justifyContent: "center",
+									gap: 5,
+									flex: 1,
+									padding: "7px 4px",
 									borderRadius: 8,
 									border: "none",
 									cursor: "pointer",
-									fontSize: 13,
+									fontSize: 12,
 									fontWeight: active ? 500 : 400,
 									color: active ? "var(--primary)" : "var(--text-2)",
 									background: active ? "var(--primary-light)" : "transparent",
 									transition: "all 0.15s",
+									whiteSpace: "nowrap",
+									minWidth: 0,
 								}}
 							>
-								{icons[t]}
-								{labels[t]}
+								<span style={{ flexShrink: 0, display: "flex" }}>{icons[t]}</span>
+								<span className="settings-tab-label">{labels[t]}</span>
+								{showSyncDot && (
+									<span style={{
+										position: "absolute",
+										top: 5,
+										right: 6,
+										width: 6,
+										height: 6,
+										borderRadius: "50%",
+										background: "var(--success)",
+										border: "1.5px solid var(--surface)",
+									}} />
+								)}
 							</button>
 						);
 					})}
 				</div>
+				<style>{`
+					@media (max-width: 400px) {
+						.settings-tab-label { display: none !important; }
+					}
+				`}</style>
 
 				{/* Body */}
 				<div
