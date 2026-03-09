@@ -83,6 +83,27 @@ function saveStudyMode(mode: StudyMode): void {
 		localStorage.setItem(STUDY_MODE_KEY, mode);
 	} catch {}
 }
+
+// ─── Hidden Categories ────────────────────────────────────────────────────────
+
+const HIDDEN_CATEGORIES_KEY = "iface_hidden_categories";
+
+function loadHiddenCategories(): Set<string> {
+	try {
+		const raw = localStorage.getItem(HIDDEN_CATEGORIES_KEY);
+		if (raw) {
+			const arr = JSON.parse(raw);
+			if (Array.isArray(arr)) return new Set<string>(arr);
+		}
+	} catch {}
+	return new Set<string>();
+}
+
+function saveHiddenCategories(s: Set<string>): void {
+	try {
+		localStorage.setItem(HIDDEN_CATEGORIES_KEY, JSON.stringify([...s]));
+	} catch {}
+}
 import {
 	clearAllStudyRecords,
 	deleteStudyRecord,
@@ -130,6 +151,7 @@ interface StoreState {
 	studyMode: StudyMode;
 	streak: StreakData;
 	dailyGoal: number;
+	hiddenCategories: Set<string>;
 	initialized: boolean;
 }
 
@@ -142,7 +164,8 @@ type Action =
 	| { type: "SET_STUDY_MODE"; studyMode: StudyMode }
 	| { type: "SET_DAILY_GOAL"; dailyGoal: number }
 	| { type: "INCREMENT_STREAK" }
-	| { type: "RESET_STREAK" };
+	| { type: "RESET_STREAK" }
+	| { type: "SET_HIDDEN_CATEGORIES"; hiddenCategories: string[] };
 
 function reducer(state: StoreState, action: Action): StoreState {
 	switch (action.type) {
@@ -156,6 +179,8 @@ function reducer(state: StoreState, action: Action): StoreState {
 				dailyGoal: action.dailyGoal,
 				initialized: true,
 			};
+		case "SET_HIDDEN_CATEGORIES":
+			return { ...state, hiddenCategories: new Set(action.hiddenCategories) };
 		case "SET_RECORD":
 			return {
 				...state,
@@ -240,6 +265,7 @@ export function useStudyStore() {
 		studyMode: loadStudyMode(),
 		streak: loadStreak(),
 		dailyGoal: loadDailyGoal(),
+		hiddenCategories: loadHiddenCategories(),
 		initialized: false,
 	});
 
@@ -359,6 +385,24 @@ export function useStudyStore() {
 		broadcast(action);
 	}, []);
 
+	const toggleCategoryVisibility = useCallback((categoryName: string) => {
+		const next = new Set(stateRef.current.hiddenCategories);
+		if (next.has(categoryName)) {
+			next.delete(categoryName);
+		} else {
+			next.add(categoryName);
+		}
+		saveHiddenCategories(next);
+		const action: Action = { type: "SET_HIDDEN_CATEGORIES", hiddenCategories: [...next] };
+		broadcast(action);
+	}, []);
+
+	const isCategoryHidden = useCallback(
+		(categoryName: string): boolean =>
+			stateRef.current.hiddenCategories.has(categoryName),
+		[],
+	);
+
 	const toggleTheme = useCallback(() => {
 		const next = stateRef.current.theme === "light" ? "dark" : "light";
 		saveTheme(next);
@@ -434,6 +478,7 @@ export function useStudyStore() {
 		studyMode: state.studyMode,
 		streak: state.streak,
 		dailyGoal: state.dailyGoal,
+		hiddenCategories: state.hiddenCategories,
 		initialized: state.initialized,
 
 		// Derived reactive values (safe as useMemo/useEffect deps)
@@ -449,6 +494,7 @@ export function useStudyStore() {
 		setDailyGoal,
 		incrementStreak,
 		resetStreak,
+		toggleCategoryVisibility,
 
 		// Queries
 		getStatus,
@@ -456,5 +502,6 @@ export function useStudyStore() {
 		getStatusCounts,
 		getWeakQuestions,
 		getEstimatedDays,
+		isCategoryHidden,
 	};
 }

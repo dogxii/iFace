@@ -191,6 +191,12 @@ export const DEFAULT_CATEGORY_MAP: CategoryMap = {
 		builtin: true,
 		order: 0,
 	},
+	Golang: {
+		name: "Golang",
+		modules: ["Go基础", "并发编程", "内存与GC", "工程化", "Web开发"],
+		builtin: true,
+		order: 1,
+	},
 };
 
 // ─── Category map ─────────────────────────────────────────────────────────────

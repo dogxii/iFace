@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getCategoryMap, DEFAULT_CATEGORY_MAP, type CategoryMap } from "@/lib/db";
+import { BUILTIN_CATEGORIES } from "@/lib/questionLoader";
 import { useAuthStore } from "@/store/useAuthStore";
 import { pushToGist, pullFromGist, deleteBackupGist } from "@/lib/gistSync";
 import { invalidateQuestionsCache } from "@/hooks/useQuestions";
@@ -330,7 +332,7 @@ type Tab = "ai" | "study" | "data" | "sync";
 
 export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 	const { config, updateConfig, resetConfig, clearAllSessions } = useAIStore();
-	const { resetAll, studyMode, setStudyMode, streak, resetStreak, dailyGoal, setDailyGoal } = useStudyStore();
+	const { resetAll, studyMode, setStudyMode, streak, resetStreak, dailyGoal, setDailyGoal, hiddenCategories, toggleCategoryVisibility } = useStudyStore();
 	const { token, user, isLoggedIn, loading: authLoading, login, logout } = useAuthStore();
 
 	const [tab, setTab] = useState<Tab>("ai");
@@ -351,9 +353,17 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 	const [syncDeleting, setSyncDeleting] = useState(false);
 	const [lastSyncResult, setLastSyncResult] = useState<{ ok: boolean; message: string; at?: string } | null>(null);
 	const [autoSynced, setAutoSynced] = useState(false);
+	const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP });
 
 	const importRef = useRef<HTMLInputElement>(null);
 	const drawerRef = useRef<HTMLDivElement>(null);
+
+	// Load category map when drawer opens (needed for visibility toggles)
+	useEffect(() => {
+		if (open) {
+			getCategoryMap().then(setCategoryMap);
+		}
+	}, [open]);
 
 	// Sync local config when store changes or drawer opens
 	useEffect(() => {
@@ -1038,6 +1048,132 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 										</span>
 									</div>
 								))}
+							</div>
+
+							{/* ── Category Visibility ── */}
+							<div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+								<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-3)", flexShrink: 0 }}>
+										<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" />
+										<circle cx="12" cy="12" r="3" />
+									</svg>
+									<span style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}>题库展示</span>
+								</div>
+								<p style={{ fontSize: 11, color: "var(--text-3)", lineHeight: 1.6, margin: 0 }}>
+									隐藏的题库不在首页展示统计和进度，但仍可在题库、练习页面访问。
+								</p>
+								<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+									{(() => {
+										// Merge builtin categories with any extra custom ones from categoryMap,
+										// sorted by order field so the list is stable.
+										const allCats = Object.entries(categoryMap).sort(
+											([, a], [, b]) => (a.order ?? 99) - (b.order ?? 99),
+										);
+										if (allCats.length === 0) return (
+											<p style={{ fontSize: 12, color: "var(--text-3)" }}>暂无题库</p>
+										);
+										return allCats.map(([key, cat]) => {
+											const isHidden = hiddenCategories.has(key);
+											// Count how many module files belong to this category
+											const builtinCat = BUILTIN_CATEGORIES.find((c) => c.category === key);
+											const moduleCount = cat.modules.length;
+											const fileCount = builtinCat ? builtinCat.files.length : 0;
+											return (
+												<button
+													key={key}
+													type="button"
+													onClick={() => {
+														toggleCategoryVisibility(key);
+														showToast(
+															hiddenCategories.has(key)
+																? `已显示「${cat.name}」题库`
+																: `已隐藏「${cat.name}」题库`,
+														);
+													}}
+													style={{
+														display: "flex",
+														alignItems: "center",
+														gap: 12,
+														padding: "10px 14px",
+														borderRadius: 10,
+														border: `1px solid ${isHidden ? "var(--border-subtle)" : "rgba(var(--primary-rgb),0.3)"}`,
+														background: isHidden ? "var(--surface-2)" : "var(--primary-light)",
+														cursor: "pointer",
+														textAlign: "left",
+														transition: "all 0.15s",
+														width: "100%",
+													}}
+												>
+													{/* Toggle pill */}
+													<div
+														style={{
+															width: 32,
+															height: 18,
+															borderRadius: 99,
+															background: isHidden ? "var(--border)" : "var(--primary)",
+															position: "relative",
+															flexShrink: 0,
+															transition: "background 0.2s",
+														}}
+													>
+														<div
+															style={{
+																width: 12,
+																height: 12,
+																borderRadius: "50%",
+																background: "white",
+																position: "absolute",
+																top: 3,
+																left: isHidden ? 3 : 17,
+																transition: "left 0.2s",
+																boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+															}}
+														/>
+													</div>
+
+													{/* Info */}
+													<div style={{ flex: 1, minWidth: 0 }}>
+														<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
+															<span style={{
+																fontSize: 13,
+																fontWeight: 600,
+																color: isHidden ? "var(--text-3)" : "var(--primary)",
+															}}>
+																{cat.name}
+															</span>
+															{cat.builtin && (
+																<span style={{
+																	fontSize: 10,
+																	padding: "1px 5px",
+																	borderRadius: 4,
+																	background: "var(--surface-3)",
+																	color: "var(--text-3)",
+																	fontWeight: 500,
+																}}>
+																	内置
+																</span>
+															)}
+														</div>
+														<p style={{ fontSize: 11, color: "var(--text-3)", margin: 0 }}>
+															{moduleCount} 个模块
+															{fileCount > 0 && ` · ${fileCount} 个文件`}
+														</p>
+													</div>
+
+													{/* Status badge */}
+													<span style={{
+														fontSize: 11,
+														fontWeight: 500,
+														color: isHidden ? "var(--text-3)" : "var(--primary)",
+														flexShrink: 0,
+													}}>
+														{isHidden ? "已隐藏" : "显示中"}
+													</span>
+												</button>
+											);
+										});
+									})()}
+								</div>
 							</div>
 						</>
 					)}

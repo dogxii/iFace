@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 import { Button, EmptyState, SegmentedRing, Skeleton } from "@/components/ui";
 import { useQuestions } from "@/hooks/useQuestions";
 import { useStudyStore, type StreakData } from "@/store/useStudyStore";
+import { getCategoryMap, DEFAULT_CATEGORY_MAP } from "@/lib/db";
 import {
 	DIFFICULTY_LABELS,
-	MODULE_LIST,
 	type Module,
 	STATUS_LABELS,
 	type StudyStatus,
@@ -696,7 +696,41 @@ const IconClock = () => (
 export default function Dashboard() {
 	const { questions, allQuestions, loading, initializing, getDailyIds } =
 		useQuestions();
-	const { records, statusCounts, getEstimatedDays, streak, dailyGoal } = useStudyStore();
+	const { records, getEstimatedDays, streak, dailyGoal, hiddenCategories } = useStudyStore();
+
+	// ── Resolve which module names belong to hidden categories ────────────────
+	// We read from DEFAULT_CATEGORY_MAP synchronously for instant render, then
+	// upgrade with the full persisted map (which may include custom categories).
+	const [categoryModuleMap, setCategoryModuleMap] = useState<Record<string, string[]>>(
+		() => Object.fromEntries(
+			Object.entries(DEFAULT_CATEGORY_MAP).map(([k, v]) => [k, v.modules]),
+		),
+	);
+
+	useEffect(() => {
+		getCategoryMap().then((map) => {
+			setCategoryModuleMap(
+				Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.modules])),
+			);
+		});
+	}, []);
+
+	// Set of module names that are in at least one hidden category
+	const hiddenModules = useMemo<Set<string>>(() => {
+		const s = new Set<string>();
+		for (const [catName, modules] of Object.entries(categoryModuleMap)) {
+			if (hiddenCategories.has(catName)) {
+				for (const m of modules) s.add(m);
+			}
+		}
+		return s;
+	}, [hiddenCategories, categoryModuleMap]);
+
+	// Visible questions: exclude any question whose module is in a hidden category
+	const visibleQuestions = useMemo(
+		() => allQuestions.filter((q) => !hiddenModules.has(q.module)),
+		[allQuestions, hiddenModules],
+	);
 
 	const [dailyIds, setDailyIds] = useState<string[]>([]);
 	const [dailyLoading, setDailyLoading] = useState(true);
@@ -713,7 +747,7 @@ export default function Dashboard() {
 	}, []);
 
 	useEffect(() => {
-		if (allQuestions.length === 0) return;
+		if (visibleQuestions.length === 0) return;
 		setDailyLoading(true);
 		getDailyIds(
 			Object.fromEntries(
@@ -726,27 +760,63 @@ export default function Dashboard() {
 		)
 			.then(setDailyIds)
 			.finally(() => setDailyLoading(false));
-	}, [allQuestions.length, records, getDailyIds, dailyGoal]);
+	}, [visibleQuestions.length, records, getDailyIds, dailyGoal]);
 
+	// Counts based on visible questions only
 	const counts = useMemo(() => {
-		const tracked = statusCounts.mastered + statusCounts.review;
-		const unlearned = Math.max(0, allQuestions.length - tracked);
-		return { ...statusCounts, unlearned };
-	}, [statusCounts, allQuestions.length]);
+		const visibleIds = new Set(visibleQuestions.map((q) => q.id));
+		let mastered = 0;
+		let review = 0;
+		for (const [id, r] of Object.entries(records)) {
+			if (!visibleIds.has(id)) continue;
+			if (r.status === "mastered") mastered++;
+			else if (r.status === "review") review++;
+		}
+		const tracked = mastered + review;
+		const unlearned = Math.max(0, visibleQuestions.length - tracked);
+		return { mastered, review, unlearned };
+	}, [records, visibleQuestions]);
 
-	const totalQuestions = allQuestions.length;
+	const totalQuestions = visibleQuestions.length;
 	const masteredPercent =
 		totalQuestions > 0
 			? Math.round((counts.mastered / totalQuestions) * 100)
 			: 0;
 	const estimatedDays = getEstimatedDays(totalQuestions, dailyGoal);
 
+	// Module progress: derive from visible questions grouped by module,
+	// preserving the order defined in categoryModuleMap, then appending any
+	// modules not covered by any category (e.g. freshly-imported custom ones).
 	const moduleStats = useMemo(() => {
-		return MODULE_LIST.map((mod) => {
-			const qs = allQuestions.filter((q) => q.module === mod);
-			return { module: mod, questions: qs };
-		});
-	}, [allQuestions]);
+		// Ordered module names from visible categories
+		const orderedModules: string[] = [];
+		const seen = new Set<string>();
+		// Sort categories by their order field
+		const sortedCategories = Object.entries(categoryModuleMap).sort(
+			([a], [b]) => {
+				const aOrder = DEFAULT_CATEGORY_MAP[a]?.order ?? 99;
+				const bOrder = DEFAULT_CATEGORY_MAP[b]?.order ?? 99;
+				return aOrder - bOrder;
+			},
+		);
+		for (const [catName, modules] of sortedCategories) {
+			if (hiddenCategories.has(catName)) continue;
+			for (const m of modules) {
+				if (!seen.has(m)) { orderedModules.push(m); seen.add(m); }
+			}
+		}
+		// Append any module present in visibleQuestions but not in any category
+		for (const q of visibleQuestions) {
+			if (!seen.has(q.module)) { orderedModules.push(q.module); seen.add(q.module); }
+		}
+
+		return orderedModules
+			.map((mod) => ({
+				module: mod as Module,
+				questions: visibleQuestions.filter((q) => q.module === mod),
+			}))
+			.filter((s) => s.questions.length > 0);
+	}, [visibleQuestions, categoryModuleMap, hiddenCategories]);
 
 	if (initializing) {
 		return (
@@ -756,7 +826,8 @@ export default function Dashboard() {
 		);
 	}
 
-	const hasNoQuestions = totalQuestions === 0 && !loading;
+	const hasNoQuestions = allQuestions.length === 0 && !loading;
+	const allHidden = allQuestions.length > 0 && totalQuestions === 0;
 
 	return (
 		<div className="page-container">
@@ -779,6 +850,8 @@ export default function Dashboard() {
 				<p style={{ fontSize: 13, color: "var(--text-3)" }}>
 					{hasNoQuestions
 						? "暂无题目，请先导入题库"
+						: allHidden
+						? "所有题库已隐藏，可在设置 → 刷题偏好中调整"
 						: `共 ${totalQuestions} 道题，已掌握 ${counts.mastered} 道`}
 				</p>
 			</div>
@@ -793,6 +866,13 @@ export default function Dashboard() {
 								<Button variant="primary">前往导入</Button>
 							</Link>
 						}
+					/>
+				</div>
+			) : allHidden ? (
+				<div className="card" style={{ padding: "80px 20px" }}>
+					<EmptyState
+						title="所有题库已隐藏"
+						description="在「设置 → 刷题偏好 → 题库展示」中打开至少一个题库"
 					/>
 				</div>
 			) : (
