@@ -11,7 +11,6 @@ import {
 	type Module,
 	STATUS_LABELS,
 	type StudyStatus,
-	getModuleIcon,
 } from "@/types";
 
 // ─── Module Selector Card ─────────────────────────────────────────────────────
@@ -82,19 +81,11 @@ function ModuleCard({
 
 			<p
 				style={{
-					fontSize: 20,
-					marginBottom: 4,
-					lineHeight: 1,
-				}}
-			>
-				{getModuleIcon(module)}
-			</p>
-			<p
-				style={{
 					fontSize: 12,
 					fontWeight: 600,
 					color: selected ? "var(--primary)" : "var(--text)",
 					marginBottom: 4,
+					marginTop: 2,
 				}}
 			>
 				{module}

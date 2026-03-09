@@ -753,9 +753,31 @@ function CustomBuilder({
 	onGenerate: (prompt: string) => void;
 }) {
 	const [module, setModule] = useState("JS基础");
+	const [moduleDropdownOpen, setModuleDropdownOpen] = useState(false);
 	const [count, setCount] = useState(60);
 	const [diffPreset, setDiffPreset] = useState("standard");
 	const [extraContext, setExtraContext] = useState("");
+	const moduleInputRef = React.useRef<HTMLInputElement>(null);
+	const moduleDropdownRef = React.useRef<HTMLDivElement>(null);
+
+	// Close dropdown on outside click
+	React.useEffect(() => {
+		if (!moduleDropdownOpen) return;
+		const handler = (e: MouseEvent) => {
+			if (
+				!moduleInputRef.current?.contains(e.target as Node) &&
+				!moduleDropdownRef.current?.contains(e.target as Node)
+			) {
+				setModuleDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handler);
+		return () => document.removeEventListener("mousedown", handler);
+	}, [moduleDropdownOpen]);
+
+	const filteredModules = MODULE_VALUES.filter((m) =>
+		m.toLowerCase().includes(module.toLowerCase()),
+	);
 
 	const diffOptions = {
 		standard: "初级 30% / 中级 50% / 高级 20%（标准）",
@@ -794,7 +816,7 @@ function CustomBuilder({
 				}}
 			>
 				{/* Module */}
-				<div>
+				<div style={{ position: "relative" }}>
 					<label
 						style={{
 							display: "block",
@@ -816,37 +838,115 @@ function CustomBuilder({
 							（可自由输入，如 Golang、Java）
 						</span>
 					</label>
-					<input
-						type="text"
-						list="module-suggestions"
-						value={module}
-						onChange={(e) => setModule(e.target.value)}
-						placeholder="输入或选择模块名…"
-						style={{
-							width: "100%",
-							padding: "7px 10px",
-							borderRadius: 10,
-							fontSize: 13,
-							background: "var(--surface)",
-							border: "1px solid var(--border)",
-							color: "var(--text)",
-							outline: "none",
-							boxSizing: "border-box",
-						}}
-						onFocus={(e) => {
-							e.currentTarget.style.borderColor = "var(--primary)";
-							e.currentTarget.style.boxShadow = "0 0 0 3px var(--primary-light)";
-						}}
-						onBlur={(e) => {
-							e.currentTarget.style.borderColor = "var(--border)";
-							e.currentTarget.style.boxShadow = "none";
-						}}
-					/>
-					<datalist id="module-suggestions">
-						{MODULE_VALUES.map((m) => (
-							<option key={m} value={m} />
-						))}
-					</datalist>
+					<div style={{ position: "relative" }}>
+						<input
+							ref={moduleInputRef}
+							type="text"
+							value={module}
+							onChange={(e) => {
+								setModule(e.target.value);
+								setModuleDropdownOpen(true);
+							}}
+							onFocus={() => setModuleDropdownOpen(true)}
+							placeholder="输入或选择模块名…"
+							style={{
+								width: "100%",
+								padding: "7px 30px 7px 10px",
+								borderRadius: 10,
+								fontSize: 13,
+								background: "var(--surface)",
+								border: moduleDropdownOpen
+									? "1px solid var(--primary)"
+									: "1px solid var(--border)",
+								boxShadow: moduleDropdownOpen
+									? "0 0 0 3px var(--primary-light)"
+									: "none",
+								color: "var(--text)",
+								outline: "none",
+								boxSizing: "border-box",
+								transition: "border-color 0.15s, box-shadow 0.15s",
+							}}
+						/>
+						{/* Chevron */}
+						<svg
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="var(--text-3)"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							style={{
+								position: "absolute",
+								right: 10,
+								top: "50%",
+								transform: moduleDropdownOpen
+									? "translateY(-50%) rotate(180deg)"
+									: "translateY(-50%)",
+								transition: "transform 0.15s",
+								pointerEvents: "none",
+							}}
+						>
+							<polyline points="6 9 12 15 18 9" />
+						</svg>
+
+						{/* Custom dropdown */}
+						{moduleDropdownOpen && filteredModules.length > 0 && (
+							<div
+								ref={moduleDropdownRef}
+								style={{
+									position: "absolute",
+									top: "calc(100% + 4px)",
+									left: 0,
+									right: 0,
+									zIndex: 200,
+									background: "var(--surface)",
+									border: "1px solid var(--border)",
+									borderRadius: 10,
+									boxShadow: "var(--shadow-lg, 0 8px 24px rgba(0,0,0,0.12))",
+									overflow: "hidden",
+									maxHeight: 220,
+									overflowY: "auto",
+								}}
+							>
+								{filteredModules.map((m) => (
+									<button
+										key={m}
+										onMouseDown={(e) => {
+											e.preventDefault();
+											setModule(m);
+											setModuleDropdownOpen(false);
+										}}
+										style={{
+											width: "100%",
+											textAlign: "left",
+											padding: "8px 12px",
+											fontSize: 13,
+											color: m === module ? "var(--primary)" : "var(--text)",
+											background:
+												m === module ? "var(--primary-light)" : "transparent",
+											border: "none",
+											cursor: "pointer",
+											transition: "background 0.1s",
+										}}
+										onMouseEnter={(e) => {
+											if (m !== module)
+												(e.currentTarget as HTMLElement).style.background =
+													"var(--surface-2)";
+										}}
+										onMouseLeave={(e) => {
+											if (m !== module)
+												(e.currentTarget as HTMLElement).style.background =
+													"transparent";
+										}}
+									>
+										{m}
+									</button>
+								))}
+							</div>
+						)}
+					</div>
 				</div>
 
 				{/* Count */}
@@ -1588,7 +1688,6 @@ export default function PromptPage() {
 									</span>
 								)}
 							</div>
-							{displayPrompt && <CopyButton text={displayPrompt} />}
 						</div>
 
 						{/* Prompt content */}
