@@ -18,7 +18,7 @@ export default defineConfig({
 				name: "iFace · 前端面试刷题助手",
 				short_name: "iFace",
 				description: "前端面试刷题助手，覆盖 JS、React、CSS、TypeScript、性能优化等核心模块",
-				theme_color: "#6366f1",
+        theme_color: "#ffffff",
 				background_color: "#ffffff",
 				display: "standalone",
 				orientation: "portrait",
