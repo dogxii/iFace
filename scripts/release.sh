@@ -219,17 +219,16 @@ log_step "Creating GitHub Release"
 NOTES_FILE="$(mktemp)"
 echo -e "$NOTES" > "$NOTES_FILE"
 
-# Determine if pre-release
-IS_PRERELEASE=false
-echo "$VERSION" | grep -qE '-(alpha|beta|rc)' && IS_PRERELEASE=true
-
+# Determine if pre-release (use portable regex match)
 PRERELEASE_FLAG=""
-$IS_PRERELEASE && PRERELEASE_FLAG="--prerelease"
+case "$VERSION" in
+  *-alpha*|*-beta*|*-rc*) PRERELEASE_FLAG="--prerelease" ;;
+esac
 
 gh release create "$TAG" \
   --title "iFace ${TAG}" \
   --notes-file "$NOTES_FILE" \
-  $PRERELEASE_FLAG
+  ${PRERELEASE_FLAG}
 
 rm -f "$NOTES_FILE"
 
