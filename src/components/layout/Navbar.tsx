@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { SettingsDrawer } from "@/components/layout/SettingsDrawer";
 import { useStudyStore } from "@/store/useStudyStore";
 
 const navItems = [
@@ -16,6 +17,7 @@ export function Navbar() {
 	const { theme, toggleTheme } = useStudyStore();
 	const [scrolled, setScrolled] = useState(false);
 	const [mobileOpen, setMobileOpen] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 
 	useEffect(() => {
 		const handler = () => setScrolled(window.scrollY > 4);
@@ -83,7 +85,6 @@ export function Navbar() {
 							flexShrink: 0,
 						}}
 					>
-
 						<span
 							style={{
 								fontSize: 15,
@@ -157,6 +158,50 @@ export function Navbar() {
 							flexShrink: 0,
 						}}
 					>
+						{/* Settings button */}
+						<button
+							onClick={() => setSettingsOpen(true)}
+							aria-label="设置"
+							style={{
+								width: 32,
+								height: 32,
+								borderRadius: 8,
+								border: "none",
+								background: "transparent",
+								color: "var(--text-2)",
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								cursor: "pointer",
+								transition: "background 0.15s, color 0.15s",
+								flexShrink: 0,
+							}}
+							onMouseEnter={(e) => {
+								(e.currentTarget as HTMLElement).style.background =
+									"var(--surface-2)";
+								(e.currentTarget as HTMLElement).style.color = "var(--text)";
+							}}
+							onMouseLeave={(e) => {
+								(e.currentTarget as HTMLElement).style.background =
+									"transparent";
+								(e.currentTarget as HTMLElement).style.color = "var(--text-2)";
+							}}
+						>
+							<svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<circle cx="12" cy="12" r="3" />
+								<path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2" />
+							</svg>
+						</button>
+
 						{/* Theme toggle */}
 						<button
 							onClick={toggleTheme}
@@ -343,7 +388,54 @@ export function Navbar() {
 						</Link>
 					);
 				})}
+
+				{/* Settings entry in mobile menu */}
+				<button
+					onClick={() => {
+						setMobileOpen(false);
+						setSettingsOpen(true);
+					}}
+					style={{
+						padding: "10px 14px",
+						borderRadius: 10,
+						fontSize: 15,
+						fontWeight: 400,
+						color: "var(--text)",
+						background: "transparent",
+						border: "none",
+						cursor: "pointer",
+						display: "flex",
+						alignItems: "center",
+						gap: 8,
+						width: "100%",
+						textAlign: "left",
+						marginTop: 4,
+						borderTop: "1px solid var(--border-subtle)",
+					}}
+				>
+					<svg
+						width="15"
+						height="15"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						strokeWidth="2"
+						strokeLinecap="round"
+						strokeLinejoin="round"
+						style={{ color: "var(--text-2)" }}
+					>
+						<circle cx="12" cy="12" r="3" />
+						<path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M12 2v2M12 20v2M2 12h2M20 12h2" />
+					</svg>
+					设置
+				</button>
 			</div>
+
+			{/* Settings Drawer */}
+			<SettingsDrawer
+				open={settingsOpen}
+				onClose={() => setSettingsOpen(false)}
+			/>
 
 			<style>{`
         @media (max-width: 640px) {

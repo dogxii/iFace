@@ -68,6 +68,16 @@ export const DIFFICULTY_COLORS: Record<Difficulty, string> = {
 	3: "text-rose-500 bg-rose-500/10 border-rose-500/20",
 };
 
+// Inline style versions — safe for dynamic rendering (no Tailwind scan needed)
+export const DIFFICULTY_STYLES: Record<
+	Difficulty,
+	{ color: string; background: string; borderColor: string }
+> = {
+	1: { color: "#10b981", background: "rgba(16,185,129,0.1)", borderColor: "rgba(16,185,129,0.2)" },
+	2: { color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderColor: "rgba(245,158,11,0.2)" },
+	3: { color: "#ef4444", background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.2)" },
+};
+
 export const STATUS_LABELS: Record<StudyStatus, string> = {
 	unlearned: "未学习",
 	mastered: "已掌握",
@@ -78,6 +88,16 @@ export const STATUS_COLORS: Record<StudyStatus, string> = {
 	unlearned: "text-zinc-400 bg-zinc-500/10 border-zinc-500/20",
 	mastered: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
 	review: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+};
+
+// Inline style versions — safe for dynamic rendering
+export const STATUS_STYLES: Record<
+	StudyStatus,
+	{ color: string; background: string; borderColor: string }
+> = {
+	unlearned: { color: "#a1a1aa", background: "rgba(113,113,122,0.1)", borderColor: "rgba(113,113,122,0.2)" },
+	mastered:  { color: "#10b981", background: "rgba(16,185,129,0.1)",  borderColor: "rgba(16,185,129,0.2)" },
+	review:    { color: "#f59e0b", background: "rgba(245,158,11,0.1)",  borderColor: "rgba(245,158,11,0.2)" },
 };
 
 export const MODULE_ICONS: Record<Module, string> = {

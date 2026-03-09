@@ -5,15 +5,18 @@ import {
 	useParams,
 	useSearchParams,
 } from "react-router-dom";
+import { AIPanelWithStyles } from "@/components/ui/AIPanel";
 import { Button, Kbd, Skeleton, Spinner } from "@/components/ui";
 import { MarkdownRenderer } from "@/components/ui/MarkdownRenderer";
 import { useQuestion } from "@/hooks/useQuestions";
+import { useAIStore } from "@/store/useAIStore";
 import { useStudyStore } from "@/store/useStudyStore";
 import {
-	DIFFICULTY_COLORS,
 	DIFFICULTY_LABELS,
+	DIFFICULTY_STYLES,
 	type StudyStatus,
 } from "@/types";
+import { SettingsDrawer } from "@/components/layout/SettingsDrawer";
 
 // ─── Status Action Button ─────────────────────────────────────────────────────
 
@@ -237,11 +240,14 @@ export default function QuestionDetail() {
 
 	const { question, loading } = useQuestion(id);
 	const { getStatus, setStatus, getRecord } = useStudyStore();
+	const { config: aiConfig } = useAIStore();
 
 	const [answerVisible, setAnswerVisible] = useState(false);
 	const [marking, setMarking] = useState(false);
 	const [justMarked, setJustMarked] = useState<StudyStatus | null>(null);
 	const [lastPressedKey, setLastPressedKey] = useState<"1" | "2" | "3" | null>(null);
+	const [aiPanelOpen, setAiPanelOpen] = useState(false);
+	const [settingsOpen, setSettingsOpen] = useState(false);
 	const answerRef = useRef<HTMLDivElement>(null);
 
 	// ── Session context (from ?ids=... or ?prev=...&next=... params) ──
@@ -410,19 +416,33 @@ export default function QuestionDetail() {
 		);
 	}
 
-	const diffColor = DIFFICULTY_COLORS[question.difficulty];
+	const diffStyle = DIFFICULTY_STYLES[question.difficulty];
+	const isAiEnabled = aiConfig.enabled && aiConfig.apiKey.trim().length > 0;
 
 	return (
+		<>
 		<div
 			className="page-container"
 			style={{
-				maxWidth: 760,
+				maxWidth: aiPanelOpen ? 1200 : 760,
+				transition: "max-width 0.3s var(--ease-out)",
+				display: "flex",
+				flexDirection: aiPanelOpen ? "row" : "column",
+				gap: aiPanelOpen ? 20 : 16,
+				alignItems: "flex-start",
+			}}
+		>
+		{/* Main content column */}
+		<div
+			style={{
+				flex: 1,
+				minWidth: 0,
 				display: "flex",
 				flexDirection: "column",
 				gap: 16,
 			}}
 		>
-			{/* ── Breadcrumb / Session progress ── */}
+				{/* ── Breadcrumb / Session progress ── */}
 			<div className="animate-fade-in">
 				{isInSession ? (
 					<SessionProgress
@@ -505,165 +525,343 @@ export default function QuestionDetail() {
 				)}
 			</div>
 
-			{/* ── Question Card ── */}
-			<div
-				className="card animate-fade-in stagger-1"
-				style={{
-					padding: 24,
-					display: "flex",
-					flexDirection: "column",
-					gap: 16,
-				}}
-			>
-				{/* Meta */}
+				{/* ── Question Card ── */}
 				<div
+					className="card animate-fade-in stagger-1"
 					style={{
+						padding: 24,
 						display: "flex",
-						alignItems: "center",
-						gap: 8,
-						flexWrap: "wrap",
+						flexDirection: "column",
+						gap: 16,
 					}}
 				>
-					<span
+					{/* Meta */}
+					<div
 						style={{
-							fontSize: 12,
-							fontWeight: 500,
-							color: "var(--text-2)",
-							padding: "3px 10px",
-							borderRadius: 6,
-							background: "var(--surface-3)",
-							border: "1px solid var(--border-subtle)",
+							display: "flex",
+							alignItems: "center",
+							gap: 8,
+							flexWrap: "wrap",
 						}}
 					>
-						{question.module}
-					</span>
-
-					<span
-						className={`text-xs font-medium px-2.5 py-1 rounded-lg border ${diffColor}`}
-					>
-						{DIFFICULTY_LABELS[question.difficulty]}
-					</span>
-
-					{question.source && (
-						<span
-							style={{
-								fontSize: 11,
-								padding: "2px 8px",
-								borderRadius: 5,
-								background: "var(--primary-light)",
-								color: "var(--primary)",
-								border: "1px solid rgba(var(--primary-rgb),0.2)",
-							}}
-						>
-							{question.source}
-						</span>
-					)}
-
-					{currentStatus !== "unlearned" && (
-						<span
-							style={{
-								fontSize: 11,
-								fontWeight: 500,
-								padding: "2px 8px",
-								borderRadius: 5,
-								background:
-									currentStatus === "mastered"
-										? "var(--success-light)"
-										: "var(--warning-light)",
-								color:
-									currentStatus === "mastered"
-										? "var(--success)"
-										: "var(--warning)",
-								border: `1px solid ${currentStatus === "mastered" ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)"}`,
-							}}
-						>
-							{currentStatus === "mastered" ? "已掌握" : "待复习"}
-						</span>
-					)}
-
-					{record && (
 						<span
 							style={{
 								fontSize: 12,
-								color: "var(--text-3)",
-								marginLeft: "auto",
+								fontWeight: 500,
+								color: "var(--text-2)",
+								padding: "3px 10px",
+								borderRadius: 6,
+								background: "var(--surface-3)",
+								border: "1px solid var(--border-subtle)",
 							}}
 						>
-							已复习 {record.reviewCount} 次
+							{question.module}
 						</span>
-					)}
-				</div>
 
-				{/* Question text */}
-				<h1
-					style={{
-						fontSize: 17,
-						fontWeight: 600,
-						color: "var(--text)",
-						lineHeight: 1.65,
-						letterSpacing: "-0.005em",
-					}}
-				>
-					{question.question}
-				</h1>
+						<span
+							style={{
+								fontSize: 12,
+								fontWeight: 500,
+								padding: "3px 10px",
+								borderRadius: 6,
+								border: "1px solid",
+								color: diffStyle.color,
+								background: diffStyle.background,
+								borderColor: diffStyle.borderColor,
+							}}
+						>
+							{DIFFICULTY_LABELS[question.difficulty]}
+						</span>
 
-				{/* Tags */}
-				{question.tags.length > 0 && (
-					<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-						{question.tags.map((tag) => (
+						{question.source && (
 							<span
-								key={tag}
 								style={{
 									fontSize: 11,
 									padding: "2px 8px",
 									borderRadius: 5,
-									border: "1px solid var(--border-subtle)",
-									color: "var(--text-3)",
+									background: "var(--primary-light)",
+									color: "var(--primary)",
+									border: "1px solid rgba(var(--primary-rgb),0.2)",
 								}}
 							>
-								#{tag}
+								{question.source}
 							</span>
-						))}
+						)}
+
+						{currentStatus !== "unlearned" && (
+							<span
+								style={{
+									fontSize: 11,
+									fontWeight: 500,
+									padding: "2px 8px",
+									borderRadius: 5,
+									background:
+										currentStatus === "mastered"
+											? "var(--success-light)"
+											: "var(--warning-light)",
+									color:
+										currentStatus === "mastered"
+											? "var(--success)"
+											: "var(--warning)",
+									border: `1px solid ${currentStatus === "mastered" ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)"}`,
+								}}
+							>
+								{currentStatus === "mastered" ? "已掌握" : "待复习"}
+							</span>
+						)}
+
+						{record && (
+							<span
+								style={{
+									fontSize: 12,
+									color: "var(--text-3)",
+									marginLeft: "auto",
+								}}
+							>
+								已复习 {record.reviewCount} 次
+							</span>
+						)}
+					</div>
+
+					{/* Question text */}
+					<h1
+						style={{
+							fontSize: 17,
+							fontWeight: 600,
+							color: "var(--text)",
+							lineHeight: 1.65,
+							letterSpacing: "-0.005em",
+						}}
+					>
+						{question.question}
+					</h1>
+
+					{/* Tags */}
+					{question.tags.length > 0 && (
+						<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+							{question.tags.map((tag) => (
+								<span
+									key={tag}
+									style={{
+										fontSize: 11,
+										padding: "2px 8px",
+										borderRadius: 5,
+										border: "1px solid var(--border-subtle)",
+										color: "var(--text-3)",
+									}}
+								>
+									#{tag}
+								</span>
+							))}
+						</div>
+					)}
+
+					{/* Reveal button */}
+					{!answerVisible && (
+						<button
+							onClick={handleRevealAnswer}
+							style={{
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								gap: 8,
+								width: "100%",
+								padding: "14px",
+								borderRadius: 12,
+								border: "2px dashed var(--border)",
+								background: "transparent",
+								color: "var(--text-2)",
+								cursor: "pointer",
+								fontSize: 14,
+								fontWeight: 500,
+								transition: "all 0.18s",
+								marginTop: 4,
+							}}
+							onMouseEnter={(e) => {
+								const el = e.currentTarget as HTMLElement;
+								el.style.borderColor = `rgba(var(--primary-rgb), 0.5)`;
+								el.style.color = "var(--primary)";
+								el.style.background = "var(--primary-light)";
+							}}
+							onMouseLeave={(e) => {
+								const el = e.currentTarget as HTMLElement;
+								el.style.borderColor = "var(--border)";
+								el.style.color = "var(--text-2)";
+								el.style.background = "transparent";
+							}}
+						>
+							<svg
+								width="15"
+								height="15"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+								<circle cx="12" cy="12" r="3" />
+							</svg>
+							查看参考答案
+							<Kbd>Space</Kbd>
+						</button>
+					)}
+				</div>
+
+				{/* ── Answer Card ── */}
+				{answerVisible && (
+					<div
+						ref={answerRef}
+						className="card animate-scale-in"
+						style={{
+							padding: 24,
+							display: "flex",
+							flexDirection: "column",
+							gap: 20,
+						}}
+					>
+						{/* Answer header */}
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: 10,
+								paddingBottom: 14,
+								borderBottom: "1px solid var(--border-subtle)",
+							}}
+						>
+							<div
+								style={{
+									width: 3,
+									height: 18,
+									borderRadius: 99,
+									background: "var(--primary)",
+									flexShrink: 0,
+								}}
+							/>
+							<h2 style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
+								参考答案
+							</h2>
+						</div>
+
+						{/* Markdown content */}
+						<div className="prose" style={{ minWidth: 0 }}>
+							<MarkdownRenderer content={question.answer} />
+						</div>
+
+						{/* ── Status actions ── */}
+						<div
+							style={{
+								paddingTop: 16,
+								borderTop: "1px solid var(--border-subtle)",
+								display: "flex",
+								flexDirection: "column",
+								gap: 12,
+							}}
+						>
+							<p
+								style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}
+							>
+								你掌握了吗？
+							</p>
+
+							<div className="flex gap-2">
+								<StatusButton
+									onClick={() => handleSetStatus("review", "1")}
+									label="没掌握"
+									sublabel="加入待复习"
+									variant="danger"
+									kbd="1"
+									active={
+										(justMarked === "review" && lastPressedKey === "1") ||
+										(currentStatus === "review" && lastPressedKey !== "2" && justMarked !== "review")
+									}
+									disabled={marking}
+								/>
+								<StatusButton
+									onClick={() => handleSetStatus("review", "2")}
+									label="大概会"
+									sublabel="还需巩固"
+									variant="warning"
+									kbd="2"
+									active={justMarked === "review" && lastPressedKey === "2"}
+									disabled={marking}
+								/>
+								<StatusButton
+									onClick={() => handleSetStatus("mastered", "3")}
+									label="完全掌握"
+									sublabel="不再推荐"
+									variant="success"
+									kbd="3"
+									active={
+										justMarked === "mastered" || currentStatus === "mastered"
+									}
+									disabled={marking}
+								/>
+							</div>
+
+							{marking && (
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										gap: 8,
+										fontSize: 12,
+										color: "var(--text-3)",
+									}}
+								>
+									<Spinner size="sm" />
+									<span>保存中…</span>
+								</div>
+							)}
+						</div>
 					</div>
 				)}
 
-				{/* Reveal button */}
-				{!answerVisible && (
+				{/* ── AI Button (floating, shows when AI is configured) ── */}
+				<div
+					className="animate-fade-in stagger-2"
+					style={{
+						display: "flex",
+						justifyContent: "center",
+					}}
+				>
 					<button
-						onClick={handleRevealAnswer}
+						onClick={() => setAiPanelOpen((v) => !v)}
 						style={{
 							display: "flex",
 							alignItems: "center",
-							justifyContent: "center",
-							gap: 8,
-							width: "100%",
-							padding: "14px",
-							borderRadius: 12,
-							border: "2px dashed var(--border)",
-							background: "transparent",
-							color: "var(--text-2)",
-							cursor: "pointer",
-							fontSize: 14,
+							gap: 7,
+							padding: "8px 16px",
+							borderRadius: 10,
+							border: `1px solid ${aiPanelOpen ? "rgba(var(--primary-rgb),0.4)" : "var(--border-subtle)"}`,
+							background: aiPanelOpen ? "var(--primary-light)" : "var(--surface-2)",
+							color: aiPanelOpen ? "var(--primary)" : isAiEnabled ? "var(--text-2)" : "var(--text-3)",
+							fontSize: 13,
 							fontWeight: 500,
+							cursor: "pointer",
 							transition: "all 0.18s",
-							marginTop: 4,
 						}}
 						onMouseEnter={(e) => {
-							const el = e.currentTarget as HTMLElement;
-							el.style.borderColor = `rgba(var(--primary-rgb), 0.5)`;
-							el.style.color = "var(--primary)";
-							el.style.background = "var(--primary-light)";
+							if (!aiPanelOpen) {
+								(e.currentTarget as HTMLElement).style.background = "var(--primary-light)";
+								(e.currentTarget as HTMLElement).style.color = "var(--primary)";
+								(e.currentTarget as HTMLElement).style.borderColor = "rgba(var(--primary-rgb),0.3)";
+							}
 						}}
 						onMouseLeave={(e) => {
-							const el = e.currentTarget as HTMLElement;
-							el.style.borderColor = "var(--border)";
-							el.style.color = "var(--text-2)";
-							el.style.background = "transparent";
+							if (!aiPanelOpen) {
+								(e.currentTarget as HTMLElement).style.background = "var(--surface-2)";
+								(e.currentTarget as HTMLElement).style.color = isAiEnabled ? "var(--text-2)" : "var(--text-3)";
+								(e.currentTarget as HTMLElement).style.borderColor = "var(--border-subtle)";
+							}
 						}}
 					>
 						<svg
-							width="15"
-							height="15"
+							width="14"
+							height="14"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -671,246 +869,217 @@ export default function QuestionDetail() {
 							strokeLinecap="round"
 							strokeLinejoin="round"
 						>
-							<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-							<circle cx="12" cy="12" r="3" />
+							<path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+							<circle cx="7.5" cy="14.5" r="1.5" />
+							<circle cx="16.5" cy="14.5" r="1.5" />
 						</svg>
-						查看参考答案
-						<Kbd>Space</Kbd>
+						{aiPanelOpen ? "关闭 AI 助手" : isAiEnabled ? "AI 分析" : "AI 助手（未配置）"}
+						{!isAiEnabled && (
+							<span
+								style={{
+									fontSize: 10,
+									padding: "1px 6px",
+									borderRadius: 4,
+									background: "var(--surface-3)",
+									color: "var(--text-3)",
+									border: "1px solid var(--border-subtle)",
+								}}
+							>
+								去设置
+							</span>
+						)}
 					</button>
-				)}
-			</div>
+				</div>
 
-			{/* ── Answer Card ── */}
-			{answerVisible && (
+				{/* ── Keyboard shortcuts ── */}
+				<div className="animate-fade-in stagger-3">
+					<ShortcutHints answerVisible={answerVisible} />
+				</div>
+
+				{/* ── Navigation ── */}
 				<div
-					ref={answerRef}
-					className="card animate-scale-in"
+					className="animate-fade-in stagger-4"
 					style={{
-						padding: 24,
 						display: "flex",
-						flexDirection: "column",
-						gap: 20,
+						alignItems: "center",
+						justifyContent: "space-between",
+						paddingTop: 8,
 					}}
 				>
-					{/* Answer header */}
-					<div
+					<button
+						onClick={() => navigateTo(prevId)}
+						disabled={!prevId}
 						style={{
 							display: "flex",
 							alignItems: "center",
-							gap: 10,
-							paddingBottom: 14,
-							borderBottom: "1px solid var(--border-subtle)",
+							gap: 6,
+							padding: "7px 12px",
+							borderRadius: 8,
+							fontSize: 13,
+							color: "var(--text-2)",
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+							transition: "background 0.15s, color 0.15s",
+							opacity: !prevId ? 0.3 : 1,
+							pointerEvents: !prevId ? "none" : "auto",
+						}}
+						onMouseEnter={(e) => {
+							(e.currentTarget as HTMLElement).style.background =
+								"var(--surface-2)";
+							(e.currentTarget as HTMLElement).style.color = "var(--text)";
+						}}
+						onMouseLeave={(e) => {
+							(e.currentTarget as HTMLElement).style.background = "none";
+							(e.currentTarget as HTMLElement).style.color = "var(--text-2)";
 						}}
 					>
-						<div
-							style={{
-								width: 3,
-								height: 18,
-								borderRadius: 99,
-								background: "var(--primary)",
-								flexShrink: 0,
-							}}
-						/>
-						<h2 style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
-							参考答案
-						</h2>
-					</div>
+						<svg
+							width="13"
+							height="13"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<line x1="19" y1="12" x2="5" y2="12" />
+							<polyline points="12 19 5 12 12 5" />
+						</svg>
+						上一题
+					</button>
 
-					{/* Markdown content */}
-					<div className="prose" style={{ minWidth: 0 }}>
-						<MarkdownRenderer content={question.answer} />
-					</div>
+					<Link
+						to="/questions"
+						style={{
+							fontSize: 12,
+							color: "var(--text-3)",
+							textDecoration: "none",
+						}}
+						onMouseEnter={(e) => {
+							(e.currentTarget as HTMLElement).style.color = "var(--primary)";
+						}}
+						onMouseLeave={(e) => {
+							(e.currentTarget as HTMLElement).style.color = "var(--text-3)";
+						}}
+					>
+						返回列表
+					</Link>
 
-					{/* ── Status actions ── */}
+					<button
+						onClick={() => navigateTo(nextId)}
+						disabled={!nextId}
+						style={{
+							display: "flex",
+							alignItems: "center",
+							gap: 6,
+							padding: "7px 12px",
+							borderRadius: 8,
+							fontSize: 13,
+							color: "var(--text-2)",
+							background: "none",
+							border: "none",
+							cursor: "pointer",
+							transition: "background 0.15s, color 0.15s",
+							opacity: !nextId ? 0.3 : 1,
+							pointerEvents: !nextId ? "none" : "auto",
+						}}
+						onMouseEnter={(e) => {
+							(e.currentTarget as HTMLElement).style.background =
+								"var(--surface-2)";
+							(e.currentTarget as HTMLElement).style.color = "var(--text)";
+						}}
+						onMouseLeave={(e) => {
+							(e.currentTarget as HTMLElement).style.background = "none";
+							(e.currentTarget as HTMLElement).style.color = "var(--text-2)";
+						}}
+					>
+						下一题
+						<svg
+							width="13"
+							height="13"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<line x1="5" y1="12" x2="19" y2="12" />
+							<polyline points="12 5 19 12 12 19" />
+						</svg>
+					</button>
+				</div>
+			</div>
+
+			{/* ── AI Panel (side column) ── */}
+			{aiPanelOpen && (
+				<div
+					style={{
+						width: 380,
+						flexShrink: 0,
+						position: "sticky",
+						top: "calc(var(--navbar-h) + 20px)",
+						height: "calc(100dvh - var(--navbar-h) - 40px)",
+						animation: "slide-down 0.22s var(--ease-out) both",
+					}}
+					className="hidden-mobile"
+				>
+					<AIPanelWithStyles
+						question={question}
+						answerVisible={answerVisible}
+						onOpenSettings={() => setSettingsOpen(true)}
+					/>
+				</div>
+			)}
+
+			{/* Mobile AI Panel (bottom sheet) */}
+			{aiPanelOpen && (
+				<div
+					className="show-mobile"
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 100,
+						background: "rgba(0,0,0,0.4)",
+						backdropFilter: "blur(2px)",
+					}}
+					onClick={() => setAiPanelOpen(false)}
+				>
 					<div
 						style={{
-							paddingTop: 16,
-							borderTop: "1px solid var(--border-subtle)",
-							display: "flex",
-							flexDirection: "column",
-							gap: 12,
+							position: "absolute",
+							bottom: 0,
+							left: 0,
+							right: 0,
+							height: "75dvh",
+							borderRadius: "16px 16px 0 0",
+							overflow: "hidden",
+							background: "var(--surface)",
+							animation: "slide-up 0.25s var(--ease-out) both",
 						}}
+						onClick={(e) => e.stopPropagation()}
 					>
-						<p
-							style={{ fontSize: 12, fontWeight: 500, color: "var(--text-2)" }}
-						>
-							你掌握了吗？
-						</p>
-
-						<div className="flex gap-2">
-							<StatusButton
-								onClick={() => handleSetStatus("review", "1")}
-								label="没掌握"
-								sublabel="加入待复习"
-								variant="danger"
-								kbd="1"
-								active={
-									(justMarked === "review" && lastPressedKey === "1") ||
-									(currentStatus === "review" && lastPressedKey !== "2" && justMarked !== "review")
-								}
-								disabled={marking}
-							/>
-							<StatusButton
-								onClick={() => handleSetStatus("review", "2")}
-								label="大概会"
-								sublabel="还需巩固"
-								variant="warning"
-								kbd="2"
-								active={justMarked === "review" && lastPressedKey === "2"}
-								disabled={marking}
-							/>
-							<StatusButton
-								onClick={() => handleSetStatus("mastered", "3")}
-								label="完全掌握"
-								sublabel="不再推荐"
-								variant="success"
-								kbd="3"
-								active={
-									justMarked === "mastered" || currentStatus === "mastered"
-								}
-								disabled={marking}
-							/>
-						</div>
-
-						{marking && (
-							<div
-								style={{
-									display: "flex",
-									alignItems: "center",
-									justifyContent: "center",
-									gap: 8,
-									fontSize: 12,
-									color: "var(--text-3)",
-								}}
-							>
-								<Spinner size="sm" />
-								<span>保存中…</span>
-							</div>
-						)}
+						<AIPanelWithStyles
+							question={question}
+							answerVisible={answerVisible}
+							onOpenSettings={() => {
+								setAiPanelOpen(false);
+								setSettingsOpen(true);
+							}}
+						/>
 					</div>
 				</div>
 			)}
 
-			{/* ── Keyboard shortcuts ── */}
-			<div className="animate-fade-in stagger-3">
-				<ShortcutHints answerVisible={answerVisible} />
 			</div>
 
-			{/* ── Navigation ── */}
-			<div
-				className="animate-fade-in stagger-4"
-				style={{
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "space-between",
-					paddingTop: 8,
-				}}
-			>
-				<button
-					onClick={() => navigateTo(prevId)}
-					disabled={!prevId}
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 6,
-						padding: "7px 12px",
-						borderRadius: 8,
-						fontSize: 13,
-						color: "var(--text-2)",
-						background: "none",
-						border: "none",
-						cursor: "pointer",
-						transition: "background 0.15s, color 0.15s",
-						opacity: !prevId ? 0.3 : 1,
-						pointerEvents: !prevId ? "none" : "auto",
-					}}
-					onMouseEnter={(e) => {
-						(e.currentTarget as HTMLElement).style.background =
-							"var(--surface-2)";
-						(e.currentTarget as HTMLElement).style.color = "var(--text)";
-					}}
-					onMouseLeave={(e) => {
-						(e.currentTarget as HTMLElement).style.background = "none";
-						(e.currentTarget as HTMLElement).style.color = "var(--text-2)";
-					}}
-				>
-					<svg
-						width="13"
-						height="13"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					>
-						<line x1="19" y1="12" x2="5" y2="12" />
-						<polyline points="12 19 5 12 12 5" />
-					</svg>
-					上一题
-				</button>
-
-				<Link
-					to="/questions"
-					style={{
-						fontSize: 12,
-						color: "var(--text-3)",
-						textDecoration: "none",
-					}}
-					onMouseEnter={(e) => {
-						(e.currentTarget as HTMLElement).style.color = "var(--primary)";
-					}}
-					onMouseLeave={(e) => {
-						(e.currentTarget as HTMLElement).style.color = "var(--text-3)";
-					}}
-				>
-					返回列表
-				</Link>
-
-				<button
-					onClick={() => navigateTo(nextId)}
-					disabled={!nextId}
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 6,
-						padding: "7px 12px",
-						borderRadius: 8,
-						fontSize: 13,
-						color: "var(--text-2)",
-						background: "none",
-						border: "none",
-						cursor: "pointer",
-						transition: "background 0.15s, color 0.15s",
-						opacity: !nextId ? 0.3 : 1,
-						pointerEvents: !nextId ? "none" : "auto",
-					}}
-					onMouseEnter={(e) => {
-						(e.currentTarget as HTMLElement).style.background =
-							"var(--surface-2)";
-						(e.currentTarget as HTMLElement).style.color = "var(--text)";
-					}}
-					onMouseLeave={(e) => {
-						(e.currentTarget as HTMLElement).style.background = "none";
-						(e.currentTarget as HTMLElement).style.color = "var(--text-2)";
-					}}
-				>
-					下一题
-					<svg
-						width="13"
-						height="13"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						strokeWidth="2"
-						strokeLinecap="round"
-						strokeLinejoin="round"
-					>
-						<line x1="5" y1="12" x2="19" y2="12" />
-						<polyline points="12 5 19 12 12 19" />
-					</svg>
-				</button>
-			</div>
-		</div>
-	);
-}
+			{/* Settings Drawer */}
+			<SettingsDrawer
+				open={settingsOpen}
+				onClose={() => setSettingsOpen(false)}
+			/>
+			</>
+		);
+	}

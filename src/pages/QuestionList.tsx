@@ -4,13 +4,13 @@ import { Button, EmptyState, Skeleton } from "@/components/ui";
 import { applyFilters, useQuestions } from "@/hooks/useQuestions";
 import { useStudyStore } from "@/store/useStudyStore";
 import {
-	DIFFICULTY_COLORS,
 	DIFFICULTY_LABELS,
+	DIFFICULTY_STYLES,
 	type Difficulty,
 	MODULE_LIST,
 	type Module,
-	STATUS_COLORS,
 	STATUS_LABELS,
+	STATUS_STYLES,
 	type StudyStatus,
 } from "@/types";
 
@@ -227,10 +227,19 @@ function FilterPanel({
 								}}
 							>
 								<span
-									className={`text-xs font-medium px-2 py-0.5 rounded-md border ${DIFFICULTY_COLORS[d]}`}
-								>
-									{DIFFICULTY_LABELS[d]}
-								</span>
+											style={{
+												fontSize: 11,
+												fontWeight: 500,
+												padding: "2px 8px",
+												borderRadius: 6,
+												border: "1px solid",
+												color: DIFFICULTY_STYLES[d].color,
+												background: DIFFICULTY_STYLES[d].background,
+												borderColor: DIFFICULTY_STYLES[d].borderColor,
+											}}
+										>
+											{DIFFICULTY_LABELS[d]}
+										</span>
 								{active && (
 									<svg
 										width="12"
@@ -295,7 +304,16 @@ function FilterPanel({
 								}}
 							>
 								<span
-									className={`text-xs font-medium px-2 py-0.5 rounded-md border ${STATUS_COLORS[s]}`}
+									style={{
+										fontSize: 11,
+										fontWeight: 500,
+										padding: "2px 8px",
+										borderRadius: 6,
+										border: "1px solid",
+										color: STATUS_STYLES[s].color,
+										background: STATUS_STYLES[s].background,
+										borderColor: STATUS_STYLES[s].borderColor,
+									}}
 								>
 									{STATUS_LABELS[s]}
 								</span>
@@ -405,7 +423,16 @@ function QuestionCard({ question: q, status, index }: QuestionCardProps) {
 
 					{/* Difficulty */}
 					<span
-						className={`text-xs font-medium px-1.5 py-0.5 rounded border ${DIFFICULTY_COLORS[q.difficulty]}`}
+						style={{
+							fontSize: 11,
+							fontWeight: 500,
+							padding: "2px 7px",
+							borderRadius: 5,
+							border: "1px solid",
+							color: DIFFICULTY_STYLES[q.difficulty].color,
+							background: DIFFICULTY_STYLES[q.difficulty].background,
+							borderColor: DIFFICULTY_STYLES[q.difficulty].borderColor,
+						}}
 					>
 						{DIFFICULTY_LABELS[q.difficulty]}
 					</span>
@@ -413,7 +440,16 @@ function QuestionCard({ question: q, status, index }: QuestionCardProps) {
 					{/* Status badge */}
 					{status !== "unlearned" && (
 						<span
-							className={`text-xs font-medium px-1.5 py-0.5 rounded border ${STATUS_COLORS[status]}`}
+							style={{
+								fontSize: 11,
+								fontWeight: 500,
+								padding: "2px 7px",
+								borderRadius: 5,
+								border: "1px solid",
+								color: STATUS_STYLES[status].color,
+								background: STATUS_STYLES[status].background,
+								borderColor: STATUS_STYLES[status].borderColor,
+							}}
 						>
 							{STATUS_LABELS[status]}
 						</span>
@@ -896,13 +932,20 @@ export default function QuestionList() {
 						<button
 							key={d}
 							onClick={() => toggleDifficulty(d)}
-							className={`text-xs font-medium border cursor-pointer transition-all duration-150 ${DIFFICULTY_COLORS[d]}`}
 							style={{
 								display: "flex",
 								alignItems: "center",
 								gap: 4,
 								padding: "3px 10px",
 								borderRadius: 99,
+								fontSize: 12,
+								fontWeight: 500,
+								border: "1px solid",
+								cursor: "pointer",
+								transition: "all 0.15s",
+								color: DIFFICULTY_STYLES[d].color,
+								background: DIFFICULTY_STYLES[d].background,
+								borderColor: DIFFICULTY_STYLES[d].borderColor,
 							}}
 						>
 							{DIFFICULTY_LABELS[d]}
@@ -923,13 +966,20 @@ export default function QuestionList() {
 						<button
 							key={s}
 							onClick={() => toggleStatus(s)}
-							className={`text-xs font-medium border cursor-pointer transition-all duration-150 ${STATUS_COLORS[s]}`}
 							style={{
 								display: "flex",
 								alignItems: "center",
 								gap: 4,
 								padding: "3px 10px",
 								borderRadius: 99,
+								fontSize: 12,
+								fontWeight: 500,
+								border: "1px solid",
+								cursor: "pointer",
+								transition: "all 0.15s",
+								color: STATUS_STYLES[s].color,
+								background: STATUS_STYLES[s].background,
+								borderColor: STATUS_STYLES[s].borderColor,
 							}}
 						>
 							{STATUS_LABELS[s]}
