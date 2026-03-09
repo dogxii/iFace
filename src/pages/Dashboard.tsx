@@ -1181,7 +1181,7 @@ export default function Dashboard() {
 								)}
 								{dailyIds.length > 0 && (
 									<Link to={`/practice?ids=${dailyIds.join(",")}`}>
-										<Button variant="primary" size="sm">
+										<Button variant="primary" size="sm" className="px-2!">
 											连续刷题
 										</Button>
 									</Link>

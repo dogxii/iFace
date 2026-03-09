@@ -292,7 +292,7 @@ function DropZone({
 					alignItems: "center",
 					justifyContent: "center",
 					gap: 14,
-					minHeight: 160,
+					minHeight: 180,
 					borderRadius: 14,
 					border: "2px dashed",
 					borderColor: dragging ? "var(--primary)" : "var(--border)",
@@ -323,7 +323,7 @@ function DropZone({
 							gap: 8,
 						}}
 					>
-						<Spinner size="lg" className="text-[var(--primary)]" />
+						<Spinner size="lg" className="text-(--primary)" />
 						<p style={{ fontSize: 13, color: "var(--text-2)" }}>导入中…</p>
 					</div>
 				) : (

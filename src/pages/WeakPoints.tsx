@@ -603,6 +603,7 @@ export default function WeakPoints() {
 										<polygon points="5 3 19 12 5 21 5 3" />
 									</svg>
 								}
+								className="px-2!"
 							>
 								集中攻克
 							</Button>
