@@ -1351,161 +1351,150 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 								</button>
 							</div>
 
-							{/* Danger Zone */}
+							{/* Clear records */}
 							<div
 								style={{
+									padding: "12px",
 									borderRadius: 10,
-									border: "1px solid rgba(239,68,68,0.2)",
-									overflow: "hidden",
+									border: "1px solid rgba(239,68,68,0.18)",
+									background: "rgba(239,68,68,0.03)",
+									display: "flex",
+									flexDirection: "column",
+									gap: 10,
 								}}
 							>
-								<div
-									style={{
-										padding: "10px 14px",
-										background: "rgba(239,68,68,0.06)",
-										borderBottom: "1px solid rgba(239,68,68,0.15)",
-									}}
-								>
-									<p style={{ fontSize: 12, fontWeight: 600, color: "var(--danger)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-										危险操作
+								<div>
+									<p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>清除学习记录</p>
+									<p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4, lineHeight: 1.5 }}>
+										保留题库，仅删除进度数据
 									</p>
 								</div>
-
-								<div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-									{/* Clear records */}
-									<div
+								{confirmReset === "records" ? (
+									<div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+										<button
+											onClick={handleResetConfirm}
+											style={{
+												padding: "6px 12px",
+												borderRadius: 7,
+												border: "1px solid rgba(239,68,68,0.3)",
+												background: "var(--danger)",
+												color: "white",
+												fontSize: 12,
+												cursor: "pointer",
+											}}
+										>
+											确认清除
+										</button>
+										<button
+											onClick={() => setConfirmReset(null)}
+											style={{
+												padding: "6px 12px",
+												borderRadius: 7,
+												border: "1px solid var(--border)",
+												background: "transparent",
+												color: "var(--text-2)",
+												fontSize: 12,
+												cursor: "pointer",
+											}}
+										>
+											取消
+										</button>
+									</div>
+								) : (
+									<button
+										onClick={() => setConfirmReset("records")}
 										style={{
-											display: "flex",
+											display: "inline-flex",
 											alignItems: "center",
-											justifyContent: "space-between",
-											gap: 12,
+											justifyContent: "center",
+											gap: 6,
+											alignSelf: "flex-start",
+											padding: "6px 12px",
+											borderRadius: 7,
+											border: "1px solid rgba(239,68,68,0.25)",
+											background: "var(--danger-light)",
+											color: "var(--danger)",
+											fontSize: 12,
+											cursor: "pointer",
 										}}
 									>
-										<div>
-											<p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>清除学习记录</p>
-											<p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 1 }}>保留题库，仅删除进度数据</p>
-										</div>
-										{confirmReset === "records" ? (
-											<div style={{ display: "flex", gap: 6 }}>
-												<button
-													onClick={handleResetConfirm}
-													style={{
-														padding: "4px 10px",
-														borderRadius: 6,
-														border: "1px solid rgba(239,68,68,0.3)",
-														background: "var(--danger)",
-														color: "white",
-														fontSize: 12,
-														cursor: "pointer",
-													}}
-												>
-													确认
-												</button>
-												<button
-													onClick={() => setConfirmReset(null)}
-													style={{
-														padding: "4px 10px",
-														borderRadius: 6,
-														border: "1px solid var(--border)",
-														background: "transparent",
-														color: "var(--text-2)",
-														fontSize: 12,
-														cursor: "pointer",
-													}}
-												>
-													取消
-												</button>
-											</div>
-										) : (
-											<button
-												onClick={() => setConfirmReset("records")}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: 5,
-													padding: "5px 10px",
-													borderRadius: 7,
-													border: "1px solid rgba(239,68,68,0.25)",
-													background: "var(--danger-light)",
-													color: "var(--danger)",
-													fontSize: 12,
-													cursor: "pointer",
-													whiteSpace: "nowrap",
-												}}
-											>
-												<IconTrash />
-												清除
-											</button>
-										)}
-									</div>
+										<IconTrash />
+										清除学习记录
+									</button>
+								)}
+							</div>
 
-									{/* Reset all */}
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "space-between",
-											gap: 12,
-										}}
-									>
-										<div>
-											<p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>重置所有数据</p>
-											<p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 1 }}>删除题库、记录、AI 对话等全部数据</p>
-										</div>
-										{confirmReset === "all" ? (
-											<div style={{ display: "flex", gap: 6 }}>
-												<button
-													onClick={handleResetConfirm}
-													style={{
-														padding: "4px 10px",
-														borderRadius: 6,
-														border: "1px solid rgba(239,68,68,0.3)",
-														background: "var(--danger)",
-														color: "white",
-														fontSize: 12,
-														cursor: "pointer",
-													}}
-												>
-													确认
-												</button>
-												<button
-													onClick={() => setConfirmReset(null)}
-													style={{
-														padding: "4px 10px",
-														borderRadius: 6,
-														border: "1px solid var(--border)",
-														background: "transparent",
-														color: "var(--text-2)",
-														fontSize: 12,
-														cursor: "pointer",
-													}}
-												>
-													取消
-												</button>
-											</div>
-										) : (
-											<button
-												onClick={() => setConfirmReset("all")}
-												style={{
-													display: "flex",
-													alignItems: "center",
-													gap: 5,
-													padding: "5px 10px",
-													borderRadius: 7,
-													border: "1px solid rgba(239,68,68,0.25)",
-													background: "var(--danger-light)",
-													color: "var(--danger)",
-													fontSize: 12,
-													cursor: "pointer",
-													whiteSpace: "nowrap",
-												}}
-											>
-												<IconTrash />
-												重置
-											</button>
-										)}
-									</div>
+							{/* Reset all */}
+							<div
+								style={{
+									padding: "12px",
+									borderRadius: 10,
+									border: "1px solid rgba(239,68,68,0.18)",
+									background: "rgba(239,68,68,0.03)",
+									display: "flex",
+									flexDirection: "column",
+									gap: 10,
+								}}
+							>
+								<div>
+									<p style={{ fontSize: 13, fontWeight: 500, color: "var(--text)" }}>重置所有数据</p>
+									<p style={{ fontSize: 11, color: "var(--text-3)", marginTop: 4, lineHeight: 1.5 }}>
+										删除题库、记录、AI 对话等全部数据
+									</p>
 								</div>
+								{confirmReset === "all" ? (
+									<div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+										<button
+											onClick={handleResetConfirm}
+											style={{
+												padding: "6px 12px",
+												borderRadius: 7,
+												border: "1px solid rgba(239,68,68,0.3)",
+												background: "var(--danger)",
+												color: "white",
+												fontSize: 12,
+												cursor: "pointer",
+											}}
+										>
+											确认重置
+										</button>
+										<button
+											onClick={() => setConfirmReset(null)}
+											style={{
+												padding: "6px 12px",
+												borderRadius: 7,
+												border: "1px solid var(--border)",
+												background: "transparent",
+												color: "var(--text-2)",
+												fontSize: 12,
+												cursor: "pointer",
+											}}
+										>
+											取消
+										</button>
+									</div>
+								) : (
+									<button
+										onClick={() => setConfirmReset("all")}
+										style={{
+											display: "inline-flex",
+											alignItems: "center",
+											justifyContent: "center",
+											gap: 6,
+											alignSelf: "flex-start",
+											padding: "6px 12px",
+											borderRadius: 7,
+											border: "1px solid rgba(239,68,68,0.25)",
+											background: "var(--danger-light)",
+											color: "var(--danger)",
+											fontSize: 12,
+											cursor: "pointer",
+										}}
+									>
+										<IconTrash />
+										重置全部数据
+									</button>
+								)}
 							</div>
 						</>
 					)}
