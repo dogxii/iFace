@@ -5,6 +5,7 @@ import { applyFilters, useQuestions } from "@/hooks/useQuestions";
 import { useStudyStore } from "@/store/useStudyStore";
 import {
 	BUILTIN_MODULES,
+	BUILTIN_MODULE_CATEGORY,
 	DIFFICULTY_LABELS,
 	DIFFICULTY_STYLES,
 	type Difficulty,
@@ -132,67 +133,80 @@ function FilterPanel({
 				</div>
 				<div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
 					{availableModules.map((mod) => {
-						const active = selectedModules.includes(mod);
-						const isCustom = !(BUILTIN_MODULES as readonly string[]).includes(mod);
-						return (
-							<button
-								key={mod}
-								onClick={() => onModuleToggle(mod)}
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 8,
-									padding: "6px 10px",
-									borderRadius: 8,
-									fontSize: 13,
-									fontWeight: active ? 500 : 400,
-									color: active ? "var(--primary)" : "var(--text-2)",
-									background: active ? "var(--primary-light)" : "transparent",
-									border: "none",
-									cursor: "pointer",
-									textAlign: "left",
-									transition: "background 0.12s, color 0.12s",
-									width: "100%",
-								}}
-								onMouseEnter={(e) => {
-									if (!active) {
-										(e.currentTarget as HTMLElement).style.background =
-											"var(--surface-2)";
-										(e.currentTarget as HTMLElement).style.color =
-											"var(--text)";
-									}
-								}}
-								onMouseLeave={(e) => {
-									if (!active) {
-										(e.currentTarget as HTMLElement).style.background =
-											"transparent";
-										(e.currentTarget as HTMLElement).style.color =
-											"var(--text-2)";
-									}
-								}}
-							>
-								<span
+							const active = selectedModules.includes(mod);
+							const categoryLabel = BUILTIN_MODULE_CATEGORY[mod] ?? null;
+							const isCustom = !(BUILTIN_MODULES as readonly string[]).includes(mod);
+							return (
+								<button
+									key={mod}
+									onClick={() => onModuleToggle(mod)}
 									style={{
-										flex: 1,
-										overflow: "hidden",
-										textOverflow: "ellipsis",
-										whiteSpace: "nowrap",
+										display: "flex",
+										alignItems: "center",
+										gap: 8,
+										padding: "6px 10px",
+										borderRadius: 8,
+										fontSize: 13,
+										fontWeight: active ? 500 : 400,
+										color: active ? "var(--primary)" : "var(--text-2)",
+										background: active ? "var(--primary-light)" : "transparent",
+										border: "none",
+										cursor: "pointer",
+										textAlign: "left",
+										transition: "background 0.12s, color 0.12s",
+										width: "100%",
+									}}
+									onMouseEnter={(e) => {
+										if (!active) {
+											(e.currentTarget as HTMLElement).style.background =
+												"var(--surface-2)";
+											(e.currentTarget as HTMLElement).style.color =
+												"var(--text)";
+										}
+									}}
+									onMouseLeave={(e) => {
+										if (!active) {
+											(e.currentTarget as HTMLElement).style.background =
+												"transparent";
+											(e.currentTarget as HTMLElement).style.color =
+												"var(--text-2)";
+										}
 									}}
 								>
-									{mod}
-								</span>
-								{isCustom && (
-									<span style={{
-										fontSize: 9,
-										padding: "1px 4px",
-										borderRadius: 3,
-										background: active ? "rgba(255,255,255,0.2)" : "var(--surface-3)",
-										color: active ? "rgba(255,255,255,0.8)" : "var(--text-3)",
-										flexShrink: 0,
-									}}>
-										自定义
+									<span
+										style={{
+											flex: 1,
+											overflow: "hidden",
+											textOverflow: "ellipsis",
+											whiteSpace: "nowrap",
+										}}
+									>
+										{mod}
 									</span>
-								)}
+									{categoryLabel && (
+										<span style={{
+											fontSize: 9,
+											padding: "1px 4px",
+											borderRadius: 3,
+											background: active ? "rgba(255,255,255,0.2)" : "var(--surface-3)",
+											color: active ? "rgba(255,255,255,0.8)" : "var(--text-3)",
+											flexShrink: 0,
+										}}>
+											{categoryLabel}
+										</span>
+									)}
+									{isCustom && (
+										<span style={{
+											fontSize: 9,
+											padding: "1px 4px",
+											borderRadius: 3,
+											background: active ? "rgba(255,255,255,0.2)" : "var(--surface-3)",
+											color: active ? "rgba(255,255,255,0.8)" : "var(--text-3)",
+											flexShrink: 0,
+										}}>
+											自定义
+										</span>
+									)}
 								{active && (
 									<svg
 										width="12"

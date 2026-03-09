@@ -1,5 +1,6 @@
-// Built-in frontend modules (used for icon/color mapping & default filter UI)
+// Built-in modules across all built-in categories (used for icon/color mapping & default filter UI)
 export const BUILTIN_MODULES = [
+	// 前端
 	"JS基础",
 	"React",
 	"性能优化",
@@ -8,9 +9,34 @@ export const BUILTIN_MODULES = [
 	"TypeScript",
 	"手写题",
 	"项目深挖",
+	// Golang
+	"Go基础",
+	"并发编程",
+	"内存与GC",
+	"工程化",
+	"Web开发",
 ] as const;
 
 export type BuiltinModule = (typeof BUILTIN_MODULES)[number];
+
+/** Maps each built-in module to its display category label */
+export const BUILTIN_MODULE_CATEGORY: Record<string, string> = {
+	// 前端
+	"JS基础":   "前端",
+	"React":    "前端",
+	"性能优化": "前端",
+	"网络":     "前端",
+	"CSS":      "前端",
+	"TypeScript": "前端",
+	"手写题":   "前端",
+	"项目深挖": "前端",
+	// Golang
+	"Go基础":   "Go",
+	"并发编程": "Go",
+	"内存与GC": "Go",
+	"工程化":   "Go",
+	"Web开发":  "Go",
+};
 
 // Module is now open — any string is valid, enabling custom topics like Golang, Java, etc.
 export type Module = string;
