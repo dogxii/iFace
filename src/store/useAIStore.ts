@@ -135,6 +135,9 @@ interface AIStoreState {
 	streamingQuestionId: string | null;
 }
 
+// Module-level abort controller so sendMessage can be cancelled from outside
+let _activeAbortController: AbortController | null = null;
+
 type AIAction =
 	| { type: "SET_CONFIG"; config: Partial<AIConfig> }
 	| { type: "RESET_CONFIG" }
@@ -258,10 +261,12 @@ export function useAIStore() {
 		[],
 	);
 
+	// Reactive: reads directly from state so components re-render on session changes
 	const getMessages = useCallback(
 		(questionId: string): AIMessage[] =>
-			stateRef.current.sessions[questionId]?.messages ?? [],
-		[],
+			state.sessions[questionId]?.messages ?? [],
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[state.sessions],
 	);
 
 	const clearSession = useCallback((questionId: string) => {
@@ -270,6 +275,15 @@ export function useAIStore() {
 
 	const clearAllSessions = useCallback(() => {
 		dispatch({ type: "CLEAR_ALL_SESSIONS" });
+	}, []);
+
+	// Abort any in-progress stream
+	const abortStream = useCallback(() => {
+		if (_activeAbortController) {
+			_activeAbortController.abort();
+			_activeAbortController = null;
+		}
+		dispatch({ type: "SET_STREAMING", streaming: false, questionId: null });
 	}, []);
 
 	// ─── AI Chat ──────────────────────────────────────────────────────────────
@@ -313,6 +327,10 @@ export function useAIStore() {
 				userMsg,
 			];
 
+			// Create a fresh AbortController for this request
+			const controller = new AbortController();
+			_activeAbortController = controller;
+
 			try {
 				const response = await fetch(`${config.baseUrl}/chat/completions`, {
 					method: "POST",
@@ -320,6 +338,7 @@ export function useAIStore() {
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${config.apiKey}`,
 					},
+					signal: controller.signal,
 					body: JSON.stringify({
 						model: config.model,
 						messages,
@@ -376,9 +395,17 @@ export function useAIStore() {
 				dispatch({ type: "ADD_MESSAGE", questionId, message: assistantMsg });
 				onDone(fullText);
 			} catch (err) {
-				const errMsg = err instanceof Error ? err.message : "未知错误";
-				onError(errMsg);
+				if (err instanceof Error && err.name === "AbortError") {
+					// User cancelled — not an error
+					onDone(/* partial text already flushed via onChunk */ "");
+				} else {
+					const errMsg = err instanceof Error ? err.message : "未知错误";
+					onError(errMsg);
+				}
 			} finally {
+				if (_activeAbortController === controller) {
+					_activeAbortController = null;
+				}
 				dispatch({ type: "SET_STREAMING", streaming: false, questionId: null });
 			}
 		},
@@ -451,6 +478,7 @@ export function useAIStore() {
 
 		// AI
 		sendMessage,
+		abortStream,
 		getQuickActions,
 	};
 }

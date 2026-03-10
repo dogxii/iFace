@@ -538,6 +538,7 @@ export function AIPanel({ question, answerVisible, onOpenSettings, headless = fa
 		getMessages,
 		clearSession,
 		sendMessage,
+		abortStream,
 	} = useAIStore();
 
 	const questionId = question.id;
@@ -658,10 +659,12 @@ export function AIPanel({ question, answerVisible, onOpenSettings, headless = fa
 	);
 
 	const handleClear = useCallback(() => {
+		if (isStreaming) abortStream();
 		clearSession(questionId);
 		setError(null);
 		setStreamingText("");
-	}, [clearSession, questionId]);
+		setTimeout(() => inputRef.current?.focus(), 60);
+	}, [clearSession, abortStream, questionId, isStreaming]);
 
 	const handleQuickAction = useCallback(
 		(prompt: string) => {
@@ -869,8 +872,8 @@ export function AIPanel({ question, answerVisible, onOpenSettings, headless = fa
 						}}
 					/>
 					<button
-						onClick={isStreaming ? undefined : () => handleSend()}
-						disabled={!isStreaming && !input.trim()}
+							onClick={isStreaming ? abortStream : () => handleSend()}
+							disabled={!isStreaming && !input.trim()}
 						style={{
 							width: 32,
 							height: 32,
