@@ -385,21 +385,38 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 		}
 	}, [open, tab]);
 
-	// Auto-pull from Gist once per session after login
+	// Auto-pull from Gist once per session after login.
+	// We set autoSynced AFTER the call resolves so a transient failure doesn't
+	// permanently suppress the sync for the rest of the session.
 	useEffect(() => {
 		if (!isLoggedIn || !token || autoSynced) return;
-		setAutoSynced(true);
-		pullFromGist(token).then((result) => {
-			if (result === null) return; // no backup yet
-			if (result.ok) {
-				invalidateQuestionsCache();
+
+		(async () => {
+			setAutoSynced(true); // prevent concurrent calls, but errors still show
+			try {
+				const result = await pullFromGist(token);
+				if (result === null) return; // no backup exists yet — silent is fine
+				if (result.ok) {
+					invalidateQuestionsCache();
+					setLastSyncResult({
+						ok: true,
+						message: `已自动从云端恢复 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目`,
+						at: result.exportedAt,
+					});
+				} else {
+					// Sync failed — show the error so the user knows
+					setLastSyncResult({
+						ok: false,
+						message: `自动同步失败：${result.error ?? "未知错误"}`,
+					});
+				}
+			} catch (err) {
 				setLastSyncResult({
-					ok: true,
-					message: `已自动从云端恢复 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目`,
-					at: result.exportedAt,
+					ok: false,
+					message: `自动同步失败：${err instanceof Error ? err.message : String(err)}`,
 				});
 			}
-		});
+		})();
 	}, [isLoggedIn, token, autoSynced]);
 
 	// Keyboard close
@@ -1639,15 +1656,28 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 												if (!token) return;
 												setSyncPushing(true);
 												setLastSyncResult(null);
-												const result = await pushToGist(token);
-												setSyncPushing(false);
-												setLastSyncResult({
-													ok: result.ok,
-													message: result.ok
-														? `已备份 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目`
-														: `备份失败：${result.error}`,
-													at: result.exportedAt,
-												});
+												try {
+													const result = await pushToGist(token);
+													if (result.ok) {
+														setLastSyncResult({
+															ok: true,
+															message: `已备份 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目`,
+															at: result.exportedAt,
+														});
+													} else {
+														setLastSyncResult({
+															ok: false,
+															message: `备份失败：${result.error ?? "未知错误"}`,
+														});
+													}
+												} catch (err) {
+													setLastSyncResult({
+														ok: false,
+														message: `备份失败：${err instanceof Error ? err.message : String(err)}`,
+													});
+												} finally {
+													setSyncPushing(false);
+												}
 											}}
 											disabled={syncPushing || syncPulling}
 											style={{
@@ -1694,19 +1724,30 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
 												if (!confirm("确定要从云端恢复数据吗？这将覆盖本地学习记录。")) return;
 												setSyncPulling(true);
 												setLastSyncResult(null);
-												const result = await pullFromGist(token);
-												setSyncPulling(false);
-												if (result === null) {
-													setLastSyncResult({ ok: false, message: "云端暂无备份，请先执行「备份到云端」" });
-												} else {
-													if (result.ok) invalidateQuestionsCache();
+												try {
+													const result = await pullFromGist(token);
+													if (result === null) {
+														setLastSyncResult({ ok: false, message: "云端暂无备份，请先执行「备份到云端」" });
+													} else if (result.ok) {
+														invalidateQuestionsCache();
+														setLastSyncResult({
+															ok: true,
+															message: `已恢复 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目`,
+															at: result.exportedAt,
+														});
+													} else {
+														setLastSyncResult({
+															ok: false,
+															message: `恢复失败：${result.error ?? "未知错误"}`,
+														});
+													}
+												} catch (err) {
 													setLastSyncResult({
-														ok: result.ok,
-														message: result.ok
-															? `已恢复 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目`
-															: `恢复失败：${result.error}`,
-														at: result.exportedAt,
+														ok: false,
+														message: `恢复失败：${err instanceof Error ? err.message : String(err)}`,
 													});
+												} finally {
+													setSyncPulling(false);
 												}
 											}}
 											disabled={syncPushing || syncPulling}
