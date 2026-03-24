@@ -5,10 +5,7 @@
     "difficulty": 1,
     "question": "手写防抖函数（debounce）",
     "answer": "## 防抖函数实现\n\n防抖：在事件被触发 n 秒后执行回调，若在 n 秒内再次触发则重新计时。\n\n```js\nfunction debounce(fn, delay = 300) {\n  let timer = null;\n  return function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => {\n      fn.apply(this, args);\n      timer = null;\n    }, delay);\n  };\n}\n\n// 使用\nconst handleSearch = debounce((val) => {\n  console.log('搜索:', val);\n}, 500);\n\ninput.addEventListener('input', (e) => handleSearch(e.target.value));\n```\n\n**支持立即执行的版本：**\n\n```js\nfunction debounce(fn, delay = 300, immediate = false) {\n  let timer = null;\n  return function (...args) {\n    const callNow = immediate && !timer;\n    clearTimeout(timer);\n    timer = setTimeout(() => {\n      timer = null;\n      if (!immediate) fn.apply(this, args);\n    }, delay);\n    if (callNow) fn.apply(this, args);\n  };\n}\n```",
-    "tags": [
-      "防抖",
-      "性能优化"
-    ],
+    "tags": ["防抖", "性能优化"],
     "source": "高频"
   },
   {
@@ -17,10 +14,7 @@
     "difficulty": 1,
     "question": "手写节流函数（throttle）",
     "answer": "## 节流函数实现\n\n节流：在单位时间内只允许函数执行一次，多余的调用被忽略。\n\n**时间戳版（首次立即执行）：**\n\n```js\nfunction throttle(fn, interval = 300) {\n  let lastTime = 0;\n  return function (...args) {\n    const now = Date.now();\n    if (now - lastTime >= interval) {\n      lastTime = now;\n      fn.apply(this, args);\n    }\n  };\n}\n```\n\n**定时器版（首次延迟执行）：**\n\n```js\nfunction throttle(fn, interval = 300) {\n  let timer = null;\n  return function (...args) {\n    if (!timer) {\n      timer = setTimeout(() => {\n        fn.apply(this, args);\n        timer = null;\n      }, interval);\n    }\n  };\n}\n```\n\n**结合版（首尾都执行）：**\n\n```js\nfunction throttle(fn, interval = 300) {\n  let lastTime = 0;\n  let timer = null;\n  return function (...args) {\n    const now = Date.now();\n    const remaining = interval - (now - lastTime);\n    if (remaining <= 0) {\n      if (timer) { clearTimeout(timer); timer = null; }\n      lastTime = now;\n      fn.apply(this, args);\n    } else if (!timer) {\n      timer = setTimeout(() => {\n        lastTime = Date.now();\n        timer = null;\n        fn.apply(this, args);\n      }, remaining);\n    }\n  };\n}\n```",
-    "tags": [
-      "节流",
-      "性能优化"
-    ],
+    "tags": ["节流", "性能优化"],
     "source": "高频"
   },
   {
@@ -29,10 +23,7 @@
     "difficulty": 2,
     "question": "手写深拷贝（deepClone），需要处理循环引用、Date、RegExp、Map、Set 等特殊类型",
     "answer": "## 深拷贝实现\n\n```js\nfunction deepClone(target, map = new WeakMap()) {\n  // 处理 null 和非对象类型\n  if (target === null || typeof target !== 'object') return target;\n\n  // 处理循环引用\n  if (map.has(target)) return map.get(target);\n\n  // 处理特殊对象类型\n  if (target instanceof Date) return new Date(target.getTime());\n  if (target instanceof RegExp) return new RegExp(target.source, target.flags);\n\n  if (target instanceof Map) {\n    const clonedMap = new Map();\n    map.set(target, clonedMap);\n    target.forEach((val, key) => {\n      clonedMap.set(deepClone(key, map), deepClone(val, map));\n    });\n    return clonedMap;\n  }\n\n  if (target instanceof Set) {\n    const clonedSet = new Set();\n    map.set(target, clonedSet);\n    target.forEach((val) => clonedSet.add(deepClone(val, map)));\n    return clonedSet;\n  }\n\n  // 处理数组和普通对象\n  const cloned = Array.isArray(target) ? [] : {};\n  map.set(target, cloned);\n\n  for (const key of Reflect.ownKeys(target)) {\n    cloned[key] = deepClone(target[key], map);\n  }\n\n  return cloned;\n}\n\n// 测试\nconst obj = { a: 1, b: { c: 2 }, d: [1, 2, 3] };\nobj.self = obj; // 循环引用\nconst cloned = deepClone(obj);\nconsole.log(cloned.b === obj.b); // false\nconsole.log(cloned.self === cloned); // true（保持循环引用结构）\n```",
-    "tags": [
-      "深拷贝",
-      "对象"
-    ],
+    "tags": ["深拷贝", "对象"],
     "source": "高频"
   },
   {
@@ -41,10 +32,7 @@
     "difficulty": 2,
     "question": "手写 Promise.all",
     "answer": "## Promise.all 实现\n\n```js\nfunction promiseAll(promises) {\n  return new Promise((resolve, reject) => {\n    if (!Array.isArray(promises)) {\n      return reject(new TypeError('promises must be an array'));\n    }\n\n    const results = [];\n    let count = 0;\n    const total = promises.length;\n\n    if (total === 0) return resolve([]);\n\n    promises.forEach((p, index) => {\n      Promise.resolve(p).then((val) => {\n        results[index] = val;\n        count++;\n        if (count === total) resolve(results);\n      }).catch(reject);\n    });\n  });\n}\n\n// 测试\npromiseAll([\n  Promise.resolve(1),\n  Promise.resolve(2),\n  new Promise(r => setTimeout(() => r(3), 100))\n]).then(console.log); // [1, 2, 3]\n\npromiseAll([Promise.resolve(1), Promise.reject('err')])\n  .catch(console.error); // 'err'\n```\n\n**关键点：**\n- 空数组直接 resolve `[]`\n- 用 `index` 而非 push 保证顺序\n- 任一 reject 即 reject 整体\n- 用 `Promise.resolve(p)` 包装非 Promise 值",
-    "tags": [
-      "Promise",
-      "异步"
-    ],
+    "tags": ["Promise", "异步"],
     "source": "高频"
   },
   {
@@ -53,10 +41,7 @@
     "difficulty": 2,
     "question": "手写 Promise.allSettled",
     "answer": "## Promise.allSettled 实现\n\n与 `Promise.all` 的区别：无论成功还是失败，都等待所有 Promise 完成，返回每个结果的状态描述对象。\n\n```js\nfunction promiseAllSettled(promises) {\n  return new Promise((resolve) => {\n    if (!Array.isArray(promises)) {\n      return resolve([]);\n    }\n\n    const results = [];\n    let count = 0;\n    const total = promises.length;\n\n    if (total === 0) return resolve([]);\n\n    promises.forEach((p, index) => {\n      Promise.resolve(p)\n        .then((value) => {\n          results[index] = { status: 'fulfilled', value };\n        })\n        .catch((reason) => {\n          results[index] = { status: 'rejected', reason };\n        })\n        .finally(() => {\n          count++;\n          if (count === total) resolve(results);\n        });\n    });\n  });\n}\n\n// 测试\npromiseAllSettled([\n  Promise.resolve(1),\n  Promise.reject('error'),\n  Promise.resolve(3),\n]).then(console.log);\n// [\n//   { status: 'fulfilled', value: 1 },\n//   { status: 'rejected', reason: 'error' },\n//   { status: 'fulfilled', value: 3 }\n// ]\n```",
-    "tags": [
-      "Promise",
-      "异步"
-    ],
+    "tags": ["Promise", "异步"],
     "source": "高频"
   },
   {
@@ -65,10 +50,7 @@
     "difficulty": 2,
     "question": "手写 Promise.race 和 Promise.any",
     "answer": "## Promise.race 和 Promise.any 实现\n\n**Promise.race —— 第一个完成（无论成功失败）即返回：**\n\n```js\nfunction promiseRace(promises) {\n  return new Promise((resolve, reject) => {\n    promises.forEach((p) => {\n      Promise.resolve(p).then(resolve).catch(reject);\n    });\n  });\n}\n```\n\n**Promise.any —— 第一个成功即返回，全部失败才 reject：**\n\n```js\nfunction promiseAny(promises) {\n  return new Promise((resolve, reject) => {\n    if (!promises.length) {\n      return reject(new AggregateError([], 'All promises were rejected'));\n    }\n\n    const errors = [];\n    let rejectedCount = 0;\n\n    promises.forEach((p, index) => {\n      Promise.resolve(p)\n        .then(resolve)\n        .catch((err) => {\n          errors[index] = err;\n          rejectedCount++;\n          if (rejectedCount === promises.length) {\n            reject(new AggregateError(errors, 'All promises were rejected'));\n          }\n        });\n    });\n  });\n}\n```",
-    "tags": [
-      "Promise",
-      "异步"
-    ],
+    "tags": ["Promise", "异步"],
     "source": "高频"
   },
   {
@@ -77,10 +59,7 @@
     "difficulty": 2,
     "question": "手写一个完整的 Promise（符合 Promises/A+ 规范）",
     "answer": "## 手写 Promise\n\n```js\nconst PENDING = 'pending';\nconst FULFILLED = 'fulfilled';\nconst REJECTED = 'rejected';\n\nclass MyPromise {\n  #state = PENDING;\n  #value = undefined;\n  #callbacks = [];\n\n  constructor(executor) {\n    const resolve = (value) => {\n      if (this.#state !== PENDING) return;\n      // 若 resolve 的是一个 Promise，需要等待它\n      if (value instanceof MyPromise) {\n        value.then(resolve, reject);\n        return;\n      }\n      this.#state = FULFILLED;\n      this.#value = value;\n      this.#callbacks.forEach(({ onFulfilled }) => onFulfilled(value));\n    };\n\n    const reject = (reason) => {\n      if (this.#state !== PENDING) return;\n      this.#state = REJECTED;\n      this.#value = reason;\n      this.#callbacks.forEach(({ onRejected }) => onRejected(reason));\n    };\n\n    try {\n      executor(resolve, reject);\n    } catch (e) {\n      reject(e);\n    }\n  }\n\n  then(onFulfilled, onRejected) {\n    onFulfilled = typeof onFulfilled === 'function' ? onFulfilled : (v) => v;\n    onRejected = typeof onRejected === 'function' ? onRejected : (r) => { throw r; };\n\n    return new MyPromise((resolve, reject) => {\n      const handle = (fn, val) => {\n        // Promises/A+ 要求异步执行\n        queueMicrotask(() => {\n          try {\n            const result = fn(val);\n            if (result instanceof MyPromise) {\n              result.then(resolve, reject);\n            } else {\n              resolve(result);\n            }\n          } catch (e) {\n            reject(e);\n          }\n        });\n      };\n\n      if (this.#state === FULFILLED) {\n        handle(onFulfilled, this.#value);\n      } else if (this.#state === REJECTED) {\n        handle(onRejected, this.#value);\n      } else {\n        this.#callbacks.push({\n          onFulfilled: (val) => handle(onFulfilled, val),\n          onRejected: (val) => handle(onRejected, val),\n        });\n      }\n    });\n  }\n\n  catch(onRejected) {\n    return this.then(null, onRejected);\n  }\n\n  finally(onFinally) {\n    return this.then(\n      (val) => MyPromise.resolve(onFinally()).then(() => val),\n      (err) => MyPromise.resolve(onFinally()).then(() => { throw err; }),\n    );\n  }\n\n  static resolve(value) {\n    if (value instanceof MyPromise) return value;\n    return new MyPromise((resolve) => resolve(value));\n  }\n\n  static reject(reason) {\n    return new MyPromise((_, reject) => reject(reason));\n  }\n}\n```",
-    "tags": [
-      "Promise",
-      "异步"
-    ],
+    "tags": ["Promise", "异步"],
     "source": "高频"
   },
   {
@@ -89,12 +68,7 @@
     "difficulty": 1,
     "question": "手写 Function.prototype.call、apply、bind",
     "answer": "## call / apply / bind 实现\n\n**call：**\n\n```js\nFunction.prototype.myCall = function (context, ...args) {\n  context = context == null ? globalThis : Object(context);\n  const sym = Symbol('fn');\n  context[sym] = this;\n  const result = context[sym](...args);\n  delete context[sym];\n  return result;\n};\n```\n\n**apply：**\n\n```js\nFunction.prototype.myApply = function (context, args = []) {\n  context = context == null ? globalThis : Object(context);\n  const sym = Symbol('fn');\n  context[sym] = this;\n  const result = context[sym](...args);\n  delete context[sym];\n  return result;\n};\n```\n\n**bind：**\n\n```js\nFunction.prototype.myBind = function (context, ...outerArgs) {\n  const fn = this;\n  return function BoundFn(...innerArgs) {\n    // 若通过 new 调用，忽略绑定的 context\n    if (new.target) {\n      return new fn(...outerArgs, ...innerArgs);\n    }\n    return fn.apply(context, [...outerArgs, ...innerArgs]);\n  };\n};\n\n// 测试\nfunction greet(greeting, name) {\n  return `${greeting}, ${name}! I am ${this.role}`;\n}\nconst obj = { role: 'admin' };\nconsole.log(greet.myCall(obj, 'Hello', 'Alice'));  // Hello, Alice! I am admin\nconsole.log(greet.myApply(obj, ['Hi', 'Bob']));    // Hi, Bob! I am admin\nconst bound = greet.myBind(obj, 'Hey');\nconsole.log(bound('Charlie')); // Hey, Charlie! I am admin\n```",
-    "tags": [
-      "Function",
-      "call",
-      "apply",
-      "bind"
-    ],
+    "tags": ["Function", "call", "apply", "bind"],
     "source": "高频"
   },
   {
@@ -103,10 +77,7 @@
     "difficulty": 1,
     "question": "手写 new 操作符",
     "answer": "## 手写 new\n\n`new` 做了以下四件事：\n1. 创建一个空对象，原型指向构造函数的 `prototype`\n2. 将构造函数的 `this` 指向新对象并执行\n3. 若构造函数返回了对象，则返回该对象；否则返回新对象\n\n```js\nfunction myNew(Constructor, ...args) {\n  // 1. 创建对象，设置原型\n  const obj = Object.create(Constructor.prototype);\n\n  // 2. 执行构造函数\n  const result = Constructor.apply(obj, args);\n\n  // 3. 若构造函数显式返回了对象，则使用该对象\n  return result !== null && typeof result === 'object' ? result : obj;\n}\n\n// 测试\nfunction Person(name, age) {\n  this.name = name;\n  this.age = age;\n}\nPerson.prototype.greet = function () {\n  return `Hi, I'm ${this.name}`;\n};\n\nconst p = myNew(Person, 'Alice', 25);\nconsole.log(p instanceof Person); // true\nconsole.log(p.greet());           // Hi, I'm Alice\n```",
-    "tags": [
-      "new",
-      "原型链"
-    ],
+    "tags": ["new", "原型链"],
     "source": "高频"
   },
   {
@@ -115,10 +86,7 @@
     "difficulty": 1,
     "question": "手写 instanceof",
     "answer": "## 手写 instanceof\n\n`instanceof` 沿着左侧对象的原型链向上查找，直到找到右侧构造函数的 `prototype`。\n\n```js\nfunction myInstanceof(left, right) {\n  // 基本类型直接返回 false\n  if (typeof left !== 'object' || left === null) return false;\n\n  let proto = Object.getPrototypeOf(left);\n  const prototype = right.prototype;\n\n  while (proto !== null) {\n    if (proto === prototype) return true;\n    proto = Object.getPrototypeOf(proto);\n  }\n\n  return false;\n}\n\n// 测试\nconsole.log(myInstanceof([], Array));        // true\nconsole.log(myInstanceof([], Object));       // true\nconsole.log(myInstanceof({}, Array));        // false\nconsole.log(myInstanceof('str', String));    // false（基本类型）\n\nfunction Animal() {}\nfunction Dog() {}\nDog.prototype = Object.create(Animal.prototype);\nconst d = new Dog();\nconsole.log(myInstanceof(d, Dog));    // true\nconsole.log(myInstanceof(d, Animal)); // true\n```",
-    "tags": [
-      "instanceof",
-      "原型链"
-    ],
+    "tags": ["instanceof", "原型链"],
     "source": "高频"
   },
   {
@@ -127,10 +95,7 @@
     "difficulty": 2,
     "question": "手写 Array.prototype.flat（数组扁平化）",
     "answer": "## 数组扁平化实现\n\n```js\n// 方法1：递归实现（支持指定深度）\nfunction myFlat(arr, depth = 1) {\n  if (depth === 0) return arr.slice();\n  return arr.reduce((acc, item) => {\n    if (Array.isArray(item) && depth > 0) {\n      acc.push(...myFlat(item, depth - 1));\n    } else {\n      acc.push(item);\n    }\n    return acc;\n  }, []);\n}\n\n// 方法2：无限深度（全部扁平化）\nfunction flatInfinity(arr) {\n  return arr.reduce(\n    (acc, item) =>\n      Array.isArray(item) ? acc.concat(flatInfinity(item)) : acc.concat(item),\n    [],\n  );\n}\n\n// 方法3：栈实现（迭代，无栈溢出风险）\nfunction flatIterative(arr) {\n  const stack = [...arr];\n  const result = [];\n  while (stack.length) {\n    const item = stack.pop();\n    if (Array.isArray(item)) {\n      stack.push(...item);\n    } else {\n      result.unshift(item); // 用 unshift 保证顺序\n    }\n  }\n  return result;\n}\n\n// 测试\nconst arr = [1, [2, [3, [4]], 5]];\nconsole.log(myFlat(arr, 1));        // [1, 2, [3, [4]], 5]\nconsole.log(myFlat(arr, 2));        // [1, 2, 3, [4], 5]\nconsole.log(myFlat(arr, Infinity)); // [1, 2, 3, 4, 5]\n```",
-    "tags": [
-      "数组",
-      "flat"
-    ],
+    "tags": ["数组", "flat"],
     "source": "高频"
   },
   {
@@ -139,10 +104,7 @@
     "difficulty": 2,
     "question": "手写 Array.prototype.reduce",
     "answer": "## 手写 reduce\n\n```js\nArray.prototype.myReduce = function (callback, initialValue) {\n  if (typeof callback !== 'function') {\n    throw new TypeError(`${callback} is not a function`);\n  }\n\n  const arr = this;\n  const len = arr.length;\n  let index = 0;\n  let acc;\n\n  if (arguments.length >= 2) {\n    acc = initialValue;\n  } else {\n    // 无初始值时，从第一个非空元素开始\n    if (len === 0) throw new TypeError('Reduce of empty array with no initial value');\n    while (index < len && !(index in arr)) index++;\n    if (index >= len) throw new TypeError('Reduce of empty array with no initial value');\n    acc = arr[index++];\n  }\n\n  while (index < len) {\n    if (index in arr) {\n      acc = callback(acc, arr[index], index, arr);\n    }\n    index++;\n  }\n\n  return acc;\n};\n\n// 测试\nconsole.log([1,2,3,4].myReduce((acc, cur) => acc + cur, 0)); // 10\nconsole.log([1,2,3].myReduce((acc, cur) => acc * cur));       // 6\n```",
-    "tags": [
-      "数组",
-      "reduce"
-    ],
+    "tags": ["数组", "reduce"],
     "source": "高频"
   },
   {
@@ -151,10 +113,7 @@
     "difficulty": 1,
     "question": "手写 Array.prototype.map、filter、find",
     "answer": "## 手写 map / filter / find\n\n```js\n// map\nArray.prototype.myMap = function (callback, thisArg) {\n  const result = [];\n  for (let i = 0; i < this.length; i++) {\n    if (i in this) {\n      result[i] = callback.call(thisArg, this[i], i, this);\n    }\n  }\n  return result;\n};\n\n// filter\nArray.prototype.myFilter = function (callback, thisArg) {\n  const result = [];\n  for (let i = 0; i < this.length; i++) {\n    if (i in this && callback.call(thisArg, this[i], i, this)) {\n      result.push(this[i]);\n    }\n  }\n  return result;\n};\n\n// find\nArray.prototype.myFind = function (callback, thisArg) {\n  for (let i = 0; i < this.length; i++) {\n    if (i in this && callback.call(thisArg, this[i], i, this)) {\n      return this[i];\n    }\n  }\n  return undefined;\n};\n\n// 测试\nconsole.log([1,2,3].myMap(x => x * 2));          // [2, 4, 6]\nconsole.log([1,2,3,4].myFilter(x => x % 2 === 0)); // [2, 4]\nconsole.log([1,2,3].myFind(x => x > 1));           // 2\n```",
-    "tags": [
-      "数组",
-      "map"
-    ],
+    "tags": ["数组", "map"],
     "source": "高频"
   },
   {
@@ -163,10 +122,7 @@
     "difficulty": 2,
     "question": "手写发布订阅模式（EventEmitter）",
     "answer": "## 发布订阅模式实现\n\n```js\nclass EventEmitter {\n  constructor() {\n    this._events = Object.create(null);\n  }\n\n  on(event, listener) {\n    if (!this._events[event]) {\n      this._events[event] = [];\n    }\n    this._events[event].push(listener);\n    return this;\n  }\n\n  once(event, listener) {\n    const wrapper = (...args) => {\n      listener.apply(this, args);\n      this.off(event, wrapper);\n    };\n    wrapper._original = listener;\n    return this.on(event, wrapper);\n  }\n\n  off(event, listener) {\n    if (!this._events[event]) return this;\n    this._events[event] = this._events[event].filter(\n      (fn) => fn !== listener && fn._original !== listener,\n    );\n    return this;\n  }\n\n  emit(event, ...args) {\n    if (!this._events[event]) return false;\n    // 拷贝一份防止在回调中修改数组导致问题\n    [...this._events[event]].forEach((fn) => fn.apply(this, args));\n    return true;\n  }\n\n  removeAllListeners(event) {\n    if (event) {\n      delete this._events[event];\n    } else {\n      this._events = Object.create(null);\n    }\n    return this;\n  }\n\n  listenerCount(event) {\n    return this._events[event]?.length ?? 0;\n  }\n}\n\n// 测试\nconst emitter = new EventEmitter();\nemitter.on('data', (msg) => console.log('A:', msg));\nemitter.once('data', (msg) => console.log('B:', msg));\nemitter.emit('data', 'hello'); // A: hello  B: hello\nemitter.emit('data', 'world'); // A: world（B 只触发一次）\n```",
-    "tags": [
-      "发布订阅",
-      "设计模式"
-    ],
+    "tags": ["发布订阅", "设计模式"],
     "source": "高频"
   },
   {
@@ -175,10 +131,7 @@
     "difficulty": 2,
     "question": "手写观察者模式，并说明与发布订阅模式的区别",
     "answer": "## 观察者模式实现\n\n```js\n// 被观察者（Subject）\nclass Subject {\n  constructor() {\n    this.observers = [];\n    this.state = null;\n  }\n\n  attach(observer) {\n    if (!this.observers.includes(observer)) {\n      this.observers.push(observer);\n    }\n  }\n\n  detach(observer) {\n    this.observers = this.observers.filter((o) => o !== observer);\n  }\n\n  setState(newState) {\n    this.state = newState;\n    this.notify();\n  }\n\n  notify() {\n    this.observers.forEach((observer) => observer.update(this));\n  }\n}\n\n// 观察者（Observer）\nclass Observer {\n  constructor(name) {\n    this.name = name;\n  }\n\n  update(subject) {\n    console.log(`${this.name} 收到更新，新状态: ${subject.state}`);\n  }\n}\n\n// 测试\nconst subject = new Subject();\nconst obs1 = new Observer('观察者A');\nconst obs2 = new Observer('观察者B');\nsubject.attach(obs1);\nsubject.attach(obs2);\nsubject.setState('loading'); // 观察者A 收到更新  观察者B 收到更新\nsubject.detach(obs1);\nsubject.setState('done');    // 仅观察者B 收到更新\n```\n\n**与发布订阅的区别：**\n\n| 对比项 | 观察者模式 | 发布订阅模式 |\n|--------|-----------|-------------|\n| 耦合度 | 观察者与主题直接引用 | 通过事件中心解耦 |\n| 通信 | 主题直接通知观察者 | 发布者不知道订阅者的存在 |\n| 适用 | 简单一对多依赖 | 跨模块/跨组件通信 |",
-    "tags": [
-      "观察者模式",
-      "设计模式"
-    ],
+    "tags": ["观察者模式", "设计模式"],
     "source": "高频"
   },
   {
@@ -187,11 +140,7 @@
     "difficulty": 2,
     "question": "手写 LRU 缓存（最近最少使用）",
     "answer": "## LRU 缓存实现\n\n利用 `Map` 的插入有序性，实现 O(1) 的 get 和 put：\n\n```js\nclass LRUCache {\n  constructor(capacity) {\n    this.capacity = capacity;\n    this.cache = new Map();\n  }\n\n  get(key) {\n    if (!this.cache.has(key)) return -1;\n    // 刷新为最近使用：删除再重新插入\n    const val = this.cache.get(key);\n    this.cache.delete(key);\n    this.cache.set(key, val);\n    return val;\n  }\n\n  put(key, value) {\n    if (this.cache.has(key)) {\n      this.cache.delete(key);\n    } else if (this.cache.size >= this.capacity) {\n      // 删除最久未使用的（Map 的第一个元素）\n      this.cache.delete(this.cache.keys().next().value);\n    }\n    this.cache.set(key, value);\n  }\n}\n\n// 测试（LeetCode 146）\nconst lru = new LRUCache(2);\nlru.put(1, 1);\nlru.put(2, 2);\nconsole.log(lru.get(1)); // 1\nlru.put(3, 3);           // 淘汰 key=2\nconsole.log(lru.get(2)); // -1\nlru.put(4, 4);           // 淘汰 key=1\nconsole.log(lru.get(1)); // -1\nconsole.log(lru.get(3)); // 3\nconsole.log(lru.get(4)); // 4\n```",
-    "tags": [
-      "LRU",
-      "缓存",
-      "数据结构"
-    ],
+    "tags": ["LRU", "缓存", "数据结构"],
     "source": "高频"
   },
   {
@@ -200,10 +149,7 @@
     "difficulty": 3,
     "question": "手写简单的虚拟 DOM 和 diff 算法",
     "answer": "## 虚拟 DOM 与 diff 实现\n\n```js\n// 创建虚拟节点\nfunction h(type, props, ...children) {\n  return {\n    type,\n    props: props || {},\n    children: children.flat(),\n  };\n}\n\n// 虚拟 DOM 渲染为真实 DOM\nfunction render(vnode) {\n  if (typeof vnode === 'string' || typeof vnode === 'number') {\n    return document.createTextNode(String(vnode));\n  }\n\n  const el = document.createElement(vnode.type);\n\n  // 设置属性\n  for (const [key, val] of Object.entries(vnode.props)) {\n    if (key.startsWith('on')) {\n      el.addEventListener(key.slice(2).toLowerCase(), val);\n    } else {\n      el.setAttribute(key, val);\n    }\n  }\n\n  // 渲染子节点\n  vnode.children.forEach((child) => el.appendChild(render(child)));\n\n  return el;\n}\n\n// 简单 diff（同层比较）\nfunction patch(parent, oldVnode, newVnode, index = 0) {\n  const el = parent.childNodes[index];\n\n  // 旧节点不存在：新增\n  if (!oldVnode) {\n    parent.appendChild(render(newVnode));\n    return;\n  }\n  // 新节点不存在：删除\n  if (!newVnode) {\n    parent.removeChild(el);\n    return;\n  }\n  // 都是文本节点\n  if (typeof oldVnode !== typeof newVnode ||\n      (typeof oldVnode === 'string' && oldVnode !== newVnode)) {\n    parent.replaceChild(render(newVnode), el);\n    return;\n  }\n  // 类型不同：替换\n  if (oldVnode.type !== newVnode.type) {\n    parent.replaceChild(render(newVnode), el);\n    return;\n  }\n\n  // 类型相同：更新 props\n  updateProps(el, oldVnode.props, newVnode.props);\n\n  // 递归 diff 子节点\n  const oldLen = oldVnode.children.length;\n  const newLen = newVnode.children.length;\n  const maxLen = Math.max(oldLen, newLen);\n  for (let i = 0; i < maxLen; i++) {\n    patch(el, oldVnode.children[i], newVnode.children[i], i);\n  }\n}\n\nfunction updateProps(el, oldProps, newProps) {\n  // 删除旧 props\n  for (const key of Object.keys(oldProps)) {\n    if (!(key in newProps)) el.removeAttribute(key);\n  }\n  // 更新/新增 props\n  for (const [key, val] of Object.entries(newProps)) {\n    if (oldProps[key] !== val) el.setAttribute(key, val);\n  }\n}\n\n// 使用\nconst vdom1 = h('div', { class: 'box' }, h('p', null, 'Hello'), 'World');\nconst vdom2 = h('div', { class: 'box active' }, h('p', null, 'Hi'), 'World');\nconst container = document.getElementById('app');\ncontainer.appendChild(render(vdom1));\npatch(container, vdom1, vdom2);\n```",
-    "tags": [
-      "虚拟DOM",
-      "diff"
-    ],
+    "tags": ["虚拟DOM", "diff"],
     "source": "高频"
   },
   {
@@ -212,10 +158,7 @@
     "difficulty": 3,
     "question": "手写函数柯里化（curry）",
     "answer": "## 柯里化实现\n\n```js\n// 通用柯里化\nfunction curry(fn) {\n  return function curried(...args) {\n    if (args.length >= fn.length) {\n      return fn.apply(this, args);\n    }\n    return function (...moreArgs) {\n      return curried.apply(this, args.concat(moreArgs));\n    };\n  };\n}\n\n// 测试\nfunction add(a, b, c) {\n  return a + b + c;\n}\nconst curriedAdd = curry(add);\nconsole.log(curriedAdd(1)(2)(3));     // 6\nconsole.log(curriedAdd(1, 2)(3));     // 6\nconsole.log(curriedAdd(1)(2, 3));     // 6\nconsole.log(curriedAdd(1, 2, 3));     // 6\n\n// 支持占位符的柯里化\nconst _ = Symbol('placeholder');\nfunction curryWithPlaceholder(fn) {\n  const arity = fn.length;\n  return function curried(...args) {\n    // 检查是否有足够的非占位符参数\n    const realArgs = args.filter((a) => a !== _);\n    if (realArgs.length >= arity) {\n      return fn(...args.filter((a) => a !== _));\n    }\n    return function (...newArgs) {\n      // 用新参数填充占位符\n      const merged = args.map((a) => (a === _ && newArgs.length ? newArgs.shift() : a));\n      return curried(...merged, ...newArgs);\n    };\n  };\n}\n```",
-    "tags": [
-      "curry",
-      "函数式编程"
-    ],
+    "tags": ["curry", "函数式编程"],
     "source": "高频"
   },
   {
@@ -224,11 +167,7 @@
     "difficulty": 2,
     "question": "手写函数组合（compose 和 pipe）",
     "answer": "## compose 和 pipe 实现\n\n```js\n// compose：从右到左执行\nfunction compose(...fns) {\n  if (fns.length === 0) return (x) => x;\n  if (fns.length === 1) return fns[0];\n  return fns.reduce((f, g) => (...args) => f(g(...args)));\n}\n\n// pipe：从左到右执行（compose 的镜像）\nfunction pipe(...fns) {\n  if (fns.length === 0) return (x) => x;\n  if (fns.length === 1) return fns[0];\n  return fns.reduce((f, g) => (...args) => g(f(...args)));\n}\n\n// 测试\nconst double = (x) => x * 2;\nconst addOne = (x) => x + 1;\nconst square = (x) => x * x;\n\nconst transform1 = compose(square, addOne, double); // square(addOne(double(x)))\nconsole.log(transform1(3)); // square(addOne(6)) = square(7) = 49\n\nconst transform2 = pipe(double, addOne, square); // 同样的逻辑，从左到右\nconsole.log(transform2(3)); // square(addOne(double(3))) = 49\n\n// Redux 中的 compose 实现（处理空和单个 fn 的边界情况）\nfunction reduxCompose(...funcs) {\n  if (funcs.length === 0) return (arg) => arg;\n  if (funcs.length === 1) return funcs[0];\n  return funcs.reduce((a, b) => (...args) => a(b(...args)));\n}\n```",
-    "tags": [
-      "compose",
-      "pipe",
-      "函数式编程"
-    ],
+    "tags": ["compose", "pipe", "函数式编程"],
     "source": "高频"
   },
   {
@@ -237,11 +176,7 @@
     "difficulty": 2,
     "question": "手写 ES5 寄生组合式继承",
     "answer": "## 寄生组合式继承\n\nES5 中最优的继承方式，避免了组合继承中调用两次父构造函数的问题。\n\n```js\nfunction Animal(name) {\n  this.name = name;\n  this.colors = ['black', 'white'];\n}\nAnimal.prototype.speak = function () {\n  console.log(`${this.name} makes a sound`);\n};\n\nfunction Dog(name, breed) {\n  // 1. 借用构造函数（继承实例属性）\n  Animal.call(this, name);\n  this.breed = breed;\n}\n\n// 2. 寄生：创建父类原型的副本，避免调用父构造函数\nfunction inheritPrototype(Child, Parent) {\n  const proto = Object.create(Parent.prototype);  // 创建副本\n  proto.constructor = Child;                       // 修复 constructor\n  Child.prototype = proto;\n}\n\ninheritPrototype(Dog, Animal);\n\n// 3. 在子类原型上添加方法\nDog.prototype.bark = function () {\n  console.log(`${this.name} barks!`);\n};\n\n// 测试\nconst d1 = new Dog('Rex', 'Husky');\nconst d2 = new Dog('Max', 'Lab');\nd1.colors.push('brown');\nconsole.log(d1.colors); // ['black', 'white', 'brown']（不影响 d2）\nconsole.log(d2.colors); // ['black', 'white']\nconsole.log(d1 instanceof Dog);    // true\nconsole.log(d1 instanceof Animal); // true\nd1.speak(); // Rex makes a sound\nd1.bark();  // Rex barks!\n```",
-    "tags": [
-      "继承",
-      "原型链",
-      "ES5"
-    ],
+    "tags": ["继承", "原型链", "ES5"],
     "source": "高频"
   },
   {
@@ -250,10 +185,7 @@
     "difficulty": 2,
     "question": "手写前端路由（Hash 路由和 History 路由）",
     "answer": "## 前端路由实现\n\n**Hash 路由：**\n\n```js\nclass HashRouter {\n  constructor() {\n    this.routes = {};\n    this.currentPath = '';\n    window.addEventListener('hashchange', this._handleChange.bind(this));\n    window.addEventListener('load', this._handleChange.bind(this));\n  }\n\n  _handleChange() {\n    this.currentPath = window.location.hash.slice(1) || '/';\n    this._render();\n  }\n\n  register(path, callback) {\n    this.routes[path] = callback;\n    return this;\n  }\n\n  _render() {\n    const cb = this.routes[this.currentPath] || this.routes['*'];\n    cb?.();\n  }\n\n  navigate(path) {\n    window.location.hash = path;\n  }\n}\n```\n\n**History 路由：**\n\n```js\nclass HistoryRouter {\n  constructor() {\n    this.routes = {};\n    window.addEventListener('popstate', this._handleChange.bind(this));\n  }\n\n  _handleChange(e) {\n    this._render(window.location.pathname);\n  }\n\n  register(path, callback) {\n    this.routes[path] = callback;\n    return this;\n  }\n\n  push(path, state = {}) {\n    window.history.pushState(state, '', path);\n    this._render(path);\n  }\n\n  replace(path, state = {}) {\n    window.history.replaceState(state, '', path);\n    this._render(path);\n  }\n\n  _render(path) {\n    // 简单匹配，实际应该支持动态路由\n    const cb = this.routes[path] || this.routes['*'];\n    cb?.();\n  }\n}\n```",
-    "tags": [
-      "路由",
-      "前端路由"
-    ],
+    "tags": ["路由", "前端路由"],
     "source": "高频"
   },
   {
@@ -262,10 +194,7 @@
     "difficulty": 3,
     "question": "手写简版响应式状态管理（类似 Vuex / Zustand）",
     "answer": "## 简版响应式状态管理\n\n```js\nfunction createStore(initialState, reducers) {\n  let state = { ...initialState };\n  const listeners = new Set();\n\n  // 订阅\n  function subscribe(listener) {\n    listeners.add(listener);\n    return () => listeners.delete(listener); // 返回取消订阅函数\n  }\n\n  // 获取状态\n  function getState() {\n    return state;\n  }\n\n  // 派发 action\n  function dispatch(action) {\n    const reducer = reducers[action.type];\n    if (!reducer) throw new Error(`Unknown action: ${action.type}`);\n    state = reducer(state, action.payload);\n    listeners.forEach((fn) => fn(state));\n  }\n\n  return { getState, dispatch, subscribe };\n}\n\n// 使用\nconst store = createStore(\n  { count: 0, user: null },\n  {\n    INCREMENT: (state, payload) => ({ ...state, count: state.count + (payload ?? 1) }),\n    DECREMENT: (state, payload) => ({ ...state, count: state.count - (payload ?? 1) }),\n    SET_USER: (state, payload) => ({ ...state, user: payload }),\n  },\n);\n\nconst unsubscribe = store.subscribe((newState) => {\n  console.log('State changed:', newState);\n});\n\nstore.dispatch({ type: 'INCREMENT' });        // count: 1\nstore.dispatch({ type: 'INCREMENT', payload: 5 }); // count: 6\nunsubscribe(); // 取消订阅\nstore.dispatch({ type: 'DECREMENT' });        // 不再触发监听器\n```",
-    "tags": [
-      "状态管理",
-      "Proxy"
-    ],
+    "tags": ["状态管理", "Proxy"],
     "source": "高频"
   },
   {
@@ -274,11 +203,7 @@
     "difficulty": 2,
     "question": "手写并发请求控制（限制同时执行的 Promise 数量）",
     "answer": "## 并发控制实现\n\n```js\n// 方式1：限制并发数的 Promise 池\nasync function promisePool(tasks, limit) {\n  const results = [];\n  const executing = new Set();\n\n  for (const [index, task] of tasks.entries()) {\n    const p = Promise.resolve().then(() => task()).then((res) => {\n      results[index] = res;\n      executing.delete(p);\n    });\n    executing.add(p);\n\n    if (executing.size >= limit) {\n      await Promise.race(executing);\n    }\n  }\n\n  await Promise.all(executing);\n  return results;\n}\n\n// 方式2：更常用的类封装\nclass RequestQueue {\n  constructor(limit = 3) {\n    this.limit = limit;\n    this.running = 0;\n    this.queue = [];\n  }\n\n  add(fn) {\n    return new Promise((resolve, reject) => {\n      this.queue.push({ fn, resolve, reject });\n      this._run();\n    });\n  }\n\n  _run() {\n    while (this.running < this.limit && this.queue.length) {\n      const { fn, resolve, reject } = this.queue.shift();\n      this.running++;\n      fn()\n        .then(resolve)\n        .catch(reject)\n        .finally(() => {\n          this.running--;\n          this._run();\n        });\n    }\n  }\n}\n\n// 测试\nconst queue = new RequestQueue(2);\nconst delay = (ms, val) => new Promise((r) => setTimeout(() => r(val), ms));\n\nqueue.add(() => delay(1000, 'A')).then(console.log);\nqueue.add(() => delay(500, 'B')).then(console.log);\nqueue.add(() => delay(300, 'C')).then(console.log);\n// 先输出 B（500ms），再输出 C（300ms + 等待A释放），最后 A（1000ms）\n```",
-    "tags": [
-      "并发控制",
-      "Promise",
-      "异步"
-    ],
+    "tags": ["并发控制", "Promise", "异步"],
     "source": "高频"
   },
   {
@@ -287,11 +212,7 @@
     "difficulty": 2,
     "question": "手写异步任务串行调度器（实现 add 方法和 start 方法）",
     "answer": "## 异步任务串行调度器\n\n```js\nclass AsyncScheduler {\n  constructor() {\n    this.tasks = [];\n  }\n\n  add(asyncFn) {\n    this.tasks.push(asyncFn);\n    return this; // 支持链式调用\n  }\n\n  async start() {\n    const results = [];\n    for (const task of this.tasks) {\n      const result = await task();\n      results.push(result);\n    }\n    return results;\n  }\n}\n\n// 链式调用版本（类似 then 链）\nclass PromiseChain {\n  constructor() {\n    this._promise = Promise.resolve();\n  }\n\n  next(fn) {\n    this._promise = this._promise.then(fn);\n    return this;\n  }\n\n  run() {\n    return this._promise;\n  }\n}\n\n// 测试\nconst scheduler = new AsyncScheduler();\nconst delay = (ms, val) => () => new Promise((r) => setTimeout(() => r(val), ms));\n\nscheduler\n  .add(delay(300, 'first'))\n  .add(delay(100, 'second'))\n  .add(delay(200, 'third'));\n\nscheduler.start().then(console.log); // ['first', 'second', 'third']\n// 依次串行：300ms + 100ms + 200ms = 600ms 完成\n```",
-    "tags": [
-      "异步",
-      "串行",
-      "队列"
-    ],
+    "tags": ["异步", "串行", "队列"],
     "source": "高频"
   },
   {
@@ -300,10 +221,7 @@
     "difficulty": 2,
     "question": "手写 Object.create、Object.assign",
     "answer": "## Object.create 和 Object.assign 实现\n\n**Object.create：**\n\n```js\nfunction myObjectCreate(proto, propertiesObject) {\n  if (typeof proto !== 'object' && typeof proto !== 'function') {\n    throw new TypeError('Object prototype may only be an Object or null');\n  }\n\n  function F() {}\n  F.prototype = proto;\n  const obj = new F();\n\n  if (propertiesObject !== undefined) {\n    Object.defineProperties(obj, propertiesObject);\n  }\n\n  return obj;\n}\n```\n\n**Object.assign：**\n\n```js\nfunction myObjectAssign(target, ...sources) {\n  if (target == null) {\n    throw new TypeError('Cannot convert undefined or null to object');\n  }\n\n  const to = Object(target);\n\n  for (const source of sources) {\n    if (source == null) continue;\n    // 仅遍历自身可枚举属性（包括 Symbol）\n    for (const key of Reflect.ownKeys(source)) {\n      const desc = Object.getOwnPropertyDescriptor(source, key);\n      if (desc && desc.enumerable) {\n        to[key] = source[key];\n      }\n    }\n  }\n\n  return to;\n}\n\n// 测试\nconst obj1 = myObjectCreate({ greet() { return 'hi'; } });\nconsole.log(obj1.greet()); // 'hi'\n\nconst result = myObjectAssign({}, { a: 1 }, { b: 2, a: 3 });\nconsole.log(result); // { a: 3, b: 2 }\n```",
-    "tags": [
-      "对象",
-      "Object"
-    ],
+    "tags": ["对象", "Object"],
     "source": "高频"
   },
   {
@@ -312,10 +230,7 @@
     "difficulty": 2,
     "question": "手写简单模板引擎（支持 {{ variable }} 和 {{#if}} {{/if}} 等逻辑）",
     "answer": "## 简单模板引擎实现\n\n```js\n// 基础版：支持变量替换\nfunction template(tpl, data) {\n  return tpl.replace(/\\{\\{(\\s*\\w+\\s*)\\}\\}/g, (match, key) => {\n    const val = data[key.trim()];\n    return val !== undefined ? val : '';\n  });\n}\n\n// 完整版：支持嵌套属性、if 和 each\nfunction renderTemplate(tpl, data) {\n  // 处理 {{#each items}}...{{/each}}\n  tpl = tpl.replace(\n    /\\{\\{#each\\s+(\\w+)\\}\\}([\\s\\S]*?)\\{\\{\\/each\\}\\}/g,\n    (_, key, inner) => {\n      const list = data[key];\n      if (!Array.isArray(list)) return '';\n      return list.map((item) => renderTemplate(inner, { ...data, ...item, this: item })).join('');\n    },\n  );\n\n  // 处理 {{#if key}}...{{/if}}\n  tpl = tpl.replace(\n    /\\{\\{#if\\s+(\\w+)\\}\\}([\\s\\S]*?)\\{\\{\\/if\\}\\}/g,\n    (_, key, inner) => (data[key] ? renderTemplate(inner, data) : ''),\n  );\n\n  // 处理变量替换（支持 a.b.c 嵌套）\n  tpl = tpl.replace(/\\{\\{\\s*([\\w.]+)\\s*\\}\\}/g, (_, path) => {\n    const val = path.split('.').reduce((obj, k) => obj?.[k], data);\n    return val ?? '';\n  });\n\n  return tpl;\n}\n\n// 测试\nconst tpl = `\n  <h1>{{title}}</h1>\n  {{#if isAdmin}}<p>管理员</p>{{/if}}\n  <ul>\n    {{#each users}}\n    <li>{{name}} - {{age}}</li>\n    {{/each}}\n  </ul>\n`;\nconst result = renderTemplate(tpl, {\n  title: 'Hello',\n  isAdmin: true,\n  users: [{ name: 'Alice', age: 25 }, { name: 'Bob', age: 30 }],\n});\n```",
-    "tags": [
-      "字符串",
-      "模板引擎"
-    ],
+    "tags": ["字符串", "模板引擎"],
     "source": "高频"
   },
   {
@@ -324,10 +239,7 @@
     "difficulty": 2,
     "question": "手写 JSONP 实现",
     "answer": "## JSONP 实现\n\n```js\nfunction jsonp(url, params = {}, callbackName = 'callback') {\n  return new Promise((resolve, reject) => {\n    // 生成唯一的回调函数名\n    const cbName = `jsonp_${callbackName}_${Date.now()}_${Math.random().toString(36).slice(2)}`;\n\n    // 构建 URL（加上 callback 参数）\n    const queryStr = new URLSearchParams({\n      ...params,\n      [callbackName]: cbName,\n    }).toString();\n    const fullUrl = `${url}?${queryStr}`;\n\n    // 挂载到全局供服务端回调使用\n    window[cbName] = (data) => {\n      resolve(data);\n      cleanup();\n    };\n\n    // 创建 script 标签\n    const script = document.createElement('script');\n    script.src = fullUrl;\n    script.onerror = () => {\n      reject(new Error(`JSONP request failed: ${fullUrl}`));\n      cleanup();\n    };\n\n    document.head.appendChild(script);\n\n    function cleanup() {\n      delete window[cbName];\n      document.head.removeChild(script);\n    }\n  });\n}\n\n// 使用\njsonp('https://api.example.com/data', { id: 123 })\n  .then((data) => console.log(data))\n  .catch(console.error);\n```\n\n**JSONP 原理：** `script` 标签不受同源策略限制，服务器返回形如 `callback({\"key\":\"value\"})` 的 JS 代码并执行。\n\n**缺点：** 只支持 GET、无法处理 HTTP 错误状态码、有 XSS 风险。",
-    "tags": [
-      "JSONP",
-      "网络"
-    ],
+    "tags": ["JSONP", "网络"],
     "source": "高频"
   },
   {
@@ -336,11 +248,7 @@
     "difficulty": 2,
     "question": "手写 Ajax 封装（基于 XMLHttpRequest）",
     "answer": "## Ajax 封装实现\n\n```js\nfunction ajax({\n  url,\n  method = 'GET',\n  data = null,\n  headers = {},\n  timeout = 0,\n  withCredentials = false,\n}) {\n  return new Promise((resolve, reject) => {\n    const xhr = new XMLHttpRequest();\n\n    // 处理查询字符串（GET 请求）\n    let fullUrl = url;\n    if (method.toUpperCase() === 'GET' && data) {\n      const qs = new URLSearchParams(data).toString();\n      fullUrl = `${url}?${qs}`;\n    }\n\n    xhr.open(method.toUpperCase(), fullUrl, true);\n\n    // 设置请求头\n    for (const [key, val] of Object.entries(headers)) {\n      xhr.setRequestHeader(key, val);\n    }\n\n    // POST 默认 Content-Type\n    if (method.toUpperCase() !== 'GET' && !headers['Content-Type']) {\n      xhr.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');\n    }\n\n    if (timeout) xhr.timeout = timeout;\n    xhr.withCredentials = withCredentials;\n\n    xhr.onload = () => {\n      if (xhr.status >= 200 && xhr.status < 300) {\n        try {\n          resolve(JSON.parse(xhr.responseText));\n        } catch {\n          resolve(xhr.responseText);\n        }\n      } else {\n        reject(new Error(`Request failed: ${xhr.status} ${xhr.statusText}`));\n      }\n    };\n\n    xhr.onerror = () => reject(new Error('Network error'));\n    xhr.ontimeout = () => reject(new Error('Request timeout'));\n\n    const body = method.toUpperCase() === 'GET'\n      ? null\n      : typeof data === 'string' ? data : JSON.stringify(data);\n\n    xhr.send(body);\n  });\n}\n```",
-    "tags": [
-      "ajax",
-      "XMLHttpRequest",
-      "网络"
-    ],
+    "tags": ["ajax", "XMLHttpRequest", "网络"],
     "source": "高频"
   },
   {
@@ -349,10 +257,7 @@
     "difficulty": 2,
     "question": "手写图片懒加载（使用 IntersectionObserver 和传统方式两种实现）",
     "answer": "## 图片懒加载实现\n\n**IntersectionObserver 版（推荐）：**\n\n```js\nfunction lazyLoadImages(selector = 'img[data-src]') {\n  const images = document.querySelectorAll(selector);\n\n  const observer = new IntersectionObserver(\n    (entries) => {\n      entries.forEach((entry) => {\n        if (entry.isIntersecting) {\n          const img = entry.target;\n          img.src = img.dataset.src;\n          img.removeAttribute('data-src');\n          observer.unobserve(img);\n        }\n      });\n    },\n    {\n      rootMargin: '100px 0px', // 提前 100px 开始加载\n      threshold: 0.01,\n    },\n  );\n\n  images.forEach((img) => observer.observe(img));\n}\n```\n\n**传统滚动监听版：**\n\n```js\nfunction lazyLoadScroll() {\n  const images = [...document.querySelectorAll('img[data-src]')];\n\n  function loadVisible() {\n    const viewHeight = window.innerHeight || document.documentElement.clientHeight;\n    images.forEach((img) => {\n      if (!img.dataset.src) return;\n      const rect = img.getBoundingClientRect();\n      if (rect.top < viewHeight + 100) {\n        img.src = img.dataset.src;\n        delete img.dataset.src;\n      }\n    });\n  }\n\n  const throttledLoad = throttle(loadVisible, 200);\n  window.addEventListener('scroll', throttledLoad);\n  loadVisible(); // 初始加载\n}\n```",
-    "tags": [
-      "图片懒加载",
-      "IntersectionObserver"
-    ],
+    "tags": ["图片懒加载", "IntersectionObserver"],
     "source": "高频"
   },
   {
@@ -361,10 +266,7 @@
     "difficulty": 2,
     "question": "手写虚拟滚动列表（Virtual Scroll）",
     "answer": "## 虚拟滚动实现\n\n核心思路：只渲染可见区域的 DOM，通过 transform 偏移模拟滚动位置。\n\n```js\nclass VirtualScroll {\n  constructor({ container, itemHeight, total, renderItem }) {\n    this.container = container;\n    this.itemHeight = itemHeight;\n    this.total = total;\n    this.renderItem = renderItem;\n\n    this.scrollTop = 0;\n    this.visibleCount = Math.ceil(container.clientHeight / itemHeight) + 2; // 多渲染 2 条缓冲\n\n    this._init();\n  }\n\n  _init() {\n    // 撑开滚动高度\n    this.phantom = document.createElement('div');\n    this.phantom.style.height = `${this.total * this.itemHeight}px`;\n    this.phantom.style.position = 'absolute';\n    this.phantom.style.top = '0';\n    this.phantom.style.left = '0';\n    this.phantom.style.width = '100%';\n    this.phantom.style.zIndex = '-1';\n\n    // 实际渲染容器\n    this.content = document.createElement('div');\n    this.content.style.position = 'absolute';\n    this.content.style.top = '0';\n    this.content.style.width = '100%';\n\n    this.container.style.position = 'relative';\n    this.container.style.overflow = 'auto';\n    this.container.appendChild(this.phantom);\n    this.container.appendChild(this.content);\n\n    this.container.addEventListener('scroll', this._onScroll.bind(this));\n    this._render();\n  }\n\n  _onScroll() {\n    this.scrollTop = this.container.scrollTop;\n    this._render();\n  }\n\n  _render() {\n    const startIndex = Math.floor(this.scrollTop / this.itemHeight);\n    const endIndex = Math.min(startIndex + this.visibleCount, this.total);\n\n    const offsetY = startIndex * this.itemHeight;\n    this.content.style.transform = `translateY(${offsetY}px)`;\n\n    const fragment = document.createDocumentFragment();\n    for (let i = startIndex; i < endIndex; i++) {\n      const el = this.renderItem(i);\n      fragment.appendChild(el);\n    }\n\n    this.content.innerHTML = '';\n    this.content.appendChild(fragment);\n  }\n}\n\n// 使用\nconst vs = new VirtualScroll({\n  container: document.getElementById('list'),\n  itemHeight: 50,\n  total: 10000,\n  renderItem: (index) => {\n    const div = document.createElement('div');\n    div.style.height = '50px';\n    div.textContent = `Item ${index}`;\n    return div;\n  },\n});\n```",
-    "tags": [
-      "虚拟滚动",
-      "性能"
-    ],
+    "tags": ["虚拟滚动", "性能"],
     "source": "高频"
   },
   {
@@ -373,10 +275,7 @@
     "difficulty": 2,
     "question": "手写字符串相关常见题：驼峰转短横线、千分位格式化、URL 解析",
     "answer": "## 字符串常见手写题\n\n**驼峰 ↔ 短横线：**\n\n```js\n// camelCase → kebab-case\nconst toKebab = (str) =>\n  str.replace(/([A-Z])/g, (m) => `-${m.toLowerCase()}`).replace(/^-/, '');\n\n// kebab-case → camelCase\nconst toCamel = (str) =>\n  str.replace(/-([a-z])/g, (_, c) => c.toUpperCase());\n\nconsole.log(toKebab('backgroundColor')); // 'background-color'\nconsole.log(toCamel('background-color')); // 'backgroundColor'\n```\n\n**千分位格式化：**\n\n```js\n// 方法1：toLocaleString\n(1234567.89).toLocaleString('zh-CN'); // '1,234,567.89'\n\n// 方法2：正则\nfunction formatNumber(num) {\n  const [int, dec] = String(num).split('.');\n  const formatted = int.replace(/\\B(?=(\\d{3})+(?!\\d))/g, ',');\n  return dec ? `${formatted}.${dec}` : formatted;\n}\nconsole.log(formatNumber(1234567.89)); // '1,234,567.89'\n```\n\n**解析 URL 参数：**\n\n```js\nfunction parseQuery(url) {\n  const query = url.includes('?') ? url.split('?')[1] : url;\n  return Object.fromEntries(new URLSearchParams(query));\n}\n\n// 处理同名参数\nfunction parseQueryMulti(url) {\n  const params = {};\n  new URLSearchParams(url.split('?')[1]).forEach((val, key) => {\n    if (key in params) {\n      params[key] = [].concat(params[key], val);\n    } else {\n      params[key] = val;\n    }\n  });\n  return params;\n}\n\nconsole.log(parseQuery('http://a.com?id=1&name=Alice'));\n// { id: '1', name: 'Alice' }\n```",
-    "tags": [
-      "字符串",
-      "算法"
-    ],
+    "tags": ["字符串", "算法"],
     "source": "高频"
   },
   {
@@ -385,10 +284,7 @@
     "difficulty": 2,
     "question": "手写快速排序和归并排序",
     "answer": "## 快速排序和归并排序\n\n**快速排序：**\n\n```js\nfunction quickSort(arr) {\n  if (arr.length <= 1) return arr;\n\n  const pivot = arr[Math.floor(arr.length / 2)];\n  const left = arr.filter((x) => x < pivot);\n  const mid = arr.filter((x) => x === pivot);\n  const right = arr.filter((x) => x > pivot);\n\n  return [...quickSort(left), ...mid, ...quickSort(right)];\n}\n\n// 原地版（高效，O(1) 空间）\nfunction quickSortInPlace(arr, lo = 0, hi = arr.length - 1) {\n  if (lo >= hi) return;\n  const p = partition(arr, lo, hi);\n  quickSortInPlace(arr, lo, p - 1);\n  quickSortInPlace(arr, p + 1, hi);\n}\nfunction partition(arr, lo, hi) {\n  const pivot = arr[hi];\n  let i = lo;\n  for (let j = lo; j < hi; j++) {\n    if (arr[j] <= pivot) {\n      [arr[i], arr[j]] = [arr[j], arr[i]];\n      i++;\n    }\n  }\n  [arr[i], arr[hi]] = [arr[hi], arr[i]];\n  return i;\n}\n```\n\n**归并排序：**\n\n```js\nfunction mergeSort(arr) {\n  if (arr.length <= 1) return arr;\n\n  const mid = Math.floor(arr.length / 2);\n  const left = mergeSort(arr.slice(0, mid));\n  const right = mergeSort(arr.slice(mid));\n\n  return merge(left, right);\n}\n\nfunction merge(left, right) {\n  const result = [];\n  let i = 0, j = 0;\n  while (i < left.length && j < right.length) {\n    if (left[i] <= right[j]) result.push(left[i++]);\n    else result.push(right[j++]);\n  }\n  return [...result, ...left.slice(i), ...right.slice(j)];\n}\n\nconsole.log(quickSort([3, 1, 4, 1, 5, 9, 2, 6])); // [1, 1, 2, 3, 4, 5, 6, 9]\nconsole.log(mergeSort([3, 1, 4, 1, 5, 9, 2, 6])); // [1, 1, 2, 3, 4, 5, 6, 9]\n```",
-    "tags": [
-      "排序",
-      "算法"
-    ],
+    "tags": ["排序", "算法"],
     "source": "高频"
   },
   {
@@ -397,10 +293,7 @@
     "difficulty": 2,
     "question": "手写二分查找（包括查找左边界和右边界）",
     "answer": "## 二分查找实现\n\n```js\n// 基础版：找到目标值的任意位置\nfunction binarySearch(arr, target) {\n  let lo = 0, hi = arr.length - 1;\n  while (lo <= hi) {\n    const mid = (lo + hi) >> 1;\n    if (arr[mid] === target) return mid;\n    if (arr[mid] < target) lo = mid + 1;\n    else hi = mid - 1;\n  }\n  return -1;\n}\n\n// 查找左边界（第一个 >= target 的位置）\nfunction lowerBound(arr, target) {\n  let lo = 0, hi = arr.length;\n  while (lo < hi) {\n    const mid = (lo + hi) >> 1;\n    if (arr[mid] < target) lo = mid + 1;\n    else hi = mid;\n  }\n  return lo; // lo == hi，即左边界\n}\n\n// 查找右边界（最后一个 <= target 的位置 + 1）\nfunction upperBound(arr, target) {\n  let lo = 0, hi = arr.length;\n  while (lo < hi) {\n    const mid = (lo + hi) >> 1;\n    if (arr[mid] <= target) lo = mid + 1;\n    else hi = mid;\n  }\n  return lo;\n}\n\n// 测试\nconst arr = [1, 2, 2, 3, 3, 3, 4, 5];\nconsole.log(binarySearch(arr, 3));  // 3, 4 或 5（任意）\nconsole.log(lowerBound(arr, 3));    // 3（第一个3）\nconsole.log(upperBound(arr, 3));    // 6（最后一个3的下一位）\nconsole.log(lowerBound(arr, 3) === upperBound(arr, 3)); // false，说明3存在\nconsole.log(lowerBound(arr, 6) === upperBound(arr, 6)); // true，说明6不存在\n```",
-    "tags": [
-      "二分查找",
-      "算法"
-    ],
+    "tags": ["二分查找", "算法"],
     "source": "高频"
   },
   {
@@ -409,12 +302,7 @@
     "difficulty": 2,
     "question": "手写树的深度优先遍历（DFS）和广度优先遍历（BFS）",
     "answer": "## 树的 DFS 和 BFS\n\n```js\n// 树节点\nclass TreeNode {\n  constructor(val, children = []) {\n    this.val = val;\n    this.children = children;\n  }\n}\n\n// DFS - 递归\nfunction dfsRecursive(root, result = []) {\n  if (!root) return result;\n  result.push(root.val);\n  root.children.forEach((child) => dfsRecursive(child, result));\n  return result;\n}\n\n// DFS - 迭代（用栈）\nfunction dfsIterative(root) {\n  if (!root) return [];\n  const stack = [root];\n  const result = [];\n  while (stack.length) {\n    const node = stack.pop();\n    result.push(node.val);\n    // 反序入栈保证从左到右遍历\n    [...node.children].reverse().forEach((c) => stack.push(c));\n  }\n  return result;\n}\n\n// BFS（层序遍历，用队列）\nfunction bfs(root) {\n  if (!root) return [];\n  const queue = [root];\n  const result = [];\n  while (queue.length) {\n    const node = queue.shift();\n    result.push(node.val);\n    queue.push(...node.children);\n  }\n  return result;\n}\n\n// 按层输出\nfunction bfsLevel(root) {\n  if (!root) return [];\n  let queue = [root];\n  const levels = [];\n  while (queue.length) {\n    levels.push(queue.map((n) => n.val));\n    queue = queue.flatMap((n) => n.children);\n  }\n  return levels;\n}\n\n// 测试\nconst tree = new TreeNode(1, [\n  new TreeNode(2, [new TreeNode(4), new TreeNode(5)]),\n  new TreeNode(3, [new TreeNode(6)]),\n]);\nconsole.log(dfsRecursive(tree));  // [1, 2, 4, 5, 3, 6]\nconsole.log(bfs(tree));           // [1, 2, 3, 4, 5, 6]\nconsole.log(bfsLevel(tree));      // [[1], [2, 3], [4, 5, 6]]\n```",
-    "tags": [
-      "树",
-      "DFS",
-      "BFS",
-      "算法"
-    ],
+    "tags": ["树", "DFS", "BFS", "算法"],
     "source": "高频"
   },
   {
@@ -423,10 +311,7 @@
     "difficulty": 2,
     "question": "手写链表常见操作：反转链表、检测环、合并两个有序链表",
     "answer": "## 链表常见操作\n\n```js\nclass ListNode {\n  constructor(val, next = null) {\n    this.val = val;\n    this.next = next;\n  }\n}\n\n// 反转链表（迭代）\nfunction reverseList(head) {\n  let prev = null;\n  let curr = head;\n  while (curr) {\n    const next = curr.next;\n    curr.next = prev;\n    prev = curr;\n    curr = next;\n  }\n  return prev;\n}\n\n// 检测环（快慢指针）\nfunction hasCycle(head) {\n  let slow = head, fast = head;\n  while (fast && fast.next) {\n    slow = slow.next;\n    fast = fast.next.next;\n    if (slow === fast) return true;\n  }\n  return false;\n}\n\n// 找环的入口节点\nfunction detectCycle(head) {\n  let slow = head, fast = head;\n  while (fast && fast.next) {\n    slow = slow.next;\n    fast = fast.next.next;\n    if (slow === fast) {\n      // 重置 slow 到 head，fast 继续，相遇点即入口\n      slow = head;\n      while (slow !== fast) {\n        slow = slow.next;\n        fast = fast.next;\n      }\n      return slow;\n    }\n  }\n  return null;\n}\n\n// 合并两个有序链表\nfunction mergeTwoLists(l1, l2) {\n  const dummy = new ListNode(0);\n  let cur = dummy;\n  while (l1 && l2) {\n    if (l1.val <= l2.val) {\n      cur.next = l1;\n      l1 = l1.next;\n    } else {\n      cur.next = l2;\n      l2 = l2.next;\n    }\n    cur = cur.next;\n  }\n  cur.next = l1 || l2;\n  return dummy.next;\n}\n```",
-    "tags": [
-      "链表",
-      "算法"
-    ],
+    "tags": ["链表", "算法"],
     "source": "高频"
   },
   {
@@ -435,10 +320,7 @@
     "difficulty": 3,
     "question": "手写单例模式（包括普通版和基于 Proxy 的版本）",
     "answer": "## 单例模式实现\n\n```js\n// 方式1：闭包\nfunction createSingleton(Constructor) {\n  let instance = null;\n  return function (...args) {\n    if (!instance) {\n      instance = new Constructor(...args);\n    }\n    return instance;\n  };\n}\n\n// 方式2：类静态属性\nclass Database {\n  static #instance = null;\n\n  constructor(config) {\n    if (Database.#instance) return Database.#instance;\n    this.config = config;\n    this.connection = null;\n    Database.#instance = this;\n  }\n\n  connect() {\n    this.connection = `Connected to ${this.config.host}`;\n    return this;\n  }\n\n  static getInstance(config) {\n    if (!Database.#instance) {\n      new Database(config);\n    }\n    return Database.#instance;\n  }\n}\n\n// 方式3：Proxy 实现（透明代理）\nfunction SingletonProxy(Constructor) {\n  let instance = null;\n  return new Proxy(Constructor, {\n    construct(target, args) {\n      if (!instance) {\n        instance = new target(...args);\n      }\n      return instance;\n    },\n  });\n}\n\n// 测试\nconst SingletonDB = SingletonProxy(class DB {\n  constructor(name) { this.name = name; }\n});\nconst db1 = new SingletonDB('primary');\nconst db2 = new SingletonDB('secondary');\nconsole.log(db1 === db2); // true\nconsole.log(db1.name);    // 'primary'\n```",
-    "tags": [
-      "设计模式",
-      "单例"
-    ],
+    "tags": ["设计模式", "单例"],
     "source": "高频"
   },
   {
@@ -447,10 +329,7 @@
     "difficulty": 2,
     "question": "手写策略模式（以表单校验为例）",
     "answer": "## 策略模式实现\n\n策略模式：将算法族分别封装，使它们之间可以互相替换。消除大量 if-else。\n\n```js\n// 校验策略集合\nconst validators = {\n  required: (val, msg = '此项必填') => (!val && val !== 0 ? msg : null),\n  minLength: (min) => (val, msg) =>\n    val.length < min ? (msg || `最少 ${min} 个字符`) : null,\n  maxLength: (max) => (val, msg) =>\n    val.length > max ? (msg || `最多 ${max} 个字符`) : null,\n  email: (val, msg = '请输入有效邮箱') =>\n    /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(val) ? null : msg,\n  phone: (val, msg = '请输入有效手机号') =>\n    /^1[3-9]\\d{9}$/.test(val) ? null : msg,\n  pattern: (regex) => (val, msg = '格式不正确') =>\n    regex.test(val) ? null : msg,\n};\n\n// 校验器\nclass FormValidator {\n  constructor() {\n    this.rules = {};\n  }\n\n  addRule(field, strategyName, ...args) {\n    if (!this.rules[field]) this.rules[field] = [];\n    const strategy = typeof strategyName === 'function'\n      ? strategyName\n      : validators[strategyName];\n    if (!strategy) throw new Error(`Unknown validator: ${strategyName}`);\n    const fn = typeof strategy === 'function' && strategy.length > 1\n      ? strategy\n      : strategy(...args);\n    this.rules[field].push(typeof fn === 'function' ? fn : strategy);\n    return this;\n  }\n\n  validate(data) {\n    const errors = {};\n    for (const [field, rules] of Object.entries(this.rules)) {\n      for (const rule of rules) {\n        const err = rule(data[field]);\n        if (err) {\n          errors[field] = err;\n          break; // 每个字段只报第一个错误\n        }\n      }\n    }\n    return { valid: Object.keys(errors).length === 0, errors };\n  }\n}\n\n// 测试\nconst validator = new FormValidator();\nvalidator\n  .addRule('username', 'required')\n  .addRule('username', validators.minLength(3))\n  .addRule('email', 'required')\n  .addRule('email', 'email');\n\nconsole.log(validator.validate({ username: 'Al', email: 'invalid' }));\n// { valid: false, errors: { username: '最少 3 个字符', email: '请输入有效邮箱' } }\n```",
-    "tags": [
-      "设计模式",
-      "策略模式"
-    ],
+    "tags": ["设计模式", "策略模式"],
     "source": "高频"
   },
   {
@@ -459,10 +338,7 @@
     "difficulty": 3,
     "question": "手写基于 Proxy 的响应式系统（类似 Vue3 reactivity）",
     "answer": "## Vue3 响应式原理实现\n\n```js\n// 依赖收集器\nlet activeEffect = null;\n\nclass Dep {\n  constructor() {\n    this.subscribers = new Set();\n  }\n  depend() {\n    if (activeEffect) this.subscribers.add(activeEffect);\n  }\n  notify() {\n    this.subscribers.forEach((fn) => fn());\n  }\n}\n\n// effect：追踪响应式副作用\nfunction effect(fn) {\n  const effectFn = () => {\n    activeEffect = effectFn;\n    fn();\n    activeEffect = null;\n  };\n  effectFn();\n  return effectFn;\n}\n\n// reactive：创建响应式对象\nconst depMap = new WeakMap();\n\nfunction getDep(target, key) {\n  if (!depMap.has(target)) depMap.set(target, new Map());\n  const map = depMap.get(target);\n  if (!map.has(key)) map.set(key, new Dep());\n  return map.get(key);\n}\n\nfunction reactive(obj) {\n  return new Proxy(obj, {\n    get(target, key, receiver) {\n      const dep = getDep(target, key);\n      dep.depend(); // 收集依赖\n      return Reflect.get(target, key, receiver);\n    },\n    set(target, key, value, receiver) {\n      const dep = getDep(target, key);\n      const result = Reflect.set(target, key, value, receiver);\n      dep.notify(); // 触发更新\n      return result;\n    },\n  });\n}\n\n// ref：包装基本类型\nfunction ref(value) {\n  const dep = new Dep();\n  return {\n    get value() {\n      dep.depend();\n      return value;\n    },\n    set value(newVal) {\n      value = newVal;\n      dep.notify();\n    },\n  };\n}\n\n// 测试\nconst state = reactive({ count: 0, name: 'Alice' });\nconst count = ref(0);\n\neffect(() => {\n  console.log(`count: ${state.count}, name: ${state.name}`);\n});\n// 立即输出: count: 0, name: Alice\n\nstate.count = 1; // 触发: count: 1, name: Alice\nstate.name = 'Bob'; // 触发: count: 1, name: Bob\n```",
-    "tags": [
-      "Proxy",
-      "响应式"
-    ],
+    "tags": ["Proxy", "响应式"],
     "source": "高频"
   },
   {
@@ -471,11 +347,7 @@
     "difficulty": 2,
     "question": "手写函数记忆化（memoize）",
     "answer": "## memoize 实现\n\n```js\n// 基础版（单参数，基本类型 key）\nfunction memoize(fn) {\n  const cache = new Map();\n  return function (...args) {\n    const key = JSON.stringify(args);\n    if (cache.has(key)) return cache.get(key);\n    const result = fn.apply(this, args);\n    cache.set(key, result);\n    return result;\n  };\n}\n\n// 支持自定义 key 函数（处理对象参数）\nfunction memoizeAdvanced(fn, resolver) {\n  const cache = new Map();\n  return function (...args) {\n    const key = resolver ? resolver(...args) : args[0];\n    if (cache.has(key)) return cache.get(key);\n    const result = fn.apply(this, args);\n    cache.set(key, result);\n    return result;\n  };\n}\n\n// 带 TTL（过期时间）的版本\nfunction memoizeWithTTL(fn, ttl = 5000) {\n  const cache = new Map();\n  return function (...args) {\n    const key = JSON.stringify(args);\n    const now = Date.now();\n    if (cache.has(key)) {\n      const { value, expiry } = cache.get(key);\n      if (now < expiry) return value;\n    }\n    const value = fn.apply(this, args);\n    cache.set(key, { value, expiry: now + ttl });\n    return value;\n  };\n}\n\n// 测试：斐波那契\nconst fib = memoize(function f(n) {\n  if (n <= 1) return n;\n  return f(n - 1) + f(n - 2);\n});\nconsole.log(fib(40)); // 快速计算，不会重复递归\n```",
-    "tags": [
-      "函数",
-      "memoize",
-      "缓存"
-    ],
+    "tags": ["函数", "memoize", "缓存"],
     "source": "高频"
   },
   {
@@ -484,11 +356,7 @@
     "difficulty": 3,
     "question": "手写带优先级的任务调度器",
     "answer": "## 优先级任务调度器\n\n```js\nclass PriorityScheduler {\n  constructor(concurrency = 2) {\n    this.concurrency = concurrency;\n    this.running = 0;\n    // 用多个队列模拟优先级（数字越小优先级越高）\n    this.queues = { high: [], normal: [], low: [] };\n  }\n\n  add(fn, priority = 'normal') {\n    return new Promise((resolve, reject) => {\n      const task = { fn, resolve, reject };\n      this.queues[priority]?.push(task) ?? this.queues.normal.push(task);\n      this._run();\n    });\n  }\n\n  _nextTask() {\n    for (const key of ['high', 'normal', 'low']) {\n      if (this.queues[key].length) return this.queues[key].shift();\n    }\n    return null;\n  }\n\n  _run() {\n    while (this.running < this.concurrency) {\n      const task = this._nextTask();\n      if (!task) break;\n      this.running++;\n      Promise.resolve()\n        .then(() => task.fn())\n        .then(task.resolve)\n        .catch(task.reject)\n        .finally(() => {\n          this.running--;\n          this._run();\n        });\n    }\n  }\n}\n\n// 测试\nconst scheduler = new PriorityScheduler(1);\nconst delay = (ms, label) => () =>\n  new Promise((r) => setTimeout(() => { console.log(label); r(label); }, ms));\n\nscheduler.add(delay(100, 'low-1'), 'low');\nscheduler.add(delay(100, 'normal-1'), 'normal');\nscheduler.add(delay(100, 'high-1'), 'high');\nscheduler.add(delay(100, 'high-2'), 'high');\n// 输出顺序：low-1（已开始）→ high-1 → high-2 → normal-1\n```",
-    "tags": [
-      "Promise",
-      "async",
-      "调度"
-    ],
+    "tags": ["Promise", "async", "调度"],
     "source": "高频"
   },
   {
@@ -497,10 +365,7 @@
     "difficulty": 2,
     "question": "手写数组去重的多种方式，说明各自的时间复杂度和适用场景",
     "answer": "## 数组去重实现\n\n```js\nconst arr = [1, 2, 2, 3, '2', null, null, { a: 1 }, { a: 1 }, NaN, NaN];\n\n// 1. Set（最简洁，O(n)，但对象引用不去重）\nconst unique1 = [...new Set(arr)];\n\n// 2. filter + indexOf（O(n²)，无法去重 NaN）\nconst unique2 = arr.filter((item, index) => arr.indexOf(item) === index);\n\n// 3. reduce（O(n²)，灵活）\nconst unique3 = arr.reduce((acc, cur) => {\n  if (!acc.includes(cur)) acc.push(cur);\n  return acc;\n}, []);\n\n// 4. Map（O(n)，可自定义 key 策略）\nfunction uniqueBy(arr, keyFn = (x) => x) {\n  const map = new Map();\n  return arr.filter((item) => {\n    const key = keyFn(item);\n    if (map.has(key)) return false;\n    map.set(key, true);\n    return true;\n  });\n}\n\n// 5. 对象深度去重（JSON序列化，不适用含函数/循环引用的对象）\nfunction deepUnique(arr) {\n  const seen = new Set();\n  return arr.filter((item) => {\n    const key = JSON.stringify(item);\n    if (seen.has(key)) return false;\n    seen.add(key);\n    return true;\n  });\n}\n\n// 按对象属性去重\nconst users = [{ id: 1, name: 'A' }, { id: 2, name: 'B' }, { id: 1, name: 'C' }];\nconsole.log(uniqueBy(users, (u) => u.id));\n// [{ id: 1, name: 'A' }, { id: 2, name: 'B' }]\n```",
-    "tags": [
-      "数组去重",
-      "算法"
-    ],
+    "tags": ["数组去重", "算法"],
     "source": "高频"
   },
   {
@@ -509,10 +374,7 @@
     "difficulty": 2,
     "question": "手写带超时和重试机制的请求函数",
     "answer": "## 请求超时与重试封装\n\n```js\n// 超时控制\nfunction withTimeout(promise, ms) {\n  const timeout = new Promise((_, reject) =>\n    setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms),\n  );\n  return Promise.race([promise, timeout]);\n}\n\n// 带重试的请求\nasync function fetchWithRetry(url, options = {}, retries = 3, delay = 1000) {\n  let lastError;\n  for (let attempt = 0; attempt <= retries; attempt++) {\n    try {\n      const res = await withTimeout(fetch(url, options), options.timeout || 5000);\n      if (!res.ok) throw new Error(`HTTP ${res.status}`);\n      return await res.json();\n    } catch (err) {\n      lastError = err;\n      if (attempt < retries) {\n        // 指数退避：每次重试等待时间翻倍\n        const wait = delay * Math.pow(2, attempt);\n        console.log(`Attempt ${attempt + 1} failed. Retrying in ${wait}ms...`);\n        await new Promise((r) => setTimeout(r, wait));\n      }\n    }\n  }\n  throw lastError;\n}\n\n// 更通用的版本（支持自定义重试条件）\nasync function retry(fn, {\n  retries = 3,\n  delay = 1000,\n  backoff = 2,\n  shouldRetry = () => true,\n} = {}) {\n  let lastError;\n  for (let i = 0; i <= retries; i++) {\n    try {\n      return await fn();\n    } catch (err) {\n      lastError = err;\n      if (i < retries && shouldRetry(err, i)) {\n        await new Promise((r) => setTimeout(r, delay * Math.pow(backoff, i)));\n      }\n    }\n  }\n  throw lastError;\n}\n\n// 使用\nretry(() => fetchWithRetry('/api/data'), {\n  retries: 3,\n  delay: 500,\n  shouldRetry: (err) => err.message.includes('Timeout'),\n}).then(console.log).catch(console.error);\n```",
-    "tags": [
-      "Promise",
-      "超时重试"
-    ],
+    "tags": ["Promise", "超时重试"],
     "source": "高频"
   },
   {
@@ -521,11 +383,7 @@
     "difficulty": 3,
     "question": "手写自定义迭代器和生成器，实现 range、无限序列等",
     "answer": "## 迭代器与生成器\n\n```js\n// 1. 实现 range 迭代器\nfunction range(start, end, step = 1) {\n  return {\n    [Symbol.iterator]() {\n      let current = start;\n      return {\n        next() {\n          if (current < end) {\n            const value = current;\n            current += step;\n            return { value, done: false };\n          }\n          return { value: undefined, done: true };\n        },\n      };\n    },\n  };\n}\n\nfor (const n of range(0, 10, 2)) {\n  process.stdout.write(n + ' '); // 0 2 4 6 8\n}\n\n// 2. 生成器版 range（更简洁）\nfunction* rangeGen(start, end, step = 1) {\n  for (let i = start; i < end; i += step) yield i;\n}\n\n// 3. 无限序列生成器\nfunction* naturals(start = 0) {\n  while (true) yield start++;\n}\n\nfunction* take(n, iter) {\n  let count = 0;\n  for (const item of iter) {\n    if (count++ >= n) break;\n    yield item;\n  }\n}\n\nconsole.log([...take(5, naturals(1))]); // [1, 2, 3, 4, 5]\n\n// 4. 惰性 map/filter（用生成器）\nfunction* lazyMap(iter, fn) {\n  for (const item of iter) yield fn(item);\n}\n\nfunction* lazyFilter(iter, pred) {\n  for (const item of iter) if (pred(item)) yield item;\n}\n\n// 处理无限序列：取前10个偶数的平方\nconst result = [\n  ...take(10, lazyMap(lazyFilter(naturals(1), (n) => n % 2 === 0), (n) => n * n)),\n];\nconsole.log(result); // [4, 16, 36, 64, 100, 144, 196, 256, 324, 400]\n```",
-    "tags": [
-      "迭代器",
-      "生成器",
-      "ES6"
-    ],
+    "tags": ["迭代器", "生成器", "ES6"],
     "source": "高频"
   },
   {
@@ -534,11 +392,7 @@
     "difficulty": 3,
     "question": "用 Promise 实现 async/await（Generator + 自动执行器）",
     "answer": "## Generator 自动执行器（模拟 async/await）\n\n```js\n// async/await 本质是 Generator + 自动执行器\nfunction asyncToGenerator(generatorFn) {\n  return function (...args) {\n    const gen = generatorFn.apply(this, args);\n\n    return new Promise((resolve, reject) => {\n      function step(key, arg) {\n        let result;\n        try {\n          result = gen[key](arg); // 'next' 或 'throw'\n        } catch (err) {\n          return reject(err);\n        }\n\n        const { value, done } = result;\n        if (done) {\n          resolve(value);\n        } else {\n          // value 可能是 Promise 或普通值\n          Promise.resolve(value).then(\n            (val) => step('next', val),\n            (err) => step('throw', err),\n          );\n        }\n      }\n\n      step('next', undefined);\n    });\n  };\n}\n\n// 测试（等价于 async function）\nconst fetchData = asyncToGenerator(function* () {\n  const user = yield Promise.resolve({ id: 1, name: 'Alice' });\n  const posts = yield Promise.resolve([{ title: 'Post 1' }, { title: 'Post 2' }]);\n  return { user, posts };\n});\n\nfetchData().then(console.log);\n// { user: { id: 1, name: 'Alice' }, posts: [...] }\n\n// 对比原生 async/await\nasync function fetchDataNative() {\n  const user = await Promise.resolve({ id: 1, name: 'Alice' });\n  const posts = await Promise.resolve([{ title: 'Post 1' }]);\n  return { user, posts };\n}\n```",
-    "tags": [
-      "async",
-      "串行并行",
-      "控制流"
-    ],
+    "tags": ["async", "串行并行", "控制流"],
     "source": "高频"
   },
   {
@@ -547,10 +401,7 @@
     "difficulty": 2,
     "question": "手写简单的双向数据绑定（模拟 Vue2 的 Object.defineProperty 方式）",
     "answer": "## 双向数据绑定实现\n\n```js\n// 依赖收集 Dep\nclass Dep {\n  constructor() { this.subs = []; }\n  addSub(watcher) { this.subs.push(watcher); }\n  notify() { this.subs.forEach((w) => w.update()); }\n}\n\n// 观察者 Watcher\nclass Watcher {\n  constructor(vm, key, cb) {\n    this.vm = vm;\n    this.key = key;\n    this.cb = cb;\n    // 触发 getter 收集依赖\n    Dep.target = this;\n    this.oldVal = vm[key];\n    Dep.target = null;\n  }\n  update() {\n    const newVal = this.vm[this.key];\n    if (newVal !== this.oldVal) {\n      this.cb(newVal, this.oldVal);\n      this.oldVal = newVal;\n    }\n  }\n}\n\n// 响应式处理\nfunction defineReactive(obj, key, val) {\n  const dep = new Dep();\n  Object.defineProperty(obj, key, {\n    get() {\n      if (Dep.target) dep.addSub(Dep.target);\n      return val;\n    },\n    set(newVal) {\n      if (newVal === val) return;\n      val = newVal;\n      dep.notify();\n    },\n  });\n}\n\n// 简版 Vue\nclass SimpleVue {\n  constructor({ data, el }) {\n    this._data = data;\n    Object.keys(data).forEach((key) => {\n      defineReactive(this._data, key, data[key]);\n      // 代理到 this 上（this.msg 等价于 this._data.msg）\n      Object.defineProperty(this, key, {\n        get: () => this._data[key],\n        set: (v) => { this._data[key] = v; },\n      });\n    });\n    this._compile(document.querySelector(el));\n  }\n\n  _compile(el) {\n    el.querySelectorAll('[v-model]').forEach((node) => {\n      const key = node.getAttribute('v-model');\n      node.value = this[key];\n      new Watcher(this, key, (val) => { node.value = val; });\n      node.addEventListener('input', (e) => { this[key] = e.target.value; });\n    });\n    el.querySelectorAll('[v-text]').forEach((node) => {\n      const key = node.getAttribute('v-text');\n      node.textContent = this[key];\n      new Watcher(this, key, (val) => { node.textContent = val; });\n    });\n  }\n}\n```",
-    "tags": [
-      "观察者",
-      "双向绑定"
-    ],
+    "tags": ["观察者", "双向绑定"],
     "source": "高频"
   },
   {
@@ -559,10 +410,7 @@
     "difficulty": 2,
     "question": "手写完整的类型判断工具函数（is 系列）",
     "answer": "## 类型判断工具函数\n\n```js\nconst typeOf = (val) => Object.prototype.toString.call(val).slice(8, -1).toLowerCase();\n\nconst is = {\n  string: (v) => typeof v === 'string',\n  number: (v) => typeof v === 'number' && !Number.isNaN(v),\n  boolean: (v) => typeof v === 'boolean',\n  null: (v) => v === null,\n  undefined: (v) => v === undefined,\n  nullish: (v) => v == null,\n  symbol: (v) => typeof v === 'symbol',\n  bigint: (v) => typeof v === 'bigint',\n  function: (v) => typeof v === 'function',\n  array: (v) => Array.isArray(v),\n  object: (v) => typeOf(v) === 'object',\n  plainObject: (v) => {\n    if (typeOf(v) !== 'object') return false;\n    const proto = Object.getPrototypeOf(v);\n    return proto === null || proto === Object.prototype;\n  },\n  date: (v) => v instanceof Date && !isNaN(v),\n  regexp: (v) => v instanceof RegExp,\n  promise: (v) => v instanceof Promise || (v != null && typeof v.then === 'function'),\n  map: (v) => v instanceof Map,\n  set: (v) => v instanceof Set,\n  error: (v) => v instanceof Error,\n  integer: (v) => Number.isInteger(v),\n  finite: (v) => Number.isFinite(v),\n  nan: (v) => Number.isNaN(v),\n  empty: (v) => {\n    if (is.nullish(v)) return true;\n    if (is.string(v) || is.array(v)) return v.length === 0;\n    if (is.map(v) || is.set(v)) return v.size === 0;\n    if (is.object(v)) return Object.keys(v).length === 0;\n    return false;\n  },\n};\n\n// 测试\nconsole.log(is.plainObject({}));        // true\nconsole.log(is.plainObject(new Date())); // false\nconsole.log(is.promise(Promise.resolve())); // true\nconsole.log(is.empty(new Map()));       // true\nconsole.log(is.nan(NaN));               // true\nconsole.log(is.number(NaN));            // false（特意排除 NaN）\n```",
-    "tags": [
-      "类型判断",
-      "工具函数"
-    ],
+    "tags": ["类型判断", "工具函数"],
     "source": "高频"
   },
   {
@@ -571,11 +419,7 @@
     "difficulty": 3,
     "question": "手写字典树（Trie）实现自动补全功能",
     "answer": "## Trie 字典树实现\n\n```js\nclass TrieNode {\n  constructor() {\n    this.children = new Map();\n    this.isEnd = false;\n    this.count = 0; // 以此节点结尾的单词数\n  }\n}\n\nclass Trie {\n  constructor() {\n    this.root = new TrieNode();\n  }\n\n  insert(word) {\n    let node = this.root;\n    for (const ch of word) {\n      if (!node.children.has(ch)) {\n        node.children.set(ch, new TrieNode());\n      }\n      node = node.children.get(ch);\n    }\n    node.isEnd = true;\n    node.count++;\n  }\n\n  search(word) {\n    let node = this.root;\n    for (const ch of word) {\n      if (!node.children.has(ch)) return false;\n      node = node.children.get(ch);\n    }\n    return node.isEnd;\n  }\n\n  startsWith(prefix) {\n    let node = this.root;\n    for (const ch of prefix) {\n      if (!node.children.has(ch)) return false;\n      node = node.children.get(ch);\n    }\n    return true;\n  }\n\n  // 自动补全：返回所有以 prefix 开头的单词\n  autoComplete(prefix, maxResults = 10) {\n    let node = this.root;\n    for (const ch of prefix) {\n      if (!node.children.has(ch)) return [];\n      node = node.children.get(ch);\n    }\n\n    const results = [];\n    const dfs = (n, current) => {\n      if (results.length >= maxResults) return;\n      if (n.isEnd) results.push(current);\n      for (const [ch, child] of n.children) {\n        dfs(child, current + ch);\n      }\n    };\n    dfs(node, prefix);\n    return results;\n  }\n\n  delete(word) {\n    const dfs = (node, i) => {\n      if (i === word.length) {\n        if (!node.isEnd) return false;\n        node.isEnd = false;\n        node.count--;\n        return node.children.size === 0;\n      }\n      const ch = word[i];\n      const child = node.children.get(ch);\n      if (!child) return false;\n      if (dfs(child, i + 1)) {\n        node.children.delete(ch);\n        return !node.isEnd && node.children.size === 0;\n      }\n      return false;\n    };\n    dfs(this.root, 0);\n  }\n}\n\n// 测试\nconst trie = new Trie();\n['apple', 'app', 'application', 'apply', 'apt', 'banana'].forEach((w) => trie.insert(w));\nconsole.log(trie.autoComplete('app')); // ['app', 'apple', 'application', 'apply']\nconsole.log(trie.search('app'));       // true\nconsole.log(trie.startsWith('apt'));   // true\n```",
-    "tags": [
-      "Trie",
-      "数据结构",
-      "算法"
-    ],
+    "tags": ["Trie", "数据结构", "算法"],
     "source": "高频"
   },
   {
@@ -584,10 +428,7 @@
     "difficulty": 3,
     "question": "手写 Koa/Express 风格的中间件（洋葱模型）",
     "answer": "## 洋葱模型中间件实现\n\n```js\n// Koa compose 核心实现\nfunction compose(middlewares) {\n  return function (ctx, next) {\n    let index = -1;\n\n    function dispatch(i) {\n      if (i <= index) {\n        return Promise.reject(new Error('next() called multiple times'));\n      }\n      index = i;\n\n      let fn = middlewares[i];\n      if (i === middlewares.length) fn = next; // 最后一个中间件之后调用 next\n      if (!fn) return Promise.resolve();\n\n      try {\n        return Promise.resolve(fn(ctx, () => dispatch(i + 1)));\n      } catch (err) {\n        return Promise.reject(err);\n      }\n    }\n\n    return dispatch(0);\n  };\n}\n\n// 简版 Koa App\nclass MiniKoa {\n  constructor() {\n    this.middlewares = [];\n  }\n\n  use(fn) {\n    this.middlewares.push(fn);\n    return this;\n  }\n\n  async handleRequest(ctx) {\n    const fn = compose(this.middlewares);\n    await fn(ctx);\n  }\n}\n\n// 测试\nconst app = new MiniKoa();\nconst ctx = { req: '/', res: null, log: [] };\n\napp.use(async (ctx, next) => {\n  ctx.log.push('M1 before');\n  await next();\n  ctx.log.push('M1 after');\n});\n\napp.use(async (ctx, next) => {\n  ctx.log.push('M2 before');\n  await next();\n  ctx.log.push('M2 after');\n});\n\napp.use(async (ctx) => {\n  ctx.log.push('handler');\n  ctx.res = 'Hello World';\n});\n\napp.handleRequest(ctx).then(() => {\n  console.log(ctx.log);\n  // ['M1 before', 'M2 before', 'handler', 'M2 after', 'M1 after']\n  console.log(ctx.res); // 'Hello World'\n});\n```",
-    "tags": [
-      "设计模式",
-      "中间件"
-    ],
+    "tags": ["设计模式", "中间件"],
     "source": "高频"
   },
   {
@@ -596,11 +437,7 @@
     "difficulty": 2,
     "question": "手写对象常见工具函数：omit、pick、merge、groupBy",
     "answer": "## 对象工具函数实现\n\n```js\n// pick：从对象中选取指定属性\nfunction pick(obj, keys) {\n  return keys.reduce((acc, key) => {\n    if (key in obj) acc[key] = obj[key];\n    return acc;\n  }, {});\n}\n\n// omit：从对象中排除指定属性\nfunction omit(obj, keys) {\n  const set = new Set(keys);\n  return Object.fromEntries(\n    Object.entries(obj).filter(([k]) => !set.has(k)),\n  );\n}\n\n// 深度 merge（对象递归合并）\nfunction merge(target, ...sources) {\n  for (const source of sources) {\n    for (const key of Object.keys(source)) {\n      const srcVal = source[key];\n      const tgtVal = target[key];\n      if (\n        srcVal !== null &&\n        typeof srcVal === 'object' &&\n        !Array.isArray(srcVal) &&\n        typeof tgtVal === 'object' &&\n        tgtVal !== null\n      ) {\n        target[key] = merge({ ...tgtVal }, srcVal);\n      } else {\n        target[key] = srcVal;\n      }\n    }\n  }\n  return target;\n}\n\n// groupBy：按 key 分组\nfunction groupBy(arr, key) {\n  return arr.reduce((acc, item) => {\n    const group = typeof key === 'function' ? key(item) : item[key];\n    (acc[group] = acc[group] || []).push(item);\n    return acc;\n  }, {});\n}\n\n// 测试\nconst user = { id: 1, name: 'Alice', age: 25, password: 'xxx' };\nconsole.log(pick(user, ['id', 'name']));        // { id: 1, name: 'Alice' }\nconsole.log(omit(user, ['password', 'age']));   // { id: 1, name: 'Alice' }\n\nconst data = [\n  { name: 'Alice', dept: 'eng' },\n  { name: 'Bob', dept: 'eng' },\n  { name: 'Carol', dept: 'design' },\n];\nconsole.log(groupBy(data, 'dept'));\n// { eng: [{...}, {...}], design: [{...}] }\n\nconsole.log(groupBy([1, 2, 3, 4, 5, 6], (n) => (n % 2 === 0 ? 'even' : 'odd')));\n// { odd: [1, 3, 5], even: [2, 4, 6] }\n```",
-    "tags": [
-      "Object",
-      "工具函数",
-      "对象"
-    ],
+    "tags": ["Object", "工具函数", "对象"],
     "source": "高频"
   },
   {
@@ -609,11 +446,7 @@
     "difficulty": 3,
     "question": "手写请求合并（同一时刻多个相同请求合并为一个，类似 SWR 的 deduplication）",
     "answer": "## 请求合并（Request Deduplication）\n\n在 SWR / React Query 中，短时间内多次触发同一个请求会被合并成一个。\n\n```js\nclass RequestDeduplicator {\n  constructor() {\n    // 存储正在进行的请求：key → Promise\n    this.pending = new Map();\n  }\n\n  async fetch(key, fetchFn) {\n    // 已有相同请求正在进行，直接复用\n    if (this.pending.has(key)) {\n      return this.pending.get(key);\n    }\n\n    const promise = fetchFn().finally(() => {\n      this.pending.delete(key);\n    });\n\n    this.pending.set(key, promise);\n    return promise;\n  }\n}\n\n// 全局实例\nconst dedup = new RequestDeduplicator();\n\n// 带缓存的版本（类似 SWR）\nclass SWRCache {\n  constructor(ttl = 5000) {\n    this.cache = new Map();\n    this.pending = new Map();\n    this.ttl = ttl;\n  }\n\n  async get(key, fetcher) {\n    // 1. 命中缓存且未过期\n    const cached = this.cache.get(key);\n    if (cached && Date.now() - cached.timestamp < this.ttl) {\n      return cached.data;\n    }\n\n    // 2. 正在请求中，等待复用\n    if (this.pending.has(key)) {\n      return this.pending.get(key);\n    }\n\n    // 3. 发起新请求\n    const promise = fetcher()\n      .then((data) => {\n        this.cache.set(key, { data, timestamp: Date.now() });\n        return data;\n      })\n      .finally(() => this.pending.delete(key));\n\n    this.pending.set(key, promise);\n    return promise;\n  }\n\n  invalidate(key) {\n    this.cache.delete(key);\n  }\n}\n\n// 测试\nconst swr = new SWRCache(3000);\nconst mockFetch = (id) => () =>\n  new Promise((r) => setTimeout(() => r({ id, name: `User ${id}` }), 200));\n\n// 同时发起 3 个相同请求，只会真正 fetch 一次\nPromise.all([\n  swr.get('user:1', mockFetch(1)),\n  swr.get('user:1', mockFetch(1)),\n  swr.get('user:1', mockFetch(1)),\n]).then((results) => {\n  console.log(results); // 三个结果相同，只发了一次请求\n  // 3秒内再次获取，命中缓存\n  return swr.get('user:1', mockFetch(1));\n}).then(console.log);\n```\n\n```\n\nNow generate the project.md file:",
-    "tags": [
-      "Promise",
-      "并发",
-      "请求合并"
-    ],
+    "tags": ["Promise", "并发", "请求合并"],
     "source": "高频"
   }
 ]

@@ -5,13 +5,7 @@
     "difficulty": 1,
     "question": "什么是 Core Web Vitals？包含哪些指标？",
     "answer": "## Core Web Vitals\n\nCore Web Vitals 是 Google 定义的一组衡量用户体验的核心指标，也是 SEO 排名因素之一。\n\n### 三大核心指标\n\n**1. LCP（Largest Contentful Paint）—— 最大内容绘制**\n- 衡量：视口内最大内容元素的渲染时间\n- 良好：≤ 2.5s，待改进：2.5s~4s，差：> 4s\n- 常见元素：`<img>`、`<video>`、大块文本\n\n**2. INP（Interaction to Next Paint）—— 交互到下一帧绘制**\n- 2024年3月取代 FID\n- 衡量：用户交互（点击、键盘输入）到浏览器响应的延迟\n- 良好：≤ 200ms，待改进：200ms~500ms，差：> 500ms\n\n**3. CLS（Cumulative Layout Shift）—— 累积布局偏移**\n- 衡量：页面生命周期内意外布局偏移的累计分数\n- 良好：≤ 0.1，待改进：0.1~0.25，差：> 0.25\n\n### 其他重要指标（辅助）\n- **FCP**（First Contentful Paint）：首次内容绘制\n- **TTFB**（Time to First Byte）：首字节时间\n- **TBT**（Total Blocking Time）：总阻塞时间\n\n### 测量工具\n- Chrome DevTools Lighthouse\n- PageSpeed Insights\n- web-vitals JS 库\n\n```js\nimport { getLCP, getINP, getCLS } from 'web-vitals';\n\ngetLCP(console.log);\ngetINP(console.log);\ngetCLS(console.log);\n```",
-    "tags": [
-      "Core Web Vitals",
-      "LCP",
-      "INP",
-      "CLS",
-      "性能指标"
-    ],
+    "tags": ["Core Web Vitals", "LCP", "INP", "CLS", "性能指标"],
     "source": "高频"
   },
   {
@@ -20,12 +14,7 @@
     "difficulty": 1,
     "question": "什么是重排（Reflow）和重绘（Repaint）？如何减少它们？",
     "answer": "## 重排与重绘\n\n### 浏览器渲染流程\n```\nHTML/CSS 解析 → DOM/CSSOM → Render Tree → Layout(重排) → Paint(重绘) → Composite(合成)\n```\n\n### 重排（Reflow / Layout）\n- **定义**：元素的尺寸、位置、结构改变，浏览器需要重新计算布局\n- **代价**：非常昂贵，会影响整个文档\n- **触发**：改变宽高、margin/padding、字体大小、读取 offsetWidth 等\n\n### 重绘（Repaint）\n- **定义**：元素样式改变但不影响布局，只需重新绘制\n- **触发**：改变 color、background、visibility 等\n- **注意**：重排必然触发重绘，重绘不一定触发重排\n\n### 减少重排重绘的方法\n\n**1. 批量修改样式**\n```js\n// ❌ 每次修改都触发重排\nconst el = document.getElementById('box');\nel.style.width = '100px';\nel.style.height = '100px';\nel.style.margin = '10px';\n\n// ✅ 使用 className 或 cssText 批量修改\nel.className = 'new-class';\nel.style.cssText = 'width:100px; height:100px; margin:10px;';\n```\n\n**2. 使用 DocumentFragment**\n```js\nconst fragment = document.createDocumentFragment();\nfor (let i = 0; i < 100; i++) {\n  const li = document.createElement('li');\n  li.textContent = `Item ${i}`;\n  fragment.appendChild(li);\n}\nul.appendChild(fragment); // 只触发一次重排\n```\n\n**3. 避免强制同步布局（读写分离）**\n```js\n// ❌ 读写交替，强制同步布局\nfor (let el of elements) {\n  el.style.width = el.offsetWidth + 10 + 'px';\n}\n\n// ✅ 先批量读后批量写\nconst widths = elements.map(el => el.offsetWidth);\nelements.forEach((el, i) => {\n  el.style.width = widths[i] + 10 + 'px';\n});\n```\n\n**4. 使用 transform/opacity 代替 top/left**\n- `transform` 和 `opacity` 只触发合成层，不触发重排重绘",
-    "tags": [
-      "重排",
-      "重绘",
-      "浏览器渲染",
-      "性能优化"
-    ],
+    "tags": ["重排", "重绘", "浏览器渲染", "性能优化"],
     "source": "高频"
   },
   {
@@ -34,11 +23,7 @@
     "difficulty": 1,
     "question": "图片懒加载是什么？如何实现？",
     "answer": "## 图片懒加载\n\n### 概念\n懒加载（Lazy Loading）：图片进入视口时才加载，减少初始页面加载时间和流量消耗。\n\n### 方法一：HTML 原生属性（推荐）\n```html\n<img src=\"image.jpg\" loading=\"lazy\" alt=\"...\" />\n```\n- 浏览器原生支持，Chrome 77+、Firefox 75+\n- 无需 JS，最简单\n\n### 方法二：Intersection Observer API\n```js\nconst observer = new IntersectionObserver((entries) => {\n  entries.forEach(entry => {\n    if (entry.isIntersecting) {\n      const img = entry.target;\n      img.src = img.dataset.src; // 真实地址存在 data-src\n      observer.unobserve(img);   // 加载后停止观察\n    }\n  });\n}, {\n  rootMargin: '100px' // 提前 100px 开始加载\n});\n\ndocument.querySelectorAll('img[data-src]').forEach(img => {\n  observer.observe(img);\n});\n```\n\n```html\n<img data-src=\"real-image.jpg\" src=\"placeholder.jpg\" alt=\"...\" />\n```\n\n### 方法三：scroll 事件监听（旧方式）\n```js\nfunction lazyLoad() {\n  const imgs = document.querySelectorAll('img[data-src]');\n  imgs.forEach(img => {\n    const rect = img.getBoundingClientRect();\n    if (rect.top < window.innerHeight) {\n      img.src = img.dataset.src;\n    }\n  });\n}\n\nwindow.addEventListener('scroll', throttle(lazyLoad, 200));\n```\n\n### 性能对比\n| 方案 | 性能 | 兼容性 | 复杂度 |\n|------|------|--------|--------|\n| loading=\"lazy\" | 最好 | 现代浏览器 | 最低 |\n| IntersectionObserver | 好 | IE不支持 | 低 |\n| scroll 事件 | 差 | 全浏览器 | 高 |",
-    "tags": [
-      "懒加载",
-      "图片优化",
-      "IntersectionObserver"
-    ],
+    "tags": ["懒加载", "图片优化", "IntersectionObserver"],
     "source": "高频"
   },
   {
@@ -47,11 +32,7 @@
     "difficulty": 1,
     "question": "什么是防抖和节流？它们在性能优化中的应用？",
     "answer": "## 防抖与节流\n\n### 防抖（Debounce）\n**原理**：触发事件后 n 毫秒内未再次触发，才执行回调；若再次触发则重新计时。\n\n**适用场景**：搜索框输入、窗口 resize 结束后、表单验证\n\n```js\nfunction debounce(fn, delay) {\n  let timer = null;\n  return function(...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => {\n      fn.apply(this, args);\n    }, delay);\n  };\n}\n\n// 使用\nconst handleSearch = debounce((value) => {\n  fetch(`/api/search?q=${value}`);\n}, 300);\n\ninput.addEventListener('input', e => handleSearch(e.target.value));\n```\n\n### 节流（Throttle）\n**原理**：单位时间内，无论触发多少次，只执行一次回调。\n\n**适用场景**：scroll 滚动、mousemove 鼠标移动、拖拽、游戏按键\n\n```js\nfunction throttle(fn, interval) {\n  let lastTime = 0;\n  return function(...args) {\n    const now = Date.now();\n    if (now - lastTime >= interval) {\n      lastTime = now;\n      fn.apply(this, args);\n    }\n  };\n}\n\n// 使用\nconst handleScroll = throttle(() => {\n  console.log('scroll position:', window.scrollY);\n}, 100);\n\nwindow.addEventListener('scroll', handleScroll);\n```\n\n### 核心区别\n| | 防抖 | 节流 |\n|--|------|------|\n| 执行时机 | 停止触发后执行 | 固定频率执行 |\n| 适用 | 最终结果 | 持续过程 |\n\n### 使用库\n```js\nimport { debounce, throttle } from 'lodash';\nconst fn = debounce(callback, 300);\n```",
-    "tags": [
-      "防抖",
-      "节流",
-      "事件优化"
-    ],
+    "tags": ["防抖", "节流", "事件优化"],
     "source": "高频"
   },
   {
@@ -60,12 +41,7 @@
     "difficulty": 1,
     "question": "什么是强缓存和协商缓存？",
     "answer": "## 浏览器缓存机制\n\n### 缓存流程\n```\n请求 → 检查强缓存 → 命中则直接用本地缓存（200 from cache）\n              → 未命中则向服务器发请求进行协商缓存\n                       → 304 则用本地缓存\n                       → 200 则用新资源\n```\n\n### 强缓存\n不发请求，直接使用本地缓存\n\n**Cache-Control**（HTTP/1.1，优先级高）\n```\nCache-Control: max-age=3600          # 缓存1小时\nCache-Control: no-cache              # 跳过强缓存，走协商缓存\nCache-Control: no-store              # 不缓存任何内容\nCache-Control: public                # 可被代理服务器缓存\nCache-Control: private               # 只能浏览器缓存\nCache-Control: immutable             # 缓存期内永不重新验证\n```\n\n**Expires**（HTTP/1.0，被 Cache-Control 取代）\n```\nExpires: Thu, 01 Jan 2025 00:00:00 GMT  # 绝对时间，受客户端时间影响\n```\n\n### 协商缓存\n发请求到服务器，服务器判断资源是否变化\n\n**Last-Modified / If-Modified-Since**\n```\n响应头: Last-Modified: Wed, 21 Oct 2024 07:28:00 GMT\n请求头: If-Modified-Since: Wed, 21 Oct 2024 07:28:00 GMT\n→ 未修改返回 304，已修改返回 200 + 新资源\n精度：秒级（1秒内多次修改可能检测不到）\n```\n\n**ETag / If-None-Match**（优先级更高，更精确）\n```\n响应头: ETag: \"abc123\"\n请求头: If-None-Match: \"abc123\"\n→ 未修改返回 304，已修改返回 200 + 新资源\n精度：内容级别（哈希值）\n```\n\n### 最佳实践\n- HTML：`Cache-Control: no-cache`（每次协商）\n- JS/CSS（带 hash）：`Cache-Control: max-age=31536000, immutable`\n- 图片：`Cache-Control: max-age=86400`",
-    "tags": [
-      "缓存",
-      "强缓存",
-      "协商缓存",
-      "HTTP"
-    ],
+    "tags": ["缓存", "强缓存", "协商缓存", "HTTP"],
     "source": "高频"
   },
   {
@@ -74,12 +50,7 @@
     "difficulty": 1,
     "question": "什么是代码分割（Code Splitting）？如何实现？",
     "answer": "## 代码分割（Code Splitting）\n\n### 概念\n将大的 bundle 文件拆分成多个小文件，按需加载，减少首屏加载的 JS 体积。\n\n### 方式一：动态 import（最常用）\n```js\n// 点击时才加载模块\nbutton.addEventListener('click', async () => {\n  const module = await import('./heavyModule.js');\n  module.doSomething();\n});\n```\n\n### 方式二：React.lazy + Suspense\n```jsx\nimport { lazy, Suspense } from 'react';\n\n// 路由级别分割\nconst Home = lazy(() => import('./pages/Home'));\nconst About = lazy(() => import('./pages/About'));\n\nfunction App() {\n  return (\n    <Suspense fallback={<div>Loading...</div>}>\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/about\" element={<About />} />\n      </Routes>\n    </Suspense>\n  );\n}\n```\n\n### 方式三：Webpack splitChunks\n```js\n// webpack.config.js\nmodule.exports = {\n  optimization: {\n    splitChunks: {\n      chunks: 'all',\n      cacheGroups: {\n        vendor: {\n          test: /[\\\\/]node_modules[\\\\/]/,\n          name: 'vendors',\n          chunks: 'all'\n        }\n      }\n    }\n  }\n};\n```\n\n### 方式四：Vite 手动分包\n```js\n// vite.config.js\nexport default {\n  build: {\n    rollupOptions: {\n      output: {\n        manualChunks: {\n          vendor: ['react', 'react-dom'],\n          utils: ['lodash', 'dayjs']\n        }\n      }\n    }\n  }\n};\n```\n\n### 效果\n- 首屏只加载必要的 JS\n- 其他模块按需加载\n- 充分利用浏览器并行下载和缓存",
-    "tags": [
-      "代码分割",
-      "懒加载",
-      "Webpack",
-      "Vite"
-    ],
+    "tags": ["代码分割", "懒加载", "Webpack", "Vite"],
     "source": "高频"
   },
   {
@@ -88,12 +59,7 @@
     "difficulty": 1,
     "question": "什么是 preload 和 prefetch？有什么区别？",
     "answer": "## preload 与 prefetch\n\n### preload（预加载）\n- **用途**：告诉浏览器当前页面**一定会用到**的资源，尽快加载\n- **优先级**：高，不会推迟当前页面资源加载\n- **场景**：关键 CSS、字体、首屏图片、LCP 图片\n\n```html\n<!-- 预加载字体 -->\n<link rel=\"preload\" href=\"font.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n\n<!-- 预加载关键 CSS -->\n<link rel=\"preload\" href=\"critical.css\" as=\"style\">\n\n<!-- 预加载 LCP 图片 -->\n<link rel=\"preload\" href=\"hero.jpg\" as=\"image\">\n\n<!-- 预加载脚本（只加载，不执行） -->\n<link rel=\"preload\" href=\"script.js\" as=\"script\">\n```\n\n### prefetch（预获取）\n- **用途**：提示浏览器**将来可能会用到**的资源，在浏览器空闲时加载\n- **优先级**：低，不影响当前页面\n- **场景**：下一页的资源、懒加载的组件\n\n```html\n<!-- 预获取下一页资源 -->\n<link rel=\"prefetch\" href=\"/next-page.js\">\n<link rel=\"prefetch\" href=\"/static/js/about.chunk.js\">\n```\n\n### preconnect 和 dns-prefetch\n```html\n<!-- 提前建立连接（DNS + TCP + TLS） -->\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n\n<!-- 仅 DNS 预解析（更轻量） -->\n<link rel=\"dns-prefetch\" href=\"https://cdn.example.com\">\n```\n\n### 对比\n| | preload | prefetch |\n|--|---------|----------|\n| 时机 | 立即加载 | 空闲时加载 |\n| 用途 | 当前页必用 | 未来可能用 |\n| 优先级 | 高 | 低 |\n| 未使用警告 | 会有控制台警告 | 不会 |",
-    "tags": [
-      "preload",
-      "prefetch",
-      "资源提示",
-      "性能优化"
-    ],
+    "tags": ["preload", "prefetch", "资源提示", "性能优化"],
     "source": "高频"
   },
   {
@@ -102,12 +68,7 @@
     "difficulty": 1,
     "question": "什么是 Tree Shaking？它是如何工作的？",
     "answer": "## Tree Shaking\n\n### 概念\nTree Shaking 是通过静态分析消除未使用代码（Dead Code Elimination）的优化技术。名字来源于「摇树」——摇掉无用的代码。\n\n### 工作原理\n基于 **ES Module** 的静态结构（`import`/`export` 在编译时确定），打包工具能够：\n1. 分析依赖图，标记哪些导出被使用\n2. 将未使用的导出标记为 dead code\n3. 压缩时（Terser）删除这些代码\n\n### 前提条件\n```js\n// ✅ ES Module（支持 Tree Shaking）\nexport function add(a, b) { return a + b; }\nexport function sub(a, b) { return a - b; }\n\n// ❌ CommonJS（不支持）\nmodule.exports = { add, sub };\n```\n\n### 示例\n```js\n// math.js\nexport const add = (a, b) => a + b;\nexport const sub = (a, b) => a - b;\nexport const mul = (a, b) => a * b;\n\n// main.js（只用了 add）\nimport { add } from './math.js';\nconsole.log(add(1, 2));\n\n// 打包后：sub 和 mul 被 tree shaking 掉\n```\n\n### 注意事项\n\n**1. 副作用（Side Effects）**\n```json\n// package.json\n{\n  \"sideEffects\": false,\n  \"sideEffects\": [\"*.css\", \"./src/polyfill.js\"]\n}\n```\n\n**2. 避免导入整个库**\n```js\n// ❌ 导入整个 lodash（无法 tree shake）\nimport _ from 'lodash';\n\n// ✅ 按需导入\nimport { debounce } from 'lodash-es';\n```\n\n**3. Vite/Rollup 原生支持**，Webpack 需要 `mode: 'production'`",
-    "tags": [
-      "Tree Shaking",
-      "打包优化",
-      "ES Module",
-      "Webpack"
-    ],
+    "tags": ["Tree Shaking", "打包优化", "ES Module", "Webpack"],
     "source": "高频"
   },
   {
@@ -116,11 +77,7 @@
     "difficulty": 1,
     "question": "如何优化首屏加载速度？",
     "answer": "## 首屏加载优化\n\n### 1. 减少关键资源体积\n- **代码压缩**：Gzip/Brotli 压缩（Brotli 比 Gzip 体积小 20-30%）\n- **代码分割**：路由懒加载，按需加载\n- **Tree Shaking**：删除未使用代码\n- **图片优化**：WebP/AVIF 格式，合适的尺寸\n\n### 2. 资源加载策略\n```html\n<!-- 关键资源 preload -->\n<link rel=\"preload\" href=\"critical.css\" as=\"style\">\n<link rel=\"preload\" href=\"hero.jpg\" as=\"image\">\n\n<!-- 非关键 JS 延迟加载 -->\n<script src=\"app.js\" defer></script>\n<script src=\"analytics.js\" async></script>\n```\n\n### 3. 减少请求数量\n- HTTP/2 多路复用（自动并行）\n- 内联关键 CSS\n- 小图片 base64 内联\n\n### 4. CDN 加速\n- 静态资源部署到 CDN\n- 就近节点分发，减少网络延迟\n\n### 5. 服务端渲染（SSR）\n- 服务端直接返回 HTML，减少白屏时间\n- Next.js、Nuxt.js\n\n### 6. 缓存策略\n- HTML：`no-cache`（协商缓存）\n- 带 hash 的静态资源：长期缓存\n\n### 7. 骨架屏\n```jsx\nfunction Page() {\n  const { data, loading } = useData();\n  if (loading) return <PageSkeleton />; // 比 spinner 体验好\n  return <PageContent data={data} />;\n}\n```\n\n### 指标目标\n- FCP < 1.8s\n- LCP < 2.5s\n- TTI < 3.8s",
-    "tags": [
-      "首屏优化",
-      "性能优化",
-      "加载速度"
-    ],
+    "tags": ["首屏优化", "性能优化", "加载速度"],
     "source": "高频"
   },
   {
@@ -129,12 +86,7 @@
     "difficulty": 1,
     "question": "script 标签的 async 和 defer 有什么区别？",
     "answer": "## async 与 defer\n\n### 普通 script（无属性）\n```html\n<script src=\"app.js\"></script>\n```\n- 遇到 script 立即**停止 HTML 解析**\n- 下载完立即执行\n- 执行完才继续解析 HTML\n- **会阻塞页面渲染**\n\n### async\n```html\n<script async src=\"analytics.js\"></script>\n```\n- HTML 解析与脚本下载**并行**\n- 下载完成后**立即执行**（此时暂停 HTML 解析）\n- 多个 async 脚本**执行顺序不确定**\n- 适用：独立脚本，不依赖 DOM 和其他脚本（如统计分析）\n\n### defer\n```html\n<script defer src=\"app.js\"></script>\n```\n- HTML 解析与脚本下载**并行**\n- 等 HTML 完全解析完才执行（DOMContentLoaded 之前）\n- 多个 defer 脚本**按顺序执行**\n- 适用：需要访问 DOM 或有依赖关系的脚本\n\n### 时间线对比\n```\n普通：  [---HTML解析---][停止][下载][执行][继续HTML解析]\nasync： [--------HTML解析--------][停止][执行][继续]\n        同时：[下载]\ndefer： [--------HTML解析--------完成]\n        同时：[下载]              [按顺序执行]\n```\n\n### 最佳实践\n- 现代应用：将 `<script>` 放在 `<body>` 底部或使用 `defer`\n- 第三方分析脚本：`async`\n- 应用主脚本：`defer`（保证顺序）\n- `type=\"module\"` 默认行为类似 `defer`",
-    "tags": [
-      "script加载",
-      "async",
-      "defer",
-      "页面渲染"
-    ],
+    "tags": ["script加载", "async", "defer", "页面渲染"],
     "source": "高频"
   },
   {
@@ -143,12 +95,7 @@
     "difficulty": 2,
     "question": "如何优化 LCP（最大内容绘制）指标？",
     "answer": "## LCP 优化策略\n\n### LCP 的常见元素\n- `<img>` 图片\n- `<video>` 封面图（poster）\n- 通过 CSS `background-image` 加载的图片\n- 包含文本的块级元素\n\n### LCP 慢的四大原因\n\n**1. 服务器响应慢（TTFB 高）**\n```\n优化：使用 CDN、服务端缓存（Redis）、优化数据库查询\n```\n\n**2. 渲染阻塞资源**\n```html\n<!-- ✅ 内联关键 CSS + 异步加载非关键 CSS -->\n<style>/* critical CSS */</style>\n<link rel=\"preload\" href=\"large.css\" as=\"style\" onload=\"this.rel='stylesheet'\">\n```\n\n**3. LCP 资源（图片）加载慢**\n```html\n<!-- ✅ preload LCP 图片 -->\n<link rel=\"preload\" as=\"image\" href=\"hero.webp\"\n      imagesrcset=\"hero-400.webp 400w, hero-800.webp 800w\"\n      imagesizes=\"100vw\">\n\n<!-- ✅ 使用 fetchpriority 提升优先级 -->\n<img src=\"hero.webp\" fetchpriority=\"high\" loading=\"eager\" width=\"800\" height=\"400\">\n\n<!-- ✅ 使用现代格式（WebP/AVIF） -->\n<picture>\n  <source srcset=\"hero.avif\" type=\"image/avif\">\n  <source srcset=\"hero.webp\" type=\"image/webp\">\n  <img src=\"hero.jpg\" alt=\"hero\">\n</picture>\n```\n\n**4. 客户端渲染（CSR）延迟**\n```\n优化：使用 SSR（Next.js）返回完整 HTML\n```\n\n### 完整 checklist\n- [ ] TTFB < 800ms\n- [ ] LCP 图片使用 preload\n- [ ] LCP 图片使用 fetchpriority=\"high\"\n- [ ] 图片使用 WebP/AVIF\n- [ ] 图片有正确的 srcset 和 sizes\n- [ ] 无渲染阻塞 CSS/JS\n- [ ] 启用 Brotli/Gzip 压缩\n- [ ] 使用 CDN",
-    "tags": [
-      "LCP",
-      "Core Web Vitals",
-      "图片优化",
-      "性能优化"
-    ],
+    "tags": ["LCP", "Core Web Vitals", "图片优化", "性能优化"],
     "source": "高频"
   },
   {
@@ -157,12 +104,7 @@
     "difficulty": 2,
     "question": "如何优化 CLS（累积布局偏移）？",
     "answer": "## CLS 优化策略\n\n### CLS 计算方式\n```\nCLS = 影响分数（受影响视口比例）× 距离分数（元素移动距离/视口高度）\n```\n\n### 常见原因与解决方案\n\n**1. 图片/视频没有尺寸声明**\n```html\n<!-- ❌ 图片加载前不占位，加载后撑开页面 -->\n<img src=\"photo.jpg\">\n\n<!-- ✅ 明确指定宽高（浏览器提前计算占位） -->\n<img src=\"photo.jpg\" width=\"800\" height=\"600\">\n\n<!-- ✅ 使用 aspect-ratio -->\n<style>\n  img { aspect-ratio: 4/3; width: 100%; }\n</style>\n```\n\n**2. 动态插入内容（广告、横幅）**\n```css\n/* ✅ 提前为动态内容预留空间 */\n.ad-container {\n  min-height: 250px;\n  width: 300px;\n}\n```\n\n**3. Web 字体闪烁（FOIT/FOUT）**\n```css\n/* ✅ font-display: optional 或 swap */\n@font-face {\n  font-family: 'MyFont';\n  src: url('font.woff2') format('woff2');\n  font-display: optional; /* 没加载到就不用，避免闪烁 */\n}\n```\n\n**4. 动画触发重排**\n```css\n/* ❌ 修改 top/left 会影响布局 */\n.moving { transition: top 0.3s; }\n\n/* ✅ 使用 transform（不影响布局流） */\n.moving { transition: transform 0.3s; }\n```\n\n**5. 骨架屏占位**\n```css\n.skeleton {\n  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);\n  background-size: 200% 100%;\n  animation: shimmer 1.5s infinite;\n}\n@keyframes shimmer {\n  from { background-position: 200% 0; }\n  to   { background-position: -200% 0; }\n}\n```\n\n### 调试工具\n- Chrome DevTools → Performance → Layout Shifts\n- `PerformanceObserver` 监听 `layout-shift` 事件",
-    "tags": [
-      "CLS",
-      "Core Web Vitals",
-      "布局偏移",
-      "性能优化"
-    ],
+    "tags": ["CLS", "Core Web Vitals", "布局偏移", "性能优化"],
     "source": "高频"
   },
   {
@@ -171,12 +113,7 @@
     "difficulty": 2,
     "question": "什么是合成层（Composite Layer）？如何利用它优化渲染？",
     "answer": "## 合成层（Composite Layer）\n\n### 浏览器渲染层级\n```\nLayout → Paint → Composite\n```\n合成层由 GPU 处理，不需要 CPU 参与 Layout 和 Paint，因此性能最优。\n\n### 触发合成层的条件\n```css\n/* 1. transform 3D 变换 */\n.el { transform: translateZ(0); }  /* 经典 hack */\n.el { transform: translate3d(0,0,0); }\n\n/* 2. will-change */\n.el { will-change: transform, opacity; }\n\n/* 3. opacity 动画 */\n.el { animation: fade 1s; }\n\n/* 4. video/canvas/iframe 元素 */\n/* 5. position: fixed */\n/* 6. CSS filter */\n.el { filter: blur(5px); }\n```\n\n### 正确使用 will-change\n```css\n/* ✅ 在动画开始前添加，动画结束后移除 */\n.btn:hover {\n  will-change: transform;\n  transform: translateY(-2px);\n}\n```\n\n```js\n// ✅ 通过 JS 精确控制\nel.addEventListener('mouseenter', () => {\n  el.style.willChange = 'transform';\n});\nel.addEventListener('transitionend', () => {\n  el.style.willChange = 'auto'; // 释放！\n});\n```\n\n### 注意：层爆炸（Layer Explosion）\n```css\n/* ❌ 不要滥用 will-change，每个合成层都占内存 */\n* { will-change: transform; }  /* 极差实践 */\n\n/* ❌ 大量列表项提升合成层 */\n.list-item { transform: translateZ(0); } /* 1000 项 = 1000 层 */\n```\n\n### 实践：流畅动画（只动画 transform 和 opacity）\n```css\n.slide-in {\n  animation: slideIn 0.3s ease;\n}\n\n@keyframes slideIn {\n  from { transform: translateX(-100%); opacity: 0; }\n  to   { transform: translateX(0);     opacity: 1; }\n}\n```\n\n### 调试工具\n- Chrome DevTools → Layers 面板\n- Rendering → Layer borders（高亮层边界）",
-    "tags": [
-      "合成层",
-      "GPU加速",
-      "will-change",
-      "渲染优化"
-    ],
+    "tags": ["合成层", "GPU加速", "will-change", "渲染优化"],
     "source": "字节跳动"
   },
   {
@@ -185,11 +122,7 @@
     "difficulty": 2,
     "question": "什么是虚拟列表（Virtual List）？如何实现？",
     "answer": "## 虚拟列表（Virtual List / Windowing）\n\n### 问题背景\n渲染 10000 条列表数据时，浏览器需要创建 10000 个 DOM 节点，性能极差。\n\n### 核心原理\n只渲染**视口内可见**的列表项，其余用空白占位。\n\n```\n总高度 = 总条数 × 每项高度\n可见区域 = 视口高度 / 每项高度（取整）\n偏移量 = scrollTop（用 transform/paddingTop 模拟）\n```\n\n### 实现（固定高度）\n```jsx\nimport { useState, useRef, useCallback } from 'react';\n\nfunction VirtualList({ data, itemHeight = 50, containerHeight = 500 }) {\n  const [scrollTop, setScrollTop] = useState(0);\n\n  // 计算可见范围\n  const visibleCount = Math.ceil(containerHeight / itemHeight);\n  const startIndex = Math.floor(scrollTop / itemHeight);\n  const endIndex = Math.min(startIndex + visibleCount + 1, data.length);\n\n  // 偏移量\n  const offsetY = startIndex * itemHeight;\n  const totalHeight = data.length * itemHeight;\n\n  const onScroll = useCallback((e) => {\n    setScrollTop(e.currentTarget.scrollTop);\n  }, []);\n\n  return (\n    <div\n      style={{ height: containerHeight, overflow: 'auto', position: 'relative' }}\n      onScroll={onScroll}\n    >\n      <div style={{ height: totalHeight }}>\n        <div style={{ transform: `translateY(${offsetY}px)` }}>\n          {data.slice(startIndex, endIndex).map((item, i) => (\n            <div\n              key={startIndex + i}\n              style={{ height: itemHeight, borderBottom: '1px solid #eee' }}\n            >\n              {item.name}\n            </div>\n          ))}\n        </div>\n      </div>\n    </div>\n  );\n}\n```\n\n### 生产推荐库\n```jsx\nimport { FixedSizeList } from 'react-window';\n\nconst Row = ({ index, style }) => (\n  <div style={style}>Row {index}</div>\n);\n\n<FixedSizeList height={500} itemCount={10000} itemSize={50} width={300}>\n  {Row}\n</FixedSizeList>\n```\n\n- `react-window`（轻量）\n- `react-virtualized`（功能全）\n- `@tanstack/virtual`（框架无关）",
-    "tags": [
-      "虚拟列表",
-      "长列表优化",
-      "React"
-    ],
+    "tags": ["虚拟列表", "长列表优化", "React"],
     "source": "高频"
   },
   {
@@ -198,12 +131,7 @@
     "difficulty": 2,
     "question": "如何分析和优化 Webpack 打包体积？",
     "answer": "## Webpack 打包体积优化\n\n### 第一步：分析 Bundle\n```bash\nnpm install --save-dev webpack-bundle-analyzer\n```\n\n```js\n// webpack.config.js\nconst { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');\n\nmodule.exports = {\n  plugins: [\n    new BundleAnalyzerPlugin()\n  ]\n};\n```\n\n### 优化策略\n\n**1. Tree Shaking**\n```json\n// package.json\n{ \"sideEffects\": false }\n```\n\n**2. 代码分割**\n```js\noptimization: {\n  splitChunks: {\n    chunks: 'all',\n    cacheGroups: {\n      vendor: {\n        test: /node_modules/,\n        name: 'vendors',\n        priority: 10\n      }\n    }\n  }\n}\n```\n\n**3. 按需引入第三方库**\n```js\n// ❌ 全量引入 lodash（70KB+）\nimport _ from 'lodash';\n\n// ✅ 只引入需要的函数\nimport { debounce } from 'lodash-es';\n```\n\n**4. 外部化（Externals）**\n```js\n// 通过 CDN 加载，不打入 bundle\nexternals: {\n  'react': 'React',\n  'react-dom': 'ReactDOM'\n}\n```\n\n**5. 代码压缩**\n```js\nminimizer: [\n  new TerserPlugin({ parallel: true }),\n  new CssMinimizerPlugin()\n]\n```\n\n**6. 启用持久化缓存（Webpack 5）**\n```js\ncache: {\n  type: 'filesystem'  // 大幅加快二次构建速度\n}\n```\n\n**7. 替换重型依赖**\n```\nmoment.js(67KB) → dayjs(2KB)\nlodash(70KB)    → lodash-es + tree shaking\naxios(15KB)     → fetch（原生）\n```",
-    "tags": [
-      "Webpack",
-      "打包优化",
-      "Bundle分析",
-      "Tree Shaking"
-    ],
+    "tags": ["Webpack", "打包优化", "Bundle分析", "Tree Shaking"],
     "source": "高频"
   },
   {
@@ -212,12 +140,7 @@
     "difficulty": 2,
     "question": "Service Worker 是什么？如何用它实现缓存策略？",
     "answer": "## Service Worker\n\n### 概念\nService Worker 是运行在浏览器后台的独立线程，可以拦截网络请求、实现离线缓存，是 PWA 的核心技术。\n\n### 特点\n- 运行在独立线程，不能直接访问 DOM\n- 只能在 HTTPS 或 localhost 下运行\n- 生命周期：install → activate → fetch\n\n### 注册\n```js\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker.register('/sw.js')\n      .then(reg => console.log('SW registered:', reg.scope))\n      .catch(err => console.log('SW failed:', err));\n  });\n}\n```\n\n### 常见缓存策略\n\n**1. Cache First（缓存优先）** —— 适合静态资源\n```js\nself.addEventListener('fetch', event => {\n  event.respondWith(\n    caches.match(event.request).then(response => {\n      return response || fetch(event.request);\n    })\n  );\n});\n```\n\n**2. Network First（网络优先）** —— 适合 API 请求\n```js\nself.addEventListener('fetch', event => {\n  event.respondWith(\n    fetch(event.request)\n      .then(response => {\n        const clone = response.clone();\n        caches.open('api-cache').then(cache => cache.put(event.request, clone));\n        return response;\n      })\n      .catch(() => caches.match(event.request))\n  );\n});\n```\n\n**3. Stale While Revalidate** —— 先返回缓存，后台更新\n```js\nself.addEventListener('fetch', event => {\n  event.respondWith(\n    caches.open('dynamic').then(cache => {\n      return cache.match(event.request).then(cached => {\n        const networkFetch = fetch(event.request).then(response => {\n          cache.put(event.request, response.clone());\n          return response;\n        });\n        return cached || networkFetch;\n      });\n    })\n  );\n});\n```\n\n### 安装预缓存\n```js\nconst CACHE_NAME = 'v1';\nconst PRECACHE_URLS = ['/', '/app.js', '/style.css'];\n\nself.addEventListener('install', event => {\n  event.waitUntil(\n    caches.open(CACHE_NAME)\n      .then(cache => cache.addAll(PRECACHE_URLS))\n      .then(() => self.skipWaiting())\n  );\n});\n```\n\n### 工具\n- `Workbox`（Google 出品，简化 SW 开发）",
-    "tags": [
-      "Service Worker",
-      "PWA",
-      "缓存策略",
-      "离线缓存"
-    ],
+    "tags": ["Service Worker", "PWA", "缓存策略", "离线缓存"],
     "source": "高频"
   },
   {
@@ -226,13 +149,7 @@
     "difficulty": 2,
     "question": "如何优化 React 应用的渲染性能？",
     "answer": "## React 渲染性能优化\n\n### 1. React.memo\n```jsx\n// 防止父组件重渲染时子组件无意义重渲染\nconst ChildComponent = React.memo(({ name, onClick }) => {\n  return <button onClick={onClick}>{name}</button>;\n});\n\n// 自定义比较函数\nconst Child = React.memo(({ data }) => {\n  return <div>{data.name}</div>;\n}, (prevProps, nextProps) => {\n  return prevProps.data.id === nextProps.data.id; // true = 相同，不重渲染\n});\n```\n\n### 2. useMemo\n```jsx\nfunction ProductList({ products, category }) {\n  // 避免每次渲染都过滤\n  const filtered = useMemo(() => {\n    return products.filter(p => p.category === category);\n  }, [products, category]);\n\n  return <ul>{filtered.map(p => <li key={p.id}>{p.name}</li>)}</ul>;\n}\n```\n\n### 3. useCallback\n```jsx\nfunction Parent() {\n  const [count, setCount] = useState(0);\n\n  // 没有 useCallback：每次 Parent 渲染都创建新函数，导致 Child 重渲染\n  const handleClick = useCallback(() => {\n    console.log('clicked');\n  }, []); // 依赖为空，函数引用不变\n\n  return (\n    <>\n      <button onClick={() => setCount(c => c + 1)}>+</button>\n      <MemoizedChild onClick={handleClick} />\n    </>\n  );\n}\n```\n\n### 4. 避免在 JSX 中创建对象/函数\n```jsx\n// ❌ 每次渲染创建新对象，导致子组件重渲染\n<Child style={{ color: 'red' }} onClick={() => doSomething()} />\n\n// ✅\nconst STYLE = { color: 'red' };\nconst handleClick = useCallback(() => doSomething(), []);\n<Child style={STYLE} onClick={handleClick} />\n```\n\n### 5. 状态下移\n```jsx\n// ❌ 频繁更新的状态放在父组件，导致整棵子树重渲染\nfunction Parent() {\n  const [hover, setHover] = useState(false);\n  return (\n    <div>\n      <HeavyTree />\n      <div onMouseEnter={() => setHover(true)}>{hover ? 'On' : 'Off'}</div>\n    </div>\n  );\n}\n\n// ✅ 将状态下移到真正需要它的组件\nfunction HoverTarget() {\n  const [hover, setHover] = useState(false);\n  return <div onMouseEnter={() => setHover(true)}>{hover ? 'On' : 'Off'}</div>;\n}\n```\n\n### 6. 使用 React DevTools Profiler 定位慢组件",
-    "tags": [
-      "React",
-      "渲染优化",
-      "memo",
-      "useMemo",
-      "useCallback"
-    ],
+    "tags": ["React", "渲染优化", "memo", "useMemo", "useCallback"],
     "source": "高频"
   },
   {
@@ -241,11 +158,7 @@
     "difficulty": 2,
     "question": "什么是关键渲染路径（Critical Rendering Path）？如何优化？",
     "answer": "## 关键渲染路径\n\n### 浏览器渲染步骤\n```\n1. 解析 HTML → 构建 DOM\n2. 解析 CSS → 构建 CSSOM\n3. DOM + CSSOM → Render Tree\n4. Layout（布局）：计算尺寸和位置\n5. Paint（绘制）：填充像素\n6. Composite（合成）：合并层\n```\n\n### 关键资源\n- **阻塞渲染的 CSS**：`<link rel=\"stylesheet\">` 阻塞 Render Tree 构建\n- **阻塞解析的 JS**：`<script>` 阻塞 DOM 构建\n\n### 优化方向\n\n**1. 内联关键 CSS**\n```html\n<head>\n  <style>\n    /* 首屏必需的最小 CSS */\n    body { margin: 0; }\n    .header { height: 60px; background: #333; }\n  </style>\n  <!-- 异步加载完整 CSS -->\n  <link rel=\"preload\" href=\"full.css\" as=\"style\" onload=\"this.rel='stylesheet'\">\n</head>\n```\n\n**2. 消除渲染阻塞 JS**\n```html\n<!-- ✅ defer：HTML 解析完后执行 -->\n<script defer src=\"app.js\"></script>\n\n<!-- ✅ async：下载完即执行，不阻塞 HTML 解析 -->\n<script async src=\"analytics.js\"></script>\n```\n\n**3. 最小化关键资源**\n- 压缩 CSS/JS（Gzip/Brotli）\n- 删除未使用的 CSS（PurgeCSS）\n- 只内联首屏所需 CSS\n\n**4. 优化关键资源加载顺序**\n```html\n<head>\n  <meta charset=\"UTF-8\">\n  <link rel=\"preconnect\" href=\"//cdn.example.com\">\n  <link rel=\"preload\" href=\"critical.css\" as=\"style\">\n  <link rel=\"preload\" href=\"hero.webp\" as=\"image\">\n</head>\n```\n\n### 测量工具\n- `performance.timing` API\n- Chrome DevTools → Performance\n- Lighthouse CRP 分析",
-    "tags": [
-      "关键渲染路径",
-      "浏览器渲染",
-      "性能优化"
-    ],
+    "tags": ["关键渲染路径", "浏览器渲染", "性能优化"],
     "source": "高频"
   },
   {
@@ -254,12 +167,7 @@
     "difficulty": 2,
     "question": "如何优化 Web 字体加载？",
     "answer": "## Web 字体优化\n\n### 字体加载问题\n- **FOIT**（Flash of Invisible Text）：字体加载完前文本不可见\n- **FOUT**（Flash of Unstyled Text）：字体加载前显示系统字体，加载后切换\n\n### font-display 策略\n```css\n@font-face {\n  font-family: 'MyFont';\n  src: url('font.woff2') format('woff2');\n\n  /* block：3s 内不显示，之后显示 fallback（FOIT）*/\n  font-display: block;\n\n  /* swap：立即显示 fallback，加载完立即切换（FOUT，推荐正文）*/\n  font-display: swap;\n\n  /* fallback：100ms 内不显示，之后 fallback，3s 内加载完则切换 */\n  font-display: fallback;\n\n  /* optional：100ms 内加载完则用，否则继续用 fallback（性能优先）*/\n  font-display: optional;\n}\n```\n\n### 优化方案\n\n**1. 使用 woff2 格式（最小体积）**\n```css\n@font-face {\n  src: url('font.woff2') format('woff2'),\n       url('font.woff') format('woff');\n}\n```\n\n**2. preload 关键字体**\n```html\n<link rel=\"preload\" href=\"font.woff2\" as=\"font\" type=\"font/woff2\" crossorigin>\n```\n\n**3. 字体子集化（Font Subsetting）**\n```bash\n# 只包含中文常用字（大幅减小体积）\npyftsubset font.ttf --unicodes=\"U+4E00-U+9FA5\" --output-file=font-cn.woff2\n```\n\n**4. 使用系统字体栈**\n```css\nbody {\n  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',\n               Roboto, 'Helvetica Neue', Arial, sans-serif;\n}\n```\n\n**5. 可变字体（Variable Fonts）**\n```css\n/* 一个文件包含所有字重，减少请求 */\n@font-face {\n  font-family: 'Inter';\n  src: url('inter-variable.woff2') format('woff2-variations');\n  font-weight: 100 900;\n}\n```\n\n**6. Google Fonts 最佳实践**\n```html\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap\" rel=\"stylesheet\">\n```",
-    "tags": [
-      "字体优化",
-      "FOIT",
-      "FOUT",
-      "font-display"
-    ],
+    "tags": ["字体优化", "FOIT", "FOUT", "font-display"],
     "source": "高频"
   },
   {
@@ -268,11 +176,7 @@
     "difficulty": 2,
     "question": "什么是 requestAnimationFrame？如何用它优化动画？",
     "answer": "## requestAnimationFrame（rAF）\n\n### 概念\n`requestAnimationFrame` 告诉浏览器在下一次重绘之前执行指定的回调函数。浏览器通常以屏幕刷新率（60fps = 16.67ms/帧）调用。\n\n### 优点\n- 与屏幕刷新率同步，避免掉帧\n- 页面不可见时（切换标签）自动暂停，节省性能\n- 回调在每一帧最佳时间执行\n\n### 基本用法\n```js\nfunction animate(timestamp) {\n  // timestamp 是高精度时间戳（毫秒）\n  element.style.transform = `translateX(${timestamp * 0.1 % 500}px)`;\n  requestAnimationFrame(animate);\n}\n\nrequestAnimationFrame(animate);\n```\n\n### 与 setTimeout 对比\n```js\n// ❌ setInterval：不与刷新率同步，可能掉帧\nsetInterval(() => {\n  element.style.left = (parseInt(element.style.left) + 1) + 'px';\n}, 16);\n\n// ✅ rAF：每帧精确执行一次\nlet pos = 0;\nfunction loop() {\n  pos += 2;\n  element.style.transform = `translateX(${pos}px)`;\n  requestAnimationFrame(loop);\n}\nrequestAnimationFrame(loop);\n```\n\n### 控制动画\n```js\nlet rafId = null;\n\nfunction start() {\n  const loop = (ts) => {\n    // 执行动画\n    rafId = requestAnimationFrame(loop);\n  };\n  rafId = requestAnimationFrame(loop);\n}\n\nfunction stop() {\n  cancelAnimationFrame(rafId); // 取消\n}\n```\n\n### 批量 DOM 操作\n```js\n// ✅ 使用 rAF 节流，每帧只执行一次\nlet ticking = false;\nwindow.addEventListener('scroll', () => {\n  if (!ticking) {\n    requestAnimationFrame(() => {\n      updateUI();\n      ticking = false;\n    });\n    ticking = true;\n  }\n});\n```",
-    "tags": [
-      "requestAnimationFrame",
-      "动画优化",
-      "渲染性能"
-    ],
+    "tags": ["requestAnimationFrame", "动画优化", "渲染性能"],
     "source": "高频"
   },
   {
@@ -281,12 +185,7 @@
     "difficulty": 2,
     "question": "如何实现图片的性能优化？",
     "answer": "## 图片性能优化\n\n### 1. 使用现代格式\n```html\n<!-- 自适应格式 -->\n<picture>\n  <source srcset=\"image.avif\" type=\"image/avif\">\n  <source srcset=\"image.webp\" type=\"image/webp\">\n  <img src=\"image.jpg\" alt=\"...\">\n</picture>\n```\n格式大小：AVIF < WebP < JPEG < PNG\n\n### 2. 响应式图片\n```html\n<img\n  src=\"image-800.jpg\"\n  srcset=\"image-400.jpg 400w, image-800.jpg 800w, image-1200.jpg 1200w\"\n  sizes=\"(max-width: 600px) 400px, (max-width: 900px) 800px, 1200px\"\n  alt=\"...\"\n/>\n```\n\n### 3. 懒加载\n```html\n<img src=\"image.jpg\" loading=\"lazy\" alt=\"...\">\n```\n\n### 4. 声明宽高（避免 CLS）\n```html\n<img src=\"photo.jpg\" width=\"800\" height=\"600\" alt=\"...\">\n```\n\n### 5. 图片压缩（构建工具）\n```js\n// vite.config.js\nimport imageOptimize from 'vite-plugin-imagemin';\n\nexport default {\n  plugins: [\n    imageOptimize({\n      webp: { quality: 80 },\n    })\n  ]\n};\n```\n\n### 6. fetchpriority 控制优先级\n```html\n<!-- LCP 图片设为高优先级 -->\n<img src=\"hero.jpg\" fetchpriority=\"high\" loading=\"eager\">\n\n<!-- 非首屏图片设为低优先级 -->\n<img src=\"thumbnail.jpg\" fetchpriority=\"low\" loading=\"lazy\">\n```\n\n### 7. CDN 图片处理服务\n```html\n<!-- 七牛云/又拍云等支持参数化裁剪 -->\n<img src=\"https://cdn.example.com/photo.jpg?w=400&format=webp&q=80\">\n```\n\n### 8. SVG 优化\n- 使用 SVGO 压缩 SVG\n- 小图标使用 SVG Sprite 或 Icon Font",
-    "tags": [
-      "图片优化",
-      "WebP",
-      "响应式图片",
-      "懒加载"
-    ],
+    "tags": ["图片优化", "WebP", "响应式图片", "懒加载"],
     "source": "高频"
   },
   {
@@ -295,12 +194,7 @@
     "difficulty": 2,
     "question": "什么是性能监控？如何在前端实现性能数据采集？",
     "answer": "## 前端性能监控\n\n### Performance API\n```js\n// 获取导航性能数据\nconst [navEntry] = performance.getEntriesByType('navigation');\nconsole.log({\n  TTFB: navEntry.responseStart - navEntry.requestStart,\n  DOMContentLoaded: navEntry.domContentLoadedEventEnd - navEntry.startTime,\n  Load: navEntry.loadEventEnd - navEntry.startTime,\n});\n```\n\n### 采集 Core Web Vitals\n```js\nimport { getLCP, getCLS, getINP, getFCP, getTTFB } from 'web-vitals';\n\nfunction sendToAnalytics(metric) {\n  const body = JSON.stringify({\n    name: metric.name,\n    value: metric.value,\n    rating: metric.rating,\n    url: location.href,\n    timestamp: Date.now()\n  });\n\n  // 使用 sendBeacon 确保数据发出（页面关闭时也能发）\n  navigator.sendBeacon('/analytics', body);\n}\n\ngetLCP(sendToAnalytics);\ngetCLS(sendToAnalytics);\ngetFCP(sendToAnalytics);\ngetTTFB(sendToAnalytics);\n```\n\n### 自定义性能标记\n```js\nperformance.mark('component-start');\n// ... 组件初始化\nperformance.mark('component-end');\nperformance.measure('component-init', 'component-start', 'component-end');\n\nconst [measure] = performance.getEntriesByName('component-init');\nconsole.log(`Component init took: ${measure.duration}ms`);\n```\n\n### 资源加载监控\n```js\nconst observer = new PerformanceObserver((list) => {\n  list.getEntries().forEach(entry => {\n    if (entry.initiatorType === 'img') {\n      console.log(`Image ${entry.name}: ${entry.duration}ms`);\n    }\n  });\n});\nobserver.observe({ entryTypes: ['resource'] });\n```\n\n### 错误监控\n```js\nwindow.addEventListener('error', (e) => {\n  sendToAnalytics({ type: 'js-error', message: e.message, stack: e.error?.stack });\n});\n\nwindow.addEventListener('unhandledrejection', (e) => {\n  sendToAnalytics({ type: 'promise-error', message: e.reason?.message });\n});\n```",
-    "tags": [
-      "性能监控",
-      "Performance API",
-      "Core Web Vitals",
-      "埋点"
-    ],
+    "tags": ["性能监控", "Performance API", "Core Web Vitals", "埋点"],
     "source": "高频"
   },
   {
@@ -309,12 +203,7 @@
     "difficulty": 2,
     "question": "HTTP/2 对前端性能有哪些提升？",
     "answer": "## HTTP/2 性能提升\n\n### HTTP/1.1 的问题\n- **队头阻塞（HOL Blocking）**：同一个 TCP 连接请求必须串行\n- **并发限制**：浏览器对同一域名最多 6 个并发连接\n- **头部冗余**：每次请求都携带完整 Header（Cookie 等）\n- **无法推送**：服务器只能被动响应\n\n### HTTP/2 核心特性\n\n**1. 多路复用（Multiplexing）**\n```\n一个 TCP 连接上并行发送多个请求/响应\nHTTP/1.1: req1 → resp1 → req2 → resp2（串行）\nHTTP/2:   req1, req2, req3 同时发 → 乱序响应（并行）\n```\n\n**2. 头部压缩（HPACK）**\n```\n- 静态表：预定义 61 个常用头部\n- 动态表：已发送的头部复用\n- Huffman 编码：进一步压缩\n→ 头部体积减少 85-88%\n```\n\n**3. 服务端推送（Server Push）**\n```\n客户端请求 index.html\n服务端主动推送 style.css、app.js（不等客户端请求）\n→ 减少 RTT（往返时延）\n```\n\n**4. 二进制分帧**\n```\nHTTP/1.1：文本格式\nHTTP/2：二进制帧（更小、更快）\n```\n\n### 对前端开发的影响\n\n| 旧优化方案 | HTTP/2 下是否需要 |\n|-----------|------------------|\n| 域名分片（多域名）| ❌ 不需要 |\n| CSS Sprite | ❌ 不强制需要 |\n| JS/CSS 文件合并 | ⚠️ 不再强制 |\n| 代码分割 | ✅ 仍需要 |\n\n### HTTP/3（QUIC）\n- 基于 UDP，解决 TCP 层的队头阻塞\n- 0-RTT 连接建立\n- 更好的弱网性能（网络切换不断连）",
-    "tags": [
-      "HTTP/2",
-      "多路复用",
-      "性能优化",
-      "网络"
-    ],
+    "tags": ["HTTP/2", "多路复用", "性能优化", "网络"],
     "source": "高频"
   },
   {
@@ -323,12 +212,7 @@
     "difficulty": 2,
     "question": "什么是内存泄漏？前端常见的内存泄漏场景有哪些？",
     "answer": "## 前端内存泄漏\n\n### 定义\n内存泄漏：程序不再需要的内存没有被释放，导致内存持续增长，最终可能导致页面崩溃或性能下降。\n\n### 常见场景\n\n**1. 未清理的事件监听器**\n```js\n// ❌ 组件卸载后监听器仍然存在\nfunction Component() {\n  useEffect(() => {\n    window.addEventListener('resize', handleResize);\n    // 忘记返回清理函数\n  }, []);\n}\n\n// ✅\nuseEffect(() => {\n  window.addEventListener('resize', handleResize);\n  return () => window.removeEventListener('resize', handleResize);\n}, []);\n```\n\n**2. 未清理的定时器**\n```js\n// ❌\nuseEffect(() => {\n  setInterval(() => fetchData(), 1000);\n}, []);\n\n// ✅\nuseEffect(() => {\n  const id = setInterval(() => fetchData(), 1000);\n  return () => clearInterval(id);\n}, []);\n```\n\n**3. 闭包持有大对象引用**\n```js\n// ❌ bigArray 被闭包持有，无法被 GC\nfunction createLeak() {\n  const bigArray = new Array(1000000).fill('data');\n  return function() {\n    console.log('called'); // bigArray 从未使用但被持有\n  };\n}\n```\n\n**4. DOM 引用未释放**\n```js\nconst elements = [];\nfunction addElement() {\n  const div = document.createElement('div');\n  document.body.appendChild(div);\n  elements.push(div); // 即使 div 从 DOM 移除，elements 仍持有引用\n}\n```\n\n**5. 未取消的 Promise**\n```js\n// ❌ 组件卸载后 setState 仍被调用（React 会报警告）\nuseEffect(() => {\n  fetchData().then(data => setState(data));\n}, []);\n\n// ✅\nuseEffect(() => {\n  let cancelled = false;\n  fetchData().then(data => {\n    if (!cancelled) setState(data);\n  });\n  return () => { cancelled = true; };\n}, []);\n```\n\n### 排查工具\n- Chrome DevTools → Memory → Heap Snapshot\n- 拍摄两次快照，对比增量对象",
-    "tags": [
-      "内存泄漏",
-      "GC",
-      "性能优化",
-      "React"
-    ],
+    "tags": ["内存泄漏", "GC", "性能优化", "React"],
     "source": "高频"
   },
   {
@@ -337,12 +221,7 @@
     "difficulty": 2,
     "question": "Vite 为什么比 Webpack 快？",
     "answer": "## Vite vs Webpack 速度对比\n\n### Webpack 开发服务器流程\n```\n启动时：扫描所有模块 → 打包成 bundle → 启动 Dev Server\n热更新：重新打包受影响的模块及其依赖链\n\n问题：项目越大，启动越慢（大型项目可能需要几十秒）\n```\n\n### Vite 开发服务器流程\n```\n启动时：不预打包（利用浏览器原生 ESM）→ 立即启动\n请求时：按需编译被请求的模块（单个文件）\n\n优势：无论项目多大，启动几乎瞬间完成\n```\n\n### 核心差异\n\n**1. 原生 ESM**\n```js\n// 浏览器直接支持 import，Vite 利用这一点\n// 请求 /src/App.tsx → 实时编译成 JS → 返回\n// 每个文件独立编译，按需处理\n```\n\n**2. 依赖预构建（esbuild）**\n```js\n// 启动时用 esbuild（Go 编写）预打包 node_modules\n// esbuild 比 Babel 快 100 倍\n// 将 CommonJS 模块转为 ESM，合并小文件减少请求数\n// 结果缓存在 .vite/deps\n```\n\n**3. 精确 HMR**\n```\nWebpack HMR：找到依赖链上所有模块，重新编译整个模块图\nVite HMR：只更新改变的文件本身，精确失效\n→ 编辑一个文件：Webpack 可能需要秒级，Vite 通常 < 100ms\n```\n\n### 生产构建\n```js\n// Vite 生产构建使用 Rollup（Tree Shaking 和代码分割更成熟）\nexport default {\n  build: {\n    rollupOptions: {\n      output: {\n        manualChunks: { vendor: ['react', 'react-dom'] }\n      }\n    }\n  }\n};\n```\n\n### 适用场景\n- **Vite**：新项目、中小型项目、偏好速度\n- **Webpack**：需要高度自定义、已有成熟生态配置的大型项目",
-    "tags": [
-      "Vite",
-      "Webpack",
-      "构建工具",
-      "性能优化"
-    ],
+    "tags": ["Vite", "Webpack", "构建工具", "性能优化"],
     "source": "高频"
   },
   {
@@ -351,12 +230,7 @@
     "difficulty": 2,
     "question": "如何优化长任务（Long Task）以提升 INP 指标？",
     "answer": "## 长任务优化与 INP\n\n### 什么是长任务\n执行时间超过 **50ms** 的 JS 任务称为长任务（Long Task）。\n浏览器主线程在长任务执行期间无法响应用户交互，导致 INP 变差。\n\n### 检测长任务\n```js\nconst observer = new PerformanceObserver((list) => {\n  list.getEntries().forEach(task => {\n    console.warn(`Long task: ${task.duration.toFixed(0)}ms`);\n  });\n});\nobserver.observe({ entryTypes: ['longtask'] });\n```\n\n### 优化策略\n\n**1. 任务分块（Task Chunking）**\n```js\n// ❌ 单个长任务处理 10000 条数据\nfunction processData(items) {\n  items.forEach(item => heavyProcess(item)); // 阻塞主线程\n}\n\n// ✅ 分批处理，每批让出主线程\nfunction yieldToMain() {\n  return new Promise(resolve => setTimeout(resolve, 0));\n}\n\nasync function processDataInChunks(items, chunkSize = 100) {\n  for (let i = 0; i < items.length; i += chunkSize) {\n    const chunk = items.slice(i, i + chunkSize);\n    chunk.forEach(item => heavyProcess(item));\n    await yieldToMain(); // 让出主线程，允许响应交互\n  }\n}\n```\n\n**2. 使用 scheduler.yield()（新 API）**\n```js\nasync function run() {\n  for (const task of tasks) {\n    process(task);\n    if ('scheduler' in window && 'yield' in scheduler) {\n      await scheduler.yield();\n    } else {\n      await new Promise(r => setTimeout(r, 0));\n    }\n  }\n}\n```\n\n**3. Web Worker 处理 CPU 密集任务**\n```js\n// worker.js\nself.onmessage = ({ data }) => {\n  const result = heavyCpuTask(data);\n  self.postMessage(result);\n};\n\n// main.js\nconst worker = new Worker('./worker.js');\nworker.postMessage(bigData);\nworker.onmessage = ({ data }) => {\n  displayResult(data); // 不阻塞主线程\n};\n```\n\n**4. React useTransition**\n```jsx\nconst [isPending, startTransition] = useTransition();\n\nfunction handleInput(value) {\n  setInputValue(value); // 高优先级：立即更新输入框\n  startTransition(() => {\n    setFilteredList(expensiveFilter(value)); // 低优先级：可中断\n  });\n}\n```",
-    "tags": [
-      "INP",
-      "长任务",
-      "Web Worker",
-      "性能优化"
-    ],
+    "tags": ["INP", "长任务", "Web Worker", "性能优化"],
     "source": "Google"
   },
   {
@@ -365,12 +239,7 @@
     "difficulty": 2,
     "question": "CDN 是什么？前端如何利用 CDN 优化性能？",
     "answer": "## CDN 原理与应用\n\n### CDN 工作原理\n```\n用户请求 → DNS 解析 → 找到最近的 CDN 边缘节点\n→ 节点有缓存 → 直接返回\n→ 节点无缓存 → 回源（Origin Server）→ 缓存并返回\n```\n\n### CDN 解决的问题\n- **物理距离**：北京用户访问美国服务器延迟高\n- **服务器压力**：CDN 节点分担源站压力\n- **带宽成本**：CDN 带宽通常比源站便宜\n\n### 前端 CDN 最佳实践\n\n**1. 静态资源走 CDN**\n```\nHTML：不走 CDN（需要动态或协商缓存）\nCSS/JS/图片/字体：走 CDN + 长期缓存\n```\n\n**2. Vite/Webpack 配置 CDN base path**\n```js\n// vite.config.js\nexport default {\n  base: 'https://cdn.example.com/static/'\n};\n\n// webpack.config.js\nmodule.exports = {\n  output: {\n    publicPath: 'https://cdn.example.com/static/'\n  }\n};\n```\n\n**3. 文件名带 hash（长期缓存）**\n```\napp.abc123.js → Cache-Control: max-age=31536000, immutable\n→ 内容变化 → 文件名变化 → 缓存自动失效\n```\n\n**4. 使用公共 CDN（第三方库）**\n```html\n<!-- 配合 Webpack externals -->\n<script src=\"https://unpkg.com/react@18/umd/react.production.min.js\" crossorigin></script>\n```\n\n**5. CDN 图片处理**\n```html\n<!-- 支持参数化裁剪、压缩、格式转换 -->\n<img src=\"https://cdn.example.com/photo.jpg?w=400&format=webp&q=80\">\n```\n\n### 注意事项\n- CDN 域名与主域名不同（避免 Cookie 传输）\n- 配置正确的 `CORS` 头（字体资源需要）\n- 监控 CDN 缓存命中率（目标 > 90%）",
-    "tags": [
-      "CDN",
-      "静态资源",
-      "缓存",
-      "性能优化"
-    ],
+    "tags": ["CDN", "静态资源", "缓存", "性能优化"],
     "source": "高频"
   },
   {
@@ -379,12 +248,7 @@
     "difficulty": 2,
     "question": "如何减少页面白屏时间？",
     "answer": "## 减少白屏时间\n\n### 白屏的原因\n从用户请求页面到看到内容之间的空白时间，主要由以下因素导致：\n1. 服务器响应慢（TTFB 高）\n2. 关键 CSS/JS 阻塞渲染\n3. 首屏 JS 执行耗时\n\n### 优化方案\n\n**1. 服务端渲染（SSR）**\n```jsx\n// Next.js 服务端渲染\nexport async function getServerSideProps() {\n  const data = await fetchData();\n  return { props: { data } };\n}\nexport default function Page({ data }) {\n  return <div>{data.title}</div>; // 服务端直接输出完整 HTML\n}\n```\n\n**2. 骨架屏（Skeleton）**\n```jsx\nfunction PostList() {\n  const { data, loading } = useData();\n  if (loading) return <SkeletonList count={5} />;\n  return <ActualList data={data} />;\n}\n```\n\n```css\n.skeleton {\n  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);\n  background-size: 200% 100%;\n  animation: skeleton 1.5s infinite;\n}\n@keyframes skeleton {\n  from { background-position: 200% 0; }\n  to   { background-position: -200% 0; }\n}\n```\n\n**3. 关键 CSS 内联**\n```html\n<head>\n  <style>\n    /* 只包含首屏必需的最小 CSS */\n    body { margin: 0; font-family: sans-serif; }\n    .header { height: 60px; background: #333; color: #fff; }\n  </style>\n</head>\n```\n\n**4. 减小 JS bundle 体积**\n- 路由懒加载，只加载当前页面的 JS\n- Tree Shaking 删除无用代码\n- 使用 Brotli 压缩\n\n**5. 静态生成（SSG）**\n```bash\n# 构建时生成 HTML，CDN 直接响应\nnpx next build\n```",
-    "tags": [
-      "白屏时间",
-      "SSR",
-      "骨架屏",
-      "FCP"
-    ],
+    "tags": ["白屏时间", "SSR", "骨架屏", "FCP"],
     "source": "高频"
   },
   {
@@ -393,12 +257,7 @@
     "difficulty": 3,
     "question": "描述浏览器的完整渲染流水线，以及各阶段的性能瓶颈",
     "answer": "## 浏览器渲染流水线\n\n### 完整流程\n\n```\n网络层\n  ↓ HTML 字节流\n解析（Parsing）\n  ├── HTML Parser → DOM Tree\n  └── CSS Parser  → CSSOM Tree\n        ↓\n样式计算（Style）\n  └── DOM + CSSOM → Computed Style（每个节点的最终样式）\n        ↓\n布局（Layout / Reflow）\n  └── 计算每个元素的几何信息（位置、尺寸）\n        ↓\n分层（Layer）\n  └── 确定哪些元素需要独立的合成层\n        ↓\n绘制（Paint）\n  └── 生成绘制指令列表（不是真正绘制像素）\n        ↓\n合成（Composite）\n  └── GPU 光栅化各层 → 合成最终画面 → 显示\n```\n\n### 各阶段瓶颈与优化\n\n**1. 解析阶段**\n```\n瓶颈：JS 阻塞 HTML 解析，CSS 阻塞渲染\n优化：script 使用 defer/async，关键 CSS 内联\n```\n\n**2. 布局（Layout）**\n```\n瓶颈：强制同步布局（读取 offsetWidth 后立即修改样式），布局抖动\n优化：读写分离（先读后写），transform 代替 top/left\n      contain: layout（限制布局影响范围）\n```\n\n**3. 分层（Layer）**\n```\n瓶颈：过多合成层占用 GPU 内存（层爆炸）\n优化：合理使用 will-change，避免不必要的合成层\n```\n\n**4. 绘制（Paint）**\n```\n瓶颈：大面积重绘（大背景、渐变、阴影）\n优化：contain: paint 隔离绘制范围\n```\n\n**5. 合成（Composite）**\n```\n最优路径：只触发 Composite（transform/opacity 动画）\n性能由好到差：Composite < Paint+Composite < Layout+Paint+Composite\n```\n\n### CSS Containment（隔离渲染影响）\n```css\n.widget {\n  contain: layout paint style; /* 严格隔离 */\n}\n\n/* 视口外元素跳过渲染 */\n.list-item {\n  content-visibility: auto;\n  contain-intrinsic-size: auto 100px;\n}\n```",
-    "tags": [
-      "渲染流水线",
-      "浏览器渲染",
-      "性能优化",
-      "合成层"
-    ],
+    "tags": ["渲染流水线", "浏览器渲染", "性能优化", "合成层"],
     "source": "字节跳动"
   },
   {
@@ -407,12 +266,7 @@
     "difficulty": 3,
     "question": "如何实现一个完整的前端性能监控 SDK？",
     "answer": "## 前端性能监控 SDK 设计\n\n### SDK 架构\n```\nSDK\n├── 数据采集层（Collectors）\n│   ├── CoreWebVitals 采集\n│   ├── 资源加载采集\n│   ├── 错误采集\n│   └── 自定义埋点\n├── 数据处理层\n│   ├── 采样（Sampling）\n│   └── 过滤（Filtering）\n└── 上报层（Reporter）\n    ├── sendBeacon（页面关闭时）\n    └── 批量上报 + 重试\n```\n\n### 核心实现\n\n```js\nclass PerformanceSDK {\n  constructor(options) {\n    this.options = {\n      dsn: '',\n      appId: '',\n      sampleRate: 1,\n      ...options\n    };\n    this.queue = [];\n    this.init();\n  }\n\n  init() {\n    this.collectCoreWebVitals();\n    this.collectResources();\n    this.collectErrors();\n    this.setupBeforeUnload();\n  }\n\n  collectCoreWebVitals() {\n    import('web-vitals').then(({ getLCP, getCLS, getINP, getFCP, getTTFB }) => {\n      const report = (metric) => this.push({\n        type: 'web-vital',\n        name: metric.name,\n        value: metric.value,\n        rating: metric.rating,\n      });\n      getLCP(report, { reportAllChanges: false });\n      getCLS(report, { reportAllChanges: false });\n      getINP(report);\n      getFCP(report);\n      getTTFB(report);\n    });\n  }\n\n  collectResources() {\n    const observer = new PerformanceObserver((list) => {\n      list.getEntries().forEach(entry => {\n        if (entry.duration > 1000) {\n          this.push({\n            type: 'slow-resource',\n            name: entry.name,\n            duration: entry.duration,\n          });\n        }\n      });\n    });\n    observer.observe({ entryTypes: ['resource'] });\n  }\n\n  collectErrors() {\n    window.addEventListener('error', (e) => {\n      this.push({ type: 'js-error', message: e.message, stack: e.error?.stack });\n    });\n    window.addEventListener('unhandledrejection', (e) => {\n      this.push({ type: 'promise-error', message: String(e.reason) });\n    });\n  }\n\n  push(data) {\n    if (Math.random() > this.options.sampleRate) return;\n    this.queue.push({\n      ...data,\n      appId: this.options.appId,\n      url: location.href,\n      timestamp: Date.now(),\n    });\n    if (this.queue.length >= 10) this.flush();\n  }\n\n  flush() {\n    if (!this.queue.length) return;\n    const data = this.queue.splice(0);\n    navigator.sendBeacon(this.options.dsn, JSON.stringify(data));\n  }\n\n  setupBeforeUnload() {\n    window.addEventListener('visibilitychange', () => {\n      if (document.visibilityState === 'hidden') this.flush();\n    });\n  }\n}\n\n// 使用\nconst sdk = new PerformanceSDK({\n  dsn: 'https://monitor.example.com/collect',\n  appId: 'my-app',\n  sampleRate: 0.1,\n});\n```",
-    "tags": [
-      "性能监控",
-      "SDK设计",
-      "Core Web Vitals",
-      "错误监控"
-    ],
+    "tags": ["性能监控", "SDK设计", "Core Web Vitals", "错误监控"],
     "source": "美团"
   },
   {
@@ -421,12 +275,7 @@
     "difficulty": 3,
     "question": "如何做大型单页应用的首屏性能优化？请从架构层面回答",
     "answer": "## 大型 SPA 首屏性能优化（架构层面）\n\n### 问题诊断\n```\n典型 SPA 首屏流程：\n1. HTML（空壳）→ 2. JS Bundle 下载 → 3. React 初始化\n→ 4. 路由匹配 → 5. 数据请求 → 6. 渲染\n\n瓶颈：步骤2（大 Bundle）和步骤5（数据瀑布）\n```\n\n### 架构层面优化\n\n**1. 渲染策略选择**\n```\nCSR（纯客户端渲染）：FCP 慢，SEO 差\nSSR（服务端渲染）：TTFB 稍高，FCP 快\nSSG（静态生成）：最快，适合内容不频繁变化的页面\nISR（增量静态再生）：SSG + 定时更新，Next.js 特有\n```\n\n**2. 激进的代码分割**\n```js\n// 路由级别分割\nconst routes = [\n  { path: '/', component: lazy(() => import('./pages/Home')) },\n  { path: '/dashboard', component: lazy(() => import('./pages/Dashboard')) },\n];\n\n// 组件级别分割（大型弹窗、编辑器）\nconst RichEditor = lazy(() => import('./components/RichEditor'));\n\n// 鼠标悬停时预获取\nlink.addEventListener('mouseenter', () => import('./pages/Dashboard'));\n```\n\n**3. 关键数据预加载（消除数据瀑布）**\n```js\n// SSR 注入初始数据（避免客户端重复请求）\n// server.js\nconst data = await fetchPageData();\nres.send(`<script>window.__INITIAL_DATA__ = ${JSON.stringify(data)}</script>`);\n\n// ❌ 串行请求（数据瀑布）\nconst user = await fetchUser();\nconst posts = await fetchPosts(user.id);\n\n// ✅ 并行请求\nconst [user, posts] = await Promise.all([fetchUser(), fetchPosts()]);\n```\n\n**4. 关键资源预加载**\n```html\n<link rel=\"modulepreload\" href=\"/static/js/main.abc123.js\">\n<link rel=\"preload\" href=\"/static/css/critical.css\" as=\"style\">\n```\n\n**5. 微前端（针对超大型应用）**\n```\n将大应用拆分为独立子应用，各自独立加载\n→ 主应用只加载当前子应用的 JS\n→ 子应用之间隔离，不互相影响启动速度\n```\n\n### 性能目标\n```\nTTFB < 600ms\nFCP < 1.8s\nLCP < 2.5s\nTTI < 3.8s\n```",
-    "tags": [
-      "SPA优化",
-      "SSR",
-      "代码分割",
-      "架构设计"
-    ],
+    "tags": ["SPA优化", "SSR", "代码分割", "架构设计"],
     "source": "阿里巴巴"
   },
   {
@@ -435,11 +284,7 @@
     "difficulty": 3,
     "question": "如何优化 Webpack 的构建速度？",
     "answer": "## Webpack 构建速度优化\n\n### 分析构建耗时\n```bash\nnpm install --save-dev speed-measure-webpack-plugin\n```\n```js\nconst SpeedMeasurePlugin = require('speed-measure-webpack-plugin');\nconst smp = new SpeedMeasurePlugin();\nmodule.exports = smp.wrap(webpackConfig);\n```\n\n### 优化方案\n\n**1. 持久化缓存（Webpack 5，效果最显著）**\n```js\nmodule.exports = {\n  cache: {\n    type: 'filesystem',\n    buildDependencies: {\n      config: [__filename]\n    }\n  }\n};\n// 二次构建速度提升 90%+\n```\n\n**2. 多线程构建（thread-loader）**\n```js\nmodule.exports = {\n  module: {\n    rules: [{\n      test: /\\.js$/,\n      use: [\n        { loader: 'thread-loader', options: { workers: 4 } },\n        'babel-loader'\n      ]\n    }]\n  }\n};\n```\n\n**3. 缩小编译范围**\n```js\nmodule.exports = {\n  resolve: {\n    modules: [path.resolve('src'), 'node_modules'],\n    extensions: ['.ts', '.tsx', '.js'],\n    alias: { '@': path.resolve('src') }\n  },\n  module: {\n    rules: [{\n      test: /\\.js$/,\n      exclude: /node_modules/,\n      use: 'babel-loader'\n    }]\n  }\n};\n```\n\n**4. 使用 esbuild-loader 替换 babel-loader**\n```js\nconst { EsbuildPlugin } = require('esbuild-loader');\n\nmodule.exports = {\n  module: {\n    rules: [{\n      test: /\\.[jt]sx?$/,\n      loader: 'esbuild-loader',\n      options: { target: 'es2020' }\n    }]\n  },\n  optimization: {\n    minimizer: [\n      new EsbuildPlugin({ target: 'es2020' })\n    ]\n  }\n};\n// 编译速度提升 5-10 倍\n```\n\n**5. DLL Plugin（预编译第三方库）**\n```js\n// webpack.dll.js\nmodule.exports = {\n  entry: { vendor: ['react', 'react-dom', 'lodash'] },\n  plugins: [\n    new webpack.DllPlugin({\n      name: '[name]',\n      path: path.join(__dirname, 'dll/[name]-manifest.json')\n    })\n  ]\n};\n```",
-    "tags": [
-      "Webpack",
-      "构建优化",
-      "编译速度"
-    ],
+    "tags": ["Webpack", "构建优化", "编译速度"],
     "source": "高频"
   },
   {
@@ -448,12 +293,7 @@
     "difficulty": 3,
     "question": "如何设计一套完整的前端缓存策略？",
     "answer": "## 前端缓存策略设计\n\n### 缓存层次体系\n```\n1. 内存缓存（Memory Cache）     最快，页面关闭即失效\n2. Service Worker 缓存          可编程，支持离线\n3. HTTP 缓存（磁盘缓存）        持久化，受 HTTP Header 控制\n4. CDN 缓存                    分布式，减少源站压力\n5. 服务端缓存（Redis）          API 数据缓存\n```\n\n### 不同资源的缓存策略\n\n**HTML（入口文件）**\n```nginx\nlocation ~* \\.html$ {\n  add_header Cache-Control \"no-cache, must-revalidate\";\n  add_header ETag \"$request_id\";\n}\n```\n\n**带 hash 的静态资源（JS/CSS/图片）**\n```nginx\nlocation ~* \\.(js|css|png|webp)$ {\n  add_header Cache-Control \"public, max-age=31536000, immutable\";\n}\n```\n\n**API 数据缓存（SWR 模式）**\n```js\nfunction useData(key) {\n  const cache = useRef(new Map());\n  const [data, setData] = useState(cache.current.get(key));\n\n  useEffect(() => {\n    // 先返回缓存（立即显示）\n    if (cache.current.has(key)) setData(cache.current.get(key));\n\n    // 后台刷新\n    fetch(key)\n      .then(r => r.json())\n      .then(fresh => {\n        cache.current.set(key, fresh);\n        setData(fresh);\n      });\n  }, [key]);\n\n  return data;\n}\n```\n\n**Service Worker 分层缓存**\n```js\n// App Shell：Cache First\n// API：Network First + 缓存兜底\n// 字体：Stale While Revalidate\n```\n\n### 缓存失效策略\n```\n1. 文件名 Hash（最可靠）\n   内容变化 → hash 变化 → 新文件名 → 旧缓存自动无效\n\n2. 主动清除：调用 CDN 刷新 API\n3. Cache-Control max-age 到期自然失效\n```\n\n### 本地存储带 TTL\n```js\nfunction setWithExpiry(key, value, ttl) {\n  localStorage.setItem(key, JSON.stringify({\n    value,\n    expiry: Date.now() + ttl\n  }));\n}\n\nfunction getWithExpiry(key) {\n  const item = JSON.parse(localStorage.getItem(key));\n  if (!item || Date.now() > item.expiry) {\n    localStorage.removeItem(key);\n    return null;\n  }\n  return item.value;\n}\n```",
-    "tags": [
-      "缓存策略",
-      "Service Worker",
-      "HTTP缓存",
-      "性能优化"
-    ],
+    "tags": ["缓存策略", "Service Worker", "HTTP缓存", "性能优化"],
     "source": "高频"
   },
   {
@@ -462,12 +302,7 @@
     "difficulty": 3,
     "question": "什么是 content-visibility？如何用它优化长页面性能？",
     "answer": "## content-visibility\n\n### 概念\n`content-visibility` 是 CSS 属性，允许浏览器跳过不在视口内的元素的渲染（布局和绘制），只在需要时才渲染，是 CSS 级别的虚拟化。\n\n### 属性值\n```css\n/* 正常渲染，默认值 */\ncontent-visibility: visible;\n\n/* 视口外的元素跳过 Layout 和 Paint */\ncontent-visibility: auto;\n\n/* 始终跳过渲染（如隐藏面板） */\ncontent-visibility: hidden;\n```\n\n### 基本用法\n```css\n.section {\n  content-visibility: auto;\n  /* 必须：告诉浏览器元素的估计高度，避免滚动条跳动 */\n  contain-intrinsic-size: auto 500px;\n}\n```\n\n### 实际效果\n```html\n<!-- 长页面包含很多 section -->\n<main>\n  <section class=\"article\"><!-- 大量内容 --></section>\n  <section class=\"article\"><!-- 大量内容 --></section>\n  <!-- ... 100 个 section -->\n</main>\n\n<style>\n.article {\n  content-visibility: auto;\n  contain-intrinsic-size: auto 800px; /* 估计高度 */\n}\n</style>\n\n<!--\n  效果：\n  - 初始渲染只处理视口内的 section\n  - 其余 section 跳过 Layout + Paint\n  - 渲染时间可从 2000ms 降到 200ms（10x 提升）\n-->\n```\n\n### 与虚拟列表的对比\n```\n虚拟列表：\n  - 需要 JS 控制，复杂度高\n  - DOM 节点数量受限\n  - 适合行高固定的列表\n\ncontent-visibility:\n  - 纯 CSS，使用简单\n  - DOM 仍然存在（只是跳过渲染）\n  - 适合内容高度不固定的页面（文章、新闻流）\n  - 浏览器支持：Chrome 85+，Firefox 部分支持\n```\n\n### 性能数据\n- Google 实测：长文档渲染时间从 232ms → 30ms（7.7x）\n- 与 CSS Containment 结合效果最佳",
-    "tags": [
-      "content-visibility",
-      "CSS优化",
-      "长页面",
-      "渲染优化"
-    ],
+    "tags": ["content-visibility", "CSS优化", "长页面", "渲染优化"],
     "source": "Google"
   },
   {
@@ -476,12 +311,7 @@
     "difficulty": 2,
     "question": "如何优化 CSS 动画的性能？",
     "answer": "## CSS 动画性能优化\n\n### 动画的渲染路径\n```\n最差（触发重排）：Style → Layout → Paint → Composite\n较差（触发重绘）：Style → Paint → Composite\n最优（只合成）：  Style → Composite\n```\n\n### 只触发合成的属性（GPU 加速）\n```css\n/* ✅ 高性能属性 */\ntransform: translate(x, y) rotate(deg) scale(n)\nopacity: 0~1\nfilter: blur() brightness()\n\n/* ❌ 低性能属性（触发重排） */\nwidth, height, margin, padding, top, left, font-size\n```\n\n### 实践对比\n```css\n/* ❌ 慢：修改 left 触发重排 */\n@keyframes slide-bad {\n  from { left: -100px; }\n  to   { left: 0; }\n}\n\n/* ✅ 快：修改 transform 只触发合成 */\n@keyframes slide-good {\n  from { transform: translateX(-100px); }\n  to   { transform: translateX(0); }\n}\n\n/* ❌ 慢：修改 width */\n@keyframes grow-bad {\n  from { width: 0; }\n  to   { width: 200px; }\n}\n\n/* ✅ 快：修改 transform: scaleX */\n@keyframes grow-good {\n  from { transform: scaleX(0); transform-origin: left; }\n  to   { transform: scaleX(1); }\n}\n```\n\n### will-change 的正确使用\n```css\n/* ✅ hover 时才提升，减少内存占用 */\n.card:hover {\n  will-change: transform;\n  transform: translateY(-4px);\n}\n```\n\n```js\n// ✅ 通过 JS 精确控制\ncard.addEventListener('mouseenter', () => {\n  card.style.willChange = 'transform';\n});\ncard.addEventListener('transitionend', () => {\n  card.style.willChange = 'auto'; // 动画结束后释放\n});\n```\n\n### 60fps 动画指导原则\n```\n每帧预算：16.67ms（1000ms / 60fps）\n原则：\n1. 只动画 transform 和 opacity\n2. 减少动画元素的 DOM 复杂度\n3. 避免在动画过程中修改 DOM\n4. 复杂动画优先用 CSS Animation（非 JS）\n```",
-    "tags": [
-      "CSS动画",
-      "渲染优化",
-      "合成层",
-      "60fps"
-    ],
+    "tags": ["CSS动画", "渲染优化", "合成层", "60fps"],
     "source": "高频"
   },
   {
@@ -490,12 +320,7 @@
     "difficulty": 1,
     "question": "Gzip 和 Brotli 压缩有什么区别？如何配置？",
     "answer": "## Gzip vs Brotli 压缩\n\n### 对比\n| | Gzip | Brotli |\n|--|------|--------|\n| 发布年份 | 1992 | 2015 |\n| 压缩率 | 基准 | 比 Gzip 小 20-30% |\n| 压缩速度 | 快 | 较慢（高压缩级别）|\n| 解压速度 | 快 | 与 Gzip 相当 |\n| 浏览器支持 | 全部 | 现代浏览器 |\n\n### 工作原理\n浏览器通过 `Accept-Encoding` 声明支持的格式：\n```\n请求头: Accept-Encoding: gzip, deflate, br\n响应头: Content-Encoding: br  （服务器选择 Brotli）\n```\n\n### Nginx 配置\n```nginx\n# Gzip\ngzip on;\ngzip_types text/plain text/css application/json application/javascript;\ngzip_min_length 1024;\ngzip_comp_level 6;\n\n# Brotli（需要 ngx_brotli 模块）\nbrotli on;\nbrotli_types text/plain text/css application/json application/javascript;\nbrotli_comp_level 6;\n```\n\n### 构建时预压缩（推荐）\n```js\n// vite.config.js\nimport viteCompression from 'vite-plugin-compression';\n\nexport default {\n  plugins: [\n    viteCompression({ algorithm: 'gzip' }),\n    viteCompression({ algorithm: 'brotliCompress' }),\n  ]\n};\n// 构建产物：app.js + app.js.gz + app.js.br\n```\n\n```nginx\n# Nginx 优先提供预压缩文件\ngzip_static on;\nbrotli_static on;\n```\n\n### 效果参考\n```\napp.js 原始：500KB\n      Gzip：150KB（减少 70%）\n    Brotli：120KB（减少 76%）\n```",
-    "tags": [
-      "Gzip",
-      "Brotli",
-      "压缩",
-      "Nginx"
-    ],
+    "tags": ["Gzip", "Brotli", "压缩", "Nginx"],
     "source": "高频"
   },
   {
@@ -504,12 +329,7 @@
     "difficulty": 2,
     "question": "什么是 TTFB？如何优化？",
     "answer": "## TTFB（Time to First Byte）\n\n### 定义\nTTFB 是从浏览器发出请求到接收到第一个字节的时间，反映服务器响应速度。\n\n**阈值：**\n- 好：≤ 800ms\n- 需改进：≤ 1800ms\n- 差：> 1800ms\n\n### 包含的时间\n```\nTTFB = DNS 解析 + TCP 连接 + TLS 握手 + 服务器处理 + 传输第一字节\n\n各阶段典型时间：\n- DNS 解析：20-120ms（有缓存接近 0）\n- TCP 连接：10-100ms（取决于距离）\n- TLS 握手：50-200ms\n- 服务器处理：主要优化点\n```\n\n### 优化方向\n\n**减少服务器处理时间**\n```\n- 缓存：Redis 缓存数据库查询结果\n- 数据库优化：索引、查询优化\n- 使用 SSG：提前生成静态 HTML，TTFB = CDN 响应时间\n```\n\n**减少网络延迟**\n```\n- CDN：就近部署，减少物理距离\n- HTTP/2：减少握手开销\n- preconnect：提前建立连接\n```\n\n**preconnect 优化**\n```html\n<!-- 提前建立与关键服务器的连接 -->\n<link rel=\"preconnect\" href=\"https://api.example.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n```\n\n### 测量\n```js\nimport { getTTFB } from 'web-vitals';\ngetTTFB(({ value }) => console.log('TTFB:', value));\n\n// 或使用 Performance API\nconst entry = performance.getEntriesByType('navigation')[0];\nconsole.log('TTFB:', entry.responseStart - entry.requestStart);\n```",
-    "tags": [
-      "TTFB",
-      "服务器性能",
-      "CDN",
-      "缓存"
-    ],
+    "tags": ["TTFB", "服务器性能", "CDN", "缓存"],
     "source": "高频"
   },
   {
@@ -518,12 +338,7 @@
     "difficulty": 2,
     "question": "什么是 Intersection Observer API？有哪些应用场景？",
     "answer": "## IntersectionObserver\n\n### 概念\n异步检测元素是否进入（或离开）视口，比 scroll 事件 + getBoundingClientRect 性能好得多（不阻塞主线程）。\n\n### 基本用法\n```js\nconst observer = new IntersectionObserver(\n  (entries, observer) => {\n    entries.forEach(entry => {\n      if (entry.isIntersecting) {\n        console.log('元素进入视口', entry.target);\n        // entry.intersectionRatio：交叉比例 0-1\n      }\n    });\n  },\n  {\n    root: null,           // 默认：视口\n    rootMargin: '100px',  // 扩展根边界（提前触发）\n    threshold: [0, 0.5, 1] // 触发时机：0%、50%、100% 可见时\n  }\n);\n\nobserver.observe(element);\nobserver.unobserve(element);\nobserver.disconnect();\n```\n\n### 应用场景1：图片懒加载\n```js\nconst observer = new IntersectionObserver(entries => {\n  entries.forEach(entry => {\n    if (entry.isIntersecting) {\n      const img = entry.target;\n      img.src = img.dataset.src;\n      observer.unobserve(img);\n    }\n  });\n}, { rootMargin: '200px' });\n\ndocument.querySelectorAll('[data-src]').forEach(img => observer.observe(img));\n```\n\n### 应用场景2：无限滚动\n```jsx\nfunction useInfiniteScroll(callback) {\n  const ref = useRef(null);\n  useEffect(() => {\n    const el = ref.current;\n    if (!el) return;\n    const observer = new IntersectionObserver(([entry]) => {\n      if (entry.isIntersecting) callback();\n    });\n    observer.observe(el);\n    return () => observer.disconnect();\n  }, [callback]);\n  return ref;\n}\n\nconst loadMoreRef = useInfiniteScroll(loadNextPage);\n<div ref={loadMoreRef} />\n```\n\n### 应用场景3：曝光埋点\n```js\nconst impressionObserver = new IntersectionObserver(entries => {\n  entries.forEach(entry => {\n    if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {\n      trackImpression(entry.target.dataset.productId);\n      impressionObserver.unobserve(entry.target);\n    }\n  });\n}, { threshold: 0.5 });\n```\n\n### 应用场景4：动画触发\n```js\nconst animObserver = new IntersectionObserver(entries => {\n  entries.forEach(entry => {\n    if (entry.isIntersecting) {\n      entry.target.classList.add('animate-in');\n    }\n  });\n});\n```",
-    "tags": [
-      "IntersectionObserver",
-      "懒加载",
-      "无限滚动",
-      "曝光埋点"
-    ],
+    "tags": ["IntersectionObserver", "懒加载", "无限滚动", "曝光埋点"],
     "source": "高频"
   },
   {
@@ -532,12 +347,7 @@
     "difficulty": 3,
     "question": "requestIdleCallback 和 requestAnimationFrame 的区别与适用场景",
     "answer": "## requestIdleCallback vs requestAnimationFrame\n\n### requestAnimationFrame（rAF）\n在每一帧绘制前执行，与屏幕刷新率同步，适合**视觉更新**。\n\n```js\n// 适用：动画、Canvas 绘制、CSS 过渡、DOM 视觉更新\nfunction smoothMove(element, targetX) {\n  let current = 0;\n  function step(timestamp) {\n    current += (targetX - current) * 0.1;\n    element.style.transform = `translateX(${current}px)`;\n    if (Math.abs(targetX - current) > 0.5) {\n      requestAnimationFrame(step);\n    }\n  }\n  requestAnimationFrame(step);\n}\n```\n\n### requestIdleCallback（rIC）\n在浏览器空闲时执行，适合**低优先级的非紧急任务**。\n\n```js\n// 适用：发送埋点、预加载、清理缓存、localStorage 写入\nfunction idleWork(deadline) {\n  // deadline.timeRemaining()：当前帧还剩多少时间\n  // deadline.didTimeout：是否超时强制执行\n  while (deadline.timeRemaining() > 0 && tasks.length > 0) {\n    const task = tasks.shift();\n    task();\n  }\n\n  if (tasks.length > 0) {\n    requestIdleCallback(idleWork, { timeout: 2000 });\n  }\n}\n\nrequestIdleCallback(idleWork, { timeout: 2000 });\n```\n\n### 对比\n| | rAF | rIC |\n|--|-----|-----|\n| 执行时机 | 每帧绘制前（~16ms）| 浏览器空闲时 |\n| 用途 | 视觉更新 | 低优先级后台任务 |\n| 保证执行 | 每帧都执行 | 不保证，可设 timeout |\n| 可用时间 | 约 16ms/帧 | 剩余帧时间（deadline）|\n\n### 兼容性\n```js\n// rIC 不支持 Safari，需要 polyfill\nconst scheduleIdle = window.requestIdleCallback ||\n  ((cb) => setTimeout(() => cb({ timeRemaining: () => 50, didTimeout: false }), 1));\n```\n\n### React 的调度策略\n```\nReact 调度器使用 MessageChannel 实现类似 rIC 的调度\n（不用 rIC 是因为触发频率太低，不够精细）\n```",
-    "tags": [
-      "requestIdleCallback",
-      "requestAnimationFrame",
-      "调度",
-      "性能"
-    ],
+    "tags": ["requestIdleCallback", "requestAnimationFrame", "调度", "性能"],
     "source": "高频"
   },
   {
@@ -546,12 +356,7 @@
     "difficulty": 2,
     "question": "什么是 Core Web Vitals？LCP、INP、CLS 分别代表什么？如何优化？",
     "answer": "## Core Web Vitals\n\nGoogle 定义的三个核心用户体验指标，直接影响 SEO 排名。\n\n### LCP（Largest Contentful Paint，最大内容绘制）\n```\n衡量：视口内最大元素（图片/视频/文本块）的渲染时间\n目标：< 2.5s（Good），2.5-4s（Needs Improvement），> 4s（Poor）\n\n常见最大元素：hero 图片、首屏大图、H1 标题块\n```\n\n优化方法：\n```html\n<!-- 1. preload 关键图片 -->\n<link rel=\"preload\" href=\"/hero.jpg\" as=\"image\" fetchpriority=\"high\">\n\n<!-- 2. 不要懒加载首屏图片 -->\n<img src=\"/hero.jpg\" loading=\"eager\" fetchpriority=\"high\">\n\n<!-- 3. 使用现代图片格式 -->\n<picture>\n  <source srcset=\"/hero.avif\" type=\"image/avif\">\n  <source srcset=\"/hero.webp\" type=\"image/webp\">\n  <img src=\"/hero.jpg\">\n</picture>\n```\n```\n4. 优化服务器响应时间（TTFB < 800ms）\n5. 消除渲染阻塞资源（CSS/JS defer）\n6. 使用 CDN 加速图片\n```\n\n### INP（Interaction to Next Paint，交互延迟）\n```\n衡量：用户交互（点击/键盘）到下一帧绘制的延迟\n目标：< 200ms（Good），200-500ms（Needs Improvement），> 500ms（Poor）\n替代了旧的 FID（First Input Delay）\n```\n\n优化方法：\n```js\n// 1. 避免长任务（Long Task > 50ms）\n// 使用 scheduler.yield() 分片\nasync function processLargeList(items) {\n  for (let i = 0; i < items.length; i++) {\n    process(items[i]);\n    if (i % 50 === 0) await scheduler.yield(); // 让出主线程\n  }\n}\n\n// 2. 非紧急更新推迟\nimport { startTransition } from 'react';\nstartTransition(() => setSearchResults(results));\n\n// 3. Web Worker 处理计算密集任务\n```\n\n### CLS（Cumulative Layout Shift，累积布局偏移）\n```\n衡量：页面生命周期内所有意外布局偏移的累积分数\n目标：< 0.1（Good），0.1-0.25（Needs Improvement），> 0.25（Poor）\n```\n\n优化方法：\n```html\n<!-- 1. 图片/视频预留空间 -->\n<img src=\"image.jpg\" width=\"800\" height=\"600\" style=\"aspect-ratio: 4/3\">\n\n<!-- 2. 广告/嵌入内容预留空间 -->\n<div style=\"min-height: 250px\">\n  <ins class=\"adsbygoogle\" ...></ins>\n</div>\n```\n```css\n/* 3. 避免插入内容导致偏移 */\n/* 4. 字体使用 font-display: optional 避免字体替换偏移 */\n@font-face { font-display: optional; }\n\n/* 5. 动画只用 transform/opacity（不触发布局）*/\n.expand { transform: scaleY(1.2); } /* 不会 CLS */\n/* .expand { height: 200px; } 会造成 CLS */\n```",
-    "tags": [
-      "Core Web Vitals",
-      "LCP",
-      "INP",
-      "CLS"
-    ],
+    "tags": ["Core Web Vitals", "LCP", "INP", "CLS"],
     "source": "高频"
   },
   {
@@ -560,12 +365,7 @@
     "difficulty": 2,
     "question": "前端图片优化有哪些手段？",
     "answer": "## 图片优化策略\n\n### 1. 选择合适格式\n```\nJPEG：照片类图片，有损压缩，不支持透明\nPNG：需要透明通道，无损压缩，体积较大\nGIF：动图，颜色限 256，已过时\nWebP：比 JPEG 小 25-35%，支持透明和动图，Chrome/Safari/Firefox 全支持\nAVIF：比 WebP 再小 20%，压缩质量更好，兼容性稍差（Chrome 85+）\nSVG：矢量图，无限缩放，适合图标/Logo\n```\n\n```html\n<!-- 渐进式格式支持 -->\n<picture>\n  <source srcset=\"image.avif\" type=\"image/avif\">\n  <source srcset=\"image.webp\" type=\"image/webp\">\n  <img src=\"image.jpg\" alt=\"描述\">\n</picture>\n```\n\n### 2. 响应式图片\n```html\n<!-- 根据视口宽度加载不同尺寸 -->\n<img\n  srcset=\"image-400.webp 400w, image-800.webp 800w, image-1200.webp 1200w\"\n  sizes=\"(max-width: 600px) 400px, (max-width: 900px) 800px, 1200px\"\n  src=\"image-800.webp\"\n  alt=\"响应式图片\">\n```\n\n### 3. 懒加载\n```html\n<!-- 原生懒加载（推荐）-->\n<img src=\"image.jpg\" loading=\"lazy\" decoding=\"async\">\n\n<!-- 首屏图片不懒加载 -->\n<img src=\"hero.jpg\" loading=\"eager\" fetchpriority=\"high\">\n```\n\n```js\n// Intersection Observer 自定义懒加载\nconst observer = new IntersectionObserver((entries) => {\n  entries.forEach(entry => {\n    if (entry.isIntersecting) {\n      const img = entry.target;\n      img.src = img.dataset.src;\n      observer.unobserve(img);\n    }\n  });\n}, { rootMargin: '200px' }); // 提前 200px 开始加载\n\ndocument.querySelectorAll('img[data-src]').forEach(img => observer.observe(img));\n```\n\n### 4. CDN + 图片处理服务\n```\nCloudinary、Imgix 等服务支持：\n- 实时裁剪（crop）\n- 格式转换（format=auto）\n- 质量压缩（quality=80）\n- 尺寸调整（width=800）\n\nURL 示例：https://cdn.example.com/image.jpg?w=800&q=80&f=webp\n```\n\n### 5. 体积优化工具\n```\n工具链：sharp（Node.js）、imagemin、squoosh\n构建集成：vite-imagetools、image-webpack-loader\n```",
-    "tags": [
-      "图片优化",
-      "WebP",
-      "AVIF",
-      "懒加载"
-    ],
+    "tags": ["图片优化", "WebP", "AVIF", "懒加载"],
     "source": "高频"
   },
   {
@@ -574,12 +374,7 @@
     "difficulty": 2,
     "question": "什么是代码分割（Code Splitting）？如何在 React 项目中实现？",
     "answer": "## 代码分割\n\n### 为什么需要代码分割\n```\n单页应用打包后 bundle 可能很大（数 MB），\n用户首屏只需要当前路由的代码，\n其余代码按需加载可显著减少首屏体积。\n```\n\n### 方案1：React.lazy + Suspense（路由级分割）\n```jsx\nimport React, { Suspense, lazy } from 'react';\n\n// 动态导入，webpack/vite 自动分割为独立 chunk\nconst Dashboard = lazy(() => import('./pages/Dashboard'));\nconst Settings  = lazy(() => import('./pages/Settings'));\n\nfunction App() {\n  return (\n    <Suspense fallback={<div>Loading...</div>}>\n      <Routes>\n        <Route path=\"/dashboard\" element={<Dashboard />} />\n        <Route path=\"/settings\"  element={<Settings />} />\n      </Routes>\n    </Suspense>\n  );\n}\n```\n\n### 方案2：组件级分割（按条件加载）\n```jsx\nconst HeavyChart = lazy(() => import('./HeavyChart'));\n\nfunction Dashboard({ showChart }) {\n  return (\n    <div>\n      {showChart && (\n        <Suspense fallback={<Skeleton />}>\n          <HeavyChart />\n        </Suspense>\n      )}\n    </div>\n  );\n}\n```\n\n### 方案3：动态 import（原生）\n```js\n// 点击时才加载\nbutton.onclick = async () => {\n  const { default: module } = await import('./heavy-module.js');\n  module.run();\n};\n\n// 预取（鼠标 hover 时）\nbutton.onmouseenter = () => import('./heavy-module.js');\n```\n\n### Vite 配置手动分割\n```js\n// vite.config.ts\nexport default {\n  build: {\n    rollupOptions: {\n      output: {\n        manualChunks: {\n          vendor: ['react', 'react-dom'],\n          chart: ['echarts'],\n          utils: ['lodash', 'dayjs'],\n        }\n      }\n    }\n  }\n}\n```\n\n### 分析 Bundle 体积\n```bash\n# vite-bundle-visualizer\nnpx vite-bundle-visualizer\n\n# webpack-bundle-analyzer\nnpx webpack-bundle-analyzer stats.json\n```",
-    "tags": [
-      "代码分割",
-      "懒加载",
-      "dynamic import",
-      "React"
-    ],
+    "tags": ["代码分割", "懒加载", "dynamic import", "React"],
     "source": "高频"
   },
   {
@@ -588,11 +383,7 @@
     "difficulty": 2,
     "question": "什么是虚拟列表（Virtual List）？如何实现？",
     "answer": "## 虚拟列表\n\n### 问题背景\n```\n渲染 10000 条列表：\n- DOM 节点数量巨大，内存占用高\n- 滚动时重排重绘开销极大\n- 首次渲染慢\n\n虚拟列表：只渲染可见区域的 DOM 节点（通常 20-30 个），\n其余用占位填充滚动条，滚动时动态替换内容。\n```\n\n### 固定高度虚拟列表实现\n```jsx\nimport { useState, useRef, useCallback } from 'react';\n\nfunction VirtualList({ items, itemHeight = 50, containerHeight = 400 }) {\n  const [scrollTop, setScrollTop] = useState(0);\n  const containerRef = useRef(null);\n\n  const totalHeight = items.length * itemHeight;\n  const visibleCount = Math.ceil(containerHeight / itemHeight);\n  const startIndex = Math.floor(scrollTop / itemHeight);\n  const endIndex = Math.min(startIndex + visibleCount + 1, items.length);\n\n  // 可见区域的数据\n  const visibleItems = items.slice(startIndex, endIndex);\n  // 顶部偏移（撑开上方空白）\n  const offsetY = startIndex * itemHeight;\n\n  const onScroll = useCallback((e) => {\n    setScrollTop(e.target.scrollTop);\n  }, []);\n\n  return (\n    <div\n      ref={containerRef}\n      style={{ height: containerHeight, overflow: 'auto' }}\n      onScroll={onScroll}\n    >\n      {/* 总高度撑开滚动条 */}\n      <div style={{ height: totalHeight, position: 'relative' }}>\n        {/* 可见区域偏移 */}\n        <div style={{ transform: `translateY(${offsetY}px)` }}>\n          {visibleItems.map((item, i) => (\n            <div key={startIndex + i} style={{ height: itemHeight }}>\n              {item.content}\n            </div>\n          ))}\n        </div>\n      </div>\n    </div>\n  );\n}\n```\n\n### 生产环境推荐库\n```bash\n# react-virtual（TanStack Virtual）\nnpm install @tanstack/react-virtual\n\n# react-window（轻量）\nnpm install react-window\n\n# react-virtuoso（支持动态高度）\nnpm install react-virtuoso\n```\n\n```jsx\n// react-window 示例\nimport { FixedSizeList } from 'react-window';\n\nconst Row = ({ index, style }) => (\n  <div style={style}>Row {index}</div>\n);\n\n<FixedSizeList\n  height={400}\n  width={600}\n  itemCount={10000}\n  itemSize={50}\n>\n  {Row}\n</FixedSizeList>\n```",
-    "tags": [
-      "虚拟列表",
-      "长列表",
-      "性能"
-    ],
+    "tags": ["虚拟列表", "长列表", "性能"],
     "source": "高频"
   },
   {
@@ -601,11 +392,7 @@
     "difficulty": 3,
     "question": "如何在前端代码中采集性能指标？PerformanceObserver 怎么用？",
     "answer": "## 前端性能指标采集\n\n### Navigation Timing（页面加载时序）\n```js\n// Performance API\nconst nav = performance.getEntriesByType('navigation')[0];\n\nconsole.log({\n  // DNS 解析时间\n  dns: nav.domainLookupEnd - nav.domainLookupStart,\n  // TCP 连接时间\n  tcp: nav.connectEnd - nav.connectStart,\n  // TLS 时间\n  tls: nav.secureConnectionStart > 0\n    ? nav.connectEnd - nav.secureConnectionStart : 0,\n  // TTFB（首字节时间）\n  ttfb: nav.responseStart - nav.requestStart,\n  // 资源下载时间\n  download: nav.responseEnd - nav.responseStart,\n  // DOM 解析时间\n  domParse: nav.domInteractive - nav.responseEnd,\n  // 页面完全加载\n  load: nav.loadEventEnd - nav.startTime,\n});\n```\n\n### PerformanceObserver（现代 API）\n```js\n// 观测 LCP\nnew PerformanceObserver((list) => {\n  const entries = list.getEntries();\n  const lcp = entries[entries.length - 1]; // 最后一个才是最终 LCP\n  console.log('LCP:', lcp.startTime, lcp.element);\n}).observe({ type: 'largest-contentful-paint', buffered: true });\n\n// 观测 CLS\nlet clsValue = 0;\nnew PerformanceObserver((list) => {\n  for (const entry of list.getEntries()) {\n    if (!entry.hadRecentInput) { // 忽略用户交互引起的偏移\n      clsValue += entry.value;\n    }\n  }\n}).observe({ type: 'layout-shift', buffered: true });\n\n// 观测 INP（长动画帧）\nnew PerformanceObserver((list) => {\n  for (const entry of list.getEntries()) {\n    if (entry.duration > 200) {\n      console.warn('Long interaction:', entry.duration, entry);\n    }\n  }\n}).observe({ type: 'event', buffered: true, durationThreshold: 100 });\n\n// 观测资源加载\nnew PerformanceObserver((list) => {\n  for (const entry of list.getEntries()) {\n    if (entry.duration > 1000) {\n      console.warn('Slow resource:', entry.name, entry.duration);\n    }\n  }\n}).observe({ type: 'resource', buffered: true });\n```\n\n### 使用 web-vitals 库（推荐）\n```js\nimport { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals';\n\nfunction sendToAnalytics({ name, value, rating, id }) {\n  fetch('/api/metrics', {\n    method: 'POST',\n    body: JSON.stringify({ name, value, rating, id, url: location.href }),\n    headers: { 'Content-Type': 'application/json' },\n    keepalive: true // 页面卸载时也能发送\n  });\n}\n\nonLCP(sendToAnalytics);\nonINP(sendToAnalytics);\nonCLS(sendToAnalytics);\nonFCP(sendToAnalytics);\nonTTFB(sendToAnalytics);\n```\n\n### 自定义性能标记\n```js\n// 测量某段代码耗时\nperformance.mark('start-render');\nrenderHeavyComponent();\nperformance.mark('end-render');\nperformance.measure('render-time', 'start-render', 'end-render');\n\nconst measure = performance.getEntriesByName('render-time')[0];\nconsole.log('Render took:', measure.duration, 'ms');\n```",
-    "tags": [
-      "性能监控",
-      "PerformanceObserver",
-      "Web Vitals"
-    ],
+    "tags": ["性能监控", "PerformanceObserver", "Web Vitals"],
     "source": "高频"
   },
   {
@@ -614,12 +401,7 @@
     "difficulty": 2,
     "question": "什么是 Tree Shaking？如何确保它正确工作？",
     "answer": "## Tree Shaking\n\n### 概念\nTree Shaking 是打包工具在构建时删除未被引用代码（Dead Code）的优化技术，基于 ES Module 的静态分析。\n\n### 前提条件\n```\n1. 使用 ES Module（import/export），不能用 CommonJS（require）\n2. 代码没有副作用（side effects）\n3. 生产模式打包（mode: 'production'）\n```\n\n### ES Module vs CommonJS\n```js\n// CommonJS（无法 Tree Shake）\nconst { add, subtract } = require('./math');\n// require 是运行时动态执行，无法静态分析\n\n// ES Module（可以 Tree Shake）\nimport { add } from './math'; // 只用了 add，subtract 会被删除\n```\n\n### 副作用声明\n```json\n// package.json\n{\n  \"name\": \"my-lib\",\n  \"sideEffects\": false,  // 所有模块无副作用，可安全 Tree Shake\n  // 或指定有副作用的文件\n  \"sideEffects\": [\n    \"*.css\",\n    \"*.scss\",\n    \"./src/polyfills.js\"\n  ]\n}\n```\n\n### 常见 Tree Shaking 失败原因\n```js\n// 1. 使用了 CommonJS\nconst utils = require('./utils'); // 整个模块被引入\n\n// 2. 动态导入（无法静态分析）\nconst fn = require(`./plugins/${name}`);\n\n// 3. 有副作用的导入\nimport './setup'; // 即使没用到，也不会被删除\n\n// 4. 没有声明 sideEffects: false\n// Webpack 保守策略：不确定就不删\n\n// 5. 对象展开引入\nimport * as utils from './utils'; // 引入全部\nutils.add(1, 2);\n```\n\n### 验证 Tree Shaking 效果\n```js\n// 使用 rollup-plugin-visualizer 或 webpack-bundle-analyzer\n// 检查 bundle 中是否包含了未使用的代码\n\n// source-map-explorer 分析具体模块大小\nnpx source-map-explorer 'build/static/js/*.js'\n```\n\n### 按需引入第三方库\n```js\n// 错误：引入整个 lodash（70KB+）\nimport _ from 'lodash';\n_.debounce(fn, 300);\n\n// 正确：只引入需要的函数\nimport debounce from 'lodash/debounce';\n// 或使用 lodash-es（ES Module 版）\nimport { debounce } from 'lodash-es';\n```",
-    "tags": [
-      "Tree Shaking",
-      "Bundle优化",
-      "Webpack",
-      "Vite"
-    ],
+    "tags": ["Tree Shaking", "Bundle优化", "Webpack", "Vite"],
     "source": "高频"
   },
   {
@@ -628,12 +410,7 @@
     "difficulty": 2,
     "question": "防抖（debounce）和节流（throttle）的区别是什么？各自适合什么场景？",
     "answer": "## 防抖与节流\n\n### 防抖（Debounce）\n```\n在事件停止触发 n 毫秒后才执行一次。\n如果期间事件再次触发，重新计时。\n\n关键特点：只执行最后一次\n```\n\n```js\nfunction debounce(fn, delay) {\n  let timer = null;\n  return function (...args) {\n    clearTimeout(timer);\n    timer = setTimeout(() => {\n      fn.apply(this, args);\n    }, delay);\n  };\n}\n\n// 使用场景\nconst handleSearch = debounce((query) => {\n  fetchResults(query); // 停止输入 300ms 后才搜索\n}, 300);\n\ninput.addEventListener('input', (e) => handleSearch(e.target.value));\n```\n\n### 节流（Throttle）\n```\n在 n 毫秒内只执行一次，无论触发多少次。\n\n关键特点：固定频率执行\n```\n\n```js\nfunction throttle(fn, interval) {\n  let lastTime = 0;\n  return function (...args) {\n    const now = Date.now();\n    if (now - lastTime >= interval) {\n      lastTime = now;\n      fn.apply(this, args);\n    }\n  };\n}\n\n// 使用场景\nconst handleScroll = throttle(() => {\n  updateScrollProgress(); // 每 100ms 执行一次\n}, 100);\n\nwindow.addEventListener('scroll', handleScroll);\n```\n\n### 对比\n```\n防抖（Debounce）：\n- 等停止后执行\n- 适合：搜索框输入、窗口resize完成后、表单验证\n- 特点：高频操作只触发最后一次\n\n节流（Throttle）：\n- 固定频率执行\n- 适合：滚动监听、鼠标移动、游戏循环、按钮点击防连击\n- 特点：保证一定时间内执行一次\n```\n\n### 立即执行版防抖（leading edge）\n```js\nfunction debounce(fn, delay, immediate = false) {\n  let timer = null;\n  return function (...args) {\n    const callNow = immediate && !timer;\n    clearTimeout(timer);\n    timer = setTimeout(() => {\n      timer = null;\n      if (!immediate) fn.apply(this, args);\n    }, delay);\n    if (callNow) fn.apply(this, args);\n  };\n}\n// immediate=true：第一次立即执行，之后防抖\n```",
-    "tags": [
-      "防抖",
-      "节流",
-      "性能",
-      "事件优化"
-    ],
+    "tags": ["防抖", "节流", "性能", "事件优化"],
     "source": "高频"
   },
   {
@@ -642,11 +419,7 @@
     "difficulty": 3,
     "question": "Web Worker 是什么？如何用它优化性能？",
     "answer": "## Web Worker\n\n### 概念\nWeb Worker 在独立线程中运行 JS 代码，不阻塞主线程（UI 线程），适合 CPU 密集型计算。\n\n```\n限制：\n- 不能操作 DOM\n- 不能访问 window/document\n- 通过 postMessage 与主线程通信\n- 可以使用 fetch、XMLHttpRequest、IndexedDB、localStorage\n```\n\n### 基本用法\n```js\n// main.js（主线程）\nconst worker = new Worker('/worker.js');\n\nworker.postMessage({ type: 'compute', data: largeArray });\n\nworker.onmessage = (e) => {\n  console.log('Result:', e.data);\n};\n\nworker.onerror = (e) => {\n  console.error('Worker error:', e.message);\n};\n\n// 用完销毁\nworker.terminate();\n```\n\n```js\n// worker.js（Worker 线程）\nself.onmessage = (e) => {\n  const { type, data } = e.data;\n  if (type === 'compute') {\n    const result = heavyComputation(data);\n    self.postMessage(result);\n  }\n};\n\nfunction heavyComputation(arr) {\n  // 排序、加密、数据处理等 CPU 密集型操作\n  return arr.sort((a, b) => a - b);\n}\n```\n\n### Vite/webpack 中使用\n```js\n// Vite（内置支持）\nconst worker = new Worker(\n  new URL('./worker.js', import.meta.url),\n  { type: 'module' }\n);\n```\n\n### Comlink（简化 Worker 通信）\n```js\n// worker.js\nimport { expose } from 'comlink';\nconst api = {\n  async computeHash(data) {\n    return await crypto.subtle.digest('SHA-256', data);\n  }\n};\nexpose(api);\n\n// main.js\nimport { wrap } from 'comlink';\nconst worker = new Worker('./worker.js');\nconst api = wrap(worker);\nconst hash = await api.computeHash(data); // 像调用普通函数！\n```\n\n### 适用场景\n```\n- 图片处理（压缩、滤镜、格式转换）\n- 大数据排序/过滤/计算\n- 加密/解密\n- JSON 大文件解析\n- 实时数据流处理\n- PDF 生成\n```",
-    "tags": [
-      "Web Worker",
-      "多线程",
-      "性能"
-    ],
+    "tags": ["Web Worker", "多线程", "性能"],
     "source": "高频"
   },
   {
@@ -655,11 +428,7 @@
     "difficulty": 2,
     "question": "requestAnimationFrame 和 requestIdleCallback 的区别和使用场景？",
     "answer": "## rAF 与 rIC\n\n### requestAnimationFrame（rAF）\n```\n在浏览器下一次绘制前执行回调（通常 60fps = 每 16.67ms）\n与屏幕刷新率同步，动画最流畅\n```\n\n```js\n// 动画循环\nfunction animate() {\n  // 更新动画状态\n  el.style.transform = `translateX(${x++}px)`;\n\n  if (x < 300) {\n    requestAnimationFrame(animate); // 继续下一帧\n  }\n}\nrequestAnimationFrame(animate);\n\n// 取消\nconst id = requestAnimationFrame(animate);\ncancelAnimationFrame(id);\n```\n\n```js\n// 性能优化：避免在 rAF 内读取布局信息\n// 不好：读写交替（布局抖动）\nfunction bad() {\n  requestAnimationFrame(() => {\n    const width = el.offsetWidth; // 读（触发重排）\n    el.style.width = width + 1 + 'px'; // 写\n  });\n}\n\n// 好：先读后写\nlet cachedWidth = el.offsetWidth;\nfunction good() {\n  requestAnimationFrame(() => {\n    el.style.width = cachedWidth + 1 + 'px'; // 只写\n  });\n}\n```\n\n### requestIdleCallback（rIC）\n```\n在浏览器空闲时执行回调（帧与帧之间的空余时间）\n不能用于紧急任务，会被高优任务打断\n```\n\n```js\nrequestIdleCallback((deadline) => {\n  // deadline.timeRemaining()：当前帧剩余时间（ms）\n  // deadline.didTimeout：是否因超时强制执行\n  while (deadline.timeRemaining() > 0 && tasks.length > 0) {\n    doTask(tasks.shift()); // 利用空闲时间处理任务\n  }\n  if (tasks.length > 0) {\n    requestIdleCallback(processQueue); // 还有任务，等下次空闲\n  }\n}, { timeout: 2000 }); // 最长等待 2s，超时强制执行\n```\n\n### 对比\n```\n特性                  rAF                    rIC\n执行时机              每帧绘制前              帧间空闲时\n执行频率              每帧（~60fps）          不固定，取决于负载\n适用场景              动画、视觉更新          低优先级任务、数据上报\n是否保证执行          每帧必执行              可能长时间不执行\nSafari 支持           ✅                     ❌（需 polyfill）\n```\n\n### rIC polyfill\n```js\n// Safari 不支持 rIC，简单 polyfill\nwindow.requestIdleCallback = window.requestIdleCallback || ((cb) => {\n  return setTimeout(() => cb({\n    timeRemaining: () => 50,\n    didTimeout: false\n  }), 1);\n});\n```",
-    "tags": [
-      "requestAnimationFrame",
-      "requestIdleCallback",
-      "动画"
-    ],
+    "tags": ["requestAnimationFrame", "requestIdleCallback", "动画"],
     "source": "高频"
   },
   {
@@ -668,11 +437,7 @@
     "difficulty": 3,
     "question": "前端内存泄漏有哪些常见原因？如何排查和修复？",
     "answer": "## 前端内存泄漏\n\n### 常见原因\n\n**1. 未清理的事件监听器**\n```js\n// 泄漏：组件卸载后监听器仍存在\nfunction Component() {\n  useEffect(() => {\n    window.addEventListener('resize', handleResize); // 持有引用\n    // 忘记返回清理函数！\n  }, []);\n}\n\n// 修复\nuseEffect(() => {\n  window.addEventListener('resize', handleResize);\n  return () => window.removeEventListener('resize', handleResize);\n}, []);\n```\n\n**2. 未清理的定时器**\n```js\n// 泄漏\nuseEffect(() => {\n  const timer = setInterval(fetchData, 1000);\n  // 组件卸载后 timer 仍在运行，持有对 fetchData（和组件状态）的引用\n}, []);\n\n// 修复\nuseEffect(() => {\n  const timer = setInterval(fetchData, 1000);\n  return () => clearInterval(timer);\n}, []);\n```\n\n**3. 闭包引用**\n```js\n// 泄漏：缓存了大对象的引用\nfunction createHeavyObject() {\n  const hugeData = new Array(1000000).fill('x');\n  return {\n    getValue: () => hugeData[0] // 闭包持有 hugeData\n  };\n}\nconst obj = createHeavyObject();\n// 只要 obj.getValue 存在，hugeData 就不会被 GC\n```\n\n**4. 未清理的 Observer**\n```js\n// 泄漏\nconst observer = new IntersectionObserver(callback);\nobserver.observe(el);\n// 组件卸载时忘记 disconnect\n\n// 修复\nuseEffect(() => {\n  const observer = new IntersectionObserver(callback);\n  observer.observe(el.current);\n  return () => observer.disconnect();\n}, []);\n```\n\n**5. 全局变量意外增长**\n```js\n// 泄漏：全局数组持续增长\nwindow.logs = [];\nfunction log(msg) {\n  window.logs.push(msg); // 永不清空\n}\n```\n\n### Chrome DevTools 排查\n```\n1. 打开 DevTools → Memory 面板\n2. 拍摄堆快照（Heap Snapshot）\n3. 执行可能泄漏的操作\n4. 再次拍摄快照\n5. 对比两次快照，查看新增对象\n6. 使用 Allocation Timeline 追踪内存增长\n\n关键指标：\n- Task Manager（Shift+Esc）查看页面内存使用\n- 持续增长且不释放 = 泄漏\n```",
-    "tags": [
-      "内存泄漏",
-      "内存管理",
-      "Chrome DevTools"
-    ],
+    "tags": ["内存泄漏", "内存管理", "Chrome DevTools"],
     "source": "高频"
   },
   {
@@ -681,12 +446,7 @@
     "difficulty": 3,
     "question": "如何系统性地优化首屏加载性能？从哪些维度入手？",
     "answer": "## 首屏加载性能优化体系\n\n### 1. 减少关键路径长度（Critical Rendering Path）\n```html\n<!-- 关键 CSS 内联（< 14KB）-->\n<head>\n  <style>/* 首屏必要样式 */</style>\n</head>\n\n<!-- 非关键 CSS 异步加载 -->\n<link rel=\"preload\" href=\"app.css\" as=\"style\" onload=\"this.rel='stylesheet'\">\n<noscript><link rel=\"stylesheet\" href=\"app.css\"></noscript>\n\n<!-- JS 不阻塞渲染 -->\n<script src=\"app.js\" defer></script>\n<script src=\"analytics.js\" async></script>\n```\n\n### 2. 减少 JS Bundle 体积\n```\n路由级代码分割（React.lazy + Suspense）\n第三方库按需引入（lodash-es、antd 按需）\nTree Shaking（ES Module）\n删除无用代码和依赖\n生产构建 + Terser 压缩\n```\n\n### 3. 服务端渲染（SSR）\n```\nCSR（客户端渲染）：白屏时间 = 下载 JS + 执行 JS + 数据请求\nSSR（服务端渲染）：服务端生成 HTML，浏览器直接渲染\n\nNext.js / Nuxt.js 方案：\n- getServerSideProps：每次请求生成 HTML\n- getStaticProps：构建时生成 HTML（SSG）\n- Streaming SSR：边生成边发送（React 18）\n```\n\n### 4. 骨架屏（Skeleton Screen）\n```jsx\n// 数据加载前展示骨架，减少视觉空白感\nfunction Card({ loading, data }) {\n  if (loading) {\n    return (\n      <div className=\"skeleton\">\n        <div className=\"skeleton-avatar\" />\n        <div className=\"skeleton-text\" />\n        <div className=\"skeleton-text short\" />\n      </div>\n    );\n  }\n  return <div>{data.title}</div>;\n}\n```\n\n```css\n.skeleton div {\n  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);\n  background-size: 200% 100%;\n  animation: shimmer 1.5s infinite;\n  border-radius: 4px;\n}\n@keyframes shimmer {\n  0% { background-position: 200% 0; }\n  100% { background-position: -200% 0; }\n}\n```\n\n### 5. 资源优化清单\n```\n图片：WebP/AVIF + 响应式 + 懒加载 + CDN\n字体：preload + font-display: swap + 子集化\n第三方脚本：async + 延迟加载 + 放到 body 底部\nAPI：并行请求（Promise.all）+ 接口聚合 + BFF 层\nHTTP：HTTP/2 + Brotli 压缩 + 强缓存（hash 文件名）\n```\n\n### 6. 度量与监控\n```js\n// 真实用户监控（RUM）\nimport { onLCP, onFCP, onCLS, onINP, onTTFB } from 'web-vitals';\n[onLCP, onFCP, onCLS, onINP, onTTFB].forEach(fn => fn(sendToServer));\n\n// 目标值\n// FCP < 1.8s, LCP < 2.5s, CLS < 0.1, INP < 200ms, TTFB < 800ms\n```",
-    "tags": [
-      "首屏优化",
-      "SSR",
-      "骨架屏",
-      "性能"
-    ],
+    "tags": ["首屏优化", "SSR", "骨架屏", "性能"],
     "source": "高频"
   }
 ]

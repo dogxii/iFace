@@ -58,21 +58,21 @@
  *       Readers also accept v1/v2 (decoded to the same GistBackup shape).
  */
 
-import type { Question, StudyRecord } from "@/types";
-import type { CategoryMap } from "@/lib/db";
+import type { CategoryMap } from '@/lib/db'
+import type { Question, StudyRecord } from '@/types'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const GIST_FILENAME = "iface-backup.json";
-const GIST_DESCRIPTION = "iFace study progress backup (auto-generated)";
+const GIST_FILENAME = 'iface-backup.json'
+const GIST_DESCRIPTION = 'iFace study progress backup (auto-generated)'
 
-const BACKUP_VERSION = 3;
-const MINIMUM_SUPPORTED_VERSION = 1;
+const BACKUP_VERSION = 3
+const MINIMUM_SUPPORTED_VERSION = 1
 
-const GH_API = "https://api.github.com";
+const GH_API = 'https://api.github.com'
 
 /** sessionStorage key — avoids re-paginating gist list on every push/pull */
-const GIST_ID_CACHE_KEY = "iface_gist_id";
+const GIST_ID_CACHE_KEY = 'iface_gist_id'
 
 // ─── Status codec ─────────────────────────────────────────────────────────────
 
@@ -80,83 +80,83 @@ const STATUS_ENCODE: Record<string, number> = {
   unlearned: 0,
   mastered: 1,
   review: 2,
-};
+}
 
-const STATUS_DECODE: Record<number, StudyRecord["status"]> = {
-  0: "unlearned",
-  1: "mastered",
-  2: "review",
-};
+const STATUS_DECODE: Record<number, StudyRecord['status']> = {
+  0: 'unlearned',
+  1: 'mastered',
+  2: 'review',
+}
 
 // ─── Compact record column format ─────────────────────────────────────────────
 
 interface CompactRecords {
   /** question IDs */
-  ids: string[];
+  ids: string[]
   /** 0=unlearned 1=mastered 2=review */
-  statuses: number[];
+  statuses: number[]
   /** Unix seconds (÷1000 from ms timestamp) */
-  times: number[];
+  times: number[]
   /** reviewCount */
-  counts: number[];
+  counts: number[]
 }
 
 function encodeRecords(records: StudyRecord[]): CompactRecords {
-  const ids: string[] = [];
-  const statuses: number[] = [];
-  const times: number[] = [];
-  const counts: number[] = [];
+  const ids: string[] = []
+  const statuses: number[] = []
+  const times: number[] = []
+  const counts: number[] = []
 
   for (const r of records) {
-    ids.push(r.questionId);
-    statuses.push(STATUS_ENCODE[r.status] ?? 0);
-    times.push(Math.floor(r.lastUpdated / 1000));
-    counts.push(r.reviewCount);
+    ids.push(r.questionId)
+    statuses.push(STATUS_ENCODE[r.status] ?? 0)
+    times.push(Math.floor(r.lastUpdated / 1000))
+    counts.push(r.reviewCount)
   }
 
-  return { ids, statuses, times, counts };
+  return { ids, statuses, times, counts }
 }
 
 function decodeRecords(compact: CompactRecords): StudyRecord[] {
-  const { ids, statuses, times, counts } = compact;
-  const len = ids.length;
-  const records: StudyRecord[] = [];
+  const { ids, statuses, times, counts } = compact
+  const len = ids.length
+  const records: StudyRecord[] = []
 
   for (let i = 0; i < len; i++) {
     records.push({
       questionId: ids[i],
-      status: STATUS_DECODE[statuses[i]] ?? "unlearned",
+      status: STATUS_DECODE[statuses[i]] ?? 'unlearned',
       lastUpdated: (times[i] ?? 0) * 1000,
       reviewCount: counts[i] ?? 0,
-    });
+    })
   }
 
-  return records;
+  return records
 }
 
 // ─── Payload types ────────────────────────────────────────────────────────────
 
 /** Shape written to / read from Gist (v3) */
 interface GistPayloadV3 {
-  version: 3;
-  exportedAt: string;
+  version: 3
+  exportedAt: string
   /** Compact columnar study records */
-  records: CompactRecords;
+  records: CompactRecords
   /** User-imported questions only (no built-in question text) */
-  customQuestions: Question[];
+  customQuestions: Question[]
   /** Non-builtin categories only */
-  customCategories: CategoryMap;
-  customSources: string[];
+  customCategories: CategoryMap
+  customSources: string[]
 }
 
 /** Legacy v1/v2 shape — full question objects included */
 interface GistPayloadLegacy {
-  version: 1 | 2;
-  exportedAt?: string;
-  studyRecords?: StudyRecord[];
-  customQuestions?: Question[];
-  categoryMap?: CategoryMap;
-  customSources?: string[];
+  version: 1 | 2
+  exportedAt?: string
+  studyRecords?: StudyRecord[]
+  customQuestions?: Question[]
+  categoryMap?: CategoryMap
+  customSources?: string[]
 }
 
 // ─── Public types ─────────────────────────────────────────────────────────────
@@ -166,58 +166,66 @@ interface GistPayloadLegacy {
  * regardless of which on-disk version was read.
  */
 export interface GistBackup {
-  version: number;
-  exportedAt: string;
-  studyRecords: StudyRecord[];
-  customQuestions: Question[];
+  version: number
+  exportedAt: string
+  studyRecords: StudyRecord[]
+  customQuestions: Question[]
   /** Full category map (custom categories only; builtins restored locally) */
-  customCategories: CategoryMap;
-  customSources: string[];
+  customCategories: CategoryMap
+  customSources: string[]
 }
 
 export interface SyncResult {
-  ok: boolean;
-  error?: string;
-  exportedAt?: string;
-  recordCount?: number;
-  questionCount?: number;
+  ok: boolean
+  error?: string
+  exportedAt?: string
+  recordCount?: number
+  questionCount?: number
 }
 
 // ─── GitHub API types ─────────────────────────────────────────────────────────
 
 interface GistListItem {
-  id: string;
-  description: string;
-  files: Record<string, { filename: string } | null>;
+  id: string
+  description: string
+  files: Record<string, { filename: string } | null>
 }
 
 interface GistFile {
-  filename: string;
-  content?: string;
-  truncated?: boolean;
-  raw_url?: string;
+  filename: string
+  content?: string
+  truncated?: boolean
+  raw_url?: string
 }
 
 interface GistResponse {
-  id: string;
-  description: string;
-  files: Record<string, GistFile | null>;
-  updated_at: string;
-  html_url: string;
+  id: string
+  description: string
+  files: Record<string, GistFile | null>
+  updated_at: string
+  html_url: string
 }
 
 // ─── Session Gist ID cache ────────────────────────────────────────────────────
 
 function getCachedGistId(): string | null {
-  try { return sessionStorage.getItem(GIST_ID_CACHE_KEY); } catch { return null; }
+  try {
+    return sessionStorage.getItem(GIST_ID_CACHE_KEY)
+  } catch {
+    return null
+  }
 }
 
 function setCachedGistId(id: string): void {
-  try { sessionStorage.setItem(GIST_ID_CACHE_KEY, id); } catch {}
+  try {
+    sessionStorage.setItem(GIST_ID_CACHE_KEY, id)
+  } catch {}
 }
 
 function clearCachedGistId(): void {
-  try { sessionStorage.removeItem(GIST_ID_CACHE_KEY); } catch {}
+  try {
+    sessionStorage.removeItem(GIST_ID_CACHE_KEY)
+  } catch {}
 }
 
 // ─── GitHub API helpers ───────────────────────────────────────────────────────
@@ -225,41 +233,37 @@ function clearCachedGistId(): void {
 function ghHeaders(token: string): HeadersInit {
   return {
     Authorization: `Bearer ${token}`,
-    Accept: "application/vnd.github+json",
-    "Content-Type": "application/json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
+    Accept: 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28',
+  }
 }
 
 /**
  * Thin fetch wrapper around the GitHub REST API.
  * Throws a descriptive Error on non-2xx.  Returns undefined for 204.
  */
-async function ghFetch<T>(
-  token: string,
-  path: string,
-  options: RequestInit = {},
-): Promise<T> {
+async function ghFetch<T>(token: string, path: string, options: RequestInit = {}): Promise<T> {
   const res = await fetch(`${GH_API}${path}`, {
     ...options,
     headers: {
       ...ghHeaders(token),
       ...(options.headers ?? {}),
     },
-  });
+  })
 
   if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    let detail = body;
+    const body = await res.text().catch(() => '')
+    let detail = body
     try {
-      const j = JSON.parse(body);
-      detail = j?.message ?? body;
+      const j = JSON.parse(body)
+      detail = j?.message ?? body
     } catch {}
-    throw new Error(`GitHub API ${res.status}: ${detail}`);
+    throw new Error(`GitHub API ${res.status}: ${detail}`)
   }
 
-  if (res.status === 204) return undefined as unknown as T;
-  return res.json() as Promise<T>;
+  if (res.status === 204) return undefined as unknown as T
+  return res.json() as Promise<T>
 }
 
 // ─── Gist lookup ──────────────────────────────────────────────────────────────
@@ -269,28 +273,25 @@ async function ghFetch<T>(
  * Checks session cache first; falls back to paginating the user's gist list.
  */
 export async function findBackupGistId(token: string): Promise<string | null> {
-  const cached = getCachedGistId();
-  if (cached) return cached;
+  const cached = getCachedGistId()
+  if (cached) return cached
 
   for (let page = 1; page <= 10; page++) {
-    const gists = await ghFetch<GistListItem[]>(
-      token,
-      `/gists?per_page=30&page=${page}`,
-    );
+    const gists = await ghFetch<GistListItem[]>(token, `/gists?per_page=30&page=${page}`)
 
-    if (!Array.isArray(gists) || gists.length === 0) break;
+    if (!Array.isArray(gists) || gists.length === 0) break
 
     for (const gist of gists) {
       if (gist.files && GIST_FILENAME in gist.files) {
-        setCachedGistId(gist.id);
-        return gist.id;
+        setCachedGistId(gist.id)
+        return gist.id
       }
     }
 
-    if (gists.length < 30) break;
+    if (gists.length < 30) break
   }
 
-  return null;
+  return null
 }
 
 // ─── Truncated content fetcher ────────────────────────────────────────────────
@@ -319,25 +320,25 @@ async function fetchTruncatedContent(
 ): Promise<string> {
   // Strategy 1: fetch raw_url without Authorization (no preflight)
   try {
-    const res = await fetch(rawUrl);
-    if (res.ok) return res.text();
+    const res = await fetch(rawUrl)
+    if (res.ok) return res.text()
   } catch {
     // fall through
   }
 
   // Strategy 2: re-fetch the gist via REST API — sometimes a second
   // request returns the full content when the file is near the boundary
-  const freshGist = await ghFetch<GistResponse>(token, `/gists/${gistId}`);
-  const freshFile = freshGist.files[GIST_FILENAME];
+  const freshGist = await ghFetch<GistResponse>(token, `/gists/${gistId}`)
+  const freshFile = freshGist.files[GIST_FILENAME]
   if (freshFile && !freshFile.truncated && freshFile.content) {
-    return freshFile.content;
+    return freshFile.content
   }
 
   throw new Error(
-    "Backup file exceeds 1 MB and cannot be fetched due to browser CORS " +
-    "restrictions on the GitHub CDN. Delete the cloud backup and create a " +
-    "new one — with the v3 compact format this should no longer occur.",
-  );
+    'Backup file exceeds 1 MB and cannot be fetched due to browser CORS ' +
+      'restrictions on the GitHub CDN. Delete the cloud backup and create a ' +
+      'new one — with the v3 compact format this should no longer occur.',
+  )
 }
 
 // ─── Payload parser / normaliser ──────────────────────────────────────────────
@@ -347,84 +348,77 @@ async function fetchTruncatedContent(
  * Throws on invalid JSON, unsupported version, or missing required fields.
  */
 function parsePayload(raw: string): GistBackup {
-  if (!raw.trim()) throw new Error("Backup file is empty");
+  if (!raw.trim()) throw new Error('Backup file is empty')
 
-  let data: Record<string, unknown>;
+  let data: Record<string, unknown>
   try {
-    data = JSON.parse(raw) as Record<string, unknown>;
+    data = JSON.parse(raw) as Record<string, unknown>
   } catch {
-    throw new Error("Backup file contains invalid JSON — it may be corrupted");
+    throw new Error('Backup file contains invalid JSON — it may be corrupted')
   }
 
-  const v = typeof data.version === "number" ? data.version : 0;
+  const v = typeof data.version === 'number' ? data.version : 0
 
   if (v < MINIMUM_SUPPORTED_VERSION) {
     throw new Error(
       `Backup version ${v} is too old (minimum supported: ${MINIMUM_SUPPORTED_VERSION}). ` +
-      "Please create a new backup.",
-    );
+        'Please create a new backup.',
+    )
   }
   if (v > BACKUP_VERSION) {
     throw new Error(
-      `Backup version ${v} was created by a newer version of iFace — ` +
-      "please update the app.",
-    );
+      `Backup version ${v} was created by a newer version of iFace — please update the app.`,
+    )
   }
 
   // ── v3 ──
   if (v === 3) {
-    const p = data as unknown as GistPayloadV3;
-    const compact = p.records;
+    const p = data as unknown as GistPayloadV3
+    const compact = p.records
     const studyRecords =
-      compact &&
-      Array.isArray(compact.ids) &&
-      compact.ids.length > 0
-        ? decodeRecords(compact)
-        : [];
+      compact && Array.isArray(compact.ids) && compact.ids.length > 0 ? decodeRecords(compact) : []
 
     return {
       version: 3,
-      exportedAt: typeof p.exportedAt === "string" ? p.exportedAt : new Date().toISOString(),
+      exportedAt: typeof p.exportedAt === 'string' ? p.exportedAt : new Date().toISOString(),
       studyRecords,
       customQuestions: Array.isArray(p.customQuestions) ? p.customQuestions : [],
       customCategories:
-        p.customCategories && typeof p.customCategories === "object"
+        p.customCategories && typeof p.customCategories === 'object'
           ? (p.customCategories as CategoryMap)
           : {},
       customSources: Array.isArray(p.customSources) ? p.customSources : [],
-    };
+    }
   }
 
   // ── v1 / v2 (legacy) — full question objects present ──
   {
-    const p = data as unknown as GistPayloadLegacy;
-    const studyRecords = Array.isArray(p.studyRecords) ? p.studyRecords : [];
+    const p = data as unknown as GistPayloadLegacy
+    const studyRecords = Array.isArray(p.studyRecords) ? p.studyRecords : []
 
     // Separate custom questions from built-in ones.
     // Built-in IDs do NOT start with "custom_".
-    const allBacked = Array.isArray(p.customQuestions) ? p.customQuestions : [];
+    const allBacked = Array.isArray(p.customQuestions) ? p.customQuestions : []
     const customQuestions = allBacked.filter(
-      (q) => typeof q.id === "string" && q.id.startsWith("custom_"),
-    );
+      (q) => typeof q.id === 'string' && q.id.startsWith('custom_'),
+    )
 
     // Extract only non-builtin categories from the legacy categoryMap
     const rawMap =
-      p.categoryMap && typeof p.categoryMap === "object"
-        ? (p.categoryMap as CategoryMap)
-        : {};
-    const customCategories: CategoryMap = {};
+      p.categoryMap && typeof p.categoryMap === 'object' ? (p.categoryMap as CategoryMap) : {}
+    const customCategories: CategoryMap = {}
     for (const [key, entry] of Object.entries(rawMap)) {
-      if (!entry.builtin) customCategories[key] = entry;
+      if (!entry.builtin) customCategories[key] = entry
     }
 
     return {
       version: v,
-      exportedAt: typeof p.exportedAt === "string" ? p.exportedAt : new Date().toISOString(),
+      exportedAt: typeof p.exportedAt === 'string' ? p.exportedAt : new Date().toISOString(),
       studyRecords,
       customQuestions,
       customCategories,
       customSources: Array.isArray(p.customSources) ? p.customSources : [],
-    };
+    }
   }
 }
 
@@ -436,24 +430,24 @@ function parsePayload(raw: string): GistBackup {
  * Throws on network errors or unreadable data.
  */
 export async function loadFromGist(token: string): Promise<GistBackup | null> {
-  const gistId = await findBackupGistId(token);
-  if (!gistId) return null;
+  const gistId = await findBackupGistId(token)
+  if (!gistId) return null
 
-  const gist = await ghFetch<GistResponse>(token, `/gists/${gistId}`);
+  const gist = await ghFetch<GistResponse>(token, `/gists/${gistId}`)
 
-  const file = gist.files[GIST_FILENAME];
-  if (!file) return null;
+  const file = gist.files[GIST_FILENAME]
+  if (!file) return null
 
-  let rawContent: string;
+  let rawContent: string
 
   if (file.truncated) {
-    if (!file.raw_url) throw new Error("Gist file is truncated but raw_url is missing");
-    rawContent = await fetchTruncatedContent(token, gistId, file.raw_url);
+    if (!file.raw_url) throw new Error('Gist file is truncated but raw_url is missing')
+    rawContent = await fetchTruncatedContent(token, gistId, file.raw_url)
   } else {
-    rawContent = file.content ?? "";
+    rawContent = file.content ?? ''
   }
 
-  return parsePayload(rawContent);
+  return parsePayload(rawContent)
 }
 
 // ─── Write ────────────────────────────────────────────────────────────────────
@@ -465,7 +459,7 @@ export async function loadFromGist(token: string): Promise<GistBackup | null> {
  */
 async function writeToGist(
   token: string,
-  backup: Omit<GistBackup, "version" | "exportedAt">,
+  backup: Omit<GistBackup, 'version' | 'exportedAt'>,
 ): Promise<SyncResult> {
   try {
     const payload: GistPayloadV3 = {
@@ -475,31 +469,31 @@ async function writeToGist(
       customQuestions: backup.customQuestions,
       customCategories: backup.customCategories,
       customSources: backup.customSources,
-    };
+    }
 
     // Minified — no indentation — keeps file size small
-    const content = JSON.stringify(payload);
+    const content = JSON.stringify(payload)
 
-    const gistId = await findBackupGistId(token);
+    const gistId = await findBackupGistId(token)
 
     if (gistId) {
       await ghFetch<GistResponse>(token, `/gists/${gistId}`, {
-        method: "PATCH",
+        method: 'PATCH',
         body: JSON.stringify({
           description: GIST_DESCRIPTION,
           files: { [GIST_FILENAME]: { content } },
         }),
-      });
+      })
     } else {
-      const created = await ghFetch<GistResponse>(token, "/gists", {
-        method: "POST",
+      const created = await ghFetch<GistResponse>(token, '/gists', {
+        method: 'POST',
         body: JSON.stringify({
           description: GIST_DESCRIPTION,
           public: false,
           files: { [GIST_FILENAME]: { content } },
         }),
-      });
-      if (created?.id) setCachedGistId(created.id);
+      })
+      if (created?.id) setCachedGistId(created.id)
     }
 
     return {
@@ -507,12 +501,12 @@ async function writeToGist(
       exportedAt: payload.exportedAt,
       recordCount: backup.studyRecords.length,
       questionCount: backup.customQuestions.length,
-    };
+    }
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
-    };
+    }
   }
 }
 
@@ -524,17 +518,17 @@ async function writeToGist(
  */
 export async function deleteBackupGist(token: string): Promise<SyncResult> {
   try {
-    const gistId = await findBackupGistId(token);
-    if (!gistId) return { ok: true };
+    const gistId = await findBackupGistId(token)
+    if (!gistId) return { ok: true }
 
-    await ghFetch<void>(token, `/gists/${gistId}`, { method: "DELETE" });
-    clearCachedGistId();
-    return { ok: true };
+    await ghFetch<void>(token, `/gists/${gistId}`, { method: 'DELETE' })
+    clearCachedGistId()
+    return { ok: true }
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
-    };
+    }
   }
 }
 
@@ -554,30 +548,26 @@ export async function deleteBackupGist(token: string): Promise<SyncResult> {
  */
 export async function pushToGist(token: string): Promise<SyncResult> {
   try {
-    const {
-      getAllStudyRecords,
-      getAllQuestions,
-      getCustomSources,
-      getCategoryMap,
-    } = await import("@/lib/db");
+    const { getAllStudyRecords, getAllQuestions, getCustomSources, getCategoryMap } = await import(
+      '@/lib/db'
+    )
 
-    const [studyRecords, allQuestions, customSources, categoryMap] =
-      await Promise.all([
-        getAllStudyRecords(),
-        getAllQuestions(),
-        getCustomSources(),
-        getCategoryMap(),
-      ]);
+    const [studyRecords, allQuestions, customSources, categoryMap] = await Promise.all([
+      getAllStudyRecords(),
+      getAllQuestions(),
+      getCustomSources(),
+      getCategoryMap(),
+    ])
 
     // Only back up user-imported questions (id starts with "custom_")
     const customQuestions = allQuestions.filter(
-      (q) => typeof q.id === "string" && q.id.startsWith("custom_"),
-    );
+      (q) => typeof q.id === 'string' && q.id.startsWith('custom_'),
+    )
 
     // Only back up non-builtin categories
-    const customCategories: CategoryMap = {};
+    const customCategories: CategoryMap = {}
     for (const [key, entry] of Object.entries(categoryMap)) {
-      if (!entry.builtin) customCategories[key] = entry;
+      if (!entry.builtin) customCategories[key] = entry
     }
 
     return writeToGist(token, {
@@ -585,12 +575,12 @@ export async function pushToGist(token: string): Promise<SyncResult> {
       customQuestions,
       customCategories,
       customSources,
-    });
+    })
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
-    };
+    }
   }
 }
 
@@ -608,8 +598,8 @@ export async function pushToGist(token: string): Promise<SyncResult> {
  */
 export async function pullFromGist(token: string): Promise<SyncResult | null> {
   try {
-    const backup = await loadFromGist(token);
-    if (!backup) return null;
+    const backup = await loadFromGist(token)
+    if (!backup) return null
 
     const {
       bulkPutStudyRecords,
@@ -619,59 +609,59 @@ export async function pullFromGist(token: string): Promise<SyncResult | null> {
       getCategoryMap,
       saveCategoryMap,
       DEFAULT_CATEGORY_MAP,
-    } = await import("@/lib/db");
+    } = await import('@/lib/db')
 
-    const ops: Promise<unknown>[] = [];
+    const ops: Promise<unknown>[] = []
 
     // Always restore study records (replace strategy)
-    ops.push(bulkPutStudyRecords(backup.studyRecords));
+    ops.push(bulkPutStudyRecords(backup.studyRecords))
 
     // Upsert custom questions
     if (backup.customQuestions.length > 0) {
-      ops.push(bulkPutQuestions(backup.customQuestions));
+      ops.push(bulkPutQuestions(backup.customQuestions))
     }
 
     // Restore custom source list
     if (backup.customSources && backup.customSources.length > 0) {
-      ops.push(setMeta(META_KEYS.CUSTOM_SOURCES, backup.customSources));
+      ops.push(setMeta(META_KEYS.CUSTOM_SOURCES, backup.customSources))
     }
 
     // Merge categories: start from local builtins, overlay backup's custom cats
     if (Object.keys(backup.customCategories).length > 0) {
-      const currentMap = await getCategoryMap();
+      const currentMap = await getCategoryMap()
 
       // Begin with a fresh copy of the builtin defaults
-      const merged = { ...DEFAULT_CATEGORY_MAP };
+      const merged = { ...DEFAULT_CATEGORY_MAP }
 
       // Overlay any custom categories from the backup
       for (const [key, entry] of Object.entries(backup.customCategories)) {
         // Never overwrite a builtin with a custom entry
         if (!merged[key]) {
-          merged[key] = entry;
+          merged[key] = entry
         }
       }
 
       // Preserve any custom categories that exist locally but not in the backup
       // (so a device-specific import isn't wiped on pull)
       for (const [key, entry] of Object.entries(currentMap)) {
-        if (!merged[key]) merged[key] = entry;
+        if (!merged[key]) merged[key] = entry
       }
 
-      ops.push(saveCategoryMap(merged));
+      ops.push(saveCategoryMap(merged))
     }
 
-    await Promise.all(ops);
+    await Promise.all(ops)
 
     return {
       ok: true,
       exportedAt: backup.exportedAt,
       recordCount: backup.studyRecords.length,
       questionCount: backup.customQuestions.length,
-    };
+    }
   } catch (err) {
     return {
       ok: false,
       error: err instanceof Error ? err.message : String(err),
-    };
+    }
   }
 }

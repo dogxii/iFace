@@ -65,6 +65,22 @@ MODULE_FILES = {
     "go-memory": "golang/memory.json",
     "go-engineering": "golang/engineering.json",
     "go-web": "golang/web.json",
+    # ── AI Agent ─────────────────────────────────────────────────────────────
+    "ai-llm": "ai-agent/llm.json",
+    "llm": "ai-agent/llm.json",
+    "ai-prompt": "ai-agent/prompt.json",
+    "agent-prompt": "ai-agent/prompt.json",
+    "ai-agent": "ai-agent/agent.json",
+    "agent-arch": "ai-agent/agent.json",
+    "architecture": "ai-agent/agent.json",
+    "ai-rag": "ai-agent/rag.json",
+    "rag": "ai-agent/rag.json",
+    "ai-tools": "ai-agent/tools.json",
+    "tools": "ai-agent/tools.json",
+    "tooling": "ai-agent/tools.json",
+    "ai-eval": "ai-agent/evaluation.json",
+    "evaluation": "ai-agent/evaluation.json",
+    "eval": "ai-agent/evaluation.json",
     # Legacy flat-path aliases (kept for backward compat)
     "perf-legacy": "performance.json",
 }
@@ -86,6 +102,13 @@ STATUS_TARGETS = {
     "golang/memory.json": 30,
     "golang/engineering.json": 30,
     "golang/web.json": 35,
+    # AI Agent
+    "ai-agent/llm.json": 40,
+    "ai-agent/prompt.json": 40,
+    "ai-agent/agent.json": 40,
+    "ai-agent/rag.json": 40,
+    "ai-agent/tools.json": 40,
+    "ai-agent/evaluation.json": 40,
 }
 
 

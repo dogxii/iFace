@@ -5,9 +5,7 @@
     "difficulty": 1,
     "question": "goroutine 和线程有什么区别？",
     "answer": "### 内存占用\n- 线程：操作系统线程栈默认 1-8 MB，固定大小\n- goroutine：初始栈仅 **2-8 KB**，按需动态增长（最大默认 1 GB）\n\n### 调度方式\n- 线程：由操作系统内核调度，上下文切换需要进入内核态，开销大（~1μs）\n- goroutine：由 Go 运行时在用户态调度（GMP 模型），上下文切换开销极小（~100ns）\n\n### 创建成本\n- 线程：创建/销毁需要系统调用，代价高\n- goroutine：由运行时管理，创建成本极低，可以轻松创建数百万个\n\n### 通信方式\n- 线程：共享内存 + 锁\n- goroutine：推荐使用 channel（CSP 模型），也支持共享内存\n\n### 示例\n```go\n// 创建 100 万个 goroutine 完全可行\nfor i := 0; i < 1_000_000; i++ {\n    go func() {\n        time.Sleep(time.Second)\n    }()\n}\n```\n\n### 对比总结\n\n| | 线程 | goroutine |\n|-|------|-----------|\n| 初始栈 | ~1-8 MB | ~2-8 KB |\n| 调度 | 内核态 | 用户态 |\n| 创建开销 | 高 | 极低 |\n| 切换开销 | ~1μs | ~100ns |\n| 并发数 | 千级 | 百万级 |",
-    "tags": [
-      "goroutine"
-    ],
+    "tags": ["goroutine"],
     "source": "高频"
   },
   {
@@ -16,10 +14,7 @@
     "difficulty": 1,
     "question": "简单解释 Go 的 GMP 调度模型是什么？",
     "answer": "GMP 是 Go 运行时的并发调度模型，由三个核心组件组成：\n\n### G（Goroutine）\n- 代表一个 goroutine，包含栈、状态、函数指针等信息\n- 是 Go 并发的基本执行单元\n\n### M（Machine / OS Thread）\n- 代表一个操作系统线程\n- 负责真正执行 G 的代码\n- M 必须绑定一个 P 才能执行 goroutine\n\n### P（Processor / 逻辑处理器）\n- 代表一个逻辑处理器，持有一个本地 goroutine 队列（Local Run Queue）\n- 数量由 `GOMAXPROCS` 决定，默认等于 CPU 核心数\n- P 是 M 和 G 之间的调度中介\n\n### 调度流程\n\n```\n全局队列 (GRQ)\n      ↕\nP0 [G1,G2,G3] ← M0（OS线程）执行\nP1 [G4,G5]    ← M1（OS线程）执行\n```\n\n1. M 必须持有 P 才能执行 G\n2. P 的本地队列满时，G 放入全局队列\n3. M 找不到可运行 G 时，从其他 P 偷取（work stealing）\n4. M 阻塞时（如系统调用），P 与 M 解绑，找其他 M 继续执行\n\n### GOMAXPROCS\n```go\nruntime.GOMAXPROCS(4)  // 设置 P 的数量\nfmt.Println(runtime.GOMAXPROCS(0))  // 查询当前值\n```",
-    "tags": [
-      "goroutine",
-      "GMP"
-    ],
+    "tags": ["goroutine", "GMP"],
     "source": "高频"
   },
   {
@@ -28,10 +23,7 @@
     "difficulty": 2,
     "question": "goroutine 的栈是如何动态增长的？什么是栈分裂（stack split）？",
     "answer": "### 初始栈大小\ngoroutine 初始栈默认 **2KB**（Go 1.4 之前是 8KB）。\n\n### 动态增长机制\nGo 使用**分段栈（segmented stack）**或**连续栈（contiguous stack，Go 1.4+）**：\n\n**Go 1.4+ 使用连续栈（copying stack）：**\n1. 每次函数调用前，运行时检查栈空间是否充足\n2. 若不足，分配一个 **2 倍大小的新栈**\n3. 将所有数据**复制**到新栈，更新所有指向旧栈的指针\n4. 释放旧栈\n\n```go\nfunc deepRecursion(n int) {\n    var buf [1024]byte  // 每次调用分配 1KB 栈空间\n    _ = buf\n    if n > 0 {\n        deepRecursion(n - 1)  // 栈会自动增长\n    }\n}\n\n// 即使递归 10000 层也能正常运行\ndeepRecursion(10000)\n```\n\n### 栈上限\n- 默认最大栈：**1 GB**（64位系统）\n- 超出会触发 `stack overflow` panic\n- 可通过 `debug.SetMaxStack` 修改\n\n### 为什么不用固定大小栈\n- 固定大小：要么浪费内存（太大），要么容易溢出（太小）\n- 动态栈：按需使用，大量 goroutine 时节省内存\n\n### 注意事项\n- 栈复制时，**指向栈变量的指针会被更新**，这是 goroutine 栈不允许被外部持有指针的原因\n- cgo 代码使用的是 OS 线程栈，不受 Go 栈增长机制管理",
-    "tags": [
-      "goroutine",
-      "GMP"
-    ],
+    "tags": ["goroutine", "GMP"],
     "source": "高频"
   },
   {
@@ -40,9 +32,7 @@
     "difficulty": 1,
     "question": "Go 中有缓冲 channel 和无缓冲 channel 的区别是什么？",
     "answer": "### 无缓冲 channel（同步通道）\n\n```go\nch := make(chan int)  // 缓冲区大小为 0\n```\n\n- 发送方**阻塞**，直到接收方准备好接收\n- 接收方**阻塞**，直到发送方发送数据\n- 发送和接收必须**同时就绪**，是一种同步原语\n\n```go\nch := make(chan int)\ngo func() {\n    ch <- 42  // 阻塞，直到 main 接收\n}()\nv := <-ch    // 接收，goroutine 解除阻塞\nfmt.Println(v)\n```\n\n### 有缓冲 channel（异步通道）\n\n```go\nch := make(chan int, 3)  // 缓冲区大小为 3\n```\n\n- 缓冲区未满时，发送**不阻塞**\n- 缓冲区为空时，接收**阻塞**\n- 允许发送方和接收方解耦，不必同时就绪\n\n```go\nch := make(chan int, 3)\nch <- 1  // 不阻塞\nch <- 2  // 不阻塞\nch <- 3  // 不阻塞\n// ch <- 4  // 阻塞！缓冲区满了\n\nfmt.Println(<-ch)  // 1\n```\n\n### 核心区别\n\n| | 无缓冲 | 有缓冲 |\n|-|--------|--------|\n| 同步性 | 强同步 | 异步（缓冲区内） |\n| 阻塞时机 | 立即（无接收方时） | 缓冲区满/空时 |\n| 适用场景 | 同步协调、握手 | 削峰填谷、解耦 |\n\n### 使用建议\n- 需要**确认对方已收到**：用无缓冲\n- 需要**限制并发量**或**队列**：用有缓冲\n- 缓冲大小不是越大越好，过大会掩盖问题",
-    "tags": [
-      "channel"
-    ],
+    "tags": ["channel"],
     "source": "高频"
   },
   {
@@ -51,9 +41,7 @@
     "difficulty": 2,
     "question": "如何正确关闭 channel？关闭 channel 后读写会发生什么？",
     "answer": "### 关闭 channel\n\n```go\nch := make(chan int, 3)\nch <- 1\nch <- 2\nclose(ch)\n```\n\n### 关闭后的行为\n\n**读取已关闭的 channel：**\n```go\nch := make(chan int, 2)\nch <- 10\nch <- 20\nclose(ch)\n\nv1, ok := <-ch  // v1=10, ok=true（还有数据）\nv2, ok := <-ch  // v2=20, ok=true\nv3, ok := <-ch  // v3=0,  ok=false（已关闭且空）\n\n// for range 会自动在 channel 关闭后停止\nfor v := range ch {\n    fmt.Println(v)  // 10, 20，然后退出\n}\n```\n\n**写入已关闭的 channel：**\n```go\nclose(ch)\nch <- 1  // ❌ panic: send on closed channel\n```\n\n**关闭已关闭的 channel：**\n```go\nclose(ch)\nclose(ch)  // ❌ panic: close of closed channel\n```\n\n### 关闭的原则\n\n> **由发送方关闭，接收方不关闭。**\n\n```go\n// ✅ 正确模式：发送方关闭\nfunc producer(ch chan<- int) {\n    defer close(ch)  // 生产完毕后关闭\n    for i := 0; i < 5; i++ {\n        ch <- i\n    }\n}\n\nfunc consumer(ch <-chan int) {\n    for v := range ch {  // 自动感知关闭\n        fmt.Println(v)\n    }\n}\n```\n\n### 多发送方时如何关闭\n\n多个发送方时，不能让每个发送方各自关闭（会 panic），需要额外的协调：\n\n```go\nvar wg sync.WaitGroup\nch := make(chan int, 10)\n\nfor i := 0; i < 3; i++ {\n    wg.Add(1)\n    go func(id int) {\n        defer wg.Done()\n        ch <- id\n    }(i)\n}\n\n// 监控 goroutine：等所有发送方完成后关闭\ngo func() {\n    wg.Wait()\n    close(ch)\n}()\n\nfor v := range ch {\n    fmt.Println(v)\n}\n```",
-    "tags": [
-      "channel"
-    ],
+    "tags": ["channel"],
     "source": "高频"
   },
   {
@@ -62,9 +50,7 @@
     "difficulty": 2,
     "question": "nil channel 有什么行为？有什么实际应用场景？",
     "answer": "### nil channel 的行为\n\n```go\nvar ch chan int  // nil channel\n\n<-ch            // 永久阻塞（不 panic）\nch <- 1         // 永久阻塞（不 panic）\nclose(ch)       // ❌ panic: close of nil channel\n```\n\n**核心规则：对 nil channel 的读写永远阻塞。**\n\n### 在 select 中的应用\n\nnil channel 在 select 中**永远不会被选中**，利用这个特性可以动态禁用某个 case：\n\n```go\nfunc merge(ch1, ch2 <-chan int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for ch1 != nil || ch2 != nil {\n            select {\n            case v, ok := <-ch1:\n                if !ok {\n                    ch1 = nil  // ch1 关闭，将其置 nil，禁用这个 case\n                    continue\n                }\n                out <- v\n            case v, ok := <-ch2:\n                if !ok {\n                    ch2 = nil  // ch2 关闭，将其置 nil\n                    continue\n                }\n                out <- v\n            }\n        }\n    }()\n    return out\n}\n```\n\n### 另一个应用：延迟激活\n\n```go\nvar ready chan struct{}  // nil，初始未激活\n\n// 某个条件满足后激活\nready = make(chan struct{})\nclose(ready)  // 广播给所有等待者\n```\n\n### 总结\n\n| 操作 | nil channel | 已关闭 channel |\n|------|------------|----------------|\n| 读 | 永久阻塞 | 返回零值+false |\n| 写 | 永久阻塞 | panic |\n| 关闭 | panic | panic |\n| select | 永不选中 | 立即选中 |",
-    "tags": [
-      "channel"
-    ],
+    "tags": ["channel"],
     "source": "高频"
   },
   {
@@ -73,9 +59,7 @@
     "difficulty": 1,
     "question": "`select` 语句的基本用法是什么？有哪些特性？",
     "answer": "### 基本语法\n\n```go\nselect {\ncase v := <-ch1:\n    fmt.Println(\"received from ch1:\", v)\ncase ch2 <- 42:\n    fmt.Println(\"sent to ch2\")\ncase <-time.After(time.Second):\n    fmt.Println(\"timeout\")\ndefault:\n    fmt.Println(\"no channel ready\")\n}\n```\n\n### 核心特性\n\n**1. 随机选择：** 若多个 case 同时就绪，**随机**选一个执行（非确定性）\n\n```go\nch1 := make(chan int, 1)\nch2 := make(chan int, 1)\nch1 <- 1\nch2 <- 2\n\nselect {\ncase v := <-ch1:\n    fmt.Println(\"ch1:\", v)  // 可能执行\ncase v := <-ch2:\n    fmt.Println(\"ch2:\", v)  // 也可能执行\n}\n```\n\n**2. default 实现非阻塞：** 有 default 时，若无 case 就绪，立即执行 default\n\n```go\n// 非阻塞读\nselect {\ncase v := <-ch:\n    fmt.Println(v)\ndefault:\n    fmt.Println(\"no data available\")\n}\n\n// 非阻塞写\nselect {\ncase ch <- data:\n    // 发送成功\ndefault:\n    // channel 满，丢弃\n}\n```\n\n**3. 阻塞等待：** 没有 default 时，阻塞直到某个 case 就绪\n\n**4. 空 select 永久阻塞：**\n```go\nselect {}  // 永久阻塞当前 goroutine\n```\n\n### 超时模式\n\n```go\nselect {\ncase result := <-workCh:\n    fmt.Println(\"done:\", result)\ncase <-time.After(5 * time.Second):\n    fmt.Println(\"timeout!\")\n}\n```",
-    "tags": [
-      "select"
-    ],
+    "tags": ["select"],
     "source": "高频"
   },
   {
@@ -84,9 +68,7 @@
     "difficulty": 3,
     "question": "如何用 `select` 实现优先级调度？即优先处理高优先级 channel 的消息。",
     "answer": "### 问题：select 是随机的\n\n```go\n// 无法保证优先处理 highPriority\nselect {\ncase v := <-highPriority:\n    handle(v)\ncase v := <-lowPriority:\n    handle(v)\n}\n```\n\n### 方案一：双层 select\n\n```go\nfunc prioritySelect(high, low <-chan int) {\n    for {\n        // 先尝试消费所有高优先级消息\n        select {\n        case v := <-high:\n            fmt.Println(\"high:\", v)\n            continue  // 继续优先处理 high\n        default:\n        }\n\n        // 高优先级没有消息，再处理低优先级（或等待任意一个）\n        select {\n        case v := <-high:\n            fmt.Println(\"high:\", v)\n        case v := <-low:\n            fmt.Println(\"low:\", v)\n        }\n    }\n}\n```\n\n**原理：** 第一个 select 带 default，非阻塞地清空高优先级队列；第二个 select 阻塞等待任意通道。\n\n### 方案二：循环排空高优先级\n\n```go\nfunc process(high, low <-chan string, quit <-chan struct{}) {\n    for {\n        select {\n        case <-quit:\n            return\n        case v := <-high:\n            fmt.Println(\"HIGH:\", v)\n        default:\n            // 高优先级空了，处理低优先级\n            select {\n            case <-quit:\n                return\n            case v := <-high:\n                fmt.Println(\"HIGH:\", v)\n            case v := <-low:\n                fmt.Println(\"low:\", v)\n            }\n        }\n    }\n}\n```\n\n### 测试验证\n\n```go\nfunc main() {\n    high := make(chan int, 10)\n    low := make(chan int, 10)\n\n    for i := 0; i < 5; i++ {\n        high <- i\n        low <- i * 10\n    }\n\n    done := make(chan struct{})\n    go func() {\n        prioritySelect(high, low)\n        close(done)\n    }()\n\n    time.Sleep(time.Millisecond)\n    // 输出中高优先级消息应先出现\n}\n```",
-    "tags": [
-      "select"
-    ],
+    "tags": ["select"],
     "source": "腾讯"
   },
   {
@@ -95,10 +77,7 @@
     "difficulty": 1,
     "question": "`sync.Mutex` 和 `sync.RWMutex` 有什么区别？分别适用于什么场景？",
     "answer": "### sync.Mutex（互斥锁）\n\n```go\nvar mu sync.Mutex\n\nmu.Lock()    // 加锁，其他 goroutine 阻塞\ndefer mu.Unlock()  // 解锁\n// 临界区：同时只有一个 goroutine 执行\n```\n\n- 同一时刻只允许**一个** goroutine 持有锁\n- 读和写都互斥\n\n### sync.RWMutex（读写锁）\n\n```go\nvar rw sync.RWMutex\n\n// 写锁：独占\nrw.Lock()\ndefer rw.Unlock()\n\n// 读锁：共享\nrw.RLock()\ndefer rw.RUnlock()\n```\n\n- **多个读锁可以同时持有**（并发读）\n- **写锁独占**（写时不能有任何读或写）\n- 写锁等待时，新的读锁请求会阻塞（防止写锁饥饿）\n\n### 实际示例\n\n```go\ntype SafeCache struct {\n    rw   sync.RWMutex\n    data map[string]string\n}\n\nfunc (c *SafeCache) Get(key string) (string, bool) {\n    c.rw.RLock()          // 读操作：允许并发\n    defer c.rw.RUnlock()\n    v, ok := c.data[key]\n    return v, ok\n}\n\nfunc (c *SafeCache) Set(key, val string) {\n    c.rw.Lock()           // 写操作：独占\n    defer c.rw.Unlock()\n    c.data[key] = val\n}\n```\n\n### 选择依据\n\n| 场景 | 选择 |\n|------|------|\n| 读写频率相近 | `Mutex`（RWMutex 有额外开销） |\n| 读多写少（读:写 > 5:1） | `RWMutex` |\n| 简单同步 | `Mutex` |",
-    "tags": [
-      "sync",
-      "mutex"
-    ],
+    "tags": ["sync", "mutex"],
     "source": "高频"
   },
   {
@@ -107,10 +86,7 @@
     "difficulty": 2,
     "question": "Go 中死锁（deadlock）是如何产生的？给出常见的死锁场景和解决方案。",
     "answer": "### 死锁的条件（哲学家问题四要素）\n1. 互斥：资源不能共享\n2. 持有并等待：持有资源同时等待其他资源\n3. 不可剥夺：已持有资源不能被强制释放\n4. 循环等待：存在等待环\n\n### 场景一：重复加锁（非可重入锁）\n\n```go\nvar mu sync.Mutex\n\nfunc bad() {\n    mu.Lock()\n    defer mu.Unlock()\n    mu.Lock()  // ❌ 死锁！Go 的 Mutex 不可重入\n    defer mu.Unlock()\n}\n```\n\n**解决**：重构代码，提取不需要锁的内部方法。\n\n### 场景二：锁顺序不一致\n\n```go\nvar mu1, mu2 sync.Mutex\n\n// goroutine 1\ngo func() {\n    mu1.Lock()\n    mu2.Lock()  // 等待 mu2\n    // ...\n}()\n\n// goroutine 2\ngo func() {\n    mu2.Lock()\n    mu1.Lock()  // 等待 mu1 → 死锁\n    // ...\n}()\n```\n\n**解决**：所有 goroutine 以相同顺序获取锁。\n\n### 场景三：channel 死锁\n\n```go\nch := make(chan int)\nch <- 1  // ❌ 死锁！无缓冲，没有接收方\n```\n\n### 场景四：goroutine 等待自己\n\n```go\nch := make(chan int)\ngo func() {\n    v := <-ch\n    ch <- v  // 等待自己先发送？\n}()\nch <- 1  // 发送后 goroutine 接收，但 goroutine 又尝试发送回来\n<-ch     // 能接收\n```\n\n### 检测死锁\n\n```go\n// Go 运行时能检测到所有 goroutine 都阻塞的情况\n// fatal error: all goroutines are asleep - deadlock!\n\n// 使用 go run -race 检测数据竞争（不是死锁，但相关）\n```",
-    "tags": [
-      "sync",
-      "mutex"
-    ],
+    "tags": ["sync", "mutex"],
     "source": "高频"
   },
   {
@@ -119,10 +95,7 @@
     "difficulty": 2,
     "question": "`sync.WaitGroup` 的正确使用方式是什么？有哪些常见错误？",
     "answer": "### 基本用法\n\n```go\nvar wg sync.WaitGroup\n\nfor i := 0; i < 5; i++ {\n    wg.Add(1)  // 在启动 goroutine 前 Add\n    go func(id int) {\n        defer wg.Done()  // goroutine 结束时 Done（等价于 Add(-1)）\n        fmt.Println(\"worker\", id)\n    }(i)\n}\n\nwg.Wait()  // 阻塞直到计数器归零\nfmt.Println(\"all done\")\n```\n\n### 常见错误一：在 goroutine 内 Add\n\n```go\n// ❌ 错误：如果主 goroutine 先执行到 Wait，计数器为 0 直接返回\nfor i := 0; i < 5; i++ {\n    go func(id int) {\n        wg.Add(1)  // 太晚了！\n        defer wg.Done()\n        // ...\n    }(i)\n}\nwg.Wait()  // 可能立即返回\n```\n\n### 常见错误二：传值而非传指针\n\n```go\n// ❌ 错误：WaitGroup 不能复制\nfunc startWorker(wg sync.WaitGroup) {  // 传值，复制了！\n    defer wg.Done()  // 操作的是副本\n}\n\n// ✅ 正确：传指针\nfunc startWorker(wg *sync.WaitGroup) {\n    defer wg.Done()\n}\n```\n\n### 常见错误三：负数计数器\n\n```go\n// ❌ 错误：Done 次数超过 Add 次数\nwg.Add(1)\nwg.Done()\nwg.Done()  // panic: sync: negative WaitGroup counter\n```\n\n### 完整正确示例\n\n```go\nfunc processAll(items []string) {\n    var wg sync.WaitGroup\n    results := make([]string, len(items))\n\n    for i, item := range items {\n        wg.Add(1)\n        go func(idx int, s string) {\n            defer wg.Done()\n            results[idx] = process(s)\n        }(i, item)\n    }\n\n    wg.Wait()\n    fmt.Println(results)\n}\n```\n\n### WaitGroup 可以复用\n\n```go\nvar wg sync.WaitGroup\n// 第一批任务\nfor i := 0; i < 3; i++ { wg.Add(1); go work(&wg) }\nwg.Wait()\n// 第二批任务（计数器归零后可以再次使用）\nfor i := 0; i < 3; i++ { wg.Add(1); go work(&wg) }\nwg.Wait()\n```",
-    "tags": [
-      "sync",
-      "WaitGroup"
-    ],
+    "tags": ["sync", "WaitGroup"],
     "source": "高频"
   },
   {
@@ -131,9 +104,7 @@
     "difficulty": 2,
     "question": "`sync.Once` 的作用是什么？如何实现线程安全的单例？",
     "answer": "### sync.Once 的作用\n\n`sync.Once` 保证某个函数**只被执行一次**，即使多个 goroutine 并发调用。\n\n```go\nvar once sync.Once\n\nfunc initialize() {\n    fmt.Println(\"initializing...\")  // 只执行一次\n}\n\nfor i := 0; i < 10; i++ {\n    go func() {\n        once.Do(initialize)  // 只有第一次调用会执行\n    }()\n}\n```\n\n### 实现线程安全的单例\n\n```go\ntype DB struct {\n    conn *sql.DB\n}\n\nvar (\n    instance *DB\n    once     sync.Once\n)\n\nfunc GetDB() *DB {\n    once.Do(func() {\n        db, err := sql.Open(\"postgres\", dsn)\n        if err != nil {\n            panic(err)\n        }\n        instance = &DB{conn: db}\n    })\n    return instance\n}\n```\n\n### Once 的特性\n\n**1. 即使 f 发生 panic，也算执行过了**\n```go\nvar once sync.Once\nonce.Do(func() { panic(\"boom\") })  // 执行，panic\nonce.Do(func() { fmt.Println(\"second\") })  // 不执行！\n```\n\n**2. 死锁陷阱：f 中再次调用 Do**\n```go\nvar once sync.Once\nonce.Do(func() {\n    once.Do(func() {  // ❌ 死锁！Once 内部加锁了\n        fmt.Println(\"nested\")\n    })\n})\n```\n\n### Go 1.21+ onceFunc\n\n```go\n// 更便捷的写法\ninit := sync.OnceFunc(func() {\n    fmt.Println(\"once\")\n})\ninit()  // 执行\ninit()  // 不执行\n```",
-    "tags": [
-      "sync"
-    ],
+    "tags": ["sync"],
     "source": "高频"
   },
   {
@@ -142,9 +113,7 @@
     "difficulty": 2,
     "question": "`sync/atomic` 包提供哪些操作？什么时候用原子操作，什么时候用互斥锁？",
     "answer": "### atomic 提供的操作\n\n```go\nimport \"sync/atomic\"\n\nvar counter int64\n\n// 加减\natomic.AddInt64(&counter, 1)\natomic.AddInt64(&counter, -1)\n\n// 读取（原子读，避免撕裂读）\nval := atomic.LoadInt64(&counter)\n\n// 写入\natomic.StoreInt64(&counter, 100)\n\n// CAS（Compare And Swap）\nswapped := atomic.CompareAndSwapInt64(&counter, old, new)\n\n// Swap（返回旧值）\nold := atomic.SwapInt64(&counter, 42)\n```\n\n### atomic.Value（存储任意类型）\n\n```go\nvar v atomic.Value\n\n// 存储（类型必须一致）\nv.Store(map[string]int{\"a\": 1})\n\n// 加载\nm := v.Load().(map[string]int)\n```\n\n### 选型对比\n\n```go\n// ✅ 用 atomic：简单计数器、标志位\nvar hits int64\natomic.AddInt64(&hits, 1)  // 比 mutex 快 3-10 倍\n\n// ✅ 用 mutex：复合操作、多变量联动\nmu.Lock()\ncount++\ntotal += amount  // count 和 total 必须同时更新\nmu.Unlock()\n```\n\n### 关键区别\n\n| | atomic | mutex |\n|-|--------|-------|\n| 操作复杂度 | 单个变量的单次操作 | 任意复合操作 |\n| 性能 | 极高（硬件指令） | 较低（系统调用） |\n| 适用场景 | 计数器、标志位、指针交换 | 临界区、结构体操作 |\n| 原子性范围 | 单变量 | 代码块 |\n\n### 实际应用：无锁读配置\n\n```go\ntype Config struct {\n    Timeout int\n    MaxConn int\n}\n\nvar cfg atomic.Value\n\n// 热更新配置：原子替换整个结构体\nfunc updateConfig(c *Config) {\n    cfg.Store(c)\n}\n\nfunc getConfig() *Config {\n    return cfg.Load().(*Config)\n}\n```",
-    "tags": [
-      "atomic"
-    ],
+    "tags": ["atomic"],
     "source": "高频"
   },
   {
@@ -153,9 +122,7 @@
     "difficulty": 1,
     "question": "`context` 包的作用是什么？有哪四种构造方式？",
     "answer": "### context 的作用\n1. **取消信号传播**：父 context 取消时，所有子 context 自动取消\n2. **超时/截止时间**：自动取消超时的操作\n3. **请求范围数据**：在调用链中传递请求 ID、用户信息等\n\n### 四种构造方式\n\n**1. context.Background()** — 根 context，永不取消\n```go\nctx := context.Background()\n// 用于 main、初始化、测试\n```\n\n**2. context.TODO()** — 占位用，当前不确定用什么 context\n```go\nctx := context.TODO()\n// 代码尚未完成 context 规划时使用\n```\n\n**3. context.WithCancel()** — 手动取消\n```go\nctx, cancel := context.WithCancel(parent)\ndefer cancel()  // 必须调用，否则泄漏资源\n```\n\n**4. context.WithTimeout() / WithDeadline()** — 超时取消\n```go\n// WithTimeout：持续时间\nctx, cancel := context.WithTimeout(parent, 5*time.Second)\ndefer cancel()\n\n// WithDeadline：绝对时间\ndeadline := time.Now().Add(5 * time.Second)\nctx, cancel := context.WithDeadline(parent, deadline)\ndefer cancel()\n```\n\n**5. context.WithValue()** — 携带数据\n```go\ntype key struct{}\nctx := context.WithValue(parent, key{}, \"request-id-123\")\nval := ctx.Value(key{}).(string)\n```\n\n### 完整使用示例\n\n```go\nfunc fetchData(ctx context.Context, url string) ([]byte, error) {\n    req, _ := http.NewRequestWithContext(ctx, \"GET\", url, nil)\n    resp, err := http.DefaultClient.Do(req)\n    if err != nil {\n        return nil, err\n    }\n    defer resp.Body.Close()\n    return io.ReadAll(resp.Body)\n}\n\nfunc main() {\n    ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)\n    defer cancel()\n\n    data, err := fetchData(ctx, \"https://example.com\")\n    if err != nil {\n        if errors.Is(err, context.DeadlineExceeded) {\n            fmt.Println(\"timeout!\")\n        }\n    }\n}\n```",
-    "tags": [
-      "context"
-    ],
+    "tags": ["context"],
     "source": "高频"
   },
   {
@@ -164,9 +131,7 @@
     "difficulty": 2,
     "question": "`context.WithValue` 的最佳实践是什么？为什么要用自定义类型作为 key？",
     "answer": "### 使用字符串 key 的问题\n\n```go\n// ❌ 错误：使用字符串 key 会引发冲突\nctx := context.WithValue(ctx, \"userID\", 42)\nctx  = context.WithValue(ctx, \"userID\", 99)  // 覆盖了前一个？\n// 实际上是两个独立的 key，但无法区分\n```\n\n更严重的问题：不同包都用 `\"userID\"` 作为 key，会导致**冲突和难以排查的 bug**。\n\n### 正确做法：自定义私有类型 key\n\n```go\n// 在每个包内定义私有类型\ntype contextKey struct{ name string }\n\n// 或者更简单的空结构体\ntype userIDKey struct{}\ntype requestIDKey struct{}\n\n// 这样不同包的 key 类型不同，不会冲突\nvar (\n    UserIDKey    = userIDKey{}\n    RequestIDKey = requestIDKey{}\n)\n\n// 封装为函数\nfunc WithUserID(ctx context.Context, id int64) context.Context {\n    return context.WithValue(ctx, UserIDKey, id)\n}\n\nfunc UserIDFromContext(ctx context.Context) (int64, bool) {\n    id, ok := ctx.Value(UserIDKey).(int64)\n    return id, ok\n}\n```\n\n### WithValue 的使用限制\n\n```go\n// ✅ 适合放入 context 的数据：\n// - 请求 ID、追踪 ID\n// - 用户认证信息（只读）\n// - 请求的 deadline 相关信息\n\n// ❌ 不适合放入 context 的数据：\n// - 函数的可选参数（应该用函数参数）\n// - 数据库连接（应该在函数签名中显式传递）\n// - 大型结构体\n```\n\n### 官方建议\n\n> \"Use context Values only for request-scoped data that transits processes and APIs, not for passing optional parameters to functions.\"\n\n```go\n// ✅ 完整实践示例\ntype traceIDKey struct{}\n\nfunc TraceMiddleware(next http.Handler) http.Handler {\n    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n        traceID := r.Header.Get(\"X-Trace-ID\")\n        if traceID == \"\" {\n            traceID = uuid.New().String()\n        }\n        ctx := context.WithValue(r.Context(), traceIDKey{}, traceID)\n        next.ServeHTTP(w, r.WithContext(ctx))\n    })\n}\n\nfunc GetTraceID(ctx context.Context) string {\n    id, _ := ctx.Value(traceIDKey{}).(string)\n    return id\n}\n```",
-    "tags": [
-      "context"
-    ],
+    "tags": ["context"],
     "source": "字节"
   },
   {
@@ -175,10 +140,7 @@
     "difficulty": 2,
     "question": "如何用 context 实现 goroutine 的优雅退出？",
     "answer": "### 基本模式\n\n```go\nfunc worker(ctx context.Context, id int) {\n    for {\n        select {\n        case <-ctx.Done():\n            fmt.Printf(\"worker %d exiting: %v\\n\", id, ctx.Err())\n            return\n        default:\n            // 正常工作\n            doWork()\n            time.Sleep(100 * time.Millisecond)\n        }\n    }\n}\n\nfunc main() {\n    ctx, cancel := context.WithCancel(context.Background())\n\n    var wg sync.WaitGroup\n    for i := 0; i < 3; i++ {\n        wg.Add(1)\n        go func(id int) {\n            defer wg.Done()\n            worker(ctx, id)\n        }(i)\n    }\n\n    // 接收系统信号，优雅退出\n    sig := make(chan os.Signal, 1)\n    signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)\n    <-sig\n\n    cancel()    // 通知所有 worker 退出\n    wg.Wait()   // 等待所有 worker 真正退出\n    fmt.Println(\"graceful shutdown complete\")\n}\n```\n\n### 带超时的优雅退出\n\n```go\nfunc processWithTimeout(ctx context.Context, data []string) error {\n    ctx, cancel := context.WithTimeout(ctx, 30*time.Second)\n    defer cancel()\n\n    for _, item := range data {\n        // 每次迭代检查 context\n        select {\n        case <-ctx.Done():\n            return fmt.Errorf(\"processing cancelled after %d items: %w\",\n                i, ctx.Err())\n        default:\n        }\n\n        if err := processItem(ctx, item); err != nil {\n            return err\n        }\n    }\n    return nil\n}\n```\n\n### context.Err() 的值\n\n```go\nctx.Err() == context.Canceled          // 被 cancel() 调用取消\nctx.Err() == context.DeadlineExceeded  // 超时或到达 deadline\n```\n\n### 传播链\n\n```go\nparent, cancelParent := context.WithCancel(context.Background())\nchild, cancelChild := context.WithTimeout(parent, 5*time.Second)\n\ncancelParent()  // 取消 parent → child 也自动取消\n// child.Err() == context.Canceled\n```",
-    "tags": [
-      "context",
-      "goroutine"
-    ],
+    "tags": ["context", "goroutine"],
     "source": "高频"
   },
   {
@@ -187,10 +149,7 @@
     "difficulty": 2,
     "question": "什么是 Pipeline 模式？请用 Go 实现一个简单的 pipeline。",
     "answer": "### Pipeline 概念\n\nPipeline 是将数据处理拆分为多个**串联阶段**，每个阶段通过 channel 连接，上一阶段的输出是下一阶段的输入。\n\n### 实现示例：数字处理流水线\n\n```go\n// 阶段1：生成数字\nfunc generate(nums ...int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for _, n := range nums {\n            out <- n\n        }\n    }()\n    return out\n}\n\n// 阶段2：求平方\nfunc square(in <-chan int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for n := range in {\n            out <- n * n\n        }\n    }()\n    return out\n}\n\n// 阶段3：过滤（只保留大于某个值的）\nfunc filter(in <-chan int, threshold int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for n := range in {\n            if n > threshold {\n                out <- n\n            }\n        }\n    }()\n    return out\n}\n\nfunc main() {\n    // 组装 pipeline: generate → square → filter → 消费\n    nums := generate(1, 2, 3, 4, 5)\n    squares := square(nums)\n    results := filter(squares, 5)\n\n    for r := range results {\n        fmt.Println(r)  // 9, 16, 25\n    }\n}\n```\n\n### 带取消的 Pipeline\n\n```go\nfunc squareWithCancel(ctx context.Context, in <-chan int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for n := range in {\n            select {\n            case out <- n * n:\n            case <-ctx.Done():\n                return  // 收到取消信号，退出\n            }\n        }\n    }()\n    return out\n}\n```\n\n### Pipeline 的优点\n- 各阶段**独立**，易于测试\n- 天然并发：各阶段可以同时处理不同数据\n- 代码清晰，单一职责",
-    "tags": [
-      "并发模式",
-      "channel"
-    ],
+    "tags": ["并发模式", "channel"],
     "source": "高频"
   },
   {
@@ -199,10 +158,7 @@
     "difficulty": 3,
     "question": "什么是 Fan-out / Fan-in 模式？请实现一个带 context 取消的版本。",
     "answer": "### 概念\n- **Fan-out**：将一个 channel 的数据分发给多个 goroutine 并行处理\n- **Fan-in**：将多个 channel 的输出合并到一个 channel\n\n```\n         ┌→ worker1 ─┐\ninput ──→├→ worker2 ─┤──→ merged output\n         └→ worker3 ─┘\n```\n\n### 实现\n\n```go\n// Fan-out：启动 n 个 worker 并行处理\nfunc fanOut(ctx context.Context, in <-chan int, n int) []<-chan int {\n    outs := make([]<-chan int, n)\n    for i := 0; i < n; i++ {\n        outs[i] = worker(ctx, in)\n    }\n    return outs\n}\n\nfunc worker(ctx context.Context, in <-chan int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for {\n            select {\n            case v, ok := <-in:\n                if !ok {\n                    return\n                }\n                select {\n                case out <- v * v:  // 处理数据\n                case <-ctx.Done():\n                    return\n                }\n            case <-ctx.Done():\n                return\n            }\n        }\n    }()\n    return out\n}\n\n// Fan-in：合并多个 channel 到一个\nfunc fanIn(ctx context.Context, channels ...<-chan int) <-chan int {\n    merged := make(chan int)\n    var wg sync.WaitGroup\n\n    output := func(c <-chan int) {\n        defer wg.Done()\n        for {\n            select {\n            case v, ok := <-c:\n                if !ok {\n                    return\n                }\n                select {\n                case merged <- v:\n                case <-ctx.Done():\n                    return\n                }\n            case <-ctx.Done():\n                return\n            }\n        }\n    }\n\n    wg.Add(len(channels))\n    for _, c := range channels {\n        go output(c)\n    }\n\n    // 所有输入 channel 都处理完后关闭 merged\n    go func() {\n        wg.Wait()\n        close(merged)\n    }()\n\n    return merged\n}\n\n// 组合使用\nfunc main() {\n    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n    defer cancel()\n\n    // 生成数据\n    in := generate(ctx, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)\n\n    // Fan-out 到 3 个 worker\n    workers := fanOut(ctx, in, 3)\n\n    // Fan-in 合并结果\n    for result := range fanIn(ctx, workers...) {\n        fmt.Println(result)\n    }\n}\n```",
-    "tags": [
-      "并发模式",
-      "channel"
-    ],
+    "tags": ["并发模式", "channel"],
     "source": "字节"
   },
   {
@@ -211,10 +167,7 @@
     "difficulty": 3,
     "question": "如何实现一个 Worker Pool（工作池）？为什么需要限制并发数量？",
     "answer": "### 为什么需要 Worker Pool\n\n无限制地创建 goroutine 会导致：\n- 内存耗尽（每个 goroutine 有栈开销）\n- 下游服务过载（数据库连接数有限）\n- 系统不稳定\n\n### 经典 Worker Pool 实现\n\n```go\ntype WorkerPool struct {\n    numWorkers int\n    jobs       chan func()\n    wg         sync.WaitGroup\n}\n\nfunc NewWorkerPool(n int) *WorkerPool {\n    p := &WorkerPool{\n        numWorkers: n,\n        jobs:       make(chan func(), n*2),  // 缓冲队列\n    }\n    p.start()\n    return p\n}\n\nfunc (p *WorkerPool) start() {\n    for i := 0; i < p.numWorkers; i++ {\n        p.wg.Add(1)\n        go func() {\n            defer p.wg.Done()\n            for job := range p.jobs {\n                job()\n            }\n        }()\n    }\n}\n\nfunc (p *WorkerPool) Submit(job func()) {\n    p.jobs <- job\n}\n\nfunc (p *WorkerPool) Shutdown() {\n    close(p.jobs)  // 关闭 channel，worker 收到后退出\n    p.wg.Wait()\n}\n\n// 使用\nfunc main() {\n    pool := NewWorkerPool(5)\n\n    for i := 0; i < 100; i++ {\n        i := i\n        pool.Submit(func() {\n            fmt.Printf(\"processing job %d\\n\", i)\n            time.Sleep(10 * time.Millisecond)\n        })\n    }\n\n    pool.Shutdown()\n    fmt.Println(\"all jobs done\")\n}\n```\n\n### 用信号量实现简单限流\n\n```go\n// 用有缓冲 channel 作信号量\nsem := make(chan struct{}, 10)  // 最多 10 个并发\n\nvar wg sync.WaitGroup\nfor _, url := range urls {\n    wg.Add(1)\n    sem <- struct{}{}  // 占位，满了就阻塞\n    go func(u string) {\n        defer wg.Done()\n        defer func() { <-sem }()  // 释放\n        fetch(u)\n    }(url)\n}\nwg.Wait()\n```",
-    "tags": [
-      "并发模式",
-      "goroutine"
-    ],
+    "tags": ["并发模式", "goroutine"],
     "source": "高频"
   },
   {
@@ -223,10 +176,7 @@
     "difficulty": 3,
     "question": "`errgroup` 是什么？相比 `WaitGroup` 有什么优势？",
     "answer": "### errgroup 的作用\n\n`golang.org/x/sync/errgroup` 是对 `WaitGroup` 的增强，额外提供：\n- **错误收集**：自动收集第一个错误\n- **context 取消**：某个 goroutine 出错后取消其他\n- **panic 处理**（Go 1.21+）\n\n### WaitGroup 的痛点\n\n```go\n// 用 WaitGroup 收集错误需要额外的 channel\nvar wg sync.WaitGroup\nerrCh := make(chan error, 3)\n\nfor _, url := range urls {\n    wg.Add(1)\n    go func(u string) {\n        defer wg.Done()\n        if err := fetch(u); err != nil {\n            errCh <- err\n        }\n    }(url)\n}\nwg.Wait()\nclose(errCh)\n// 还要处理 errCh...\n```\n\n### errgroup 的用法\n\n```go\nimport \"golang.org/x/sync/errgroup\"\n\n// 方式一：不带 context（收集第一个错误）\ng := new(errgroup.Group)\n\nfor _, url := range urls {\n    url := url\n    g.Go(func() error {\n        return fetch(url)\n    })\n}\n\nif err := g.Wait(); err != nil {\n    fmt.Println(\"failed:\", err)\n}\n```\n\n### 带 context 的版本（推荐）\n\n```go\ng, ctx := errgroup.WithContext(context.Background())\n\nfor _, url := range urls {\n    url := url\n    g.Go(func() error {\n        req, err := http.NewRequestWithContext(ctx, \"GET\", url, nil)\n        if err != nil {\n            return err\n        }\n        resp, err := http.DefaultClient.Do(req)\n        if err != nil {\n            return err  // 返回 error → ctx 自动取消 → 其他 goroutine 也会退出\n        }\n        defer resp.Body.Close()\n        return process(resp.Body)\n    })\n}\n\n// 等待所有 goroutine 完成，返回第一个非 nil error\nif err := g.Wait(); err != nil {\n    fmt.Println(\"error:\", err)\n}\n```\n\n### SetLimit：限制并发数\n\n```go\ng := new(errgroup.Group)\ng.SetLimit(5)  // 同时最多 5 个 goroutine\n\nfor _, item := range largeList {\n    item := item\n    g.Go(func() error {\n        return process(item)\n    })\n}\ng.Wait()\n```",
-    "tags": [
-      "errgroup",
-      "并发模式"
-    ],
+    "tags": ["errgroup", "并发模式"],
     "source": "高频"
   },
   {
@@ -235,9 +185,7 @@
     "difficulty": 2,
     "question": "什么是数据竞争（data race）？如何检测和避免？",
     "answer": "### 什么是数据竞争\n\n当两个或多个 goroutine **并发访问同一内存位置**，且至少有一个是写操作，且没有使用同步机制时，就发生了数据竞争。\n\n```go\n// ❌ 经典数据竞争示例\nvar counter int\n\nfunc main() {\n    var wg sync.WaitGroup\n    for i := 0; i < 1000; i++ {\n        wg.Add(1)\n        go func() {\n            defer wg.Done()\n            counter++  // 读-改-写不是原子操作！\n        }()\n    }\n    wg.Wait()\n    fmt.Println(counter)  // 结果不确定，小于 1000\n}\n```\n\n### 检测：-race 标志\n\n```bash\ngo run -race main.go\ngo test -race ./...\ngo build -race -o myapp\n```\n\n输出示例：\n```\n==================\nWARNING: DATA RACE\nWrite at 0x... by goroutine 7:\n  main.main.func1()\n      main.go:10\n\nPrevious write at 0x... by goroutine 6:\n  main.main.func1()\n      main.go:10\n==================\n```\n\n### 修复方式\n\n**方式一：atomic**\n```go\nvar counter int64\natomic.AddInt64(&counter, 1)\n```\n\n**方式二：mutex**\n```go\nvar mu sync.Mutex\nvar counter int\n\nmu.Lock()\ncounter++\nmu.Unlock()\n```\n\n**方式三：channel（CSP 风格）**\n```go\nch := make(chan struct{}, 1)\nvar counter int\n\nfunc inc() {\n    ch <- struct{}{}  // 获取\"锁\"\n    counter++\n    <-ch              // 释放\n}\n```\n\n**方式四：避免共享（推荐）**\n```go\n// 各 goroutine 独立计数，最后汇总\nfunc countParallel(n int) int {\n    results := make([]int, n)\n    var wg sync.WaitGroup\n    for i := 0; i < n; i++ {\n        wg.Add(1)\n        go func(id int) {\n            defer wg.Done()\n            results[id] = doCount()  // 写不同位置，无竞争\n        }(i)\n    }\n    wg.Wait()\n    total := 0\n    for _, r := range results {\n        total += r\n    }\n    return total\n}\n```",
-    "tags": [
-      "竞态"
-    ],
+    "tags": ["竞态"],
     "source": "高频"
   },
   {
@@ -246,10 +194,7 @@
     "difficulty": 2,
     "question": "什么是 goroutine 泄漏？有哪些常见原因和检测方法？",
     "answer": "### 什么是 goroutine 泄漏\n\ngoroutine 启动后**无法退出**，一直占用内存和 goroutine 栈，随时间累积导致内存泄漏。\n\n### 常见原因一：channel 阻塞\n\n```go\n// ❌ 泄漏：没有接收方，goroutine 永久阻塞\nfunc leak() {\n    ch := make(chan int)\n    go func() {\n        result := doWork()\n        ch <- result  // 如果没有人读 ch，这里永远阻塞\n    }()\n    // 函数返回，ch 被 GC，但 goroutine 还在阻塞\n}\n\n// ✅ 修复：使用有缓冲 channel 或确保有读方\nfunc fixed() {\n    ch := make(chan int, 1)  // 有缓冲，goroutine 可以退出\n    go func() {\n        ch <- doWork()\n    }()\n    // 调用方必须读 ch\n}\n```\n\n### 常见原因二：context 未传递\n\n```go\n// ❌ 泄漏：goroutine 不响应取消\nfunc startWorker() {\n    go func() {\n        for {\n            doWork()  // 永远运行，即使调用方已退出\n        }\n    }()\n}\n\n// ✅ 修复：传递 context\nfunc startWorker(ctx context.Context) {\n    go func() {\n        for {\n            select {\n            case <-ctx.Done():\n                return\n            default:\n                doWork()\n            }\n        }\n    }()\n}\n```\n\n### 常见原因三：HTTP/DB 连接泄漏\n\n```go\n// ❌ 泄漏：没有读完 body\nresp, _ := http.Get(url)\n// resp.Body 未关闭，底层 goroutine 泄漏\n\n// ✅ 修复\nresp, _ := http.Get(url)\ndefer resp.Body.Close()\nio.Copy(io.Discard, resp.Body)  // 读完或丢弃\n```\n\n### 检测方法\n\n```go\n// 打印当前 goroutine 数量\nfmt.Println(runtime.NumGoroutine())\n\n// 使用 goleak 库（推荐在测试中使用）\n// go get go.uber.org/goleak\nfunc TestNoLeak(t *testing.T) {\n    defer goleak.VerifyNone(t)\n    // 运行业务代码\n}\n\n// pprof 可视化\nimport _ \"net/http/pprof\"\n// 访问 http://localhost:6060/debug/pprof/goroutine\n```",
-    "tags": [
-      "竞态",
-      "goroutine"
-    ],
+    "tags": ["竞态", "goroutine"],
     "source": "高频"
   },
   {
@@ -258,10 +203,7 @@
     "difficulty": 3,
     "question": "以下代码有什么问题？输出什么？如何修复？\n\n```go\nfunc main() {\n    var wg sync.WaitGroup\n    for i := 0; i < 5; i++ {\n        wg.Add(1)\n        go func() {\n            defer wg.Done()\n            fmt.Println(i)\n        }()\n    }\n    wg.Wait()\n}\n```",
     "answer": "### 问题：循环变量捕获\n\n所有 goroutine 捕获的是变量 `i` 的**引用**，不是当时的值。\n\n循环结束时 `i = 5`，goroutine 执行时读到的 `i` 大概率是 5。\n\n### 输出（不确定，但通常是）\n```\n5\n5\n5\n5\n5\n```\n\n（偶尔可能看到 0-4 中的某些值，取决于调度时机，但这是竞态行为，不可依赖）\n\n### 用 -race 检测\n\n```bash\ngo run -race main.go\n# WARNING: DATA RACE\n# Read at ... by goroutine ...: fmt.Println(i)\n# Write at ... by goroutine ...: for i := 0; i < 5; i++\n```\n\n### 修复方式\n\n**方法一：通过参数传值（推荐）**\n```go\nfor i := 0; i < 5; i++ {\n    wg.Add(1)\n    go func(n int) {  // n 是 i 的副本\n        defer wg.Done()\n        fmt.Println(n)\n    }(i)  // 传入当前 i 的值\n}\n```\n\n**方法二：创建局部变量（Go 1.22 前的惯用法）**\n```go\nfor i := 0; i < 5; i++ {\n    i := i  // 每次迭代创建新的局部变量\n    wg.Add(1)\n    go func() {\n        defer wg.Done()\n        fmt.Println(i)\n    }()\n}\n```\n\n**方法三：Go 1.22+ 自动修复**\n\n从 Go 1.22 开始，`for` 循环变量在每次迭代都是独立的新变量，原始代码不再有此问题。\n\n### 输出（修复后）\n```\n0\n3\n1\n4\n2\n```\n（顺序不确定，但每个数字恰好出现一次）",
-    "tags": [
-      "竞态",
-      "goroutine"
-    ],
+    "tags": ["竞态", "goroutine"],
     "source": "字节"
   },
   {
@@ -270,9 +212,7 @@
     "difficulty": 2,
     "question": "什么是 work stealing？Go 的调度器如何通过它提高效率？",
     "answer": "### 背景：P 的本地队列\n\n每个 P（逻辑处理器）维护一个本地 Goroutine 运行队列（Local Run Queue，LRQ），M 从绑定的 P 的 LRQ 中取 G 执行。\n\n### 问题：负载不均\n\n```\nP0: [G1, G2, G3, G4, G5]  ← 很忙\nP1: []                      ← 空闲，M1 无事可做\n```\n\n如果 P1 的 M1 闲着，CPU 资源浪费。\n\n### Work Stealing 解决方案\n\n当 P 的 LRQ 为空时，按以下顺序偷取 goroutine：\n\n1. **从全局队列（GRQ）获取**\n2. **从其他 P 的 LRQ 偷取一半**\n3. **从 netpoll 获取就绪的 IO goroutine**\n\n```\nP0: [G1, G2, G3, G4, G5]\nP1: []  → steal → P0\nP0: [G1, G2]\nP1: [G3, G4, G5]  ← 偷走了一半\n```\n\n### 代码层面的影响\n\nwork stealing 对开发者**透明**，但了解它有助于：\n\n```go\n// GOMAXPROCS 设置 P 的数量\n// 等于 CPU 核心数时，work stealing 效率最高\nruntime.GOMAXPROCS(runtime.NumCPU())\n\n// 过少的 P 会导致 goroutine 堆积，work stealing 无法帮助\n// 过多的 P 会增加调度开销（锁竞争等）\n```\n\n### 调度触发时机\n\nM 在以下情况放弃当前 G：\n1. G 调用 `runtime.Gosched()`（主动让出）\n2. G 进行系统调用（阻塞时 P 与 M 解绑）\n3. G 被抢占（Go 1.14+ 基于信号的异步抢占）\n4. G 运行超过 10ms（抢占式调度）",
-    "tags": [
-      "GMP"
-    ],
+    "tags": ["GMP"],
     "source": "高频"
   },
   {
@@ -281,9 +221,7 @@
     "difficulty": 2,
     "question": "`GOMAXPROCS` 设置为 1 和 CPU 核心数时有什么区别？",
     "answer": "### GOMAXPROCS 的含义\n\n`GOMAXPROCS` 决定**同时执行 Go 代码的 OS 线程数上限**（即 P 的数量）。\n\n```go\n// 查询\nfmt.Println(runtime.GOMAXPROCS(0))  // 0 表示查询，不修改\n\n// 设置\nold := runtime.GOMAXPROCS(4)\n```\n\n### GOMAXPROCS = 1 的行为\n\n```go\nruntime.GOMAXPROCS(1)\n// 只有一个 P，同一时刻只有一个 goroutine 在执行（真正的并发，但非并行）\n```\n\n- goroutine 仍然是**并发**的，但**不并行**（不会同时在多个 CPU 上运行）\n- 减少了锁竞争和 cache miss\n- 适合：CPU 密集型单核任务、某些测试场景\n\n**注意**：即使 GOMAXPROCS=1，阻塞操作（IO、sleep）也会触发调度切换。\n\n### GOMAXPROCS = NumCPU 的行为\n\n```go\nruntime.GOMAXPROCS(runtime.NumCPU())  // 默认值\n// goroutine 真正并行，多核同时执行\n```\n\n- 充分利用多核 CPU\n- IO 密集型任务：几乎没有差别（IO 期间 P 可以运行其他 G）\n- CPU 密集型任务：线性加速\n\n### 最佳实践\n\n```go\n// Go 默认已设置为 NumCPU，无需手动设置\n// 以下场景考虑调整：\n\n// 1. 容器限制：自动检测 CPU 配额\n// go.uber.org/automaxprocs 库会读取 cgroup 配额\nimport _ \"go.uber.org/automaxprocs\"\n\n// 2. 与 C 代码混用：cgo 使用 OS 线程，可能需要调整\n// 3. 性能测试：对比不同值的吞吐量\n```\n\n### 性能影响示例\n\n```go\n// CPU 密集型任务\nfunc cpuBound(n int) int {\n    sum := 0\n    for i := 0; i < n; i++ { sum += i }\n    return sum\n}\n// GOMAXPROCS=1: 1x\n// GOMAXPROCS=4: ~4x（理想情况）\n```",
-    "tags": [
-      "GMP"
-    ],
+    "tags": ["GMP"],
     "source": "高频"
   },
   {
@@ -292,10 +230,7 @@
     "difficulty": 3,
     "question": "Go 1.14 引入的基于信号的异步抢占是什么？解决了什么问题？",
     "answer": "### Go 1.13 及之前：协作式抢占\n\n早期的 Go 调度器依赖 goroutine **主动让出**：\n- 函数调用时插入栈检查点（stack guard check）\n- 若被标记为\"应该抢占\"，则让出调度权\n\n**问题：** 无函数调用的紧密循环无法被抢占\n\n```go\n// 在 Go 1.14 之前，这会导致其他 goroutine 饥饿\ngo func() {\n    for {\n        // 纯计算，没有函数调用，不会被抢占\n        sum := 0\n        for i := 0; i < 1e9; i++ {\n            sum += i\n        }\n    }\n}()\n\n// 另一个 goroutine 在 GOMAXPROCS=1 时无法执行\ngo func() {\n    fmt.Println(\"I never run\")\n}()\n```\n\n### Go 1.14+：基于信号的异步抢占\n\n运行时向 OS 线程发送 `SIGURG` 信号，强制中断当前 goroutine：\n\n1. sysmon 线程检测运行超过 10ms 的 goroutine\n2. 向其所在的 M 发送 `SIGURG` 信号\n3. M 的信号处理函数将 goroutine 标记为可抢占\n4. goroutine 在安全点（如下一条汇编指令）被实际抢占\n\n```go\n// Go 1.14+ 中，以下代码不会再饿死其他 goroutine\ngo func() {\n    for {\n        // 即使没有函数调用，也会被抢占\n        sum := 0\n        for i := 0; i < 1e9; i++ {\n            sum += i\n        }\n    }\n}()\n\ngo func() {\n    fmt.Println(\"I can run now!\")  // ✅ 会被调度到\n}()\n```\n\n### 影响\n\n- **GC 停顿缩短**：GC 不再需要等待紧密循环的 goroutine 自愿让出\n- **调度公平性提升**：长时间 CPU 密集任务不会饿死其他任务\n- **代价**：信号处理有微小开销，但实际影响可忽略",
-    "tags": [
-      "GMP",
-      "goroutine"
-    ],
+    "tags": ["GMP", "goroutine"],
     "source": "高频"
   },
   {
@@ -304,10 +239,7 @@
     "difficulty": 2,
     "question": "如何用 channel 实现一个超时重试机制？",
     "answer": "### 基本超时模式\n\n```go\nfunc fetchWithTimeout(url string, timeout time.Duration) ([]byte, error) {\n    type result struct {\n        data []byte\n        err  error\n    }\n\n    ch := make(chan result, 1)\n    go func() {\n        data, err := http.Get(url)\n        if err != nil {\n            ch <- result{err: err}\n            return\n        }\n        defer data.Body.Close()\n        body, err := io.ReadAll(data.Body)\n        ch <- result{data: body, err: err}\n    }()\n\n    select {\n    case r := <-ch:\n        return r.data, r.err\n    case <-time.After(timeout):\n        return nil, fmt.Errorf(\"timeout after %v\", timeout)\n    }\n}\n```\n\n### 带重试的超时\n\n```go\nfunc fetchWithRetry(ctx context.Context, url string, maxRetries int) ([]byte, error) {\n    var lastErr error\n\n    for attempt := 0; attempt <= maxRetries; attempt++ {\n        if attempt > 0 {\n            // 指数退避\n            wait := time.Duration(1<<uint(attempt-1)) * 100 * time.Millisecond\n            select {\n            case <-time.After(wait):\n            case <-ctx.Done():\n                return nil, ctx.Err()\n            }\n            fmt.Printf(\"retry %d/%d\\n\", attempt, maxRetries)\n        }\n\n        // 每次请求有独立超时\n        reqCtx, cancel := context.WithTimeout(ctx, 3*time.Second)\n        data, err := fetchOnce(reqCtx, url)\n        cancel()\n\n        if err == nil {\n            return data, nil\n        }\n\n        // 如果是 context 被父取消，不重试\n        if errors.Is(err, context.Canceled) {\n            return nil, err\n        }\n\n        lastErr = err\n    }\n\n    return nil, fmt.Errorf(\"all %d attempts failed, last: %w\", maxRetries+1, lastErr)\n}\n```\n\n### time.After 的资源泄漏问题\n\n```go\n// ❌ 每次调用都创建新的 Timer，即使 select 已选其他 case，Timer 仍在\nfor {\n    select {\n    case v := <-ch:\n        process(v)\n    case <-time.After(time.Second):  // 每次循环创建新 Timer，之前的不会立即 GC\n        fmt.Println(\"idle\")\n    }\n}\n\n// ✅ 复用 Timer\ntimer := time.NewTimer(time.Second)\ndefer timer.Stop()\nfor {\n    timer.Reset(time.Second)\n    select {\n    case v := <-ch:\n        process(v)\n    case <-timer.C:\n        fmt.Println(\"idle\")\n    }\n}\n```",
-    "tags": [
-      "channel",
-      "并发模式"
-    ],
+    "tags": ["channel", "并发模式"],
     "source": "高频"
   },
   {
@@ -316,9 +248,7 @@
     "difficulty": 2,
     "question": "`sync.Cond` 是什么？在什么场景下需要使用它？",
     "answer": "### sync.Cond 的作用\n\n`sync.Cond` 是**条件变量**，允许 goroutine 等待某个条件成立，避免忙等待。\n\n### 基本 API\n\n```go\ncond := sync.NewCond(&sync.Mutex{})\n\n// 等待：释放锁，挂起，直到被唤醒再重新获取锁\ncond.Wait()\n\n// 唤醒一个等待的 goroutine\ncond.Signal()\n\n// 唤醒所有等待的 goroutine\ncond.Broadcast()\n```\n\n### 经典用例：生产者-消费者\n\n```go\ntype Queue struct {\n    mu    sync.Mutex\n    cond  *sync.Cond\n    items []int\n    max   int\n}\n\nfunc NewQueue(max int) *Queue {\n    q := &Queue{max: max}\n    q.cond = sync.NewCond(&q.mu)\n    return q\n}\n\nfunc (q *Queue) Push(item int) {\n    q.mu.Lock()\n    defer q.mu.Unlock()\n\n    for len(q.items) == q.max {\n        q.cond.Wait()  // 队列满，等待消费者消费\n    }\n\n    q.items = append(q.items, item)\n    q.cond.Signal()  // 通知消费者有新数据\n}\n\nfunc (q *Queue) Pop() int {\n    q.mu.Lock()\n    defer q.mu.Unlock()\n\n    for len(q.items) == 0 {\n        q.cond.Wait()  // 队列空，等待生产者生产\n    }\n\n    item := q.items[0]\n    q.items = q.items[1:]\n    q.cond.Signal()  // 通知生产者有空位\n    return item\n}\n```\n\n### Wait 必须在循环中使用\n\n```go\n// ❌ 错误：Wait 可能虚假唤醒\nif len(q.items) == 0 {\n    q.cond.Wait()\n}\n\n// ✅ 正确：用 for 循环重新检查条件\nfor len(q.items) == 0 {\n    q.cond.Wait()\n}\n```\n\n### Cond vs Channel\n\n| | sync.Cond | Channel |\n|-|-----------|---------|\n| 唤醒多个 | Broadcast（广播） | close（广播） |\n| 唤醒一个 | Signal | 发送一个值 |\n| 条件复杂 | 适合 | 繁琐 |\n| 惯用程度 | 较少用 | Go 惯用 |",
-    "tags": [
-      "sync"
-    ],
+    "tags": ["sync"],
     "source": "高频"
   },
   {
@@ -327,10 +257,7 @@
     "difficulty": 3,
     "question": "如何实现一个线程安全的、支持过期淘汰的本地缓存？",
     "answer": "```go\ntype entry struct {\n    value     any\n    expiresAt time.Time\n}\n\ntype Cache struct {\n    mu    sync.RWMutex\n    items map[string]entry\n    done  chan struct{}\n}\n\nfunc NewCache(cleanupInterval time.Duration) *Cache {\n    c := &Cache{\n        items: make(map[string]entry),\n        done:  make(chan struct{}),\n    }\n    // 后台清理过期条目\n    go c.cleanup(cleanupInterval)\n    return c\n}\n\nfunc (c *Cache) Set(key string, val any, ttl time.Duration) {\n    c.mu.Lock()\n    defer c.mu.Unlock()\n    c.items[key] = entry{\n        value:     val,\n        expiresAt: time.Now().Add(ttl),\n    }\n}\n\nfunc (c *Cache) Get(key string) (any, bool) {\n    c.mu.RLock()\n    defer c.mu.RUnlock()\n    e, ok := c.items[key]\n    if !ok || time.Now().After(e.expiresAt) {\n        return nil, false\n    }\n    return e.value, true\n}\n\nfunc (c *Cache) cleanup(interval time.Duration) {\n    ticker := time.NewTicker(interval)\n    defer ticker.Stop()\n    for {\n        select {\n        case <-ticker.C:\n            now := time.Now()\n            c.mu.Lock()\n            for k, e := range c.items {\n                if now.After(e.expiresAt) {\n                    delete(c.items, k)\n                }\n            }\n            c.mu.Unlock()\n        case <-c.done:\n            return\n        }\n    }\n}\n\nfunc (c *Cache) Close() {\n    close(c.done)\n}\n\n// 使用\nfunc main() {\n    cache := NewCache(time.Minute)\n    defer cache.Close()\n\n    cache.Set(\"user:1\", User{Name: \"Alice\"}, 5*time.Minute)\n\n    if val, ok := cache.Get(\"user:1\"); ok {\n        fmt.Println(val.(User).Name)\n    }\n}\n```\n\n### 关键设计点\n\n1. **RWMutex**：读多写少场景用读写锁\n2. **后台 goroutine + ticker**：定期清理，避免内存泄漏\n3. **done channel**：优雅停止后台 goroutine\n4. **读时检查过期**：Get 时也检查，double check 避免脏读",
-    "tags": [
-      "channel",
-      "并发模式"
-    ],
+    "tags": ["channel", "并发模式"],
     "source": "高频"
   },
   {
@@ -339,10 +266,7 @@
     "difficulty": 3,
     "question": "channel 和 mutex 该如何选择？分别适合什么场景？",
     "answer": "### Go 的哲学\n\n> \"Do not communicate by sharing memory; instead, share memory by communicating.\"\n> 不要通过共享内存来通信，而要通过通信来共享内存。\n\n但这并不意味着 channel 总是更好，要根据场景选择。\n\n### 使用 Channel 的场景\n\n```go\n// ✅ 传递数据所有权\njobs := make(chan Job, 100)\ngo producer(jobs)\ngo consumer(jobs)\n\n// ✅ 协调 goroutine 生命周期（通知退出）\nquit := make(chan struct{})\ngo func() {\n    select {\n    case <-quit:\n        return\n    }\n}()\nclose(quit)  // 通知退出\n\n// ✅ 限速/节流\nsem := make(chan struct{}, 10)\n\n// ✅ 事件通知（多对多广播用 sync.Cond 或关闭 channel）\nready := make(chan struct{})\nclose(ready)  // 广播给所有等待者\n```\n\n### 使用 Mutex 的场景\n\n```go\n// ✅ 保护共享状态（struct 的多个字段）\ntype Counter struct {\n    mu    sync.Mutex\n    value int\n    total int  // value 和 total 必须一起更新\n}\n\n// ✅ 缓存/状态对象\ntype Cache struct {\n    mu    sync.RWMutex\n    items map[string]any\n}\n\n// ✅ 需要条件变量配合时\nsync.Cond 只能与 Mutex 配合\n\n// ✅ 性能敏感的高频操作（mutex 比 channel 快）\n```\n\n### 性能对比\n\n```go\n// benchmark 结果（仅供参考）\n// sync.Mutex:   ~30ns/op\n// atomic.Add:   ~5ns/op\n// channel send: ~100ns/op（有缓冲）\n// channel send: ~200ns/op（无缓冲，需同步）\n```\n\n### 决策树\n\n```\n需要传递数据/所有权？  →  Channel\n需要协调 goroutine？   →  Channel\n保护共享状态/结构体？  →  Mutex\n简单计数/标志位？      →  atomic\n等待复杂条件？         →  sync.Cond\n```",
-    "tags": [
-      "channel",
-      "mutex"
-    ],
+    "tags": ["channel", "mutex"],
     "source": "高频"
   },
   {
@@ -351,10 +275,7 @@
     "difficulty": 2,
     "question": "`sync.Map` 和带锁的普通 map 有什么区别？什么时候用 `sync.Map`？",
     "answer": "### sync.Map 的内部设计\n\n`sync.Map` 内部维护两个 map：\n- **read map**：只读，无锁访问（通过原子操作）\n- **dirty map**：带锁，存储新写入的数据\n\n```\n读操作：先查 read map（无锁），miss 再查 dirty（加锁）\n写操作：写入 dirty map（加锁）\n提升：当 miss 次数超过阈值，dirty 提升为 read\n```\n\n### 基本使用\n\n```go\nvar sm sync.Map\n\n// Store\nsm.Store(\"key\", \"value\")\n\n// Load\nif val, ok := sm.Load(\"key\"); ok {\n    fmt.Println(val.(string))\n}\n\n// LoadOrStore：若 key 不存在则存入并返回 actual=false\nactual, loaded := sm.LoadOrStore(\"key\", \"default\")\n\n// Delete\nsm.Delete(\"key\")\n\n// LoadAndDelete：原子获取并删除\nval, loaded := sm.LoadAndDelete(\"key\")\n\n// Range：遍历（顺序不确定）\nsm.Range(func(k, v any) bool {\n    fmt.Println(k, v)\n    return true  // 返回 false 停止\n})\n```\n\n### sync.Map vs mutex + map\n\n| | sync.Map | RWMutex + map |\n|-|----------|---------------|\n| 读多写少（key 稳定） | ✅ 更快 | 较慢（读锁竞争） |\n| 写多或 key 不稳定 | ❌ 较慢 | ✅ 更好 |\n| 遍历时并发写 | ✅ 安全 | 需要写锁 |\n| 类型安全 | ❌ any | ✅ 泛型/具体类型 |\n| 内存占用 | 较高 | 较低 |\n\n### 适用场景\n\n```go\n// ✅ sync.Map 的最佳场景：\n// 1. key 只增不减（如注册表、路由表）\n// 2. 读多写少（99% 读，1% 写）\n// 3. 多个 goroutine 写不同的 key（无写竞争）\n\n// ❌ 不适合 sync.Map：\n// 1. 频繁遍历\n// 2. 需要计数（LoadOrStore + 修改 value 不原子）\n// 3. 需要强类型\n```",
-    "tags": [
-      "sync",
-      "mutex"
-    ],
+    "tags": ["sync", "mutex"],
     "source": "高频"
   },
   {
@@ -363,10 +284,7 @@
     "difficulty": 3,
     "question": "如何实现一个支持并发安全的发布-订阅（Pub/Sub）系统？",
     "answer": "```go\ntype EventBus struct {\n    mu          sync.RWMutex\n    subscribers map[string][]chan any\n}\n\nfunc NewEventBus() *EventBus {\n    return &EventBus{\n        subscribers: make(map[string][]chan any),\n    }\n}\n\n// Subscribe 订阅主题，返回消息 channel 和取消函数\nfunc (b *EventBus) Subscribe(topic string, bufSize int) (<-chan any, func()) {\n    ch := make(chan any, bufSize)\n\n    b.mu.Lock()\n    b.subscribers[topic] = append(b.subscribers[topic], ch)\n    b.mu.Unlock()\n\n    cancel := func() {\n        b.mu.Lock()\n        defer b.mu.Unlock()\n        subs := b.subscribers[topic]\n        for i, sub := range subs {\n            if sub == ch {\n                b.subscribers[topic] = append(subs[:i], subs[i+1:]...)\n                close(ch)\n                return\n            }\n        }\n    }\n\n    return ch, cancel\n}\n\n// Publish 发布消息到主题\nfunc (b *EventBus) Publish(topic string, msg any) {\n    b.mu.RLock()\n    subs := make([]chan any, len(b.subscribers[topic]))\n    copy(subs, b.subscribers[topic])\n    b.mu.RUnlock()\n\n    for _, ch := range subs {\n        // 非阻塞发送，避免慢订阅者阻塞发布者\n        select {\n        case ch <- msg:\n        default:\n            // 缓冲区满，丢弃（或记录日志）\n        }\n    }\n}\n\n// 使用示例\nfunc main() {\n    bus := NewEventBus()\n\n    // 订阅者 1\n    ch1, cancel1 := bus.Subscribe(\"order.created\", 10)\n    defer cancel1()\n\n    go func() {\n        for msg := range ch1 {\n            fmt.Println(\"subscriber1:\", msg)\n        }\n    }()\n\n    // 订阅者 2\n    ch2, cancel2 := bus.Subscribe(\"order.created\", 10)\n    defer cancel2()\n\n    go func() {\n        for msg := range ch2 {\n            fmt.Println(\"subscriber2:\", msg)\n        }\n    }()\n\n    // 发布消息\n    bus.Publish(\"order.created\", map[string]any{\"id\": 123, \"amount\": 99.9})\n\n    time.Sleep(time.Millisecond * 100)\n}\n```",
-    "tags": [
-      "goroutine",
-      "并发模式"
-    ],
+    "tags": ["goroutine", "并发模式"],
     "source": "高频"
   },
   {
@@ -375,10 +293,7 @@
     "difficulty": 3,
     "question": "如何实现一个无锁的、并发安全的栈（lock-free stack）？",
     "answer": "### 基于 CAS（Compare-And-Swap）的无锁栈\n\n```go\nimport (\n    \"sync/atomic\"\n    \"unsafe\"\n)\n\ntype node struct {\n    val  int\n    next *node\n}\n\ntype LockFreeStack struct {\n    head unsafe.Pointer  // *node\n}\n\nfunc (s *LockFreeStack) Push(val int) {\n    newNode := &node{val: val}\n    for {\n        // 读取当前头节点\n        oldHead := atomic.LoadPointer(&s.head)\n        newNode.next = (*node)(oldHead)\n\n        // CAS：如果 head 还是 oldHead，就把它换成 newNode\n        if atomic.CompareAndSwapPointer(&s.head, oldHead, unsafe.Pointer(newNode)) {\n            return  // 成功\n        }\n        // CAS 失败说明有其他 goroutine 修改了 head，重试\n    }\n}\n\nfunc (s *LockFreeStack) Pop() (int, bool) {\n    for {\n        oldHead := atomic.LoadPointer(&s.head)\n        if oldHead == nil {\n            return 0, false  // 空栈\n        }\n\n        head := (*node)(oldHead)\n        nextHead := unsafe.Pointer(head.next)\n\n        if atomic.CompareAndSwapPointer(&s.head, oldHead, nextHead) {\n            return head.val, true  // 成功弹出\n        }\n        // 重试\n    }\n}\n\n// 使用\nfunc main() {\n    var s LockFreeStack\n\n    var wg sync.WaitGroup\n    for i := 0; i < 100; i++ {\n        wg.Add(1)\n        go func(n int) {\n            defer wg.Done()\n            s.Push(n)\n        }(i)\n    }\n    wg.Wait()\n\n    for {\n        if val, ok := s.Pop(); ok {\n            fmt.Println(val)\n        } else {\n            break\n        }\n    }\n}\n```\n\n### 优缺点\n\n**优点：**\n- 无锁，高并发下性能优于 mutex（无上下文切换）\n- 不会死锁\n\n**缺点：**\n- ABA 问题：值从 A→B→A，CAS 误以为没有变化（需要版本号解决）\n- 实现复杂，难以推理\n- 实际工程中优先使用 `sync.Mutex`，除非有明确的性能瓶颈证明",
-    "tags": [
-      "atomic",
-      "并发模式"
-    ],
+    "tags": ["atomic", "并发模式"],
     "source": "腾讯"
   },
   {
@@ -387,10 +302,7 @@
     "difficulty": 2,
     "question": "以下代码有什么 bug？如何修复？\n\n```go\ntype SafeCounter struct {\n    mu sync.Mutex\n    v  map[string]int\n}\n\nfunc (c *SafeCounter) Inc(key string) {\n    c.mu.Lock()\n    c.v[key]++\n    c.mu.Unlock()\n}\n\nfunc (c *SafeCounter) Value(key string) int {\n    return c.v[key]  // 直接读取，没有加锁\n}\n```",
     "answer": "### Bug 分析\n\n`Value` 方法读取 `c.v[key]` 时没有加锁，而 `Inc` 方法会并发写入，存在**数据竞争**：\n\n```bash\ngo test -race\n# WARNING: DATA RACE\n# Read at Value()\n# Write at Inc()\n```\n\n即使 map 读写在底层不会崩溃，**数据竞争是未定义行为**，结果不可预测，且会被 `-race` 检测到。\n\n### 修复方案\n\n**方案一：读也加写锁（简单但并发度低）**\n```go\nfunc (c *SafeCounter) Value(key string) int {\n    c.mu.Lock()\n    defer c.mu.Unlock()\n    return c.v[key]\n}\n```\n\n**方案二：使用 RWMutex（推荐，读多写少时性能更好）**\n```go\ntype SafeCounter struct {\n    mu sync.RWMutex  // 改为读写锁\n    v  map[string]int\n}\n\nfunc (c *SafeCounter) Inc(key string) {\n    c.mu.Lock()\n    defer c.mu.Unlock()\n    c.v[key]++\n}\n\nfunc (c *SafeCounter) Value(key string) int {\n    c.mu.RLock()  // 读锁\n    defer c.mu.RUnlock()\n    return c.v[key]\n}\n```\n\n**方案三：使用 sync.Map（适合 key 稳定场景）**\n```go\ntype SafeCounter struct {\n    v sync.Map\n}\n\nfunc (c *SafeCounter) Inc(key string) {\n    val, _ := c.v.LoadOrStore(key, new(int64))\n    atomic.AddInt64(val.(*int64), 1)\n}\n\nfunc (c *SafeCounter) Value(key string) int64 {\n    val, ok := c.v.Load(key)\n    if !ok {\n        return 0\n    }\n    return atomic.LoadInt64(val.(*int64))\n}\n```",
-    "tags": [
-      "goroutine",
-      "竞态"
-    ],
+    "tags": ["goroutine", "竞态"],
     "source": "高频"
   },
   {
@@ -399,10 +311,7 @@
     "difficulty": 2,
     "question": "如何实现一个可以被取消的 ticker（定时任务）？",
     "answer": "### 基本实现\n\n```go\nfunc startTicker(ctx context.Context, interval time.Duration, fn func()) {\n    go func() {\n        ticker := time.NewTicker(interval)\n        defer ticker.Stop()  // 必须 Stop，否则泄漏\n\n        for {\n            select {\n            case <-ticker.C:\n                fn()\n            case <-ctx.Done():\n                fmt.Println(\"ticker stopped:\", ctx.Err())\n                return\n            }\n        }\n    }()\n}\n\n// 使用\nfunc main() {\n    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n    defer cancel()\n\n    startTicker(ctx, time.Second, func() {\n        fmt.Println(\"tick:\", time.Now().Format(\"15:04:05\"))\n    })\n\n    <-ctx.Done()\n}\n```\n\n### 带错误处理和重启的 ticker\n\n```go\ntype Task struct {\n    interval time.Duration\n    fn       func(ctx context.Context) error\n    onError  func(err error)\n}\n\nfunc (t *Task) Run(ctx context.Context) {\n    ticker := time.NewTicker(t.interval)\n    defer ticker.Stop()\n\n    for {\n        select {\n        case <-ctx.Done():\n            return\n        case <-ticker.C:\n            if err := t.fn(ctx); err != nil {\n                if t.onError != nil {\n                    t.onError(err)\n                }\n                // 可以在这里决定是否继续或退出\n            }\n        }\n    }\n}\n\n// 使用\ntask := &Task{\n    interval: 10 * time.Second,\n    fn: func(ctx context.Context) error {\n        return syncData(ctx)\n    },\n    onError: func(err error) {\n        log.Printf(\"sync failed: %v\", err)\n    },\n}\n\ngo task.Run(ctx)\n```\n\n### 立即执行 + 定时执行\n\n```go\nfunc runImmediatelyThenTick(ctx context.Context, interval time.Duration, fn func()) {\n    go func() {\n        fn()  // 立即执行一次\n\n        ticker := time.NewTicker(interval)\n        defer ticker.Stop()\n\n        for {\n            select {\n            case <-ticker.C:\n                fn()\n            case <-ctx.Done():\n                return\n            }\n        }\n    }()\n}\n```",
-    "tags": [
-      "channel",
-      "select"
-    ],
+    "tags": ["channel", "select"],
     "source": "高频"
   },
   {
@@ -411,11 +320,7 @@
     "difficulty": 3,
     "question": "如何实现一个支持并发限制和超时的批量处理函数？",
     "answer": "```go\n// ProcessBatch 并发处理一批任务，限制并发数，支持整体超时和单个任务超时\nfunc ProcessBatch[T, R any](\n    ctx context.Context,\n    items []T,\n    concurrency int,\n    timeout time.Duration,\n    fn func(ctx context.Context, item T) (R, error),\n) ([]R, []error) {\n    results := make([]R, len(items))\n    errs := make([]error, len(items))\n\n    // 用 errgroup 限制并发\n    g, ctx := errgroup.WithContext(ctx)\n    g.SetLimit(concurrency)\n\n    for i, item := range items {\n        i, item := i, item  // 捕获变量\n        g.Go(func() error {\n            // 每个任务有独立超时\n            taskCtx, cancel := context.WithTimeout(ctx, timeout)\n            defer cancel()\n\n            result, err := fn(taskCtx, item)\n            results[i] = result\n            errs[i] = err\n            return nil  // 不向 errgroup 返回 error，自行收集\n        })\n    }\n\n    g.Wait()\n    return results, errs\n}\n\n// 使用示例\nfunc main() {\n    ctx := context.Background()\n\n    urls := []string{\n        \"https://example.com/1\",\n        \"https://example.com/2\",\n        \"https://example.com/3\",\n    }\n\n    results, errs := ProcessBatch(\n        ctx,\n        urls,\n        5,               // 最多 5 个并发\n        3*time.Second,   // 每个请求最多 3 秒\n        func(ctx context.Context, url string) ([]byte, error) {\n            req, _ := http.NewRequestWithContext(ctx, \"GET\", url, nil)\n            resp, err := http.DefaultClient.Do(req)\n            if err != nil {\n                return nil, err\n            }\n            defer resp.Body.Close()\n            return io.ReadAll(resp.Body)\n        },\n    )\n\n    for i, result := range results {\n        if errs[i] != nil {\n            fmt.Printf(\"url[%d] error: %v\\n\", i, errs[i])\n        } else {\n            fmt.Printf(\"url[%d] got %d bytes\\n\", i, len(result))\n        }\n    }\n}\n```",
-    "tags": [
-      "goroutine",
-      "并发模式",
-      "context"
-    ],
+    "tags": ["goroutine", "并发模式", "context"],
     "source": "高频"
   },
   {
@@ -424,10 +329,7 @@
     "difficulty": 2,
     "question": "channel 的方向类型（单向 channel）有什么用？",
     "answer": "### 双向 channel vs 单向 channel\n\n```go\nch := make(chan int)  // 双向，可读可写\n\nvar sendOnly chan<- int = ch  // 只能发送\nvar recvOnly <-chan int = ch  // 只能接收\n```\n\n### 为什么需要单向 channel\n\n**类型安全**：在函数签名中声明 channel 的方向，编译器帮你检查误用。\n\n```go\n// ✅ 通过类型系统防止接收方意外关闭或发送\nfunc producer(out chan<- int) {  // 只能发送\n    defer close(out)\n    for i := 0; i < 5; i++ {\n        out <- i\n    }\n    // <-out  // ❌ 编译错误：cannot receive from send-only channel\n}\n\nfunc consumer(in <-chan int) {  // 只能接收\n    for v := range in {\n        fmt.Println(v)\n    }\n    // in <- 1    // ❌ 编译错误：cannot send to receive-only channel\n    // close(in)  // ❌ 编译错误：cannot close receive-only channel\n}\n\nfunc main() {\n    ch := make(chan int, 5)\n    go producer(ch)  // 双向 channel 自动转换为单向\n    consumer(ch)\n}\n```\n\n### Pipeline 中的应用\n\n```go\n// 每个阶段的函数签名清晰地表达了 channel 的用途\nfunc generate(nums ...int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for _, n := range nums {\n            out <- n\n        }\n    }()\n    return out  // 返回只读 channel，调用方不能写入\n}\n\nfunc square(in <-chan int) <-chan int {\n    out := make(chan int)\n    go func() {\n        defer close(out)\n        for n := range in {  // in 是只读的\n            out <- n * n\n        }\n    }()\n    return out\n}\n```\n\n### 接口中的 channel\n\n```go\ntype DataSource interface {\n    Output() <-chan []byte  // 接口只暴露只读 channel\n}\n```",
-    "tags": [
-      "channel",
-      "goroutine"
-    ],
+    "tags": ["channel", "goroutine"],
     "source": "高频"
   },
   {
@@ -436,10 +338,7 @@
     "difficulty": 3,
     "question": "系统调用会对 GMP 调度产生什么影响？Go 如何处理阻塞的系统调用？",
     "answer": "### 问题：系统调用会阻塞 OS 线程\n\n当一个 goroutine 执行**阻塞的系统调用**（如文件 IO、网络 IO）时，OS 线程会被阻塞，无法执行其他 goroutine。\n\n### Go 的解决方案\n\n**对于网络 IO / 可异步化的 IO：Netpoller**\n\n```\nG (网络IO) → 注册到 epoll/kqueue → G 挂起（不阻塞 M）\n                                  → P 与 M 解绑，运行其他 G\nIO 就绪    → netpoller 唤醒 G    → G 重新入队\n```\n\nGo 的 net 包底层使用非阻塞 IO + netpoller，goroutine 在等待 IO 时不占用 M。\n\n**对于真正阻塞的系统调用（如 syscall.Read 文件）：**\n\n```go\n// G 执行阻塞系统调用\nsyscall.Read(fd, buf)\n```\n\n1. **进入系统调用前**：运行时调用 `entersyscall`\n   - P 与 M **解绑**（handoff）\n   - P 绑定到其他 M（或新建 M），继续运行其他 G\n\n2. **系统调用返回后**：运行时调用 `exitsyscall`\n   - 尝试获取一个 P 继续执行\n   - 若所有 P 都忙，G 进入全局队列，M 进入线程池\n\n```\nM0 (阻塞中)     P0 → M1 (继续运行)\nG0 (syscall) ←→ P1 → M2 (继续运行)\n```\n\n### 为什么 cgo 调用更重\n\n```go\n// cgo 调用被视为阻塞系统调用，每次都会触发 P handoff\n// 频繁 cgo 会导致线程数增加\nimport \"C\"\nC.someBlockingFunction()  // P 解绑，M 阻塞\n```\n\n### 实践影响\n\n```go\n// io/os 包的文件操作会阻塞 M，但 Go 运行时自动处理\n// 对开发者透明，只需注意：\n\n// 1. 大量文件 IO 的程序可能创建很多 OS 线程\n// 2. 可设置 runtime/debug.SetMaxThreads（默认 10000）\n\n// 3. 网络 IO 走 netpoller，goroutine 多也没问题\nconn.Read(buf)  // 不阻塞 M，goroutine 挂起\n```",
-    "tags": [
-      "GMP",
-      "goroutine"
-    ],
+    "tags": ["GMP", "goroutine"],
     "source": "高频"
   },
   {
@@ -448,11 +347,7 @@
     "difficulty": 3,
     "question": "实现一个支持超时、并发限制、结果聚合的并发请求函数，类似\"选最快的 N 个结果\"。",
     "answer": "```go\n// Race 并发向所有 URLs 发请求，返回最先成功的 n 个结果\nfunc Race(ctx context.Context, urls []string, n int, timeout time.Duration) ([]string, error) {\n    if n <= 0 || n > len(urls) {\n        n = len(urls)\n    }\n\n    type result struct {\n        url  string\n        body string\n        err  error\n    }\n\n    ctx, cancel := context.WithTimeout(ctx, timeout)\n    defer cancel()\n\n    resultCh := make(chan result, len(urls))\n\n    for _, url := range urls {\n        url := url\n        go func() {\n            req, err := http.NewRequestWithContext(ctx, \"GET\", url, nil)\n            if err != nil {\n                resultCh <- result{url: url, err: err}\n                return\n            }\n            resp, err := http.DefaultClient.Do(req)\n            if err != nil {\n                resultCh <- result{url: url, err: err}\n                return\n            }\n            defer resp.Body.Close()\n            body, err := io.ReadAll(resp.Body)\n            resultCh <- result{url: url, body: string(body), err: err}\n        }()\n    }\n\n    var (\n        successes []string\n        lastErr   error\n        received  int\n    )\n\n    for received < len(urls) && len(successes) < n {\n        select {\n        case r := <-resultCh:\n            received++\n            if r.err != nil {\n                lastErr = r.err\n            } else {\n                successes = append(successes, r.body)\n            }\n        case <-ctx.Done():\n            if len(successes) > 0 {\n                return successes, nil\n            }\n            return nil, fmt.Errorf(\"timeout: got %d/%d results: %w\", len(successes), n, ctx.Err())\n        }\n    }\n\n    if len(successes) == 0 {\n        return nil, fmt.Errorf(\"all requests failed, last error: %w\", lastErr)\n    }\n    return successes, nil\n}\n\n// 使用\nfunc main() {\n    ctx := context.Background()\n    mirrors := []string{\n        \"https://mirror1.example.com/file\",\n        \"https://mirror2.example.com/file\",\n        \"https://mirror3.example.com/file\",\n    }\n    // 取最先成功的 1 个结果（类似 CDN 择优）\n    results, err := Race(ctx, mirrors, 1, 5*time.Second)\n    if err != nil {\n        log.Fatal(err)\n    }\n    fmt.Println(\"fastest result:\", results[0][:100])\n}\n```",
-    "tags": [
-      "并发模式",
-      "channel",
-      "context"
-    ],
+    "tags": ["并发模式", "channel", "context"],
     "source": "字节"
   },
   {
@@ -461,11 +356,7 @@
     "difficulty": 3,
     "question": "以下代码有几个并发问题？全部找出来并修复。\n\n```go\ntype Server struct {\n    connections map[string]net.Conn\n    count       int\n}\n\nfunc (s *Server) Add(id string, conn net.Conn) {\n    s.connections[id] = conn\n    s.count++\n}\n\nfunc (s *Server) Remove(id string) {\n    delete(s.connections, id)\n    s.count--\n}\n\nfunc (s *Server) Get(id string) net.Conn {\n    return s.connections[id]\n}\n\nfunc (s *Server) Count() int {\n    return s.count\n}\n\nfunc (s *Server) Broadcast(msg []byte) {\n    for _, conn := range s.connections {\n        go func() {\n            conn.Write(msg)\n        }()\n    }\n}\n```",
     "answer": "### 发现的并发问题\n\n**问题 1：map 并发读写（数据竞争）**\n`connections` 是普通 map，多个 goroutine 并发调用 Add/Remove/Get 会触发 `fatal: concurrent map read and write`。\n\n**问题 2：count 非原子操作（数据竞争）**\n`s.count++` 是读-改-写三步操作，并发时结果不确定。\n\n**问题 3：Broadcast 中的闭包捕获（循环变量陷阱）**\n```go\nfor _, conn := range s.connections {\n    go func() {\n        conn.Write(msg)  // ❌ 捕获的是循环变量 conn 的引用\n    }()\n}\n// 所有 goroutine 可能用的是同一个 conn（最后一个）\n```\n\n**问题 4：Broadcast 中 msg 的并发写风险**\n若调用方在发送后修改了 `msg`（如 `msg` 是底层被复用的 buf），并发写入会有问题。\n\n### 修复\n\n```go\ntype Server struct {\n    mu          sync.RWMutex\n    connections map[string]net.Conn\n    count       int64  // 用 atomic 操作\n}\n\nfunc (s *Server) Add(id string, conn net.Conn) {\n    s.mu.Lock()\n    defer s.mu.Unlock()\n    s.connections[id] = conn\n    atomic.AddInt64(&s.count, 1)\n}\n\nfunc (s *Server) Remove(id string) {\n    s.mu.Lock()\n    defer s.mu.Unlock()\n    if _, ok := s.connections[id]; ok {\n        delete(s.connections, id)\n        atomic.AddInt64(&s.count, -1)\n    }\n}\n\nfunc (s *Server) Get(id string) net.Conn {\n    s.mu.RLock()\n    defer s.mu.RUnlock()\n    return s.connections[id]\n}\n\nfunc (s *Server) Count() int64 {\n    return atomic.LoadInt64(&s.count)\n}\n\nfunc (s *Server) Broadcast(msg []byte) {\n    // 复制 msg 防止调用方修改\n    msgCopy := make([]byte, len(msg))\n    copy(msgCopy, msg)\n\n    s.mu.RLock()\n    conns := make([]net.Conn, 0, len(s.connections))\n    for _, conn := range s.connections {\n        conns = append(conns, conn)\n    }\n    s.mu.RUnlock()  // 尽快释放读锁，不在锁内做 IO\n\n    for _, conn := range conns {\n        conn := conn  // ✅ 修复闭包捕获\n        go func() {\n            conn.Write(msgCopy)\n        }()\n    }\n}\n```\n\n### 修复要点总结\n\n1. 所有 map 操作用 `RWMutex` 保护\n2. 计数器用 `atomic` 操作\n3. 循环变量传参修复闭包捕获\n4. IO 操作在锁外执行（减少锁持有时间）\n5. 复制 `msg` 避免并发修改",
-    "tags": [
-      "goroutine",
-      "竞态",
-      "channel"
-    ],
+    "tags": ["goroutine", "竞态", "channel"],
     "source": "高频"
   }
 ]

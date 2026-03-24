@@ -5,11 +5,7 @@
     "difficulty": 1,
     "question": "TypeScript 中有哪些基础类型？",
     "answer": "## TypeScript 基础类型\n\n### 原始类型\n```ts\nlet str: string = 'hello';\nlet num: number = 42;\nlet bool: boolean = true;\nlet n: null = null;\nlet u: undefined = undefined;\nlet big: bigint = 9007199254740991n;\nlet sym: symbol = Symbol('key');\n```\n\n### 数组与元组\n```ts\n// 数组\nlet arr1: number[] = [1, 2, 3];\nlet arr2: Array<string> = ['a', 'b'];\n\n// 元组（固定长度和类型的数组）\nlet tuple: [string, number] = ['Alice', 30];\ntuple[0]; // string\ntuple[1]; // number\n\n// 可选元素\nlet opt: [string, number?] = ['Alice'];\n\n// 剩余元素\nlet rest: [string, ...number[]] = ['Alice', 1, 2, 3];\n```\n\n### 特殊类型\n```ts\n// any：放弃类型检查（尽量避免）\nlet a: any = 1;\na = 'hello'; // 不报错\n\n// unknown：类型安全的 any，使用前必须类型收窄\nlet u: unknown = getInput();\nif (typeof u === 'string') {\n  u.toUpperCase(); // 收窄后才能使用\n}\n\n// never：永不发生的类型（抛异常、无限循环）\nfunction fail(msg: string): never {\n  throw new Error(msg);\n}\n\n// void：无返回值的函数\nfunction log(msg: string): void {\n  console.log(msg);\n}\n\n// object：非原始类型\nlet obj: object = { a: 1 };\n```\n\n### 字面量类型\n```ts\nlet direction: 'left' | 'right' | 'up' | 'down';\nlet status: 200 | 404 | 500;\nlet flag: true; // 只能是 true\n```",
-    "tags": [
-      "TypeScript",
-      "类型",
-      "基础"
-    ],
+    "tags": ["TypeScript", "类型", "基础"],
     "source": "高频"
   },
   {
@@ -18,12 +14,7 @@
     "difficulty": 1,
     "question": "interface 和 type 有什么区别？",
     "answer": "## interface vs type\n\n### 相同点\n两者都可以描述对象形状，都支持扩展。\n\n```ts\n// interface\ninterface User {\n  name: string;\n  age: number;\n}\n\n// type\ntype User = {\n  name: string;\n  age: number;\n};\n```\n\n### 核心区别\n\n**1. 扩展语法不同**\n```ts\n// interface 用 extends\ninterface Animal { name: string; }\ninterface Dog extends Animal { breed: string; }\n\n// type 用交叉类型 &\ntype Animal = { name: string; };\ntype Dog = Animal & { breed: string; };\n```\n\n**2. interface 可以声明合并，type 不能**\n```ts\n// interface 同名声明自动合并（Declaration Merging）\ninterface Window { myProp: string; }\ninterface Window { otherProp: number; }\n// 合并为 { myProp: string; otherProp: number; }\n\n// type 同名会报错\ntype Foo = { a: string };\ntype Foo = { b: number }; // Error: Duplicate identifier\n```\n\n**3. type 能表示更多形状**\n```ts\n// 联合类型（interface 不能）\ntype ID = string | number;\ntype Result = Success | Error;\n\n// 元组\ntype Point = [number, number];\n\n// 映射类型\ntype Readonly<T> = { readonly [K in keyof T]: T[K] };\n\n// 条件类型\ntype IsString<T> = T extends string ? true : false;\n```\n\n**4. interface 描述类的结构更清晰**\n```ts\ninterface Serializable {\n  serialize(): string;\n  deserialize(input: string): void;\n}\nclass Config implements Serializable { ... }\n```\n\n### 使用建议\n```\n公共 API / 库定义 → interface（可被用户扩展）\n类型别名 / 联合 / 元组 / 工具类型 → type\n日常开发两者皆可，团队保持一致即可\n```",
-    "tags": [
-      "TypeScript",
-      "interface",
-      "type",
-      "区别"
-    ],
+    "tags": ["TypeScript", "interface", "type", "区别"],
     "source": "高频"
   },
   {
@@ -32,11 +23,7 @@
     "difficulty": 1,
     "question": "什么是泛型（Generics）？为什么需要泛型？",
     "answer": "## 泛型（Generics）\n\n### 概念\n泛型让代码在**保持类型安全**的前提下，支持多种类型，避免重复代码。\n\n### 没有泛型的问题\n```ts\n// 使用 any 失去类型信息\nfunction identity(arg: any): any {\n  return arg;\n}\nconst result = identity(42); // result 是 any，不知道是 number\n\n// 重复代码\nfunction identityString(arg: string): string { return arg; }\nfunction identityNumber(arg: number): number { return arg; }\n```\n\n### 泛型函数\n```ts\n// T 是类型参数，调用时确定\nfunction identity<T>(arg: T): T {\n  return arg;\n}\n\nconst s = identity<string>('hello'); // s: string\nconst n = identity(42);              // 自动推断 T 为 number\n```\n\n### 泛型接口与类型\n```ts\ninterface Box<T> {\n  value: T;\n  getValue(): T;\n}\n\ntype Pair<T, U> = { first: T; second: U };\n\nconst pair: Pair<string, number> = { first: 'a', second: 1 };\n```\n\n### 泛型约束\n```ts\n// 约束 T 必须有 length 属性\nfunction getLength<T extends { length: number }>(arg: T): number {\n  return arg.length;\n}\n\ngetLength('hello');     // ✅ string 有 length\ngetLength([1, 2, 3]);   // ✅ array 有 length\ngetLength(42);          // ❌ number 没有 length\n\n// 约束 K 是 T 的键\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n\nconst user = { name: 'Alice', age: 30 };\ngetProperty(user, 'name'); // string\ngetProperty(user, 'age');  // number\ngetProperty(user, 'x');    // ❌ 不存在的键\n```\n\n### 泛型默认值\n```ts\ninterface Response<T = unknown> {\n  data: T;\n  status: number;\n}\n\nconst res: Response = { data: null, status: 200 }; // T 默认 unknown\nconst res2: Response<User[]> = { data: [], status: 200 };\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "Generic"
-    ],
+    "tags": ["TypeScript", "泛型", "Generic"],
     "source": "高频"
   },
   {
@@ -45,11 +32,7 @@
     "difficulty": 1,
     "question": "TypeScript 中 enum（枚举）有哪些使用方式？有什么注意事项？",
     "answer": "## TypeScript 枚举\n\n### 数字枚举（默认）\n```ts\nenum Direction {\n  Up,    // 0\n  Down,  // 1\n  Left,  // 2\n  Right  // 3\n}\n\nDirection.Up    // 0\nDirection[0]    // \"Up\"（反向映射）\n\n// 自定义起始值\nenum Status {\n  Active = 1,\n  Inactive, // 2\n  Deleted   // 3\n}\n```\n\n### 字符串枚举\n```ts\nenum Color {\n  Red = 'RED',\n  Green = 'GREEN',\n  Blue = 'BLUE'\n}\n\n// 字符串枚举没有反向映射\n// 可读性更好，推荐使用\n```\n\n### const 枚举（性能优化）\n```ts\nconst enum Fruit {\n  Apple,\n  Banana,\n  Cherry\n}\n\n// 编译时直接内联值，不生成对象\nconst f = Fruit.Apple; // 编译为 const f = 0;\n```\n\n### 枚举 vs 联合类型\n```ts\n// 枚举\nenum Role { Admin = 'admin', User = 'user', Guest = 'guest' }\n\n// 联合字面量类型（更轻量，无运行时开销）\ntype Role = 'admin' | 'user' | 'guest';\n\n// 两者对比\n// 枚举：有命名空间、可反向映射、有运行时对象\n// 联合类型：无运行时开销、更简洁、Tree Shake 友好\n```\n\n### 注意事项\n```ts\n// 1. 数字枚举有反向映射，字符串枚举没有\n// 2. const enum 在某些 bundler 下可能有问题（esbuild/SWC 不支持）\n// 3. 异构枚举（混合类型）不推荐\nenum Bad {\n  A = 1,\n  B = 'b' // 混合，避免使用\n}\n```",
-    "tags": [
-      "TypeScript",
-      "枚举",
-      "enum"
-    ],
+    "tags": ["TypeScript", "枚举", "enum"],
     "source": "高频"
   },
   {
@@ -58,12 +41,7 @@
     "difficulty": 1,
     "question": "TypeScript 中类型断言（Type Assertion）有哪些方式？",
     "answer": "## 类型断言\n\n### as 语法（推荐）\n```ts\nconst input = document.getElementById('name') as HTMLInputElement;\ninput.value = 'hello'; // 现在知道是 HTMLInputElement\n\n// 等价的尖括号语法（JSX 中不能用）\nconst input2 = <HTMLInputElement>document.getElementById('name');\n```\n\n### 非空断言操作符 !\n```ts\n// 告诉 TS：这个值一定不是 null/undefined\nfunction getUser(): User | null { ... }\n\nconst user = getUser()!; // 断言非 null\nuser.name; // 不会报错\n\n// 链式使用\nconst len = maybeString!.length;\n\n// 注意：滥用 ! 会绕过类型检查，尽量用类型守卫\n```\n\n### 双重断言（强制转换）\n```ts\n// 当两种类型不相关时，先断言为 unknown/any\nconst x = 'hello' as unknown as number; // 强制，但不安全\n\n// 正常情况下不要这么做\n```\n\n### 类型断言 vs 类型转换\n```ts\n// 类型断言：只影响编译时类型检查，运行时不做任何转换\nconst n = '123' as any as number;\ntypeof n; // 仍然是 \"string\"！运行时还是字符串\n\n// 真正的值转换\nconst n2 = Number('123'); // 运行时转为数字\n```\n\n### satisfies 操作符（TS 4.9+）\n```ts\n// 既满足类型约束，又保留字面量类型推断\nconst palette = {\n  red: [255, 0, 0],\n  green: '#00ff00',\n} satisfies Record<string, string | number[]>;\n\n// palette.red 推断为 number[]（而不是 string | number[]）\n// palette.green 推断为 string\n```",
-    "tags": [
-      "TypeScript",
-      "类型断言",
-      "as",
-      "非空断言"
-    ],
+    "tags": ["TypeScript", "类型断言", "as", "非空断言"],
     "source": "高频"
   },
   {
@@ -72,15 +50,7 @@
     "difficulty": 2,
     "question": "TypeScript 内置工具类型有哪些？分别有什么作用？",
     "answer": "## TypeScript 内置工具类型\n\n### Partial<T> — 所有属性变可选\n```ts\ninterface User { name: string; age: number; email: string; }\n\ntype PartialUser = Partial<User>;\n// { name?: string; age?: number; email?: string; }\n\n// 实现原理\ntype MyPartial<T> = { [K in keyof T]?: T[K] };\n```\n\n### Required<T> — 所有属性变必填\n```ts\ntype RequiredUser = Required<PartialUser>;\n// { name: string; age: number; email: string; }\n\ntype MyRequired<T> = { [K in keyof T]-?: T[K] }; // -? 删除可选\n```\n\n### Readonly<T> — 所有属性变只读\n```ts\ntype ReadonlyUser = Readonly<User>;\n// { readonly name: string; readonly age: number; ... }\n\nconst u: ReadonlyUser = { name: 'Alice', age: 30, email: 'a@b.com' };\nu.name = 'Bob'; // ❌ Error\n```\n\n### Pick<T, K> — 选取指定属性\n```ts\ntype UserPreview = Pick<User, 'name' | 'email'>;\n// { name: string; email: string; }\n\ntype MyPick<T, K extends keyof T> = { [P in K]: T[P] };\n```\n\n### Omit<T, K> — 排除指定属性\n```ts\ntype UserWithoutEmail = Omit<User, 'email'>;\n// { name: string; age: number; }\n\ntype MyOmit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;\n```\n\n### Record<K, V> — 构造对象类型\n```ts\ntype PageMap = Record<string, string>;\n// { [key: string]: string }\n\ntype RoleMap = Record<'admin' | 'user' | 'guest', string[]>;\n// { admin: string[]; user: string[]; guest: string[]; }\n```\n\n### Exclude<T, U> 和 Extract<T, U>\n```ts\ntype T = Exclude<string | number | boolean, boolean>;\n// string | number\n\ntype T2 = Extract<string | number | boolean, string | boolean>;\n// string | boolean\n```\n\n### NonNullable<T> — 去除 null/undefined\n```ts\ntype T = NonNullable<string | null | undefined>;\n// string\n```\n\n### ReturnType<T> 和 Parameters<T>\n```ts\nfunction add(a: number, b: number): number { return a + b; }\n\ntype R = ReturnType<typeof add>;    // number\ntype P = Parameters<typeof add>;   // [a: number, b: number]\n```\n\n### InstanceType<T>\n```ts\nclass Dog { name: string = ''; bark() {} }\ntype DogInstance = InstanceType<typeof Dog>; // Dog\n```",
-    "tags": [
-      "TypeScript",
-      "工具类型",
-      "Partial",
-      "Required",
-      "Readonly",
-      "Pick",
-      "Omit"
-    ],
+    "tags": ["TypeScript", "工具类型", "Partial", "Required", "Readonly", "Pick", "Omit"],
     "source": "高频"
   },
   {
@@ -89,11 +59,7 @@
     "difficulty": 2,
     "question": "什么是类型守卫（Type Guard）？有哪些实现方式？",
     "answer": "## 类型守卫（Type Guard）\n\n类型守卫是在运行时检查类型，使 TypeScript 在某个分支内缩窄（narrow）类型。\n\n### typeof 守卫\n```ts\nfunction process(val: string | number) {\n  if (typeof val === 'string') {\n    val.toUpperCase(); // 这里 val 是 string\n  } else {\n    val.toFixed(2);    // 这里 val 是 number\n  }\n}\n```\n\n### instanceof 守卫\n```ts\nclass Cat { meow() {} }\nclass Dog { bark() {} }\n\nfunction makeSound(animal: Cat | Dog) {\n  if (animal instanceof Cat) {\n    animal.meow(); // 这里是 Cat\n  } else {\n    animal.bark(); // 这里是 Dog\n  }\n}\n```\n\n### in 操作符守卫\n```ts\ninterface Fish { swim(): void; }\ninterface Bird { fly(): void; }\n\nfunction move(animal: Fish | Bird) {\n  if ('swim' in animal) {\n    animal.swim(); // 这里是 Fish\n  } else {\n    animal.fly();  // 这里是 Bird\n  }\n}\n```\n\n### 自定义类型谓词（is）\n```ts\n// 返回类型为 arg is T，是自定义类型守卫\nfunction isString(val: unknown): val is string {\n  return typeof val === 'string';\n}\n\nfunction isUser(val: unknown): val is User {\n  return typeof val === 'object' && val !== null\n    && 'name' in val && 'age' in val;\n}\n\nfunction process(val: unknown) {\n  if (isString(val)) {\n    val.toUpperCase(); // val 是 string\n  }\n  if (isUser(val)) {\n    val.name; // val 是 User\n  }\n}\n```\n\n### 可辨识联合（Discriminated Union）\n```ts\ntype Shape =\n  | { kind: 'circle'; radius: number }\n  | { kind: 'rect'; width: number; height: number }\n  | { kind: 'triangle'; base: number; height: number };\n\nfunction area(shape: Shape): number {\n  switch (shape.kind) {\n    case 'circle':\n      return Math.PI * shape.radius ** 2;\n    case 'rect':\n      return shape.width * shape.height;\n    case 'triangle':\n      return (shape.base * shape.height) / 2;\n    default:\n      // exhaustive check：确保所有分支都处理了\n      const _never: never = shape;\n      throw new Error(`Unknown shape: ${_never}`);\n  }\n}\n```\n\n### 断言函数（asserts）\n```ts\nfunction assertIsString(val: unknown): asserts val is string {\n  if (typeof val !== 'string') {\n    throw new Error('Not a string');\n  }\n}\n\nfunction process(val: unknown) {\n  assertIsString(val);\n  val.toUpperCase(); // 执行到这里 val 一定是 string\n}\n```",
-    "tags": [
-      "TypeScript",
-      "类型守卫",
-      "narrowing"
-    ],
+    "tags": ["TypeScript", "类型守卫", "narrowing"],
     "source": "高频"
   },
   {
@@ -102,11 +68,7 @@
     "difficulty": 2,
     "question": "什么是条件类型（Conditional Types）？infer 关键字有什么用？",
     "answer": "## 条件类型\n\n### 基本语法\n```ts\n// T extends U ? X : Y\n// 如果 T 能赋值给 U，则为 X，否则为 Y\n\ntype IsString<T> = T extends string ? true : false;\ntype A = IsString<string>;  // true\ntype B = IsString<number>;  // false\n```\n\n### 分布式条件类型\n```ts\n// 当 T 是联合类型时，条件类型会分发到每个成员\ntype ToArray<T> = T extends any ? T[] : never;\ntype C = ToArray<string | number>; // string[] | number[]\n\n// 阻止分发：用 [] 包裹\ntype ToArrayNonDist<T> = [T] extends [any] ? T[] : never;\ntype D = ToArrayNonDist<string | number>; // (string | number)[]\n```\n\n### infer 关键字（类型推断）\n```ts\n// 在条件类型中使用 infer 声明待推断的类型变量\n\n// 推断函数返回值类型\ntype ReturnType<T> = T extends (...args: any[]) => infer R ? R : never;\ntype R = ReturnType<(a: string) => number>; // number\n\n// 推断函数参数类型\ntype FirstParam<T> = T extends (first: infer P, ...rest: any[]) => any ? P : never;\ntype P = FirstParam<(a: string, b: number) => void>; // string\n\n// 推断 Promise 的值类型\ntype Awaited<T> = T extends Promise<infer V> ? Awaited<V> : T;\ntype V = Awaited<Promise<Promise<string>>>; // string\n\n// 推断数组元素类型\ntype ElementType<T> = T extends (infer E)[] ? E : never;\ntype E = ElementType<number[]>; // number\n```\n\n### 实用示例\n```ts\n// 获取对象某属性的类型\ntype PropType<T, K extends keyof T> = T extends { [P in K]: infer V } ? V : never;\n\n// 展开嵌套 Promise\ntype DeepAwaited<T> =\n  T extends null | undefined ? T\n  : T extends object & { then(onfulfilled: infer F, ...args: infer _): any }\n    ? F extends (value: infer V, ...args: infer _) => any\n      ? DeepAwaited<V>\n      : never\n    : T;\n```",
-    "tags": [
-      "TypeScript",
-      "条件类型",
-      "infer"
-    ],
+    "tags": ["TypeScript", "条件类型", "infer"],
     "source": "高频"
   },
   {
@@ -115,12 +77,7 @@
     "difficulty": 2,
     "question": "什么是映射类型（Mapped Types）？keyof 和 typeof 有什么用？",
     "answer": "## 映射类型与 keyof / typeof\n\n### keyof\n```ts\ninterface User { name: string; age: number; email: string; }\n\ntype UserKeys = keyof User; // \"name\" | \"age\" | \"email\"\n\n// 结合泛型确保 key 安全\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key];\n}\n```\n\n### typeof（类型层面）\n```ts\nconst user = { name: 'Alice', age: 30 };\ntype UserType = typeof user; // { name: string; age: number }\n\n// 获取函数类型\nconst add = (a: number, b: number) => a + b;\ntype AddFn = typeof add; // (a: number, b: number) => number\n\n// 结合 keyof\ntype UserKey = keyof typeof user; // \"name\" | \"age\"\n```\n\n### 映射类型基础\n```ts\n// 将 T 的所有属性转换\ntype Readonly<T> = {\n  readonly [K in keyof T]: T[K];  // 加 readonly\n};\n\ntype Optional<T> = {\n  [K in keyof T]?: T[K];          // 加 ?\n};\n\ntype Nullable<T> = {\n  [K in keyof T]: T[K] | null;    // 值加 null\n};\n```\n\n### 修饰符操作\n```ts\n// 加修饰符\ntype WithReadonly<T> = { +readonly [K in keyof T]+?: T[K] }; // 加 readonly 和 ?\n\n// 去修饰符\ntype Mutable<T> = { -readonly [K in keyof T]: T[K] }; // 去 readonly\ntype Required<T> = { [K in keyof T]-?: T[K] };         // 去 ?\n```\n\n### 重映射键名（as）\n```ts\n// TypeScript 4.1+ 支持 as 重映射键\ntype Getters<T> = {\n  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];\n};\n\ntype UserGetters = Getters<{ name: string; age: number }>;\n// { getName: () => string; getAge: () => number; }\n\n// 过滤属性（映射到 never 则排除）\ntype FilterString<T> = {\n  [K in keyof T as T[K] extends string ? K : never]: T[K];\n};\n\ntype StringProps = FilterString<{ name: string; age: number; email: string }>;\n// { name: string; email: string; }\n```",
-    "tags": [
-      "TypeScript",
-      "映射类型",
-      "keyof",
-      "typeof"
-    ],
+    "tags": ["TypeScript", "映射类型", "keyof", "typeof"],
     "source": "高频"
   },
   {
@@ -129,11 +86,7 @@
     "difficulty": 2,
     "question": "TypeScript 装饰器（Decorator）是什么？有哪些类型？",
     "answer": "## TypeScript 装饰器\n\n### 启用装饰器\n```json\n// tsconfig.json\n{\n  \"compilerOptions\": {\n    \"experimentalDecorators\": true,\n    \"emitDecoratorMetadata\": true\n  }\n}\n```\n\n### 类装饰器\n```ts\n// 接收构造函数作为参数\nfunction sealed(constructor: Function) {\n  Object.seal(constructor);\n  Object.seal(constructor.prototype);\n}\n\nfunction log(constructor: Function) {\n  console.log(`Class ${constructor.name} created`);\n}\n\n@sealed\n@log\nclass BugReport {\n  type = 'report';\n  title: string;\n  constructor(t: string) { this.title = t; }\n}\n```\n\n### 方法装饰器\n```ts\nfunction readonly(\n  target: any,\n  propertyKey: string,\n  descriptor: PropertyDescriptor\n) {\n  descriptor.writable = false;\n  return descriptor;\n}\n\n// 日志装饰器（实际场景）\nfunction logMethod(target: any, key: string, desc: PropertyDescriptor) {\n  const original = desc.value;\n  desc.value = function (...args: any[]) {\n    console.log(`Calling ${key} with`, args);\n    const result = original.apply(this, args);\n    console.log(`${key} returned`, result);\n    return result;\n  };\n  return desc;\n}\n\nclass Calculator {\n  @logMethod\n  add(a: number, b: number) { return a + b; }\n}\n```\n\n### 属性装饰器\n```ts\nfunction format(formatString: string) {\n  return function (target: any, propertyKey: string) {\n    let value: string;\n    Object.defineProperty(target, propertyKey, {\n      get() { return `${formatString} ${value}`; },\n      set(v: string) { value = v; },\n    });\n  };\n}\n\nclass User {\n  @format('Hello,')\n  name: string = 'Alice';\n}\n// new User().name → \"Hello, Alice\"\n```\n\n### 参数装饰器\n```ts\nfunction required(target: any, key: string, paramIndex: number) {\n  // 记录哪些参数是必填的（通常结合 reflect-metadata）\n  console.log(`Parameter ${paramIndex} of ${key} is required`);\n}\n\nclass Service {\n  method(@required name: string) {}\n}\n```\n\n### 装饰器工厂\n```ts\n// 返回装饰器函数，支持传参\nfunction Component(options: { selector: string; template: string }) {\n  return function (constructor: Function) {\n    constructor.prototype.selector = options.selector;\n    constructor.prototype.template = options.template;\n  };\n}\n\n@Component({ selector: 'app-root', template: '<div>Hello</div>' })\nclass AppComponent {}\n```",
-    "tags": [
-      "TypeScript",
-      "装饰器",
-      "Decorator"
-    ],
+    "tags": ["TypeScript", "装饰器", "Decorator"],
     "source": "高频"
   },
   {
@@ -142,11 +95,7 @@
     "difficulty": 2,
     "question": "tsconfig.json 中有哪些重要配置项？",
     "answer": "## tsconfig.json 重要配置\n\n### 基础配置\n```json\n{\n  \"compilerOptions\": {\n    // 编译目标（输出的 JS 版本）\n    \"target\": \"ES2020\",\n\n    // 模块系统\n    \"module\": \"ESNext\",          // 输出模块格式\n    \"moduleResolution\": \"bundler\", // 模块解析策略（TS 5.0+）\n\n    // 输出目录\n    \"outDir\": \"./dist\",\n    \"rootDir\": \"./src\",\n\n    // 源码映射（调试用）\n    \"sourceMap\": true,\n    \"declaration\": true,         // 生成 .d.ts 类型声明文件\n    \"declarationMap\": true\n  }\n}\n```\n\n### 严格模式（强烈推荐）\n```json\n{\n  \"compilerOptions\": {\n    \"strict\": true,  // 开启所有严格检查，等于以下所有\n\n    // 以下是 strict 包含的选项\n    \"strictNullChecks\": true,      // null/undefined 不能赋给其他类型\n    \"strictFunctionTypes\": true,   // 函数参数逆变检查\n    \"strictBindCallApply\": true,   // bind/call/apply 参数类型检查\n    \"strictPropertyInitialization\": true, // 类属性必须初始化\n    \"noImplicitAny\": true,         // 禁止隐式 any\n    \"noImplicitThis\": true,        // 禁止隐式 this\n    \"alwaysStrict\": true           // 输出文件使用 strict mode\n  }\n}\n```\n\n### 路径别名\n```json\n{\n  \"compilerOptions\": {\n    \"baseUrl\": \".\",\n    \"paths\": {\n      \"@/*\": [\"src/*\"],\n      \"@components/*\": [\"src/components/*\"],\n      \"@utils/*\": [\"src/utils/*\"]\n    }\n  }\n}\n```\n\n### 额外有用配置\n```json\n{\n  \"compilerOptions\": {\n    \"noUnusedLocals\": true,        // 禁止未使用的局部变量\n    \"noUnusedParameters\": true,    // 禁止未使用的函数参数\n    \"noImplicitReturns\": true,     // 所有代码路径必须有返回值\n    \"noFallthroughCasesInSwitch\": true, // switch 必须有 break\n    \"exactOptionalPropertyTypes\": true, // 可选属性不能赋 undefined\n    \"isolatedModules\": true,       // 每个文件独立编译（Babel/esbuild 要求）\n    \"skipLibCheck\": true,          // 跳过 node_modules 的类型检查（加速）\n    \"esModuleInterop\": true,       // 允许 import React from 'react'\n    \"allowSyntheticDefaultImports\": true,\n    \"jsx\": \"react-jsx\",            // React 17+ JSX 转换\n    \"lib\": [\"ES2020\", \"DOM\", \"DOM.Iterable\"]\n  },\n  \"include\": [\"src/**/*\", \"vite.config.ts\"],\n  \"exclude\": [\"node_modules\", \"dist\"]\n}\n```",
-    "tags": [
-      "TypeScript",
-      "tsconfig",
-      "配置"
-    ],
+    "tags": ["TypeScript", "tsconfig", "配置"],
     "source": "高频"
   },
   {
@@ -155,11 +104,7 @@
     "difficulty": 2,
     "question": "TypeScript 与 React 结合时，如何正确定义组件 Props 和常用类型？",
     "answer": "## TypeScript + React 常用类型\n\n### 函数组件 Props\n```tsx\n// 方式1：interface（推荐）\ninterface ButtonProps {\n  label: string;\n  onClick: () => void;\n  disabled?: boolean;\n  variant?: 'primary' | 'secondary' | 'danger';\n  children?: React.ReactNode;\n}\n\nconst Button: React.FC<ButtonProps> = ({ label, onClick, disabled = false, variant = 'primary' }) => {\n  return <button onClick={onClick} disabled={disabled} className={variant}>{label}</button>;\n};\n\n// 方式2：直接解构（不用 React.FC，推荐）\nfunction Button({ label, onClick, disabled = false }: ButtonProps) {\n  return <button onClick={onClick} disabled={disabled}>{label}</button>;\n}\n```\n\n### 事件类型\n```tsx\n// 常见事件类型\nconst handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {};\nconst handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {\n  console.log(e.target.value);\n};\nconst handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {\n  e.preventDefault();\n};\nconst handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {};\nconst handleDrop = (e: React.DragEvent<HTMLDivElement>) => {};\n```\n\n### Ref 类型\n```tsx\nconst inputRef = useRef<HTMLInputElement>(null);\nconst timerRef = useRef<ReturnType<typeof setInterval> | null>(null);\n\n// 使用\ninputRef.current?.focus();\n```\n\n### children 类型\n```tsx\n// React.ReactNode：最宽泛（包含 string/number/element/array/null 等）\ninterface Props { children: React.ReactNode; }\n\n// React.ReactElement：只接受 JSX 元素\ninterface Props { children: React.ReactElement; }\n\n// JSX.Element：等同于 React.ReactElement\n```\n\n### 泛型组件\n```tsx\ninterface ListProps<T> {\n  items: T[];\n  renderItem: (item: T) => React.ReactNode;\n  keyExtractor: (item: T) => string;\n}\n\nfunction List<T>({ items, renderItem, keyExtractor }: ListProps<T>) {\n  return (\n    <ul>\n      {items.map(item => (\n        <li key={keyExtractor(item)}>{renderItem(item)}</li>\n      ))}\n    </ul>\n  );\n}\n\n// 使用\n<List<User>\n  items={users}\n  renderItem={u => <span>{u.name}</span>}\n  keyExtractor={u => u.id}\n/>\n```\n\n### useState / useReducer 类型\n```tsx\n// useState 自动推断\nconst [count, setCount] = useState(0); // number\nconst [user, setUser] = useState<User | null>(null); // 需显式指定\n\n// useReducer\ntype Action =\n  | { type: 'increment' }\n  | { type: 'decrement' }\n  | { type: 'reset'; payload: number };\n\nfunction reducer(state: number, action: Action): number {\n  switch (action.type) {\n    case 'increment': return state + 1;\n    case 'decrement': return state - 1;\n    case 'reset': return action.payload;\n  }\n}\n\nconst [count, dispatch] = useReducer(reducer, 0);\ndispatch({ type: 'reset', payload: 10 });\n```",
-    "tags": [
-      "TypeScript",
-      "React",
-      "组件类型"
-    ],
+    "tags": ["TypeScript", "React", "组件类型"],
     "source": "高频"
   },
   {
@@ -168,11 +113,7 @@
     "difficulty": 2,
     "question": "TypeScript 函数重载（Overload）是什么？如何使用？",
     "answer": "## 函数重载\n\n### 概念\n函数重载允许同一个函数根据不同的参数类型/数量表现出不同的行为，同时保留类型安全。\n\n### 基本语法\n```ts\n// 重载签名（只声明，不实现）\nfunction format(value: string): string;\nfunction format(value: number, decimals?: number): string;\nfunction format(value: Date): string;\n\n// 实现签名（必须兼容所有重载）\nfunction format(value: string | number | Date, decimals = 2): string {\n  if (typeof value === 'string') return value.trim();\n  if (typeof value === 'number') return value.toFixed(decimals);\n  return value.toLocaleDateString();\n}\n\n// 调用时根据参数类型推断\nconst s = format('hello');         // string\nconst n = format(3.14159, 2);      // string\nconst d = format(new Date());      // string\n```\n\n### 接口中的重载\n```ts\ninterface StringArray {\n  (index: number): string;\n  (index: string): number;\n}\n```\n\n### 类方法重载\n```ts\nclass Dom {\n  on(event: 'click', handler: (e: MouseEvent) => void): this;\n  on(event: 'keydown', handler: (e: KeyboardEvent) => void): this;\n  on(event: string, handler: (e: Event) => void): this {\n    document.addEventListener(event, handler);\n    return this;\n  }\n}\n```\n\n### 使用注意\n```ts\n// 重载签名的顺序很重要：更具体的放前面\nfunction process(x: string): string;        // 具体\nfunction process(x: string | null): string; // 宽泛（放后面）\nfunction process(x: string | null): string {\n  return x ?? '';\n}\n```",
-    "tags": [
-      "TypeScript",
-      "函数重载",
-      "overload"
-    ],
+    "tags": ["TypeScript", "函数重载", "overload"],
     "source": "高频"
   },
   {
@@ -181,12 +122,7 @@
     "difficulty": 2,
     "question": "TypeScript 中 namespace 和 module 有什么区别？",
     "answer": "## Namespace vs Module\n\n### 模块（Module）— 现代推荐方式\n```ts\n// math.ts\nexport function add(a: number, b: number): number { return a + b; }\nexport function subtract(a: number, b: number): number { return a - b; }\nexport const PI = 3.14159;\n\n// main.ts\nimport { add, PI } from './math';\nimport * as MathUtils from './math';\n\nMathUtils.add(1, 2);\n```\n\n### 命名空间（Namespace）\n```ts\n// 用于在全局脚本或 .d.ts 中组织代码\nnamespace Validation {\n  export interface StringValidator {\n    isAcceptable(s: string): boolean;\n  }\n\n  export class LettersOnlyValidator implements StringValidator {\n    isAcceptable(s: string) {\n      return /^[A-Za-z]+$/.test(s);\n    }\n  }\n}\n\nconst v = new Validation.LettersOnlyValidator();\n\n// 嵌套命名空间\nnamespace App.Utils {\n  export function format(s: string) { return s.trim(); }\n}\nApp.Utils.format(' hello ');\n```\n\n### 声明合并与命名空间\n```ts\n// 为已有类型添加命名空间（扩展第三方库时常用）\ninterface jQuery {\n  (selector: string): Element;\n}\nnamespace jQuery {\n  function ajax(url: string): void;\n}\n```\n\n### 何时使用\n```\nModule（import/export）：\n  - 现代项目的首选\n  - 配合打包工具（Webpack/Vite）\n  - Tree Shaking 友好\n\nNamespace：\n  - 老代码库（pre-module 时代）\n  - 全局脚本（非模块化）\n  - 编写 .d.ts 声明文件\n  - 防止全局变量污染\n```",
-    "tags": [
-      "TypeScript",
-      "命名空间",
-      "模块",
-      "namespace"
-    ],
+    "tags": ["TypeScript", "命名空间", "模块", "namespace"],
     "source": "高频"
   },
   {
@@ -195,12 +131,7 @@
     "difficulty": 2,
     "question": "什么是 .d.ts 声明文件？如何为第三方 JS 库编写类型声明？",
     "answer": "## TypeScript 声明文件\n\n### 概念\n`.d.ts` 文件只包含类型信息，不含运行时代码，告诉 TypeScript 某个模块/变量的类型。\n\n### 为全局变量声明类型\n```ts\n// global.d.ts\ndeclare const __DEV__: boolean;\ndeclare const __VERSION__: string;\n\n// 声明全局函数\ndeclare function gtag(command: string, ...args: any[]): void;\n\n// 声明全局类型\ndeclare type ID = string | number;\n```\n\n### 为模块声明类型\n```ts\n// my-module.d.ts\ndeclare module 'my-module' {\n  export interface Config {\n    url: string;\n    timeout?: number;\n  }\n\n  export function request(config: Config): Promise<Response>;\n\n  export default class Client {\n    constructor(config: Config);\n    get(path: string): Promise<any>;\n    post(path: string, data: any): Promise<any>;\n  }\n}\n```\n\n### 为无类型 JS 文件补充声明\n```ts\n// 假设 legacy.js 没有类型\n// legacy.d.ts\nexport declare function legacyMethod(input: string): number;\nexport declare const config: Record<string, string>;\n```\n\n### 扩展第三方类型\n```ts\n// 扩展 Express Request 类型\ndeclare global {\n  namespace Express {\n    interface Request {\n      user?: { id: string; role: string };\n      requestId: string;\n    }\n  }\n}\n\n// 扩展 Window\ninterface Window {\n  analytics: { track(event: string): void };\n  __APP_CONFIG__: { apiUrl: string };\n}\n```\n\n### 模块声明的通配符\n```ts\n// 为 CSS/图片等资源声明类型（Vite 项目中）\ndeclare module '*.css' {\n  const styles: Record<string, string>;\n  export default styles;\n}\n\ndeclare module '*.svg' {\n  import React from 'react';\n  const ReactComponent: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;\n  export { ReactComponent };\n  const src: string;\n  export default src;\n}\n\ndeclare module '*.png' { const src: string; export default src; }\ndeclare module '*.jpg' { const src: string; export default src; }\n```",
-    "tags": [
-      "TypeScript",
-      "声明文件",
-      "d.ts",
-      "类型声明"
-    ],
+    "tags": ["TypeScript", "声明文件", "d.ts", "类型声明"],
     "source": "高频"
   },
   {
@@ -209,11 +140,7 @@
     "difficulty": 3,
     "question": "TypeScript 模板字面量类型（Template Literal Types）是什么？有什么实用场景？",
     "answer": "## 模板字面量类型\n\n### 基础语法（TS 4.1+）\n```ts\ntype Greeting = `Hello, ${string}`;\nconst g: Greeting = 'Hello, World'; // ✅\nconst g2: Greeting = 'Hi, World';   // ❌\n\n// 联合类型自动组合\ntype Direction = 'top' | 'bottom' | 'left' | 'right';\ntype CSSProperty = `margin-${Direction}` | `padding-${Direction}`;\n// \"margin-top\" | \"margin-bottom\" | ... | \"padding-right\"\n```\n\n### 内置字符串操作类型\n```ts\ntype U = Uppercase<'hello'>;     // \"HELLO\"\ntype L = Lowercase<'HELLO'>;     // \"hello\"\ntype C = Capitalize<'hello'>;    // \"Hello\"\ntype UC = Uncapitalize<'Hello'>; // \"hello\"\n```\n\n### 实用场景1：事件名推导\n```ts\ntype EventName<T extends string> = `on${Capitalize<T>}`;\ntype ClickHandler = EventName<'click'>;  // \"onClick\"\n\n// 从对象属性生成事件处理器类型\ntype EventHandlers<T extends Record<string, () => void>> = {\n  [K in keyof T as EventName<string & K>]: T[K];\n};\n```\n\n### 实用场景2：对象路径访问\n```ts\ntype NestedPaths<T, Prefix extends string = ''> = {\n  [K in keyof T]: T[K] extends object\n    ? `${Prefix}${string & K}` | NestedPaths<T[K], `${Prefix}${string & K}.`>\n    : `${Prefix}${string & K}`;\n}[keyof T];\n\ntype UserPaths = NestedPaths<{\n  name: string;\n  address: { city: string; zip: string };\n}>;\n// \"name\" | \"address\" | \"address.city\" | \"address.zip\"\n```\n\n### 实用场景3：CSS-in-JS 类型安全\n```ts\ntype CSSUnit = 'px' | 'rem' | 'em' | '%' | 'vw' | 'vh';\ntype CSSValue = `${number}${CSSUnit}` | 'auto' | 'inherit';\n\nfunction css(property: string, value: CSSValue) {}\ncss('width', '100px');  // ✅\ncss('width', '100');    // ❌（缺少单位）\n```\n\n### 实用场景4：i18n 翻译键类型安全\n```ts\ntype Translations = {\n  'common.ok': string;\n  'common.cancel': string;\n  'user.name': string;\n};\n\nfunction t(key: keyof Translations): string {\n  return translations[key];\n}\n\nt('common.ok');   // ✅\nt('user.email');  // ❌\n```",
-    "tags": [
-      "TypeScript",
-      "高级类型",
-      "模板字面量类型"
-    ],
+    "tags": ["TypeScript", "高级类型", "模板字面量类型"],
     "source": "字节跳动"
   },
   {
@@ -222,12 +149,7 @@
     "difficulty": 3,
     "question": "什么是 TypeScript 中的协变（Covariance）和逆变（Contravariance）？",
     "answer": "## 协变与逆变\n\n### 概念\n描述类型参数在类型层级中的可替换方向。\n\n### 协变（Covariant）—— 子类型可赋值给父类型\n```ts\n// 返回值类型是协变的\ntype Producer<T> = () => T;\n\ntype AnimalProducer = Producer<Animal>;\ntype DogProducer = Producer<Dog>; // Dog extends Animal\n\nlet animalProducer: AnimalProducer;\nconst dogProducer: DogProducer = () => new Dog();\n\n// ✅ 可以赋值：产出 Dog 的函数，可以当作产出 Animal 的函数\nanimalProducer = dogProducer;\n```\n\n### 逆变（Contravariant）—— 父类型可赋值给子类型位置\n```ts\n// 函数参数类型是逆变的（在 strictFunctionTypes: true 时）\ntype Consumer<T> = (arg: T) => void;\n\ntype AnimalConsumer = Consumer<Animal>; // 接收 Animal\ntype DogConsumer = Consumer<Dog>;       // 接收 Dog\n\nconst animalConsumer: AnimalConsumer = (a: Animal) => a.name;\nlet dogConsumer: DogConsumer;\n\n// ✅ 可以赋值：接收 Animal 的函数，能处理更多，可以当 Dog Consumer\ndogConsumer = animalConsumer;\n\n// ❌ 不可赋值：接收 Dog 的函数，不能处理所有 Animal\n// animalConsumer = dogConsumer;\n```\n\n### 为什么函数参数是逆变的？\n```ts\nclass Animal { name = ''; }\nclass Dog extends Animal { bark() {} }\n\nfunction feedAnimal(animal: Animal) {\n  console.log(animal.name); // Animal 的属性都有\n}\n\nfunction feedDog(dog: Dog) {\n  dog.bark(); // Dog 特有的方法，Animal 没有！\n}\n\n// 如果允许 feedDog 作为 feedAnimal 的替代：\n// 可能传入一只 Cat（Cat extends Animal），但 Cat 没有 bark()！\n```\n\n### 双变（Bivariant）—— 方法类型\n```ts\n// 方法（method）声明是双变的（既协变又逆变）\ninterface Processor {\n  process(arg: Dog): void; // 方法写法，双变\n}\n\n// 函数属性是逆变的（strictFunctionTypes 生效）\ninterface Processor {\n  process: (arg: Dog) => void; // 函数属性写法，逆变\n}\n```\n\n### 实际影响\n```ts\n// 数组是协变的（这实际上不完全安全！）\nconst dogs: Dog[] = [new Dog()];\nconst animals: Animal[] = dogs; // ✅ 允许（协变）\nanimals.push(new Cat()); // 运行时错误！但编译时不报错\n\n// 只读数组是安全的协变\nconst readonlyAnimals: ReadonlyArray<Animal> = dogs; // ✅ 安全\n```",
-    "tags": [
-      "TypeScript",
-      "协变",
-      "逆变",
-      "双变"
-    ],
+    "tags": ["TypeScript", "协变", "逆变", "双变"],
     "source": "字节跳动"
   },
   {
@@ -236,12 +158,7 @@
     "difficulty": 3,
     "question": "如何实现 TypeScript 中的递归类型？写出 DeepPartial 和 DeepReadonly。",
     "answer": "## 递归类型\n\n### DeepPartial — 深层可选\n```ts\ntype DeepPartial<T> = T extends object\n  ? { [K in keyof T]?: DeepPartial<T[K]> }\n  : T;\n\n// 使用\ninterface Config {\n  server: { host: string; port: number; ssl: boolean };\n  database: { url: string; name: string };\n}\n\ntype PartialConfig = DeepPartial<Config>;\n// 所有嵌套属性都变为可选\n\nconst config: PartialConfig = {\n  server: { host: 'localhost' } // port 和 ssl 可以省略\n};\n```\n\n### DeepReadonly — 深层只读\n```ts\ntype DeepReadonly<T> = T extends (infer E)[]\n  ? ReadonlyArray<DeepReadonly<E>>\n  : T extends object\n    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }\n    : T;\n\nconst obj: DeepReadonly<Config> = { ... };\nobj.server.port = 3000; // ❌ Error: 深层也只读\n```\n\n### DeepRequired — 深层必填\n```ts\ntype DeepRequired<T> = T extends object\n  ? { [K in keyof T]-?: DeepRequired<T[K]> }\n  : T;\n```\n\n### 递归类型注意事项\n```ts\n// TS 4.1+ 支持尾递归优化，但仍有深度限制（默认100层）\n// 过深的递归会报 \"Type instantiation is excessively deep\" 错误\n\n// 处理循环引用\ntype JSONValue =\n  | string\n  | number\n  | boolean\n  | null\n  | JSONValue[]\n  | { [key: string]: JSONValue }; // 循环引用，TS 允许\n```\n\n### 实用工具：DeepMerge\n```ts\ntype DeepMerge<T, U> = {\n  [K in keyof T | keyof U]:\n    K extends keyof T & keyof U\n      ? T[K] extends object\n        ? U[K] extends object\n          ? DeepMerge<T[K], U[K]>\n          : U[K]\n        : U[K]\n      : K extends keyof T\n        ? T[K]\n        : K extends keyof U\n          ? U[K]\n          : never;\n};\n```",
-    "tags": [
-      "TypeScript",
-      "递归类型",
-      "DeepPartial",
-      "DeepReadonly"
-    ],
+    "tags": ["TypeScript", "递归类型", "DeepPartial", "DeepReadonly"],
     "source": "高频"
   },
   {
@@ -250,12 +167,7 @@
     "difficulty": 2,
     "question": "TypeScript 类中有哪些访问修饰符？abstract 抽象类有什么用？",
     "answer": "## TypeScript 类特性\n\n### 访问修饰符\n```ts\nclass BankAccount {\n  public owner: string;       // 公开（默认）\n  private balance: number;    // 私有（只在类内访问）\n  protected accountType: string; // 受保护（类和子类访问）\n  readonly id: string;        // 只读（不可修改）\n\n  // 构造函数简写（自动创建并赋值属性）\n  constructor(\n    public name: string,      // 等同于 this.name = name\n    private _secret: string\n  ) {\n    this.id = Math.random().toString(36);\n    this.owner = name;\n    this.balance = 0;\n    this.accountType = 'basic';\n  }\n\n  // 私有方法\n  private validate(): boolean {\n    return this.balance >= 0;\n  }\n\n  // getter/setter\n  get amount(): number { return this.balance; }\n  set amount(v: number) {\n    if (v < 0) throw new Error('Cannot be negative');\n    this.balance = v;\n  }\n}\n\n// JS 私有字段（真正的运行时私有）\nclass Modern {\n  #secret = 'hidden'; // 运行时也无法访问\n  getSecret() { return this.#secret; }\n}\n```\n\n### 抽象类\n```ts\n// 抽象类不能实例化，只能被继承\nabstract class Shape {\n  abstract area(): number;           // 抽象方法：子类必须实现\n  abstract perimeter(): number;\n\n  // 可以有普通方法\n  toString(): string {\n    return `Area: ${this.area()}, Perimeter: ${this.perimeter()}`;\n  }\n}\n\nclass Circle extends Shape {\n  constructor(private radius: number) { super(); }\n  area() { return Math.PI * this.radius ** 2; }\n  perimeter() { return 2 * Math.PI * this.radius; }\n}\n\nclass Rectangle extends Shape {\n  constructor(private w: number, private h: number) { super(); }\n  area() { return this.w * this.h; }\n  perimeter() { return 2 * (this.w + this.h); }\n}\n\n// new Shape(); // ❌ Error\nconst c = new Circle(5);\nconsole.log(c.toString()); // ✅\n```\n\n### implements 实现接口\n```ts\ninterface Drawable { draw(): void; }\ninterface Resizable { resize(factor: number): void; }\n\n// 一个类可以实现多个接口\nclass Widget implements Drawable, Resizable {\n  draw() { console.log('Drawing widget'); }\n  resize(factor: number) { console.log(`Resizing by ${factor}`); }\n}\n```",
-    "tags": [
-      "TypeScript",
-      "类",
-      "访问修饰符",
-      "抽象类"
-    ],
+    "tags": ["TypeScript", "类", "访问修饰符", "抽象类"],
     "source": "高频"
   },
   {
@@ -264,11 +176,7 @@
     "difficulty": 2,
     "question": "TypeScript 中索引签名（Index Signature）和索引访问类型是什么？",
     "answer": "## 索引签名与索引访问类型\n\n### 索引签名\n```ts\n// 字符串索引签名\ninterface StringMap {\n  [key: string]: string;\n}\nconst m: StringMap = { a: '1', b: '2' };\nm['c'] = '3'; // ✅\nm['d'] = 4;   // ❌ 值必须是 string\n\n// 数字索引签名\ninterface NumberArray {\n  [index: number]: string;\n}\n\n// 混合（数字索引的值类型必须是字符串索引值类型的子类型）\ninterface Mixed {\n  [key: string]: string | number;\n  [index: number]: string; // ✅ string 是 string|number 的子类型\n  name: string; // ✅ 具名属性的值类型必须兼容索引签名\n}\n```\n\n### 索引访问类型（T[K]）\n```ts\ninterface User {\n  name: string;\n  age: number;\n  address: { city: string; zip: string };\n}\n\ntype NameType = User['name'];              // string\ntype AgeType = User['age'];               // number\ntype AddressType = User['address'];       // { city: string; zip: string }\ntype CityType = User['address']['city'];  // string（嵌套访问）\n\n// 联合键访问\ntype NameOrAge = User['name' | 'age'];    // string | number\n\n// 结合 keyof\ntype AllValues = User[keyof User];        // string | number | { city: string; zip: string }\n\n// 数组元素类型\ntype Arr = string[];\ntype Item = Arr[number]; // string（用 number 索引数组）\n\nconst colors = ['red', 'green', 'blue'] as const;\ntype Color = typeof colors[number]; // \"red\" | \"green\" | \"blue\"\n```\n\n### 实用技巧：从对象值类型构造联合\n```ts\nconst STATUS = {\n  PENDING: 'pending',\n  ACTIVE: 'active',\n  DELETED: 'deleted',\n} as const;\n\ntype Status = typeof STATUS[keyof typeof STATUS];\n// \"pending\" | \"active\" | \"deleted\"\n```",
-    "tags": [
-      "TypeScript",
-      "索引签名",
-      "索引访问"
-    ],
+    "tags": ["TypeScript", "索引签名", "索引访问"],
     "source": "高频"
   },
   {
@@ -277,11 +185,7 @@
     "difficulty": 2,
     "question": "TypeScript 联合类型（Union）和交叉类型（Intersection）的区别？",
     "answer": "## 联合类型 vs 交叉类型\n\n### 联合类型（Union）—— 或\n```ts\n// A | B：值是 A 类型 或 B 类型之一\ntype StringOrNumber = string | number;\ntype Status = 'active' | 'inactive' | 'deleted';\n\nfunction format(val: string | number): string {\n  // 使用前需要类型收窄\n  if (typeof val === 'string') return val.toUpperCase();\n  return val.toFixed(2);\n}\n\n// 对象联合类型\ntype Cat = { kind: 'cat'; meow(): void };\ntype Dog = { kind: 'dog'; bark(): void };\ntype Pet = Cat | Dog;\n\n// 联合类型只能访问共有属性\nfunction greet(pet: Pet) {\n  pet.kind; // ✅ 共有属性\n  // pet.meow(); // ❌ 不确定是 Cat\n}\n```\n\n### 交叉类型（Intersection）—— 且\n```ts\n// A & B：值同时满足 A 和 B 类型\ntype Serializable = { serialize(): string };\ntype Identifiable = { id: string };\n\ntype Record = Serializable & Identifiable;\n// { serialize(): string; id: string; }\n\n// 合并对象类型\ntype Combined = { a: string } & { b: number };\n// { a: string; b: number; }\n\n// 冲突时\ntype Conflict = { a: string } & { a: number };\n// a 的类型是 string & number = never（不可能同时是两种）\n```\n\n### 联合类型的分发特性\n```ts\n// 条件类型对联合类型的分发\ntype Nullable<T> = T | null | undefined;\ntype Flatten<T> = T extends Array<infer E> ? E : T;\n\ntype A = Flatten<string[] | number | boolean[]>;\n// string | number | boolean\n// 分发：Flatten<string[]> | Flatten<number> | Flatten<boolean[]>\n// = string | number | boolean\n```\n\n### 实际使用模式\n```ts\n// 联合：API 响应类型\ntype ApiResponse<T> =\n  | { status: 'success'; data: T }\n  | { status: 'error'; message: string }\n  | { status: 'loading' };\n\n// 交叉：混入模式\ntype WithTimestamps<T> = T & {\n  createdAt: Date;\n  updatedAt: Date;\n};\n\ntype UserWithTimestamps = WithTimestamps<User>;\n// User & { createdAt: Date; updatedAt: Date; }\n```",
-    "tags": [
-      "TypeScript",
-      "联合类型",
-      "交叉类型"
-    ],
+    "tags": ["TypeScript", "联合类型", "交叉类型"],
     "source": "高频"
   },
   {
@@ -290,11 +194,7 @@
     "difficulty": 3,
     "question": "实现 TypeScript 工具类型：Flatten、UnionToIntersection、TupleToUnion。",
     "answer": "## TypeScript 类型体操\n\n### Flatten — 展开嵌套数组类型\n```ts\ntype Flatten<T> = T extends Array<infer Item>\n  ? Flatten<Item>\n  : T;\n\ntype A = Flatten<number[][][]>;  // number\ntype B = Flatten<string[]>;      // string\ntype C = Flatten<number>;        // number（非数组原样返回）\n```\n\n### TupleToUnion — 元组转联合\n```ts\ntype TupleToUnion<T extends any[]> = T[number];\n\ntype T = TupleToUnion<[string, number, boolean]>;\n// string | number | boolean\n```\n\n### UnionToIntersection — 联合转交叉\n```ts\n// 利用逆变位置推断\ntype UnionToIntersection<U> =\n  (U extends any ? (x: U) => void : never) extends (x: infer I) => void\n    ? I\n    : never;\n\ntype A = UnionToIntersection<{ a: string } | { b: number }>;\n// { a: string } & { b: number }\n\n// 原理：\n// 1. 分发条件类型把联合展开\n// 2. 函数参数位置（逆变位置）的推断会将多个类型合并为交叉类型\n```\n\n### TupleLength — 元组长度\n```ts\ntype TupleLength<T extends any[]> = T['length'];\n\ntype L = TupleLength<[1, 2, 3]>; // 3（字面量类型，不是 number）\n```\n\n### LastElement — 元组最后一个元素\n```ts\ntype Last<T extends any[]> = T extends [...infer _, infer L] ? L : never;\n\ntype L = Last<[1, 2, 3]>; // 3\n```\n\n### Equal — 判断两类型是否相等\n```ts\ntype Equal<X, Y> =\n  (<T>() => T extends X ? 1 : 2) extends\n  (<T>() => T extends Y ? 1 : 2) ? true : false;\n\ntype A = Equal<string, string>; // true\ntype B = Equal<string, number>; // false\ntype C = Equal<any, number>;    // false\n```\n\n### Awaited — 展开 Promise\n```ts\ntype MyAwaited<T> =\n  T extends null | undefined\n    ? T\n    : T extends object & { then(onfulfilled: infer F): any }\n      ? F extends (value: infer V) => any\n        ? MyAwaited<V>\n        : never\n      : T;\n\ntype A = MyAwaited<Promise<string>>;          // string\ntype B = MyAwaited<Promise<Promise<number>>>; // number\n```",
-    "tags": [
-      "TypeScript",
-      "类型体操",
-      "高级"
-    ],
+    "tags": ["TypeScript", "类型体操", "高级"],
     "source": "字节跳动"
   },
   {
@@ -303,11 +203,7 @@
     "difficulty": 2,
     "question": "TypeScript 中如何正确定义函数类型？什么是函数类型兼容性？",
     "answer": "## 函数类型\n\n### 函数类型定义\n```ts\n// 方式1：内联类型\nconst add: (a: number, b: number) => number = (a, b) => a + b;\n\n// 方式2：type 别名\ntype MathFn = (a: number, b: number) => number;\nconst multiply: MathFn = (a, b) => a * b;\n\n// 方式3：interface（可以重载）\ninterface Formatter {\n  (value: string): string;\n  (value: number, decimals: number): string;\n}\n\n// 方式4：call signature\ntype WithCallCount = {\n  (x: number): number;\n  callCount: number; // 函数属性\n};\n```\n\n### 可选参数与默认值\n```ts\nfunction greet(name: string, greeting = 'Hello', title?: string): string {\n  return `${greeting}, ${title ? title + ' ' : ''}${name}!`;\n}\n// title 是可选的，greeting 有默认值\n\n// 剩余参数\nfunction sum(...nums: number[]): number {\n  return nums.reduce((acc, n) => acc + n, 0);\n}\n```\n\n### 函数类型兼容性\n```ts\n// 参数数量少的函数可以赋值给参数数量多的（结构子类型）\ntype Handler = (event: Event, extra: string) => void;\nconst simpleHandler: Handler = (event) => {}; // ✅ 少参数兼容\n\n// 返回值类型：协变（子类型兼容父类型）\ntype GetAnimal = () => Animal;\nconst getDog: GetAnimal = () => new Dog(); // ✅ Dog extends Animal\n\n// 参数类型：逆变（strictFunctionTypes 开启时）\ntype HandleAnimal = (a: Animal) => void;\nconst handleDog: HandleAnimal = (a: Animal) => {}; // ✅\n// const handleDog2: HandleAnimal = (d: Dog) => d.bark(); // ❌\n```\n\n### this 类型\n```ts\ninterface ClickHandler {\n  handleClick(this: HTMLButtonElement, event: MouseEvent): void;\n}\n\n// 声明 this 类型，调用时 TS 会检查 this 的类型\nfunction onClick(this: HTMLButtonElement, event: MouseEvent) {\n  console.log(this.disabled); // this 是 HTMLButtonElement\n}\nbutton.addEventListener('click', onClick.bind(button)); // ✅\n```",
-    "tags": [
-      "TypeScript",
-      "函数类型",
-      "高阶函数"
-    ],
+    "tags": ["TypeScript", "函数类型", "高阶函数"],
     "source": "高频"
   },
   {
@@ -316,11 +212,7 @@
     "difficulty": 1,
     "question": "TypeScript 的类型推断（Type Inference）是如何工作的？",
     "answer": "## 类型推断\n\n### 基础推断\n```ts\n// 变量初始化推断\nlet x = 42;        // x: number\nlet s = 'hello';   // s: string\nlet arr = [1, 2];  // arr: number[]\nlet mixed = [1, 'a']; // mixed: (string | number)[]\n\n// 函数返回值推断\nfunction add(a: number, b: number) {\n  return a + b; // 返回 number\n}\n\n// 对象字面量推断\nconst user = { name: 'Alice', age: 30 };\n// user: { name: string; age: number }\n```\n\n### 最佳公共类型（Best Common Type）\n```ts\nconst arr = [1, 'hello', true]; // (string | number | boolean)[]\n```\n\n### 上下文类型推断（Contextual Typing）\n```ts\n// 根据上下文推断参数类型\nwindow.addEventListener('click', (e) => {\n  // e 被推断为 MouseEvent（根据 'click' 事件的签名）\n  e.clientX; // ✅\n});\n\nconst nums = [1, 2, 3];\nnums.map((n) => n.toFixed(2)); // n 推断为 number\n```\n\n### as const — 字面量推断\n```ts\n// 普通推断（宽泛类型）\nconst palette = { red: '#ff0000', blue: '#0000ff' };\n// { red: string; blue: string }\n\n// as const（窄类型，所有值变为字面量类型）\nconst palette2 = { red: '#ff0000', blue: '#0000ff' } as const;\n// { readonly red: \"#ff0000\"; readonly blue: \"#0000ff\" }\n\nconst langs = ['ts', 'js', 'rust'] as const;\n// readonly [\"ts\", \"js\", \"rust\"]\ntype Lang = typeof langs[number]; // \"ts\" | \"js\" | \"rust\"\n```\n\n### satisfies（TS 4.9+）\n```ts\n// 既验证类型，又保留精确推断\nconst config = {\n  port: 3000,\n  host: 'localhost',\n} satisfies { port: number; host: string; timeout?: number };\n\n// config.port 的类型是 3000（字面量），而不是 number\n```",
-    "tags": [
-      "TypeScript",
-      "类型推断",
-      "自动推断"
-    ],
+    "tags": ["TypeScript", "类型推断", "自动推断"],
     "source": "高频"
   },
   {
@@ -329,12 +221,7 @@
     "difficulty": 2,
     "question": "TypeScript 中如何扩展第三方模块的类型（模块扩展 Module Augmentation）？",
     "answer": "## 模块扩展\n\n### 扩展已有模块\n```ts\n// 扩展 Express 的 Request 类型\n// types/express.d.ts\nimport { User } from './models/user';\n\ndeclare module 'express-serve-static-core' {\n  interface Request {\n    user?: User;\n    requestId: string;\n    startTime: number;\n  }\n}\n\n// 使用\napp.use((req, res, next) => {\n  req.user = authenticatedUser; // ✅ 有类型\n  req.requestId = uuid();       // ✅\n});\n```\n\n### 扩展全局类型\n```ts\n// global.d.ts（不需要 declare module，直接 declare global）\ndeclare global {\n  interface Window {\n    analytics: {\n      track(event: string, properties?: Record<string, unknown>): void;\n    };\n    __APP_CONFIG__: {\n      apiUrl: string;\n      version: string;\n    };\n  }\n\n  interface Array<T> {\n    // 扩展数组方法\n    groupBy(key: keyof T): Record<string, T[]>;\n  }\n}\n\nexport {}; // 必须有，使文件成为模块\n```\n\n### 扩展枚举\n```ts\n// 声明枚举合并（不常用，推荐用联合类型）\nenum Color { Red = 'red', Blue = 'blue' }\nnamespace Color {\n  export const Purple = 'purple';\n  export function isValid(c: string): c is Color {\n    return Object.values(Color).includes(c as Color);\n  }\n}\n```\n\n### 扩展第三方组件库类型\n```ts\n// 扩展 Material UI 主题\ndeclare module '@mui/material/styles' {\n  interface Theme {\n    custom: {\n      drawerWidth: number;\n    };\n  }\n  interface ThemeOptions {\n    custom?: {\n      drawerWidth?: number;\n    };\n  }\n}\n```",
-    "tags": [
-      "TypeScript",
-      "namespace",
-      "模块扩展",
-      "augmentation"
-    ],
+    "tags": ["TypeScript", "namespace", "模块扩展", "augmentation"],
     "source": "高频"
   },
   {
@@ -343,12 +230,7 @@
     "difficulty": 2,
     "question": "如何用 TypeScript 实现一个类型安全的 EventEmitter？",
     "answer": "## 类型安全的 EventEmitter\n\n```ts\n// 定义事件映射类型\ntype EventMap = Record<string, any>;\n\n// 事件发射器接口\ninterface TypedEventEmitter<Events extends EventMap> {\n  on<K extends keyof Events>(event: K, listener: (data: Events[K]) => void): this;\n  off<K extends keyof Events>(event: K, listener: (data: Events[K]) => void): this;\n  emit<K extends keyof Events>(event: K, data: Events[K]): boolean;\n  once<K extends keyof Events>(event: K, listener: (data: Events[K]) => void): this;\n}\n\n// 实现\nclass EventEmitter<Events extends EventMap> implements TypedEventEmitter<Events> {\n  private listeners: Partial<Record<keyof Events, Function[]>> = {};\n\n  on<K extends keyof Events>(event: K, listener: (data: Events[K]) => void): this {\n    if (!this.listeners[event]) {\n      this.listeners[event] = [];\n    }\n    this.listeners[event]!.push(listener);\n    return this;\n  }\n\n  off<K extends keyof Events>(event: K, listener: (data: Events[K]) => void): this {\n    const arr = this.listeners[event];\n    if (arr) {\n      this.listeners[event] = arr.filter(l => l !== listener) as any;\n    }\n    return this;\n  }\n\n  emit<K extends keyof Events>(event: K, data: Events[K]): boolean {\n    const arr = this.listeners[event];\n    if (!arr?.length) return false;\n    arr.forEach(l => l(data));\n    return true;\n  }\n\n  once<K extends keyof Events>(event: K, listener: (data: Events[K]) => void): this {\n    const wrapper = (data: Events[K]) => {\n      listener(data);\n      this.off(event, wrapper);\n    };\n    return this.on(event, wrapper);\n  }\n}\n\n// 使用\ninterface AppEvents {\n  login: { userId: string; timestamp: number };\n  logout: { userId: string };\n  error: Error;\n  resize: { width: number; height: number };\n}\n\nconst emitter = new EventEmitter<AppEvents>();\n\nemitter.on('login', (data) => {\n  console.log(data.userId);   // ✅ string\n  console.log(data.timestamp); // ✅ number\n});\n\nemitter.emit('login', { userId: '123', timestamp: Date.now() }); // ✅\nemitter.emit('login', { userId: 123 }); // ❌ userId 必须是 string\n```",
-    "tags": [
-      "TypeScript",
-      "泛型约束",
-      "条件类型",
-      "实战"
-    ],
+    "tags": ["TypeScript", "泛型约束", "条件类型", "实战"],
     "source": "高频"
   },
   {
@@ -357,11 +239,7 @@
     "difficulty": 3,
     "question": "如何用 TypeScript 泛型实现链式调用（Builder 模式）并保持类型安全？",
     "answer": "## TypeScript Builder 模式\n\n```ts\n// 累积类型的 Builder\nclass QueryBuilder<T extends object = {}> {\n  private conditions: string[] = [];\n  private selectedFields: string[] = [];\n\n  select<K extends string>(\n    ...fields: K[]\n  ): QueryBuilder<T & Record<K, unknown>> {\n    this.selectedFields.push(...fields);\n    return this as any;\n  }\n\n  where(condition: string): this {\n    this.conditions.push(condition);\n    return this;\n  }\n\n  build(): string {\n    const fields = this.selectedFields.join(', ') || '*';\n    const where = this.conditions.length\n      ? ` WHERE ${this.conditions.join(' AND ')}`\n      : '';\n    return `SELECT ${fields}${where}`;\n  }\n}\n\n// 使用\nconst query = new QueryBuilder()\n  .select('name', 'age', 'email')\n  .where('age > 18')\n  .where('active = true')\n  .build();\n\n// 真正类型安全的 Builder（用元组累积类型）\ntype Expand<T> = { [K in keyof T]: T[K] };\n\nclass StrictBuilder<T extends Record<string, unknown> = {}> {\n  private data: Partial<T> = {};\n\n  set<K extends string, V>(\n    key: K,\n    value: V\n  ): StrictBuilder<Expand<T & Record<K, V>>> {\n    (this.data as any)[key] = value;\n    return this as any;\n  }\n\n  build(): T {\n    return this.data as T;\n  }\n}\n\nconst result = new StrictBuilder()\n  .set('name', 'Alice')    // StrictBuilder<{ name: string }>\n  .set('age', 30)          // StrictBuilder<{ name: string; age: number }>\n  .set('active', true)     // StrictBuilder<{ name: string; age: number; active: boolean }>\n  .build();\n\nresult.name;   // string ✅\nresult.age;    // number ✅\nresult.active; // boolean ✅\n```",
-    "tags": [
-      "TypeScript",
-      "高级类型",
-      "Builder模式"
-    ],
+    "tags": ["TypeScript", "高级类型", "Builder模式"],
     "source": "高频"
   },
   {
@@ -370,11 +248,7 @@
     "difficulty": 2,
     "question": "如何用 TypeScript 实现类型安全的错误处理（Result/Either 类型）？",
     "answer": "## 类型安全错误处理\n\n### Result 类型（成功/失败二选一）\n```ts\ntype Result<T, E = Error> =\n  | { ok: true; value: T }\n  | { ok: false; error: E };\n\n// 创建辅助函数\nconst ok = <T>(value: T): Result<T, never> => ({ ok: true, value });\nconst err = <E>(error: E): Result<never, E> => ({ ok: false, error });\n\n// 使用\nasync function fetchUser(id: string): Promise<Result<User, string>> {\n  try {\n    const res = await fetch(`/api/users/${id}`);\n    if (!res.ok) return err(`HTTP ${res.status}`);\n    const user = await res.json();\n    return ok(user);\n  } catch (e) {\n    return err('Network error');\n  }\n}\n\nasync function main() {\n  const result = await fetchUser('123');\n  if (result.ok) {\n    console.log(result.value.name); // ✅ User\n  } else {\n    console.error(result.error);    // ✅ string\n  }\n}\n```\n\n### 链式操作（monadic）\n```ts\nclass ResultChain<T, E> {\n  constructor(private result: Result<T, E>) {}\n\n  map<U>(fn: (value: T) => U): ResultChain<U, E> {\n    if (this.result.ok) {\n      return new ResultChain(ok(fn(this.result.value)));\n    }\n    return this as unknown as ResultChain<U, E>;\n  }\n\n  flatMap<U>(fn: (value: T) => Result<U, E>): ResultChain<U, E> {\n    if (this.result.ok) {\n      return new ResultChain(fn(this.result.value));\n    }\n    return this as unknown as ResultChain<U, E>;\n  }\n\n  match<U>(handlers: { ok: (v: T) => U; err: (e: E) => U }): U {\n    return this.result.ok\n      ? handlers.ok(this.result.value)\n      : handlers.err(this.result.error);\n  }\n}\n\n// 使用\nconst output = new ResultChain(await fetchUser('123'))\n  .map(user => user.name.toUpperCase())\n  .map(name => `Hello, ${name}!`)\n  .match({\n    ok: msg => msg,\n    err: e => `Error: ${e}`,\n  });\n```",
-    "tags": [
-      "TypeScript",
-      "错误处理",
-      "Result类型"
-    ],
+    "tags": ["TypeScript", "错误处理", "Result类型"],
     "source": "高频"
   },
   {
@@ -383,11 +257,7 @@
     "difficulty": 3,
     "question": "TypeScript 项目中有哪些常见的类型检查性能问题？如何优化？",
     "answer": "## TypeScript 性能优化\n\n### 1. 避免过度复杂的类型\n```ts\n// 问题：递归类型层次过深\ntype DeepPartial<T> = T extends object ? {\n  [K in keyof T]?: DeepPartial<T[K]>;\n} : T;\n// 对大型对象可能导致 \"Type instantiation is excessively deep\"\n\n// 优化：限制递归深度\ntype DeepPartial<T, D extends number = 5> = [D] extends [never]\n  ? T\n  : T extends object\n    ? { [K in keyof T]?: DeepPartial<T[K], Prev[D]> }\n    : T;\n// 使用计数器限制深度\n```\n\n### 2. 使用 interface 代替 type（可合并，提升增量编译性能）\n```ts\n// 大型项目中 interface 的类型检查比 type 更快（可缓存）\ninterface User { name: string; age: number; }\n// 比\ntype User = { name: string; age: number };\n// 性能稍好（在复杂场景下）\n```\n\n### 3. skipLibCheck 和 isolatedModules\n```json\n{\n  \"compilerOptions\": {\n    \"skipLibCheck\": true,       // 不检查 node_modules 类型（大幅提速）\n    \"isolatedModules\": true,    // 每文件独立编译（esbuild/SWC 要求）\n    \"incremental\": true,        // 增量编译（缓存编译结果）\n    \"tsBuildInfoFile\": \".tsbuildinfo\"\n  }\n}\n```\n\n### 4. 拆分类型文件\n```ts\n// 将复杂的工具类型放到单独文件，避免污染主模块\n// types/utils.ts（只被需要时导入）\nexport type DeepPartial<T> = ...;\n\n// 使用 type-only import（提示编译器可安全擦除）\nimport type { User } from './models';\n```\n\n### 5. 避免反模式\n```ts\n// 避免：枚举嵌套太深\ntype Bad = Record<string, Record<string, Record<string, string>>>;\n\n// 避免：大量条件类型链\ntype Bad2<T> = T extends A ? X : T extends B ? Y : T extends C ? Z : ...;\n\n// 避免：对 any/unknown 大量使用条件类型\n```\n\n### 6. 项目引用（Project References）\n```json\n// tsconfig.json（大型 monorepo）\n{\n  \"references\": [\n    { \"path\": \"./packages/core\" },\n    { \"path\": \"./packages/ui\" }\n  ]\n}\n// 每个子包独立编译、缓存，不互相污染\n```",
-    "tags": [
-      "TypeScript",
-      "性能",
-      "类型检查优化"
-    ],
+    "tags": ["TypeScript", "性能", "类型检查优化"],
     "source": "高频"
   },
   {
@@ -396,11 +266,7 @@
     "difficulty": 2,
     "question": "如何用 TypeScript 泛型设计一个类型安全的 API 请求封装？",
     "answer": "## 类型安全的 API 封装\n\n```ts\n// API 路由类型映射\ninterface ApiRoutes {\n  'GET /users': { params: never; response: User[] };\n  'GET /users/:id': { params: { id: string }; response: User };\n  'POST /users': { params: never; body: CreateUserDto; response: User };\n  'PUT /users/:id': { params: { id: string }; body: UpdateUserDto; response: User };\n  'DELETE /users/:id': { params: { id: string }; response: void };\n}\n\ntype Method = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';\n\n// 类型安全的请求函数\nasync function request<\n  R extends keyof ApiRoutes,\n  Route extends ApiRoutes[R]\n>(\n  route: R,\n  options?: {\n    params?: Route extends { params: infer P } ? P : never;\n    body?: Route extends { body: infer B } ? B : never;\n  }\n): Promise<Route extends { response: infer Res } ? Res : never> {\n  const [method, path] = (route as string).split(' ');\n  // 替换路径参数\n  let url = path;\n  if (options?.params) {\n    Object.entries(options.params).forEach(([k, v]) => {\n      url = url.replace(`:${k}`, String(v));\n    });\n  }\n\n  const res = await fetch(url, {\n    method,\n    body: options?.body ? JSON.stringify(options.body) : undefined,\n    headers: { 'Content-Type': 'application/json' },\n  });\n\n  if (!res.ok) throw new Error(`HTTP ${res.status}`);\n  return res.json();\n}\n\n// 使用（完全类型安全）\nconst users = await request('GET /users');\n// users: User[]\n\nconst user = await request('GET /users/:id', { params: { id: '123' } });\n// user: User\n\nconst newUser = await request('POST /users', {\n  body: { name: 'Alice', email: 'alice@example.com' },\n});\n// newUser: User\n\n// 错误示例\nawait request('GET /users/:id'); // ❌ 缺少 params\nawait request('GET /users/:id', { params: { userId: '123' } }); // ❌ 应该是 id 不是 userId\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "API设计"
-    ],
+    "tags": ["TypeScript", "泛型", "API设计"],
     "source": "高频"
   },
   {
@@ -409,11 +275,7 @@
     "difficulty": 2,
     "question": "TypeScript 中如何实现一个类型安全的依赖注入容器？",
     "answer": "## 类型安全的依赖注入\n\n```ts\ntype Constructor<T = any> = new (...args: any[]) => T;\n\nclass Container {\n  private bindings = new Map<any, any>();\n\n  bind<T>(token: Constructor<T> | symbol | string, factory: () => T): this {\n    this.bindings.set(token, factory);\n    return this;\n  }\n\n  resolve<T>(token: Constructor<T> | symbol | string): T {\n    const factory = this.bindings.get(token);\n    if (!factory) throw new Error(`No binding for token: ${String(token)}`);\n    return factory();\n  }\n}\n\n// 使用\ninterface Logger { log(msg: string): void; }\ninterface Database { query(sql: string): Promise<any[]>; }\n\nconst container = new Container();\n\ncontainer.bind<Logger>(Symbol('Logger'), () => ({\n  log: (msg) => console.log(`[LOG] ${msg}`),\n}));\n\nclass UserService {\n  constructor(\n    private logger: Logger,\n    private db: Database\n  ) {}\n  async getUsers() {\n    this.logger.log('Fetching users');\n    return this.db.query('SELECT * FROM users');\n  }\n}\n\n// reflect-metadata + 装饰器方案（NestJS 风格）\nimport 'reflect-metadata';\n\nfunction Injectable(): ClassDecorator {\n  return (target) => {\n    Reflect.defineMetadata('injectable', true, target);\n  };\n}\n\nfunction Inject(token: any): ParameterDecorator {\n  return (target, _, parameterIndex) => {\n    const tokens = Reflect.getMetadata('inject:tokens', target) || [];\n    tokens[parameterIndex] = token;\n    Reflect.defineMetadata('inject:tokens', tokens, target);\n  };\n}\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "工厂函数"
-    ],
+    "tags": ["TypeScript", "泛型", "工厂函数"],
     "source": "高频"
   },
   {
@@ -422,11 +284,7 @@
     "difficulty": 2,
     "question": "TypeScript 类型只在编译时有效，如何在运行时验证数据类型？",
     "answer": "## 运行时类型验证\n\n### 问题\nTypeScript 类型在编译后被完全擦除，API 响应、用户输入等外部数据无法在运行时保证类型安全。\n\n### 方案1：Zod（推荐）\n```ts\nimport { z } from 'zod';\n\n// 定义 schema（同时生成 TS 类型）\nconst UserSchema = z.object({\n  id: z.string().uuid(),\n  name: z.string().min(1).max(100),\n  age: z.number().int().min(0).max(150),\n  email: z.string().email(),\n  role: z.enum(['admin', 'user', 'guest']),\n  createdAt: z.string().datetime(),\n  tags: z.array(z.string()).optional(),\n});\n\n// 从 schema 推断 TypeScript 类型\ntype User = z.infer<typeof UserSchema>;\n\n// 运行时验证\nasync function fetchUser(id: string): Promise<User> {\n  const res = await fetch(`/api/users/${id}`);\n  const raw = await res.json();\n\n  // parse：失败抛异常\n  const user = UserSchema.parse(raw);\n  // safeParse：失败返回 { success: false, error }\n  const result = UserSchema.safeParse(raw);\n  if (!result.success) {\n    console.error(result.error.errors);\n    throw new Error('Invalid user data');\n  }\n  return result.data;\n}\n```\n\n### 方案2：自定义类型守卫\n```ts\nfunction isUser(val: unknown): val is User {\n  return (\n    typeof val === 'object' && val !== null &&\n    'id' in val && typeof (val as any).id === 'string' &&\n    'name' in val && typeof (val as any).name === 'string'\n  );\n}\n```\n\n### 方案3：class-validator（NestJS 生态）\n```ts\nimport { IsString, IsEmail, IsInt, Min, Max, validate } from 'class-validator';\nimport { plainToInstance } from 'class-transformer';\n\nclass CreateUserDto {\n  @IsString() name!: string;\n  @IsEmail() email!: string;\n  @IsInt() @Min(0) @Max(150) age!: number;\n}\n\nasync function validateInput(raw: unknown) {\n  const dto = plainToInstance(CreateUserDto, raw);\n  const errors = await validate(dto);\n  if (errors.length > 0) throw new Error(errors.toString());\n  return dto;\n}\n```",
-    "tags": [
-      "TypeScript",
-      "Zod",
-      "运行时类型验证"
-    ],
+    "tags": ["TypeScript", "Zod", "运行时类型验证"],
     "source": "高频"
   },
   {
@@ -435,11 +293,7 @@
     "difficulty": 1,
     "question": "TypeScript 中可选链（?.）和空值合并（??）操作符有什么用？",
     "answer": "## 可选链与空值合并\n\n### 可选链（Optional Chaining）?.\n```ts\n// 不用 ?.\nconst city = user && user.address && user.address.city;\n\n// 用 ?.（短路求值，遇到 null/undefined 返回 undefined）\nconst city = user?.address?.city;\n\n// 可选方法调用\nconst result = obj?.method?.();\n\n// 可选数组访问\nconst item = arr?.[0];\n\n// 深层嵌套\nconst zip = user?.address?.location?.zipCode;\n\n// 与函数调用结合\ncallback?.('hello'); // 如果 callback 是 null/undefined 则不调用\n```\n\n### 空值合并（Nullish Coalescing）??\n```ts\n// ?? 只在左侧是 null 或 undefined 时才用右侧（不同于 ||）\nconst name = user.name ?? 'Anonymous';\nconst count = obj.count ?? 0;\n\n// || 的问题：0、''、false 也会触发\nconst count1 = obj.count || 0;  // obj.count 为 0 时错误！\nconst count2 = obj.count ?? 0;  // obj.count 为 0 时正确\n\n// 赋值简写（??=）\nuser.name ??= 'Anonymous'; // 只在 name 为 null/undefined 时赋值\nuser.count ??= 0;\n```\n\n### 组合使用\n```ts\ninterface Config {\n  server?: {\n    host?: string;\n    port?: number;\n    ssl?: boolean;\n  };\n}\n\nfunction getServerConfig(config: Config) {\n  return {\n    host: config.server?.host ?? 'localhost',\n    port: config.server?.port ?? 3000,\n    ssl: config.server?.ssl ?? false,\n  };\n}\n\n// TypeScript 类型收窄\nfunction processUser(user: User | null | undefined) {\n  const name = user?.name ?? 'Guest';\n  // name 的类型是 string（不是 string | undefined）\n}\n```",
-    "tags": [
-      "TypeScript",
-      "可选链",
-      "空值合并"
-    ],
+    "tags": ["TypeScript", "可选链", "空值合并"],
     "source": "高频"
   },
   {
@@ -448,12 +302,7 @@
     "difficulty": 2,
     "question": "TypeScript 中如何用接口和抽象类实现多态？",
     "answer": "## 多态实现\n\n### 接口多态\n```ts\ninterface Renderer {\n  render(content: string): string;\n  renderList(items: string[]): string;\n}\n\nclass HtmlRenderer implements Renderer {\n  render(content: string) { return `<p>${content}</p>`; }\n  renderList(items: string[]) {\n    return `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`;\n  }\n}\n\nclass MarkdownRenderer implements Renderer {\n  render(content: string) { return content; }\n  renderList(items: string[]) {\n    return items.map(i => `- ${i}`).join('\\n');\n  }\n}\n\nclass JsonRenderer implements Renderer {\n  render(content: string) { return JSON.stringify({ content }); }\n  renderList(items: string[]) { return JSON.stringify(items); }\n}\n\n// 多态调用\nfunction renderPage(renderer: Renderer, data: string[]) {\n  console.log(renderer.renderList(data));\n}\n\nrenderPage(new HtmlRenderer(), ['a', 'b', 'c']);\nrenderPage(new MarkdownRenderer(), ['a', 'b', 'c']);\n```\n\n### 抽象类多态（模板方法模式）\n```ts\nabstract class DataExporter {\n  // 模板方法（固定流程）\n  async export(data: unknown[]): Promise<string> {\n    const validated = await this.validate(data);\n    const transformed = this.transform(validated);\n    const output = this.serialize(transformed);\n    await this.save(output);\n    return output;\n  }\n\n  // 钩子方法（可重写）\n  protected async validate(data: unknown[]): Promise<unknown[]> {\n    return data.filter(Boolean);\n  }\n\n  // 抽象方法（必须实现）\n  protected abstract transform(data: unknown[]): any[];\n  protected abstract serialize(data: any[]): string;\n  protected abstract save(output: string): Promise<void>;\n}\n\nclass CsvExporter extends DataExporter {\n  protected transform(data: unknown[]) {\n    return data.map(row => Object.values(row as object));\n  }\n  protected serialize(data: any[][]) {\n    return data.map(row => row.join(',')).join('\\n');\n  }\n  protected async save(output: string) {\n    await fs.writeFile('export.csv', output);\n  }\n}\n```",
-    "tags": [
-      "TypeScript",
-      "抽象类",
-      "多态",
-      "设计模式"
-    ],
+    "tags": ["TypeScript", "抽象类", "多态", "设计模式"],
     "source": "高频"
   },
   {
@@ -462,11 +311,7 @@
     "difficulty": 2,
     "question": "TypeScript 可辨识联合（Discriminated Union）的最佳实践是什么？",
     "answer": "## 可辨识联合最佳实践\n\n### 基础结构\n```ts\n// 每个成员有共同的字面量字段作为\"标签\"\ntype Shape =\n  | { kind: 'circle';   radius: number }\n  | { kind: 'rect';     width: number; height: number }\n  | { kind: 'triangle'; base: number; height: number };\n\nfunction area(shape: Shape): number {\n  switch (shape.kind) {\n    case 'circle':   return Math.PI * shape.radius ** 2;\n    case 'rect':     return shape.width * shape.height;\n    case 'triangle': return (shape.base * shape.height) / 2;\n    // TypeScript 会提示未处理的 case\n  }\n}\n```\n\n### 穷举检查（Exhaustive Check）\n```ts\n// 确保所有 case 都被处理\nfunction assertNever(x: never): never {\n  throw new Error(`Unhandled case: ${JSON.stringify(x)}`);\n}\n\nfunction area(shape: Shape): number {\n  switch (shape.kind) {\n    case 'circle':   return Math.PI * shape.radius ** 2;\n    case 'rect':     return shape.width * shape.height;\n    case 'triangle': return (shape.base * shape.height) / 2;\n    default:         return assertNever(shape); // 如果漏了某个 case，编译报错\n  }\n}\n\n// 新增类型时，所有 switch 都会自动报错，不会遗漏\ntype Shape = ... | { kind: 'pentagon'; sides: number[] };\n// 上面的 area 函数立刻报错：pentagon 未处理 ✅\n```\n\n### Action Pattern（Redux 风格）\n```ts\ntype Action =\n  | { type: 'INCREMENT'; payload?: number }\n  | { type: 'DECREMENT'; payload?: number }\n  | { type: 'RESET' }\n  | { type: 'SET'; payload: number };\n\nfunction reducer(state: number, action: Action): number {\n  switch (action.type) {\n    case 'INCREMENT': return state + (action.payload ?? 1);\n    case 'DECREMENT': return state - (action.payload ?? 1);\n    case 'RESET':     return 0;\n    case 'SET':       return action.payload;\n    default:          return assertNever(action);\n  }\n}\n```\n\n### 结合 Result 类型\n```ts\ntype ApiResult<T> =\n  | { status: 'loading' }\n  | { status: 'success'; data: T }\n  | { status: 'error'; code: number; message: string };\n\nfunction render<T>(result: ApiResult<T>) {\n  switch (result.status) {\n    case 'loading': return <Spinner />;\n    case 'success': return <DataView data={result.data} />;\n    case 'error':   return <ErrorView message={result.message} />;\n  }\n}\n```",
-    "tags": [
-      "TypeScript",
-      "类型收窄",
-      "discriminated union"
-    ],
+    "tags": ["TypeScript", "类型收窄", "discriminated union"],
     "source": "高频"
   },
   {
@@ -475,11 +320,7 @@
     "difficulty": 3,
     "question": "实现 TypeScript 工具类型 Permutation（排列组合），将联合类型转为所有排列的元组。",
     "answer": "## Permutation 实现\n\n```ts\n// 核心思路：对联合类型每个成员，取出一个，对剩余成员递归\ntype Permutation<T, K = T> =\n  [T] extends [never]\n    ? []\n    : K extends K\n      ? [K, ...Permutation<Exclude<T, K>>]\n      : never;\n\ntype P = Permutation<'a' | 'b' | 'c'>;\n// [\"a\", \"b\", \"c\"] | [\"a\", \"c\", \"b\"] | [\"b\", \"a\", \"c\"] |\n// [\"b\", \"c\", \"a\"] | [\"c\", \"a\", \"b\"] | [\"c\", \"b\", \"a\"]\n\n// 解析：\n// 1. [T] extends [never]：使用元组包裹防止分发，处理 never\n// 2. K extends K：触发联合类型分发（K 和 T 相同，分发 K）\n// 3. [K, ...Permutation<Exclude<T, K>>]：当前选 K，剩余递归\n```\n\n### 相关工具类型练习\n\n```ts\n// 联合类型转元组（顺序不确定，利用 UnionToIntersection）\ntype UnionToIntersection<U> =\n  (U extends any ? (x: U) => void : never) extends (x: infer I) => void ? I : never;\n\ntype LastOf<T> =\n  UnionToIntersection<T extends any ? () => T : never> extends () => infer R ? R : never;\n\ntype UnionToTuple<T, L = LastOf<T>, N = [T] extends [never] ? true : false> =\n  true extends N ? [] : [...UnionToTuple<Exclude<T, L>>, L];\n\ntype T = UnionToTuple<'a' | 'b' | 'c'>; // [\"a\", \"b\", \"c\"]（顺序由 TS 内部决定）\n\n// Combination：从元组中选 K 个的组合\ntype Combination<T extends string, U extends string = T> =\n  T extends T\n    ? T | `${T} ${Combination<Exclude<U, T>>}`\n    : never;\n\ntype C = Combination<'a' | 'b' | 'c'>;\n// \"a\" | \"b\" | \"c\" | \"a b\" | \"a c\" | \"b a\" | \"b c\" | \"c a\" | \"c b\" | ...\n```",
-    "tags": [
-      "TypeScript",
-      "类型编程",
-      "Permutation"
-    ],
+    "tags": ["TypeScript", "类型编程", "Permutation"],
     "source": "字节跳动"
   },
   {
@@ -488,11 +329,7 @@
     "difficulty": 2,
     "question": "TypeScript 如何为柯里化（Currying）函数提供类型支持？",
     "answer": "## TypeScript 柯里化类型\n\n### 简单柯里化\n```ts\n// 手动类型\nfunction add(a: number): (b: number) => number {\n  return (b) => a + b;\n}\n\nconst add5 = add(5);\nconst result = add5(3); // 8，类型是 number\n```\n\n### 泛型柯里化\n```ts\n// 两参数柯里化\nfunction curry<A, B, R>(fn: (a: A, b: B) => R): (a: A) => (b: B) => R {\n  return (a) => (b) => fn(a, b);\n}\n\nconst curriedAdd = curry((a: number, b: number) => a + b);\n// curriedAdd: (a: number) => (b: number) => number\n\nconst add10 = curriedAdd(10);\nadd10(5); // 15\n```\n\n### 多参数泛型柯里化（高级）\n```ts\n// 递归类型实现任意参数柯里化\ntype Curry<Params extends any[], Return> =\n  Params extends [infer First, ...infer Rest]\n    ? Rest extends []\n      ? (arg: First) => Return\n      : (arg: First) => Curry<Rest, Return>\n    : Return;\n\nfunction curryN<P extends any[], R>(fn: (...args: P) => R): Curry<P, R> {\n  return function curried(...args: any[]): any {\n    if (args.length >= fn.length) {\n      return fn(...args as P);\n    }\n    return (...moreArgs: any[]) => curried(...args, ...moreArgs);\n  } as any;\n}\n\n// 使用\nconst sum = curryN((a: number, b: number, c: number) => a + b + c);\nsum(1)(2)(3);     // 6\nsum(1, 2)(3);     // 6（支持部分应用）\nsum(1)(2, 3);     // 6\n```\n\n### Partial Application\n```ts\ntype PartialApplication<F extends (...args: any) => any, A extends any[]> =\n  F extends (...args: [...A, ...infer Rest]) => infer R\n    ? (...args: Rest) => R\n    : never;\n\nfunction partial<F extends (...args: any) => any, A extends any[]>(\n  fn: F,\n  ...partialArgs: A\n): PartialApplication<F, A> {\n  return ((...remainingArgs: any[]) => fn(...partialArgs, ...remainingArgs)) as any;\n}\n\nconst add3 = (a: number, b: number, c: number) => a + b + c;\nconst add1And2 = partial(add3, 1, 2); // (c: number) => number\nadd1And2(3); // 6\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "柯里化"
-    ],
+    "tags": ["TypeScript", "泛型", "柯里化"],
     "source": "高频"
   },
   {
@@ -501,11 +338,7 @@
     "difficulty": 2,
     "question": "TypeScript 中 Awaited、NoInfer 等较新的工具类型是什么？",
     "answer": "## 较新的 TypeScript 工具类型\n\n### Awaited<T>（TS 4.5+）\n```ts\n// 递归展开 Promise 类型\ntype A = Awaited<Promise<string>>;              // string\ntype B = Awaited<Promise<Promise<number>>>;     // number\ntype C = Awaited<string | Promise<number>>;     // string | number\n\n// 实际使用\nasync function fetchData(): Promise<User[]> { ... }\ntype Data = Awaited<ReturnType<typeof fetchData>>; // User[]\n```\n\n### NoInfer<T>（TS 5.4+）\n```ts\n// 阻止 TS 在该位置推断类型，强制从其他位置推断\nfunction createState<T>(initial: T, fallback: NoInfer<T>): T {\n  return initial ?? fallback;\n}\n\ncreateState({ name: 'Alice' }, { name: 'Bob' }); // T 从 initial 推断\n// createState({ name: 'Alice' }, { age: 30 }); // ❌ 报错，fallback 类型不匹配\n```\n\n### ThisType<T>（TS 2.3+）\n```ts\n// 指定对象方法中 this 的类型\ntype ObjectDescriptor<D, M> = {\n  data?: D;\n  methods?: M & ThisType<D & M>;\n};\n\nfunction makeObject<D, M>(desc: ObjectDescriptor<D, M>): D & M {\n  const data = desc.data || {} as D;\n  const methods = desc.methods || {} as M;\n  return { ...data, ...methods };\n}\n\nconst obj = makeObject({\n  data: { x: 0, y: 0 },\n  methods: {\n    moveBy(dx: number, dy: number) {\n      this.x += dx; // this 的类型是 { x: number; y: number } & Methods\n      this.y += dy;\n    }\n  }\n});\n```\n\n### ConstructorParameters<T> 和 OmitThisParameter<T>\n```ts\nclass Point {\n  constructor(public x: number, public y: number) {}\n}\n\ntype PointArgs = ConstructorParameters<typeof Point>; // [x: number, y: number]\n\nfunction createInstance<T extends new (...args: any) => any>(\n  Cls: T,\n  ...args: ConstructorParameters<T>\n): InstanceType<T> {\n  return new Cls(...args);\n}\n\nconst p = createInstance(Point, 1, 2); // Point，类型安全\n```",
-    "tags": [
-      "TypeScript",
-      "工具类型",
-      "实战"
-    ],
+    "tags": ["TypeScript", "工具类型", "实战"],
     "source": "高频"
   },
   {
@@ -514,11 +347,7 @@
     "difficulty": 1,
     "question": "TypeScript 的类型系统是结构类型（Structural Typing）还是名义类型（Nominal Typing）？",
     "answer": "## 结构类型 vs 名义类型\n\n### TypeScript 使用结构类型系统\n```ts\n// 结构类型：只要形状（结构）兼容，就认为类型兼容，不管名字\ninterface Point2D { x: number; y: number; }\ninterface Coordinate { x: number; y: number; }\n\nconst p: Point2D = { x: 1, y: 2 };\nconst c: Coordinate = p; // ✅ 结构相同，可以赋值\n\n// 与 Java/C# 不同：\n// Java（名义类型）：Point2D 和 Coordinate 是不同类型，即使结构相同\n```\n\n### 鸭子类型（Duck Typing）\n```ts\ninterface Printable { print(): void; }\n\nclass Dog {\n  print() { console.log('Dog'); }\n  bark() { console.log('Woof'); }\n}\n\n// Dog 没有显式 implements Printable，但结构兼容\nfunction printIt(p: Printable) { p.print(); }\nprintIt(new Dog()); // ✅ Dog 有 print 方法，结构兼容\n```\n\n### 额外属性检查（对象字面量例外）\n```ts\ninterface Config { host: string; port: number; }\n\n// 对象字面量直接赋值时有额外属性检查\nconst config: Config = { host: 'localhost', port: 3000, debug: true }; // ❌\n\n// 通过变量赋值则没有额外检查（结构类型）\nconst raw = { host: 'localhost', port: 3000, debug: true };\nconst config2: Config = raw; // ✅\n```\n\n### 模拟名义类型\n```ts\n// 利用品牌类型（Branded Types）实现名义区分\ntype UserId = string & { readonly _brand: 'UserId' };\ntype OrderId = string & { readonly _brand: 'OrderId' };\n\nfunction createUserId(id: string): UserId {\n  return id as UserId;\n}\n\nfunction getUser(id: UserId): User { ... }\n\nconst userId = createUserId('user_123');\nconst orderId = '123' as OrderId;\n\ngetUser(userId);  // ✅\ngetUser(orderId); // ❌ OrderId 不能赋给 UserId（即使都是 string）\n```",
-    "tags": [
-      "TypeScript",
-      "类型兼容",
-      "结构类型"
-    ],
+    "tags": ["TypeScript", "类型兼容", "结构类型"],
     "source": "高频"
   },
   {
@@ -527,12 +356,7 @@
     "difficulty": 2,
     "question": "TypeScript 中如何处理 ESM 和 CommonJS 模块互操作？",
     "answer": "## ESM 与 CommonJS 互操作\n\n### tsconfig 配置\n```json\n{\n  \"compilerOptions\": {\n    \"module\": \"NodeNext\",     // 支持 ESM 和 CJS\n    \"moduleResolution\": \"NodeNext\",\n    // 或\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\", // Vite/Webpack 推荐\n    \"esModuleInterop\": true,       // 允许 default import CJS 模块\n    \"allowSyntheticDefaultImports\": true\n  }\n}\n```\n\n### esModuleInterop\n```ts\n// 没有 esModuleInterop：CJS 模块没有 default export\nimport * as fs from 'fs';       // ✅\nimport fs from 'fs';            // ❌ 没有 default\n\n// 开启 esModuleInterop 后\nimport fs from 'fs';            // ✅ 可以这样写\nimport { readFile } from 'fs';  // ✅ 具名导入也可以\n```\n\n### 类型声明中区分\n```ts\n// CJS 模块的类型声明\ndeclare module 'some-cjs-module' {\n  const value: string;\n  export = value; // CJS 风格\n}\n\n// 使用时\nimport value = require('some-cjs-module'); // 传统方式\n// 或\nimport value from 'some-cjs-module'; // esModuleInterop 开启后\n```\n\n### package.json exports\n```json\n{\n  \"exports\": {\n    \".\": {\n      \"import\": {\n        \"types\": \"./dist/esm/index.d.ts\",\n        \"default\": \"./dist/esm/index.js\"\n      },\n      \"require\": {\n        \"types\": \"./dist/cjs/index.d.ts\",\n        \"default\": \"./dist/cjs/index.cjs\"\n      }\n    }\n  }\n}\n```\n\n### 注意事项\n```ts\n// ESM 中导入必须带扩展名（Node ESM 要求）\nimport { foo } from './foo.js'; // 即使源码是 foo.ts，编译后是 .js\n\n// 使用 verbatimModuleSyntax（TS 5.0+，推荐）\n// 强制 type-only import 使用 import type\nimport type { User } from './types'; // 编译时擦除\nimport { User } from './types';      // ❌ 若 User 只是类型，报错\n```",
-    "tags": [
-      "TypeScript",
-      "模块",
-      "ESM",
-      "CommonJS"
-    ],
+    "tags": ["TypeScript", "模块", "ESM", "CommonJS"],
     "source": "高频"
   },
   {
@@ -541,12 +365,7 @@
     "difficulty": 2,
     "question": "TypeScript 中如何实现一个类型安全的状态机（State Machine）？",
     "answer": "## 类型安全状态机\n\n```ts\n// 定义状态和转换\ntype MachineConfig<\n  State extends string,\n  Event extends string\n> = {\n  initial: State;\n  states: {\n    [S in State]: {\n      on?: Partial<Record<Event, State>>;\n      entry?: () => void;\n      exit?: () => void;\n    };\n  };\n};\n\nclass StateMachine<State extends string, Event extends string> {\n  private current: State;\n\n  constructor(private config: MachineConfig<State, Event>) {\n    this.current = config.initial;\n    config.states[this.current].entry?.();\n  }\n\n  send(event: Event): this {\n    const stateConfig = this.config.states[this.current];\n    const nextState = stateConfig.on?.[event];\n\n    if (nextState) {\n      stateConfig.exit?.();\n      this.current = nextState;\n      this.config.states[this.current].entry?.();\n    }\n    return this;\n  }\n\n  getState(): State { return this.current; }\n\n  matches(state: State): boolean { return this.current === state; }\n}\n\n// 使用：交通灯状态机\ntype TrafficState = 'red' | 'green' | 'yellow';\ntype TrafficEvent = 'NEXT';\n\nconst trafficLight = new StateMachine<TrafficState, TrafficEvent>({\n  initial: 'red',\n  states: {\n    red: {\n      on: { NEXT: 'green' },\n      entry: () => console.log('🔴 Red - Stop'),\n    },\n    green: {\n      on: { NEXT: 'yellow' },\n      entry: () => console.log('🟢 Green - Go'),\n    },\n    yellow: {\n      on: { NEXT: 'red' },\n      entry: () => console.log('🟡 Yellow - Caution'),\n    },\n  },\n});\n\ntrafficLight.send('NEXT'); // 🟢 Green\ntrafficLight.send('NEXT'); // 🟡 Yellow\ntrafficLight.getState();   // \"yellow\"（类型是 TrafficState）\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "类型推断",
-      "实战"
-    ],
+    "tags": ["TypeScript", "泛型", "类型推断", "实战"],
     "source": "高频"
   },
   {
@@ -555,11 +374,7 @@
     "difficulty": 1,
     "question": "为什么有人推荐用 const 对象替代 TypeScript enum？",
     "answer": "## const 对象 vs enum\n\n### enum 的问题\n\n**1. 数字枚举的双向映射**\n```ts\nenum Status { Active, Inactive }\n\n// 编译后生成：\nvar Status;\nStatus[Status[\"Active\"] = 0] = \"Active\";\nStatus[Status[\"Inactive\"] = 1] = \"Inactive\";\n\n// 导致奇怪行为：\nStatus[0] // \"Active\"（反向映射）\nStatus[3] // undefined，但不报错\n```\n\n**2. const enum 与 babel/esbuild 不兼容**\n```ts\nconst enum Fruit { Apple, Banana }\n// esbuild/SWC 无法处理 const enum 跨文件使用\n```\n\n**3. 字符串枚举不支持反向映射（但没有上面的问题）**\n\n### const 对象方案（推荐）\n```ts\n// 定义\nconst STATUS = {\n  ACTIVE: 'active',\n  INACTIVE: 'inactive',\n  DELETED: 'deleted',\n} as const;\n\n// 类型：从对象值推断（自动维护）\ntype Status = typeof STATUS[keyof typeof STATUS];\n// \"active\" | \"inactive\" | \"deleted\"\n\n// 使用\nfunction setStatus(status: Status) { ... }\nsetStatus(STATUS.ACTIVE);  // ✅\nsetStatus('active');       // ✅（字符串字面量兼容）\nsetStatus('unknown');      // ❌\n\n// 优势：\n// 1. 无运行时开销（普通对象）\n// 2. 值可用于 JSON 序列化\n// 3. 与所有构建工具兼容\n// 4. 可迭代（Object.values(STATUS)）\n// 5. Tree-Shaking 友好\n```\n\n### 何时仍使用 enum\n```ts\n// 需要数值枚举（位运算标志）时\nconst enum Permission {\n  Read    = 1 << 0, // 1\n  Write   = 1 << 1, // 2\n  Execute = 1 << 2, // 4\n}\nconst perm = Permission.Read | Permission.Write; // 3\n```",
-    "tags": [
-      "TypeScript",
-      "枚举替代",
-      "const对象"
-    ],
+    "tags": ["TypeScript", "枚举替代", "const对象"],
     "source": "高频"
   },
   {
@@ -568,12 +383,7 @@
     "difficulty": 2,
     "question": "实现 TypeScript 中的 DeepPick 工具类型，支持点路径访问。",
     "answer": "## DeepPick 实现\n\n```ts\n// 辅助：获取嵌套路径\ntype Paths<T, Prefix extends string = ''> = T extends object\n  ? {\n      [K in keyof T]: K extends string\n        ? Prefix extends ''\n          ? K | Paths<T[K], K>\n          : `${Prefix}.${K}` | Paths<T[K], `${Prefix}.${K}`>\n        : never;\n    }[keyof T]\n  : never;\n\n// 辅助：根据路径获取类型\ntype PathValue<T, P extends string> =\n  P extends `${infer Key}.${infer Rest}`\n    ? Key extends keyof T\n      ? PathValue<T[Key], Rest>\n      : never\n    : P extends keyof T\n      ? T[P]\n      : never;\n\n// DeepPick：根据路径数组选取\ntype DeepPick<T, Paths extends string> = {\n  [P in Paths as P extends `${infer Key}.${string}` ? Key : P]:\n    P extends `${infer Key}.${infer Rest}`\n      ? Key extends keyof T\n        ? DeepPick<T[Key], Rest>\n        : never\n      : P extends keyof T\n        ? T[P]\n        : never;\n};\n\n// 测试\ninterface User {\n  id: string;\n  name: string;\n  address: {\n    city: string;\n    zip: string;\n    country: { code: string; name: string };\n  };\n  tags: string[];\n}\n\ntype Picked = DeepPick<User, 'id' | 'name' | 'address.city' | 'address.country.code'>;\n// {\n//   id: string;\n//   name: string;\n//   address: {\n//     city: string;\n//     country: { code: string };\n//   };\n// }\n\n// 简化版（只支持两层）\ntype ShallowDeepPick<T, K extends string> = {\n  [P in K as P extends `${infer Top}.${string}` ? Top : P]:\n    P extends `${infer Top}.${infer Sub}`\n      ? Top extends keyof T\n        ? Sub extends keyof T[Top]\n          ? { [Q in Sub]: T[Top][Q] }\n          : never\n        : never\n      : P extends keyof T ? T[P] : never\n};\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "条件类型",
-      "实战"
-    ],
+    "tags": ["TypeScript", "泛型", "条件类型", "实战"],
     "source": "高频"
   },
   {
@@ -582,11 +392,7 @@
     "difficulty": 3,
     "question": "如何用 TypeScript 实现一个类型安全的表单（Form）系统？",
     "answer": "## 类型安全表单系统\n\n```ts\n// 表单字段定义\ntype FieldConfig<T> = {\n  initialValue: T;\n  validate?: (value: T) => string | undefined;\n  transform?: (value: string) => T;\n};\n\ntype FormConfig<T extends Record<string, any>> = {\n  [K in keyof T]: FieldConfig<T[K]>;\n};\n\ntype FormErrors<T> = Partial<Record<keyof T, string>>;\ntype FormTouched<T> = Partial<Record<keyof T, boolean>>;\n\n// 表单状态\ninterface FormState<T extends Record<string, any>> {\n  values: T;\n  errors: FormErrors<T>;\n  touched: FormTouched<T>;\n  isValid: boolean;\n  isSubmitting: boolean;\n}\n\n// 表单 Hook\nfunction useForm<T extends Record<string, any>>(config: FormConfig<T>) {\n  type Keys = keyof T;\n\n  // 初始值\n  const initialValues = Object.fromEntries(\n    Object.entries(config).map(([k, v]) => [k, (v as FieldConfig<any>).initialValue])\n  ) as T;\n\n  const [values, setValues] = useState<T>(initialValues);\n  const [errors, setErrors] = useState<FormErrors<T>>({});\n  const [touched, setTouched] = useState<FormTouched<T>>({});\n\n  // 验证单个字段\n  function validateField(name: Keys, value: T[Keys]): string | undefined {\n    return config[name].validate?.(value);\n  }\n\n  // 验证所有字段\n  function validateAll(): FormErrors<T> {\n    const newErrors: FormErrors<T> = {};\n    for (const key of Object.keys(config) as Keys[]) {\n      const error = validateField(key, values[key]);\n      if (error) newErrors[key] = error;\n    }\n    return newErrors;\n  }\n\n  const setField = <K extends Keys>(name: K, value: T[K]) => {\n    setValues(prev => ({ ...prev, [name]: value }));\n    const error = validateField(name, value);\n    setErrors(prev => ({ ...prev, [name]: error }));\n    setTouched(prev => ({ ...prev, [name]: true }));\n  };\n\n  const handleSubmit = (onSubmit: (values: T) => Promise<void>) =>\n    async (e: React.FormEvent) => {\n      e.preventDefault();\n      const allErrors = validateAll();\n      setErrors(allErrors);\n      if (Object.keys(allErrors).length === 0) {\n        await onSubmit(values);\n      }\n    };\n\n  return { values, errors, touched, setField, handleSubmit };\n}\n\n// 使用\ninterface LoginForm {\n  email: string;\n  password: string;\n  rememberMe: boolean;\n}\n\nconst { values, errors, setField, handleSubmit } = useForm<LoginForm>({\n  email: {\n    initialValue: '',\n    validate: (v) => !v.includes('@') ? 'Invalid email' : undefined,\n  },\n  password: {\n    initialValue: '',\n    validate: (v) => v.length < 8 ? 'Too short' : undefined,\n  },\n  rememberMe: { initialValue: false },\n});\n\nsetField('email', 'user@example.com'); // ✅ 类型安全\nsetField('email', 123);               // ❌ 类型错误\n```",
-    "tags": [
-      "TypeScript",
-      "类型安全",
-      "表单验证"
-    ],
+    "tags": ["TypeScript", "类型安全", "表单验证"],
     "source": "高频"
   },
   {
@@ -595,12 +401,7 @@
     "difficulty": 2,
     "question": "TypeScript monorepo 项目中如何配置类型共享和项目引用（Project References）？",
     "answer": "## TypeScript Monorepo 配置\n\n### 目录结构\n```\nmonorepo/\n├── tsconfig.base.json        # 共享基础配置\n├── packages/\n│   ├── shared/\n│   │   ├── tsconfig.json\n│   │   └── src/types.ts\n│   ├── ui/\n│   │   ├── tsconfig.json\n│   │   └── src/\n│   └── app/\n│       ├── tsconfig.json\n│       └── src/\n└── package.json\n```\n\n### tsconfig.base.json（共享配置）\n```json\n{\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"target\": \"ES2020\",\n    \"module\": \"ESNext\",\n    \"moduleResolution\": \"bundler\",\n    \"esModuleInterop\": true,\n    \"skipLibCheck\": true,\n    \"declaration\": true,\n    \"declarationMap\": true,\n    \"sourceMap\": true\n  }\n}\n```\n\n### packages/shared/tsconfig.json\n```json\n{\n  \"extends\": \"../../tsconfig.base.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"./dist\",\n    \"rootDir\": \"./src\",\n    \"composite\": true\n  },\n  \"include\": [\"src/**/*\"]\n}\n```\n\n### packages/app/tsconfig.json\n```json\n{\n  \"extends\": \"../../tsconfig.base.json\",\n  \"compilerOptions\": {\n    \"outDir\": \"./dist\",\n    \"rootDir\": \"./src\",\n    \"paths\": {\n      \"@monorepo/shared\": [\"../shared/src\"],\n      \"@monorepo/ui\": [\"../ui/src\"]\n    }\n  },\n  \"references\": [\n    { \"path\": \"../shared\" },\n    { \"path\": \"../ui\" }\n  ],\n  \"include\": [\"src/**/*\"]\n}\n```\n\n### 根目录 tsconfig.json（构建入口）\n```json\n{\n  \"files\": [],\n  \"references\": [\n    { \"path\": \"./packages/shared\" },\n    { \"path\": \"./packages/ui\" },\n    { \"path\": \"./packages/app\" }\n  ]\n}\n```\n\n### 构建命令\n```bash\n# 增量构建（只重新构建变化的包）\ntsc --build\ntsc --build --watch\n\n# 清理\ntsc --build --clean\n```\n\n### Package.json 路径映射（pnpm workspace）\n```json\n{\n  \"name\": \"@monorepo/app\",\n  \"dependencies\": {\n    \"@monorepo/shared\": \"workspace:*\",\n    \"@monorepo/ui\": \"workspace:*\"\n  }\n}\n```",
-    "tags": [
-      "TypeScript",
-      "工程化",
-      "配置",
-      "monorepo"
-    ],
+    "tags": ["TypeScript", "工程化", "配置", "monorepo"],
     "source": "高频"
   },
   {
@@ -609,11 +410,7 @@
     "difficulty": 2,
     "question": "如何对 TypeScript 类型进行单元测试？",
     "answer": "## TypeScript 类型测试\n\n### 方案1：tsd（Type System Definitions）\n```ts\n// types.test-d.ts\nimport { expectType, expectError, expectAssignable } from 'tsd';\nimport { add, getUser } from './my-module';\n\n// 验证返回类型\nexpectType<number>(add(1, 2));\n\n// 验证错误（编译时应该报错的情况）\nexpectError(add('1', 2)); // 传字符串应该报错\n\n// 验证可赋值性\nexpectAssignable<string | number>(getUser().id);\n```\n\n### 方案2：@type-challenges/utils\n```ts\nimport type { Equal, Expect, NotAny } from '@type-challenges/utils';\n\n// 类型测试用例\ntype cases = [\n  Expect<Equal<ReturnType<typeof add>, number>>,\n  Expect<Equal<Parameters<typeof add>, [a: number, b: number]>>,\n  Expect<NotAny<ReturnType<typeof add>>>,\n];\n```\n\n### 方案3：vitest / jest 中的类型测试\n```ts\n// 使用 expectTypeOf（vitest 内置）\nimport { expectTypeOf } from 'vitest';\nimport { add } from './math';\n\ntest('add returns number', () => {\n  expectTypeOf(add).toBeFunction();\n  expectTypeOf(add).parameters.toEqualTypeOf<[number, number]>();\n  expectTypeOf(add).returns.toBeNumber();\n});\n\ntest('add result type', () => {\n  const result = add(1, 2);\n  expectTypeOf(result).toBeNumber();\n});\n```\n\n### 方案4：手写断言工具\n```ts\n// 用于在源码中内联类型断言\ntype Expect<T extends true> = T;\ntype Equal<X, Y> =\n  (<T>() => T extends X ? 1 : 2) extends\n  (<T>() => T extends Y ? 1 : 2) ? true : false;\n\n// 用法\ntype _ = Expect<Equal<string, string>>; // ✅ 通过\ntype __ = Expect<Equal<string, number>>; // ❌ 编译报错\n\n// 确保 never\ntype IsNever<T> = [T] extends [never] ? true : false;\ntype ___ = Expect<IsNever<string & number>>; // ✅\n```",
-    "tags": [
-      "TypeScript",
-      "类型测试",
-      "expect-type"
-    ],
+    "tags": ["TypeScript", "类型测试", "expect-type"],
     "source": "高频"
   },
   {
@@ -622,11 +419,7 @@
     "difficulty": 3,
     "question": "如何用 TypeScript 实现类型安全的路由系统（类似 TanStack Router）？",
     "answer": "## 类型安全路由\n\n```ts\n// 路由参数提取\ntype ExtractParams<Path extends string> =\n  Path extends `${string}:${infer Param}/${infer Rest}`\n    ? { [K in Param | keyof ExtractParams<`/${Rest}`>]: string }\n    : Path extends `${string}:${infer Param}`\n      ? { [K in Param]: string }\n      : {};\n\ntype P1 = ExtractParams<'/users/:id'>; // { id: string }\ntype P2 = ExtractParams<'/users/:id/posts/:postId'>; // { id: string; postId: string }\ntype P3 = ExtractParams<'/about'>; // {}\n\n// 路由定义\ntype RouteDefinition = {\n  [Path: string]: {\n    params?: Record<string, string>;\n    search?: Record<string, string | undefined>;\n    component: React.ComponentType<any>;\n  };\n};\n\n// 类型安全的 Link 组件\ntype LinkProps<\n  Routes extends RouteDefinition,\n  Path extends keyof Routes\n> = {\n  to: Path;\n  params: ExtractParams<Path & string>;\n  search?: Routes[Path]['search'];\n};\n\nfunction Link<Routes extends RouteDefinition, Path extends keyof Routes>(\n  props: LinkProps<Routes, Path>\n) {\n  const { to, params } = props;\n  // 将参数替换到路径中\n  const href = (to as string).replace(\n    /:(\\w+)/g,\n    (_, key) => (params as any)[key]\n  );\n  return <a href={href}>{props.children}</a>;\n}\n\n// 使用\nconst routes = {\n  '/': { component: Home },\n  '/users/:id': { component: UserPage },\n  '/users/:id/posts/:postId': { component: PostPage },\n} satisfies RouteDefinition;\n\n// 完全类型安全\n<Link to=\"/users/:id\" params={{ id: '123' }} />          // ✅\n<Link to=\"/users/:id/posts/:postId\"\n  params={{ id: '123', postId: '456' }} />                // ✅\n<Link to=\"/users/:id\" params={{ userId: '123' }} />       // ❌ 应该是 id\n<Link to=\"/users/:id\" params={{}} />                      // ❌ 缺少 id\n```",
-    "tags": [
-      "TypeScript",
-      "类型安全路由",
-      "实战"
-    ],
+    "tags": ["TypeScript", "类型安全路由", "实战"],
     "source": "高频"
   },
   {
@@ -635,11 +428,7 @@
     "difficulty": 2,
     "question": "TypeScript 中 any、unknown、never 三者的区别是什么？",
     "answer": "## any vs unknown vs never\n\n### any — 放弃类型检查\n```ts\nlet a: any;\na = 1;           // ✅\na = 'hello';     // ✅\na.foo.bar.baz(); // ✅（不检查，运行时可能崩溃）\na as string;     // ✅\n\n// any 是双向兼容的\nconst s: string = a; // ✅（any 可赋给任何类型）\nconst a2: any = s;   // ✅（任何类型可赋给 any）\n```\n\n### unknown — 类型安全的 any\n```ts\nlet u: unknown;\nu = 1;           // ✅（可以赋任何值）\nu = 'hello';     // ✅\n\n// 使用前必须收窄（不能直接操作）\nu.toString();    // ❌ 编译报错！\n(u as string).toUpperCase(); // ✅ 断言后可用（但不安全）\n\nif (typeof u === 'string') {\n  u.toUpperCase(); // ✅ 收窄后安全使用\n}\n\n// unknown 只能赋给 any 和 unknown\nconst s: string = u; // ❌\nconst a: any = u;    // ✅\nconst u2: unknown = u; // ✅\n```\n\n### never — 永不发生\n```ts\n// never 是所有类型的子类型\n// never 类型的值可以赋给任何类型\n// 但任何值（除了 never 本身）都不能赋给 never\n\n// 使用场景1：永不返回的函数\nfunction fail(msg: string): never {\n  throw new Error(msg); // 永远不会正常返回\n}\n\nfunction infinite(): never {\n  while (true) {} // 无限循环\n}\n\n// 使用场景2：穷举检查\nfunction assertNever(x: never): never {\n  throw new Error(`Unhandled: ${x}`);\n}\n\n// 使用场景3：过滤类型\ntype NonNullable<T> = T extends null | undefined ? never : T;\ntype A = NonNullable<string | null | undefined>; // string\n\n// 使用场景4：Bottom type（联合中消失）\ntype B = string | never; // string\ntype C = string & never; // never\n```\n\n### 对比总结\n```\n特性               any        unknown    never\n可接收任意值        ✅         ✅         ❌\n可赋给任意类型      ✅         ❌         ✅\n使用前需收窄        ❌         ✅         N/A\n是否安全            ❌         ✅         N/A（不会有值）\n用途               逃生舱     外部数据   穷举/永不返回\n```",
-    "tags": [
-      "TypeScript",
-      "类型",
-      "any vs unknown vs never"
-    ],
+    "tags": ["TypeScript", "类型", "any vs unknown vs never"],
     "source": "高频"
   },
   {
@@ -648,11 +437,7 @@
     "difficulty": 2,
     "question": "如何为 React 高阶组件（HOC）编写正确的 TypeScript 类型？",
     "answer": "## HOC TypeScript 类型\n\n### 基础 HOC 类型\n```tsx\n// 通用 HOC 类型模式\nfunction withLogger<P extends object>(\n  WrappedComponent: React.ComponentType<P>\n): React.FC<P> {\n  return function LoggedComponent(props: P) {\n    useEffect(() => {\n      console.log('Component rendered:', WrappedComponent.displayName);\n    });\n    return <WrappedComponent {...props} />;\n  };\n}\n\n// 使用\nconst LoggedButton = withLogger(Button);\n<LoggedButton label=\"Click me\" onClick={() => {}} />; // 保留原有 Props 类型\n```\n\n### 注入额外 Props 的 HOC\n```tsx\n// HOC 注入某些 props，包装组件不需要提供\ninterface WithUserProps {\n  user: User;\n  isAuthenticated: boolean;\n}\n\nfunction withAuth<P extends WithUserProps>(\n  WrappedComponent: React.ComponentType<P>\n): React.FC<Omit<P, keyof WithUserProps>> {\n  return function AuthComponent(props: Omit<P, keyof WithUserProps>) {\n    const { user, isAuthenticated } = useAuth();\n    if (!isAuthenticated) return <Redirect to=\"/login\" />;\n    return <WrappedComponent {...(props as P)} user={user} isAuthenticated />;\n  };\n}\n\n// 使用\ninterface DashboardProps extends WithUserProps {\n  title: string;\n}\n\nconst Dashboard: React.FC<DashboardProps> = ({ user, title }) => (\n  <div>{title} - {user.name}</div>\n);\n\nconst ProtectedDashboard = withAuth(Dashboard);\n<ProtectedDashboard title=\"Dashboard\" />;\n// user 和 isAuthenticated 由 HOC 注入，不需要外部提供\n```\n\n### 保留 ref 的 HOC（forwardRef）\n```tsx\nfunction withBorder<T, P extends object>(\n  WrappedComponent: React.ForwardRefExoticComponent<\n    React.PropsWithoutRef<P> & React.RefAttributes<T>\n  >\n) {\n  return React.forwardRef<T, P>((props, ref) => (\n    <div style={{ border: '1px solid red' }}>\n      <WrappedComponent {...props} ref={ref} />\n    </div>\n  ));\n}\n```\n\n### 组合多个 HOC\n```ts\n// 类型安全的 compose\nfunction compose<R>(fn1: (a: R) => R, ...fns: Array<(a: R) => R>): (a: R) => R;\nfunction compose(...fns: Function[]) {\n  return fns.reduce((f, g) => (...args: any[]) => f(g(...args)));\n}\n\nconst enhance = compose(withAuth, withLogger, withTheme);\nconst EnhancedComponent = enhance(MyComponent);\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "高阶组件"
-    ],
+    "tags": ["TypeScript", "泛型", "高阶组件"],
     "source": "高频"
   },
   {
@@ -661,11 +446,7 @@
     "difficulty": 3,
     "question": "TypeScript 中如何用类型系统解析字符串（如解析 URL 查询参数类型）？",
     "answer": "## 字符串解析类型\n\n### 解析 URL 查询参数\n```ts\n// 解析单个键值对 \"key=value\"\ntype ParseParam<S extends string> =\n  S extends `${infer Key}=${infer Value}`\n    ? { [K in Key]: Value }\n    : never;\n\n// 解析多个参数 \"a=1&b=2&c=3\"\ntype ParseQuery<S extends string> =\n  S extends `${infer Param}&${infer Rest}`\n    ? ParseParam<Param> & ParseQuery<Rest>\n    : ParseParam<S>;\n\ntype Q = ParseQuery<'name=Alice&age=30&city=Beijing'>;\n// { name: \"Alice\" } & { age: \"30\" } & { city: \"Beijing\" }\n\n// 展开交叉类型\ntype Flatten<T> = { [K in keyof T]: T[K] };\ntype ParsedQuery = Flatten<ParseQuery<'name=Alice&age=30'>>;\n// { name: \"Alice\"; age: \"30\" }\n```\n\n### 解析路由路径\n```ts\n// 解析路径段\ntype ParsePath<S extends string> =\n  S extends `/${infer Segment}/${infer Rest}`\n    ? [Segment, ...ParsePath<`/${Rest}`>]\n    : S extends `/${infer Segment}`\n      ? [Segment]\n      : [];\n\ntype Segments = ParsePath<'/users/123/posts/456'>;\n// [\"users\", \"123\", \"posts\", \"456\"]\n\n// 提取动态段（:param）\ntype ExtractDynamic<Segs extends string[]> = {\n  [K in keyof Segs]: Segs[K] extends `:${infer Param}` ? Param : never\n}[number];\n\ntype Params = ExtractDynamic<ParsePath<'/users/:id/posts/:postId'>>;\n// \"id\" | \"postId\"\n```\n\n### 解析 CSV 标题行\n```ts\ntype ParseCSVHeader<S extends string> =\n  S extends `${infer Col},${infer Rest}`\n    ? [Col, ...ParseCSVHeader<Rest>]\n    : [S];\n\ntype Headers = ParseCSVHeader<'id,name,age,email'>;\n// [\"id\", \"name\", \"age\", \"email\"]\n\ntype CSVRow<Headers extends string[]> = {\n  [K in Headers[number]]: string;\n};\n\ntype Row = CSVRow<ParseCSVHeader<'id,name,age'>>;\n// { id: string; name: string; age: string; }\n```",
-    "tags": [
-      "TypeScript",
-      "类型编程",
-      "StringParser"
-    ],
+    "tags": ["TypeScript", "类型编程", "StringParser"],
     "source": "字节跳动"
   },
   {
@@ -674,12 +455,7 @@
     "difficulty": 2,
     "question": "TypeScript 中有哪些常用的实战技巧和最佳实践？",
     "answer": "## TypeScript 实战技巧\n\n### 1. const assertions 精确类型\n```ts\n// 不用 as const：推断为宽泛类型\nconst config = { env: 'production', port: 3000 };\n// config.env: string（不是 \"production\"）\n\n// 用 as const：推断为字面量类型\nconst config = { env: 'production', port: 3000 } as const;\n// config.env: \"production\"，config.port: 3000\n\n// 数组用 as const 变为 readonly 元组\nconst ROLES = ['admin', 'user', 'guest'] as const;\ntype Role = typeof ROLES[number]; // \"admin\" | \"user\" | \"guest\"\n```\n\n### 2. 条件导入类型\n```ts\n// 仅类型导入（不影响运行时）\nimport type { User } from './types';\nimport type { FC } from 'react';\n\n// inline type import（TS 4.5+）\nimport { type User, createUser } from './user';\n```\n\n### 3. 函数重载改善 API\n```ts\n// 根据参数类型返回不同类型\nfunction createElement(tag: 'input'): HTMLInputElement;\nfunction createElement(tag: 'canvas'): HTMLCanvasElement;\nfunction createElement(tag: 'table'): HTMLTableElement;\nfunction createElement(tag: string): HTMLElement {\n  return document.createElement(tag);\n}\n\nconst input = createElement('input'); // HTMLInputElement，不是 HTMLElement\n```\n\n### 4. Opaque / Brand Types 区分结构相同的类型\n```ts\ndeclare const brand: unique symbol;\ntype Brand<T, B> = T & { [brand]: B };\n\ntype Meters = Brand<number, 'meters'>;\ntype Kilograms = Brand<number, 'kilograms'>;\n\nfunction addMeters(a: Meters, b: Meters): Meters {\n  return (a + b) as Meters;\n}\n\nconst height = 1.75 as Meters;\nconst weight = 70 as Kilograms;\n\naddMeters(height, height); // ✅\naddMeters(height, weight); // ❌ 类型不兼容！即使都是 number\n```\n\n### 5. 利用 infer 提取嵌套类型\n```ts\n// 从 Promise 数组提取元素类型\ntype UnwrapPromiseArray<T> =\n  T extends Promise<infer U>[]\n    ? U\n    : T extends Promise<infer U>\n      ? U\n      : T;\n\ntype A = UnwrapPromiseArray<Promise<string>[]>; // string\n```\n\n### 6. 安全的 Object.keys / entries\n```ts\n// Object.keys 返回 string[]，不精确\nfunction safeKeys<T extends object>(obj: T): (keyof T)[] {\n  return Object.keys(obj) as (keyof T)[];\n}\n\nfunction safeEntries<T extends object>(obj: T): [keyof T, T[keyof T]][] {\n  return Object.entries(obj) as any;\n}\n```",
-    "tags": [
-      "TypeScript",
-      "性能",
-      "类型检查",
-      "实战技巧"
-    ],
+    "tags": ["TypeScript", "性能", "类型检查", "实战技巧"],
     "source": "高频"
   },
   {
@@ -688,12 +464,7 @@
     "difficulty": 2,
     "question": "TypeScript 4.0 起 catch 中的 error 变为 unknown，如何正确处理？",
     "answer": "## catch 中的 unknown error\n\n### 变化背景\n```ts\n// TypeScript 4.0 前：error 是 any\ntry {\n  riskyOperation();\n} catch (error) {\n  error.message; // ✅（any 类型，但不安全）\n}\n\n// TypeScript 4.0 后（useUnknownInCatchVariables: true）\ntry {\n  riskyOperation();\n} catch (error) {\n  // error 是 unknown，必须收窄才能使用\n  error.message; // ❌ 编译报错\n}\n```\n\n### 正确处理方式\n\n```ts\n// 方式1：instanceof Error\ntry {\n  riskyOperation();\n} catch (error) {\n  if (error instanceof Error) {\n    console.error(error.message);  // ✅ string\n    console.error(error.stack);    // ✅ string | undefined\n  } else {\n    console.error('Unknown error:', error);\n  }\n}\n\n// 方式2：自定义错误类型守卫\nfunction isError(val: unknown): val is Error {\n  return val instanceof Error;\n}\n\nfunction getErrorMessage(error: unknown): string {\n  if (error instanceof Error) return error.message;\n  if (typeof error === 'string') return error;\n  if (typeof error === 'object' && error !== null) {\n    const e = error as Record<string, unknown>;\n    if (typeof e.message === 'string') return e.message;\n  }\n  return String(error);\n}\n```\n\n### 自定义业务错误类\n```ts\nclass AppError extends Error {\n  constructor(\n    message: string,\n    public readonly code: string,\n    public readonly statusCode: number = 500,\n    public readonly data?: unknown\n  ) {\n    super(message);\n    this.name = 'AppError';\n    Object.setPrototypeOf(this, AppError.prototype); // 兼容 ES5\n  }\n\n  static isAppError(error: unknown): error is AppError {\n    return error instanceof AppError;\n  }\n}\n\n// 使用\ntry {\n  await fetchUser(id);\n} catch (error) {\n  if (AppError.isAppError(error)) {\n    if (error.statusCode === 404) showNotFound();\n    else showError(error.message);\n  } else {\n    throw error; // 重新抛出未知错误\n  }\n}\n```",
-    "tags": [
-      "TypeScript",
-      "错误类型",
-      "unknown",
-      "catch"
-    ],
+    "tags": ["TypeScript", "错误类型", "unknown", "catch"],
     "source": "高频"
   },
   {
@@ -702,11 +473,7 @@
     "difficulty": 3,
     "question": "实现 TypeScript 工具类型：StringToUnion、ReplaceAll、CamelToSnake。",
     "answer": "## 字符串类型体操\n\n### StringToUnion — 字符串转字符联合\n```ts\ntype StringToUnion<S extends string> =\n  S extends `${infer First}${infer Rest}`\n    ? First | StringToUnion<Rest>\n    : never;\n\ntype U = StringToUnion<'hello'>; // \"h\" | \"e\" | \"l\" | \"o\"\n```\n\n### ReplaceAll — 替换所有匹配\n```ts\ntype ReplaceAll<\n  S extends string,\n  From extends string,\n  To extends string\n> = From extends ''\n  ? S\n  : S extends `${infer Head}${From}${infer Tail}`\n    ? `${Head}${To}${ReplaceAll<Tail, From, To>}`\n    : S;\n\ntype R = ReplaceAll<'hello world hello', 'hello', 'hi'>;\n// \"hi world hi\"\n```\n\n### CamelToSnake — 驼峰转蛇形\n```ts\ntype CamelToSnake<S extends string> =\n  S extends `${infer Head}${infer Tail}`\n    ? Head extends Uppercase<Head>\n      ? Head extends Lowercase<Head>  // 非字母字符（数字等）\n        ? `${Head}${CamelToSnake<Tail>}`\n        : `_${Lowercase<Head>}${CamelToSnake<Tail>}`\n      : `${Head}${CamelToSnake<Tail>}`\n    : S;\n\ntype S1 = CamelToSnake<'helloWorld'>;    // \"hello_world\"\ntype S2 = CamelToSnake<'getUserById'>; // \"get_user_by_id\"\n\n// SnakeToCamel\ntype SnakeToCamel<S extends string> =\n  S extends `${infer Head}_${infer Tail}`\n    ? `${Head}${Capitalize<SnakeToCamel<Tail>>}`\n    : S;\n\ntype C = SnakeToCamel<'hello_world_foo'>; // \"helloWorldFoo\"\n```\n\n### KebabToCamel\n```ts\ntype KebabToCamel<S extends string> =\n  S extends `${infer Head}-${infer Tail}`\n    ? `${Head}${Capitalize<KebabToCamel<Tail>>}`\n    : S;\n\ntype K = KebabToCamel<'my-component-name'>; // \"myComponentName\"\n```\n\n### Join — 元组转字符串\n```ts\ntype Join<\n  T extends string[],\n  Sep extends string = ''\n> = T extends []\n  ? ''\n  : T extends [infer Only extends string]\n    ? Only\n    : T extends [infer First extends string, ...infer Rest extends string[]]\n      ? `${First}${Sep}${Join<Rest, Sep>}`\n      : string;\n\ntype J = Join<['a', 'b', 'c'], '-'>; // \"a-b-c\"\n```",
-    "tags": [
-      "TypeScript",
-      "类型体操",
-      "高级"
-    ],
+    "tags": ["TypeScript", "类型体操", "高级"],
     "source": "字节跳动"
   },
   {
@@ -715,12 +482,7 @@
     "difficulty": 2,
     "question": "如何用 TypeScript 为 JavaScript Proxy 提供类型安全的封装？",
     "answer": "## 类型安全的 Proxy 封装\n\n```ts\n// 类型安全的 readonly 代理\nfunction createReadonlyProxy<T extends object>(target: T): Readonly<T> {\n  return new Proxy(target, {\n    get(obj, key) {\n      const value = Reflect.get(obj, key);\n      if (typeof value === 'object' && value !== null) {\n        return createReadonlyProxy(value); // 递归只读\n      }\n      return value;\n    },\n    set() {\n      throw new TypeError('Cannot set on readonly proxy');\n    },\n    deleteProperty() {\n      throw new TypeError('Cannot delete on readonly proxy');\n    },\n  }) as Readonly<T>;\n}\n\n// 类型安全的响应式代理（Vue 3 风格）\ntype ReactiveHandler<T extends object> = {\n  get<K extends keyof T>(target: T, key: K): T[K];\n  set<K extends keyof T>(target: T, key: K, value: T[K]): boolean;\n};\n\nfunction reactive<T extends object>(target: T): T {\n  const subscribers = new Map<keyof T, Set<() => void>>();\n\n  return new Proxy(target, {\n    get(obj, key: keyof T) {\n      // 依赖追踪（简化）\n      return obj[key];\n    },\n    set(obj, key: keyof T, value) {\n      obj[key] = value;\n      subscribers.get(key)?.forEach(fn => fn()); // 触发更新\n      return true;\n    },\n  } as ProxyHandler<T>);\n}\n\n// 验证代理（运行时类型验证）\nfunction validated<T extends object>(\n  target: T,\n  schema: { [K in keyof T]?: (value: T[K]) => boolean }\n): T {\n  return new Proxy(target, {\n    set(obj, key: string | symbol, value) {\n      const validator = schema[key as keyof T];\n      if (validator && !validator(value)) {\n        throw new TypeError(`Invalid value for ${String(key)}: ${value}`);\n      }\n      return Reflect.set(obj, key, value);\n    },\n  });\n}\n\n// 使用\nconst user = validated(\n  { name: '', age: 0 },\n  {\n    name: (v) => typeof v === 'string' && v.length > 0,\n    age: (v) => typeof v === 'number' && v >= 0 && v <= 150,\n  }\n);\n\nuser.name = 'Alice'; // ✅\nuser.age = 30;       // ✅\nuser.age = -1;       // ❌ 运行时抛错\n```",
-    "tags": [
-      "TypeScript",
-      "泛型",
-      "实战",
-      "Proxy"
-    ],
+    "tags": ["TypeScript", "泛型", "实战", "Proxy"],
     "source": "高频"
   },
   {
@@ -729,12 +491,7 @@
     "difficulty": 3,
     "question": "TypeScript 类型系统是图灵完备的——用类型实现一个简单的四则运算（加法）。",
     "answer": "## TypeScript 类型级别运算\n\n### 利用元组长度实现加法\n```ts\n// 构建指定长度的元组\ntype BuildTuple<L extends number, T extends unknown[] = []> =\n  T['length'] extends L ? T : BuildTuple<L, [...T, unknown]>;\n\n// 加法：合并两个元组\ntype Add<A extends number, B extends number> =\n  [...BuildTuple<A>, ...BuildTuple<B>]['length'];\n\ntype Sum = Add<3, 4>; // 7\ntype Sum2 = Add<10, 5>; // 15\n\n// 减法（A >= B）\ntype Subtract<A extends number, B extends number> =\n  BuildTuple<A> extends [...BuildTuple<B>, ...infer Rest]\n    ? Rest['length']\n    : never;\n\ntype Diff = Subtract<10, 3>; // 7\ntype Diff2 = Subtract<5, 5>; // 0\n\n// 比较大小\ntype GreaterThan<A extends number, B extends number> =\n  BuildTuple<A> extends [...BuildTuple<B>, ...infer Rest]\n    ? Rest extends []\n      ? false   // A === B\n      : true    // A > B\n    : false;    // A < B\n\ntype G = GreaterThan<5, 3>; // true\ntype G2 = GreaterThan<3, 5>; // false\n\n// 乘法（递归累加）\ntype Multiply<\n  A extends number,\n  B extends number,\n  Acc extends unknown[] = []\n> = B extends 0\n  ? Acc['length']\n  : Multiply<A, Subtract<B, 1>, [...Acc, ...BuildTuple<A>]>;\n\ntype Product = Multiply<3, 4>; // 12\n\n// 注意：受递归深度限制，大数运算会报错\n// TypeScript 默认递归上限约 100 层\n```\n\n### 类型级别斐波那契（演示图灵完备性）\n```ts\ntype Fib<N extends number> =\n  N extends 0 ? 0\n  : N extends 1 ? 1\n  : Add<Fib<Subtract<N, 1>>, Fib<Subtract<N, 2>>>;\n\ntype F0 = Fib<0>; // 0\ntype F1 = Fib<1>; // 1\ntype F5 = Fib<5>; // 5\ntype F7 = Fib<7>; // 13\n// 注意：递归深度有限制，较大的 N 会报错\n```\n\n### 实际应用价值\n```ts\n// 类型级别运算在实际中用于：\n// 1. 限制数组长度\ntype FixedArray<T, N extends number, A extends T[] = []> =\n  A['length'] extends N ? A : FixedArray<T, N, [...A, T]>;\n\ntype ThreeNumbers = FixedArray<number, 3>; // [number, number, number]\nconst arr: ThreeNumbers = [1, 2, 3]; // ✅\nconst arr2: ThreeNumbers = [1, 2];   // ❌ 长度不对\n\n// 2. 固定长度的矩阵类型\ntype Matrix<T, Rows extends number, Cols extends number> =\n  FixedArray<FixedArray<T, Cols>, Rows>;\n\ntype Matrix3x3 = Matrix<number, 3, 3>;\n// [[number,number,number],[number,number,number],[number,number,number]]\n```",
-    "tags": [
-      "TypeScript",
-      "类型系统",
-      "图灵完备",
-      "有趣"
-    ],
+    "tags": ["TypeScript", "类型系统", "图灵完备", "有趣"],
     "source": "字节跳动"
   }
 ]

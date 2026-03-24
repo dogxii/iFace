@@ -5,11 +5,7 @@
     "difficulty": 2,
     "question": "Webpack 的构建流程是什么？从入口到输出经历了哪些阶段？",
     "answer": "## Webpack 构建流程\n\nWebpack 的构建流程可分为以下几个核心阶段：\n\n**1. 初始化阶段**\n\n- 读取配置文件（webpack.config.js）与 Shell 参数，合并得到最终配置\n- 创建 `Compiler` 对象，加载所有插件（调用 `plugin.apply(compiler)`）\n- 调用 `compiler.run()` 开始编译\n\n**2. 编译阶段（Make）**\n\n- 从 `entry` 开始，调用 `compilation.addEntry()`\n- 针对每个模块，用对应 Loader 转换源码（例如 babel-loader 转 JS，css-loader 转 CSS）\n- 对转换后的代码调用 `acorn` 解析为 AST，分析 `import/require` 依赖\n- 递归处理所有依赖模块，形成**模块依赖图**（Module Graph）\n\n**3. 封装阶段（Seal）**\n\n- 根据依赖图将模块分配到不同 Chunk（默认每个入口一个 Chunk）\n- 应用 `optimization`（如 SplitChunksPlugin 分割公共代码、TerserPlugin 压缩）\n- 生成最终的 `assets`（输出文件内容）\n\n**4. 输出阶段（Emit）**\n\n- 调用 `compiler.emitAssets()`，将 assets 写入到 `output.path` 目录\n- 触发 `afterEmit`、`done` 钩子，插件可在此阶段做收尾工作\n\n```\nEntry → Loader转换 → AST分析依赖 → 递归构建模块图\n     → Chunk分割 → 优化压缩 → 输出文件\n```\n\n**核心对象：**\n\n- `Compiler`：代表完整的 Webpack 环境，全局唯一\n- `Compilation`：代表一次具体的构建，包含当前模块和依赖\n- `Module`：每个文件对应一个 Module\n- `Chunk`：由多个 Module 组成，对应最终输出的文件",
-    "tags": [
-      "Webpack",
-      "工程化",
-      "构建"
-    ],
+    "tags": ["Webpack", "工程化", "构建"],
     "source": "高频"
   },
   {
@@ -18,11 +14,7 @@
     "difficulty": 2,
     "question": "Webpack Loader 和 Plugin 的区别是什么？如何编写一个自定义 Loader 和 Plugin？",
     "answer": "## Loader vs Plugin\n\n| 对比项   | Loader                       | Plugin                                  |\n| -------- | ---------------------------- | --------------------------------------- |\n| 作用     | 转换特定类型的文件           | 扩展 Webpack 功能，参与整个构建生命周期 |\n| 运行时机 | 模块加载时                   | 通过 Hooks 监听构建各阶段               |\n| 本质     | 函数，接收源码返回转换后内容 | 类，包含 `apply(compiler)` 方法         |\n| 配置位置 | `module.rules`               | `plugins`                               |\n\n**自定义 Loader（将 console.log 替换为空）：**\n\n```js\n// remove-console-loader.js\nmodule.exports = function (source) {\n  // this 是 loader 上下文\n  const result = source.replace(/console\\.log\\(.*?\\);?/g, '')\n  return result\n}\n\n// 异步 Loader\nmodule.exports = function (source) {\n  const callback = this.async()\n  setTimeout(() => {\n    callback(null, source.replace(/foo/g, 'bar'))\n  }, 100)\n}\n```\n\n**自定义 Plugin（生成文件清单）：**\n\n```js\nclass FileListPlugin {\n  constructor(options = {}) {\n    this.filename = options.filename || 'filelist.md'\n  }\n\n  apply(compiler) {\n    // 监听 emit 钩子（输出文件前）\n    compiler.hooks.emit.tapAsync('FileListPlugin', (compilation, callback) => {\n      const fileList = Object.keys(compilation.assets)\n        .map((name) => `- ${name} (${compilation.assets[name].size()} bytes)`)\n        .join('\\n')\n\n      // 向输出目录添加新文件\n      compilation.assets[this.filename] = {\n        source: () => `# 构建产物清单\\n\\n${fileList}`,\n        size: () => fileList.length,\n      }\n\n      callback()\n    })\n  }\n}\n\nmodule.exports = FileListPlugin\n```",
-    "tags": [
-      "Webpack",
-      "Loader",
-      "Plugin"
-    ],
+    "tags": ["Webpack", "Loader", "Plugin"],
     "source": "高频"
   },
   {
@@ -31,11 +23,7 @@
     "difficulty": 2,
     "question": "如何优化 Webpack 构建速度和产物体积？",
     "answer": "## Webpack 优化策略\n\n### 构建速度优化\n\n**1. 缩小构建范围**\n\n```js\nmodule: {\n  rules: [\n    {\n      test: /\\.js$/,\n      include: path.resolve(__dirname, 'src'), // 只处理 src 目录\n      exclude: /node_modules/,\n      use: 'babel-loader',\n    },\n  ]\n}\n```\n\n**2. 缓存（持久化缓存）**\n\n```js\n// Webpack 5 内置\ncache: { type: 'filesystem' }\n\n// babel-loader 缓存\nuse: { loader: 'babel-loader', options: { cacheDirectory: true } }\n```\n\n**3. 多线程构建**\n\n```js\nuse: ['thread-loader', 'babel-loader'] // 开启多线程\n```\n\n**4. DLL（预编译不变的库，Webpack 5 已不推荐，用 externals 代替）**\n\n### 产物体积优化\n\n**1. Tree Shaking**\n\n- 使用 ES Module（`import/export`），Webpack 在 production 模式自动启用\n- 在 `package.json` 中设置 `\"sideEffects\": false`\n\n**2. 代码分割（Code Splitting）**\n\n```js\noptimization: {\n  splitChunks: {\n    chunks: 'all',\n    cacheGroups: {\n      vendors: {\n        test: /[\\\\/]node_modules[\\\\/]/,\n        name: 'vendors',\n        priority: -10,\n      },\n    },\n  },\n}\n```\n\n**3. 动态导入（懒加载）**\n\n```js\nconst Chart = () => import('./Chart') // 路由级别代码分割\n```\n\n**4. 压缩**\n\n```js\noptimization: {\n  minimizer: [\n    new TerserPlugin({ parallel: true }),\n    new CssMinimizerPlugin(),\n  ],\n}\n```\n\n**5. 分析工具：** `webpack-bundle-analyzer` 可视化分析包体积。",
-    "tags": [
-      "Webpack",
-      "优化",
-      "Tree Shaking"
-    ],
+    "tags": ["Webpack", "优化", "Tree Shaking"],
     "source": "高频"
   },
   {
@@ -44,11 +32,7 @@
     "difficulty": 2,
     "question": "Vite 为什么比 Webpack 快？Vite 的原理是什么？",
     "answer": "## Vite 原理与优势\n\n### 为什么快？\n\n**开发模式的根本区别：**\n\n|          | Webpack                     | Vite                            |\n| -------- | --------------------------- | ------------------------------- |\n| 启动方式 | 打包所有模块再启动          | 直接启动，按需编译              |\n| 依赖处理 | Bundle-based                | No-bundle（利用浏览器原生 ESM） |\n| HMR 速度 | 需要重新构建受影响的 Bundle | 只更新改动的模块，精确到文件级  |\n| 冷启动   | O(模块总数)                 | O(1)，几乎瞬间                  |\n\n### Vite 核心原理\n\n**1. 依赖预构建（Pre-bundling）**\n\n- 使用 `esbuild`（Go 编写，比 Webpack 快 10-100 倍）将 `node_modules` 中的 CommonJS/UMD 转换为 ES Module\n- 将有大量内部模块的包（如 `lodash-es`）合并成单个文件，减少 HTTP 请求\n\n**2. 源码按需编译**\n\n```\n浏览器请求 /src/App.vue\n  → Vite Dev Server 拦截请求\n  → 实时用 esbuild/rollup 转换该文件\n  → 返回 ES Module 格式代码\n```\n\n**3. 利用浏览器原生 ESM**\n\n```html\n<script type=\"module\" src=\"/src/main.ts\"></script>\n```\n\n浏览器自己解析 `import` 语句，按需向服务器请求模块。\n\n**4. 生产构建仍用 Rollup**\n\n- Rollup 的 Tree Shaking 更彻底，适合生产打包\n- Vite 封装了 Rollup 配置，保持开发/生产一致性\n\n**HMR 精确更新原理：**\n\n- Vite 维护一个模块依赖图\n- 文件变更时，只使失效的模块边界更新\n- 通过 WebSocket 通知浏览器，浏览器动态 `import` 新模块",
-    "tags": [
-      "Vite",
-      "工程化",
-      "ESBuild"
-    ],
+    "tags": ["Vite", "工程化", "ESBuild"],
     "source": "高频"
   },
   {
@@ -57,11 +41,7 @@
     "difficulty": 3,
     "question": "什么是微前端？qiankun 的实现原理是什么？如何解决样式隔离和 JS 沙箱问题？",
     "answer": "## 微前端原理\n\n### 微前端核心概念\n\n微前端将一个大型前端应用拆分为多个独立部署、独立开发的子应用，由主应用（基座）统一调度。\n\n**核心解决的问题：**\n\n- 巨石应用难以维护\n- 多团队技术栈不统一\n- 子应用独立部署、独立发布\n\n### qiankun 实现原理\n\n**1. 应用注册与加载**\n\n```js\n// 主应用\nimport { registerMicroApps, start } from 'qiankun'\nregisterMicroApps([\n  {\n    name: 'react-app',\n    entry: '//localhost:3001', // 子应用地址\n    container: '#sub-app',\n    activeRule: '/react',\n  },\n])\nstart()\n```\n\n**2. HTML Entry（import-html-entry）**\n\n- 请求子应用的 HTML，解析出 JS/CSS 资源\n- 动态执行 JS，不通过 `<script>` 标签（为了能控制执行上下文）\n\n**3. JS 沙箱（三种模式）**\n\n```js\n// 快照沙箱（不支持并行）：激活时快照 window，失活时还原\nclass SnapshotSandbox {\n  activate() {\n    this.windowSnapshot = { ...window }\n    Object.keys(this.modifyMap).forEach(\n      (key) => (window[key] = this.modifyMap[key]),\n    )\n  }\n  deactivate() {\n    Object.keys(window).forEach((key) => {\n      if (window[key] !== this.windowSnapshot[key]) {\n        this.modifyMap[key] = window[key]\n        window[key] = this.windowSnapshot[key]\n      }\n    })\n  }\n}\n\n// Proxy 沙箱（支持并行，推荐）：用 Proxy 代理 window\nclass ProxySandbox {\n  constructor() {\n    this.fakeWindow = {}\n    this.proxy = new Proxy(this.fakeWindow, {\n      get(target, key) {\n        return key in target ? target[key] : window[key]\n      },\n      set(target, key, value) {\n        target[key] = value\n        return true\n      },\n    })\n  }\n}\n```\n\n**4. CSS 隔离**\n\n- **Shadow DOM**：最彻底的隔离，但兼容性和第三方 UI 库有问题\n- **Scoped CSS**：给子应用 CSS 加前缀选择器（类似 Vue Scoped）\n- **动态加载/卸载**：子应用激活时加载 CSS，失活时卸载\n\n**5. 应用间通信**\n\n```js\n// 基于 props 传递\n// 基于全局状态（initGlobalState）\nimport { initGlobalState } from 'qiankun'\nconst actions = initGlobalState({ user: null })\nactions.onGlobalStateChange((state, prev) => console.log(state))\nactions.setGlobalState({ user: { name: 'Alice' } })\n```",
-    "tags": [
-      "微前端",
-      "qiankun",
-      "架构"
-    ],
+    "tags": ["微前端", "qiankun", "架构"],
     "source": "高频"
   },
   {
@@ -70,11 +50,7 @@
     "difficulty": 2,
     "question": "如何在前端项目中实现错误监控和上报？捕获哪些类型的错误？",
     "answer": "## 前端错误监控体系\n\n### 错误类型与捕获方式\n\n**1. JS 运行时错误**\n\n```js\nwindow.addEventListener(\n  'error',\n  (event) => {\n    const { message, filename, lineno, colno, error } = event\n    report({\n      type: 'js_error',\n      message,\n      stack: error?.stack,\n      filename,\n      position: `${lineno}:${colno}`,\n    })\n  },\n  true,\n) // 捕获阶段，能捕获子元素错误\n```\n\n**2. Promise 未处理的 rejection**\n\n```js\nwindow.addEventListener('unhandledrejection', (event) => {\n  report({\n    type: 'promise_error',\n    message: event.reason?.message || String(event.reason),\n    stack: event.reason?.stack,\n  })\n})\n```\n\n**3. 资源加载错误**\n\n```js\nwindow.addEventListener(\n  'error',\n  (event) => {\n    const target = event.target\n    if (\n      target instanceof HTMLScriptElement ||\n      target instanceof HTMLLinkElement ||\n      target instanceof HTMLImageElement\n    ) {\n      report({\n        type: 'resource_error',\n        tagName: target.tagName,\n        src: target.src || target.href,\n      })\n    }\n  },\n  true,\n) // 必须是捕获阶段\n```\n\n**4. React 错误边界**\n\n```jsx\nclass ErrorBoundary extends React.Component {\n  componentDidCatch(error, info) {\n    report({\n      type: 'react_error',\n      message: error.message,\n      stack: info.componentStack,\n    })\n  }\n}\n```\n\n**5. 接口错误（Axios 拦截器）**\n\n```js\naxios.interceptors.response.use(null, (error) => {\n  report({\n    type: 'api_error',\n    url: error.config?.url,\n    status: error.response?.status,\n    message: error.message,\n  })\n  return Promise.reject(error)\n})\n```\n\n### 上报策略\n\n```js\nclass ErrorReporter {\n  constructor(options) {\n    this.queue = []\n    this.dsn = options.dsn\n    this.maxQueue = 10\n    this._flush = debounce(this._send.bind(this), 1000)\n  }\n\n  report(error) {\n    this.queue.push({\n      ...error,\n      timestamp: Date.now(),\n      url: location.href,\n      userAgent: navigator.userAgent,\n      uid: this._getUID(),\n    })\n    if (this.queue.length >= this.maxQueue) this._send()\n    else this._flush()\n  }\n\n  _send() {\n    if (!this.queue.length) return\n    const data = this.queue.splice(0)\n    // 优先用 sendBeacon（页面卸载时也能发送）\n    if (navigator.sendBeacon) {\n      navigator.sendBeacon(this.dsn, JSON.stringify(data))\n    } else {\n      fetch(this.dsn, {\n        method: 'POST',\n        body: JSON.stringify(data),\n        keepalive: true,\n      })\n    }\n  }\n}\n```\n\n**Source Map 还原：** 生产环境上传 source map 到监控平台，通过 `source-map` 库还原压缩后的报错位置。",
-    "tags": [
-      "监控",
-      "错误上报",
-      "埋点"
-    ],
+    "tags": ["监控", "错误上报", "埋点"],
     "source": "高频"
   },
   {
@@ -83,11 +59,7 @@
     "difficulty": 2,
     "question": "如何设计前端埋点系统？声明式埋点和命令式埋点有什么区别？",
     "answer": "## 前端埋点系统设计\n\n### 埋点类型\n\n| 类型       | 实现方式                 | 优点       | 缺点                     |\n| ---------- | ------------------------ | ---------- | ------------------------ |\n| 命令式埋点 | 手动在代码中调用上报函数 | 灵活、精准 | 侵入业务代码，维护成本高 |\n| 声明式埋点 | 通过属性/指令/装饰器描述 | 低侵入     | 复杂交互难以表达         |\n| 无埋点     | 自动采集所有点击/曝光    | 零开发成本 | 数据量大，噪音多         |\n\n### 命令式埋点\n\n```js\n// 封装 SDK\nclass Analytics {\n  track(eventName, properties = {}) {\n    this._send({ type: 'event', event: eventName, ...properties })\n  }\n  page(pageName, properties = {}) {\n    this._send({ type: 'page', page: pageName, ...properties })\n  }\n}\nconst analytics = new Analytics({ dsn: '/api/track' })\n\n// 使用\nbutton.addEventListener('click', () => {\n  analytics.track('button_click', { button_id: 'submit', page: 'checkout' })\n})\n```\n\n### 声明式埋点（基于 data 属性 + MutationObserver/事件委托）\n\n```js\n// HTML 中声明埋点信息\n// <button data-track=\"click\" data-event=\"add_to_cart\" data-product-id=\"123\">加入购物车</button>\n\n// 全局事件委托\ndocument.addEventListener(\n  'click',\n  (e) => {\n    const target = e.target.closest('[data-track=\"click\"]')\n    if (!target) return\n\n    const eventName = target.dataset.event\n    const properties = {}\n    // 收集所有 data-* 属性作为参数\n    for (const [key, val] of Object.entries(target.dataset)) {\n      if (key !== 'track' && key !== 'event') {\n        properties[key] = val\n      }\n    }\n    analytics.track(eventName, properties)\n  },\n  true,\n)\n```\n\n### 曝光埋点（IntersectionObserver）\n\n```js\nconst exposureObserver = new IntersectionObserver(\n  (entries) => {\n    entries.forEach((entry) => {\n      if (entry.isIntersecting) {\n        const el = entry.target\n        analytics.track('element_exposure', {\n          element_id: el.dataset.trackId,\n          duration: 0,\n        })\n        exposureObserver.unobserve(el) // 只上报一次\n      }\n    })\n  },\n  { threshold: 0.5 },\n) // 50% 可见才算曝光\n\ndocument\n  .querySelectorAll('[data-track=\"exposure\"]')\n  .forEach((el) => exposureObserver.observe(el))\n```\n\n### 数据模型设计\n\n```json\n{\n  \"event\": \"button_click\",\n  \"timestamp\": 1704067200000,\n  \"session_id\": \"abc123\",\n  \"user_id\": \"user_456\",\n  \"page\": \"/checkout\",\n  \"properties\": { \"button_id\": \"submit\" },\n  \"context\": {\n    \"url\": \"https://example.com/checkout\",\n    \"referrer\": \"https://example.com/cart\",\n    \"screen\": \"1920x1080\",\n    \"os\": \"macOS\",\n    \"browser\": \"Chrome 120\"\n  }\n}\n```",
-    "tags": [
-      "埋点",
-      "性能监控",
-      "用户行为"
-    ],
+    "tags": ["埋点", "性能监控", "用户行为"],
     "source": "高频"
   },
   {
@@ -96,11 +68,7 @@
     "difficulty": 2,
     "question": "如何在项目中采集和监控 Core Web Vitals（LCP、INP、CLS）？",
     "answer": "## Core Web Vitals 监控实现\n\n### 使用 web-vitals 库（推荐）\n\n```js\nimport { onLCP, onINP, onCLS, onFCP, onTTFB } from 'web-vitals'\n\nfunction reportMetric({ name, value, rating, delta, id }) {\n  analytics.track('web_vital', {\n    metric_name: name, // 'LCP', 'INP', 'CLS', ...\n    value: Math.round(name === 'CLS' ? value * 1000 : value),\n    rating, // 'good', 'needs-improvement', 'poor'\n    delta: Math.round(delta),\n    metric_id: id,\n  })\n}\n\nonLCP(reportMetric)\nonINP(reportMetric)\nonCLS(reportMetric)\nonFCP(reportMetric)\nonTTFB(reportMetric)\n```\n\n### 手动实现 LCP 采集\n\n```js\n// PerformanceObserver 监听 largest-contentful-paint\nlet lcp = null\nconst observer = new PerformanceObserver((list) => {\n  const entries = list.getEntries()\n  lcp = entries[entries.length - 1] // 取最新的（LCP 可能更新多次）\n})\nobserver.observe({ type: 'largest-contentful-paint', buffered: true })\n\n// 页面隐藏时上报最终值\ndocument.addEventListener('visibilitychange', () => {\n  if (document.visibilityState === 'hidden' && lcp) {\n    report({ name: 'LCP', value: lcp.startTime, element: lcp.element?.tagName })\n    observer.disconnect()\n  }\n})\n```\n\n### 手动实现 CLS 采集\n\n```js\nlet clsValue = 0\nlet clsEntries = []\nconst clsObserver = new PerformanceObserver((list) => {\n  list.getEntries().forEach((entry) => {\n    // 用户交互后 500ms 内的偏移不计入 CLS\n    if (!entry.hadRecentInput) {\n      clsValue += entry.value\n      clsEntries.push(entry)\n    }\n  })\n})\nclsObserver.observe({ type: 'layout-shift', buffered: true })\n```\n\n### 性能优化阈值\n\n| 指标 | 良好    | 待改进   | 差       |\n| ---- | ------- | -------- | -------- |\n| LCP  | ≤ 2.5s  | ≤ 4.0s   | > 4.0s   |\n| INP  | ≤ 200ms | ≤ 500ms  | > 500ms  |\n| CLS  | ≤ 0.1   | ≤ 0.25   | > 0.25   |\n| FCP  | ≤ 1.8s  | ≤ 3.0s   | > 3.0s   |\n| TTFB | ≤ 800ms | ≤ 1800ms | > 1800ms |",
-    "tags": [
-      "性能监控",
-      "Web Vitals",
-      "LCP"
-    ],
+    "tags": ["性能监控", "Web Vitals", "LCP"],
     "source": "高频"
   },
   {
@@ -109,11 +77,7 @@
     "difficulty": 2,
     "question": "描述一个完整的前端 CI/CD 流程，包括代码检查、构建、测试、部署各阶段",
     "answer": "## 前端 CI/CD 流程设计\n\n### 典型流程（以 GitHub Actions + Vercel 为例）\n\n```yaml\n# .github/workflows/ci.yml\nname: CI/CD Pipeline\n\non:\n  push:\n    branches: [main, develop]\n  pull_request:\n    branches: [main]\n\njobs:\n  # 代码质量检查\n  lint-and-type-check:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with: { node-version: '20', cache: 'pnpm' }\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm lint # ESLint\n      - run: pnpm type-check # tsc --noEmit\n\n  # 单元测试\n  test:\n    runs-on: ubuntu-latest\n    needs: lint-and-type-check\n    steps:\n      - uses: actions/checkout@v4\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm test:coverage\n      - uses: codecov/codecov-action@v3 # 上传覆盖率报告\n\n  # 构建\n  build:\n    runs-on: ubuntu-latest\n    needs: test\n    steps:\n      - uses: actions/checkout@v4\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm build\n      - uses: actions/upload-artifact@v4\n        with:\n          name: dist\n          path: dist/\n\n  # E2E 测试\n  e2e:\n    runs-on: ubuntu-latest\n    needs: build\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/download-artifact@v4\n        with: { name: dist }\n      - run: pnpm exec playwright test\n\n  # 部署（仅 main 分支）\n  deploy:\n    runs-on: ubuntu-latest\n    needs: [build, e2e]\n    if: github.ref == 'refs/heads/main'\n    steps:\n      - uses: actions/download-artifact@v4\n      - name: Deploy to CDN\n        run: |\n          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} --delete\n          aws cloudfront create-invalidation --distribution-id ${{ secrets.CF_ID }} --paths \"/*\"\n```\n\n### 关键实践\n\n1. **分支策略**：`feature` → `develop`（自动部署测试环境）→ `main`（自动部署生产）\n2. **缓存优化**：缓存 `node_modules`，减少 CI 时间\n3. **并行化**：Lint、Type Check、Test 可并行执行\n4. **环境变量**：通过 Secrets 管理 API Key、CDN Token\n5. **灰度发布**：先部署 10% 流量，监控 Error Rate 后再全量",
-    "tags": [
-      "CI/CD",
-      "部署",
-      "DevOps"
-    ],
+    "tags": ["CI/CD", "部署", "DevOps"],
     "source": "高频"
   },
   {
@@ -122,11 +86,7 @@
     "difficulty": 3,
     "question": "如何设计一个可维护的大型前端项目架构？包括目录结构、模块划分、状态管理等",
     "answer": "## 大型前端项目架构设计\n\n### 目录结构（功能式划分）\n\n```\nsrc/\n├── app/                  # 应用层（路由、全局配置）\n│   ├── router/\n│   ├── store/\n│   └── providers/\n├── features/             # 业务功能模块（核心）\n│   ├── auth/\n│   │   ├── components/\n│   │   ├── hooks/\n│   │   ├── api/\n│   │   ├── store/\n│   │   └── index.ts      # 模块公开 API\n│   ├── product/\n│   └── order/\n├── shared/               # 跨功能共享代码\n│   ├── components/       # 通用 UI 组件\n│   ├── hooks/            # 通用 Hooks\n│   ├── utils/            # 工具函数\n│   ├── types/            # 全局类型\n│   └── constants/\n├── infrastructure/       # 基础设施层\n│   ├── http/             # API 客户端封装\n│   ├── storage/          # 本地存储封装\n│   └── analytics/        # 埋点 SDK\n└── pages/                # 页面组件（薄层，组合 features）\n```\n\n### 核心原则\n\n**1. 模块边界清晰**\n\n```ts\n// ✅ features/auth/index.ts 只暴露必要的接口\nexport { LoginForm } from './components/LoginForm'\nexport { useAuth } from './hooks/useAuth'\nexport type { User, AuthState } from './types'\n\n// ❌ 不要直接引用其他模块的内部实现\nimport { userReducer } from '@/features/auth/store/userSlice' // 错误\n```\n\n**2. 单向依赖**\n\n```\npages → features → shared → infrastructure\n         ↓\n      不能反向依赖\n```\n\n**3. 状态分层**\n\n```ts\n// 服务端状态：React Query / SWR\nconst { data: products } = useQuery(['products'], fetchProducts);\n\n// 全局客户端状态：Zustand（用户信息、主题）\nconst useUserStore = create<UserState>((set) => ({ ... }));\n\n// 局部 UI 状态：useState / useReducer\nconst [isOpen, setIsOpen] = useState(false);\n```\n\n**4. API 层统一封装**\n\n```ts\n// infrastructure/http/client.ts\nconst client = axios.create({ baseURL: '/api/v1' })\nclient.interceptors.request.use(authInterceptor)\nclient.interceptors.response.use(null, errorInterceptor)\n\n// features/product/api/productApi.ts\nexport const productApi = {\n  list: (params: ListParams) => client.get<Product[]>('/products', { params }),\n  detail: (id: string) => client.get<Product>(`/products/${id}`),\n}\n```",
-    "tags": [
-      "架构设计",
-      "大型项目",
-      "模块化"
-    ],
+    "tags": ["架构设计", "大型项目", "模块化"],
     "source": "高频"
   },
   {
@@ -135,11 +95,7 @@
     "difficulty": 2,
     "question": "如何用 Rollup 打包一个 npm 组件库？需要注意哪些配置？",
     "answer": "## Rollup 打包组件库\n\n### 为什么选 Rollup？\n\n- Tree Shaking 更彻底（原生支持）\n- 输出格式更干净（无 Webpack 的运行时代码）\n- 适合库开发（ESM、CJS、UMD 多格式输出）\n\n### rollup.config.js\n\n```js\nimport resolve from '@rollup/plugin-node-resolve'\nimport commonjs from '@rollup/plugin-commonjs'\nimport typescript from '@rollup/plugin-typescript'\nimport dts from 'rollup-plugin-dts'\nimport { defineConfig } from 'rollup'\n\nconst pkg = require('./package.json')\n\nexport default defineConfig([\n  // 主构建：输出 ESM 和 CJS\n  {\n    input: 'src/index.ts',\n    output: [\n      {\n        file: pkg.module, // 'dist/index.esm.js'\n        format: 'esm',\n        sourcemap: true,\n      },\n      {\n        file: pkg.main, // 'dist/index.cjs.js'\n        format: 'cjs',\n        sourcemap: true,\n        exports: 'named',\n      },\n    ],\n    plugins: [\n      resolve(),\n      commonjs(),\n      typescript({ tsconfig: './tsconfig.json' }),\n    ],\n    // 声明外部依赖，不打进包里\n    external: [\n      'react',\n      'react-dom',\n      ...Object.keys(pkg.peerDependencies || {}),\n    ],\n  },\n  // 类型声明文件\n  {\n    input: 'dist/types/index.d.ts',\n    output: { file: 'dist/index.d.ts', format: 'esm' },\n    plugins: [dts()],\n  },\n])\n```\n\n### package.json 配置\n\n```json\n{\n  \"name\": \"my-component-lib\",\n  \"main\": \"dist/index.cjs.js\",\n  \"module\": \"dist/index.esm.js\",\n  \"types\": \"dist/index.d.ts\",\n  \"exports\": {\n    \".\": {\n      \"import\": \"./dist/index.esm.js\",\n      \"require\": \"./dist/index.cjs.js\",\n      \"types\": \"./dist/index.d.ts\"\n    }\n  },\n  \"sideEffects\": false,\n  \"files\": [\"dist\"],\n  \"peerDependencies\": {\n    \"react\": \">=17\"\n  }\n}\n```\n\n### 关键注意事项\n\n1. `external` 声明 peer dependencies，避免重复打包\n2. `sideEffects: false` 让消费方能 Tree Shaking\n3. 同时输出 ESM（给打包工具）和 CJS（给 Node.js 环境）\n4. 生成 `.d.ts` 类型声明文件\n5. CSS 处理：用 `rollup-plugin-postcss` 可选是否注入或提取",
-    "tags": [
-      "Rollup",
-      "打包",
-      "库开发"
-    ],
+    "tags": ["Rollup", "打包", "库开发"],
     "source": "高频"
   },
   {
@@ -148,11 +104,7 @@
     "difficulty": 2,
     "question": "项目首屏白屏时间过长，你会如何排查和优化？",
     "answer": "## 首屏白屏优化方案\n\n### 排查工具\n\n1. **Chrome DevTools → Performance** 录制页面加载，查看 FCP/LCP 时间点\n2. **Network 面板**：找到阻塞渲染的大文件（main.js、vendor.js）\n3. **webpack-bundle-analyzer**：可视化找出大体积依赖\n4. **Lighthouse**：自动给出优化建议\n\n### 常见原因与解法\n\n**1. JS Bundle 体积过大**\n\n```js\n// 路由懒加载\nconst Home = React.lazy(() => import('./pages/Home'))\n\n// 按需引入第三方库\nimport { debounce } from 'lodash-es' // ✅ 而非 import _ from 'lodash'\n\n// 分析大依赖，用轻量替代\n// moment.js (300KB) → day.js (2KB)\n// lodash (70KB) → lodash-es + Tree Shaking\n```\n\n**2. 关键资源阻塞渲染**\n\n```html\n<!-- 非关键 CSS 异步加载 -->\n<link\n  rel=\"preload\"\n  href=\"styles.css\"\n  as=\"style\"\n  onload=\"this.rel='stylesheet'\"\n/>\n\n<!-- JS 不阻塞 HTML 解析 -->\n<script defer src=\"main.js\"></script>\n<script async src=\"analytics.js\"></script>\n\n<!-- 预加载关键资源 -->\n<link rel=\"preload\" href=\"/fonts/main.woff2\" as=\"font\" crossorigin />\n```\n\n**3. 首屏 API 请求慢**\n\n```js\n// 并行请求（替代串行）\nconst [user, products] = await Promise.all([\n  fetchUser(),\n  fetchProducts(),\n]);\n\n// 接口数据预取（在 HTML 中内联首屏数据）\nwindow.__INITIAL_DATA__ = { user: {...}, config: {...} };\n```\n\n**4. 图片优化**\n\n- 首屏图片使用 WebP/AVIF 格式\n- 非首屏图片懒加载\n- 使用 `<img loading=\"lazy\">` 原生懒加载\n\n**5. 服务端渲染 / 静态生成**\n\n```\nCSR: 白屏 → JS 加载 → 渲染\nSSR: 服务器返回 HTML → 立即渲染 → JS 注水\n```\n\n**6. 骨架屏**\n\n```jsx\nfunction App() {\n  return (\n    <Suspense fallback={<SkeletonScreen />}>\n      <Router />\n    </Suspense>\n  )\n}\n```\n\n### 优化后效果评估\n\n| 指标      | 优化前 | 优化后                 |\n| --------- | ------ | ---------------------- |\n| JS Bundle | 2.8MB  | 320KB（代码分割+压缩） |\n| FCP       | 4.2s   | 1.1s                   |\n| LCP       | 6.8s   | 2.3s                   |",
-    "tags": [
-      "性能",
-      "白屏",
-      "首屏优化"
-    ],
+    "tags": ["性能", "白屏", "首屏优化"],
     "source": "高频"
   },
   {
@@ -161,11 +113,7 @@
     "difficulty": 2,
     "question": "详解 Webpack splitChunks 配置，如何合理分割 Chunk？",
     "answer": "## splitChunks 详解\n\n### 默认行为\n\nWebpack 5 默认只对异步 Chunk 进行分割，同步 Chunk 需要手动配置。\n\n### 完整配置解析\n\n```js\noptimization: {\n  splitChunks: {\n    chunks: 'all',          // 'async'(默认) | 'initial' | 'all'\n    minSize: 20000,         // 最小 20KB 才分割\n    minChunks: 1,           // 至少被引用 1 次\n    maxAsyncRequests: 30,   // 按需加载时最大并行请求数\n    maxInitialRequests: 30, // 入口点最大并行请求数\n\n    cacheGroups: {\n      // 第三方库单独打包\n      vendors: {\n        test: /[\\\\/]node_modules[\\\\/]/,\n        name: 'vendors',\n        chunks: 'all',\n        priority: -10,\n        reuseExistingChunk: true,\n      },\n\n      // 大型库单独打包（减少 vendors 体积）\n      react: {\n        test: /[\\\\/]node_modules[\\\\/](react|react-dom)[\\\\/]/,\n        name: 'react-vendor',\n        chunks: 'all',\n        priority: 20,     // 优先级高于 vendors\n      },\n\n      // 公共业务代码（被多个 Chunk 引用的）\n      common: {\n        name: 'common',\n        minChunks: 2,       // 至少被 2 个 Chunk 引用\n        priority: -20,\n        reuseExistingChunk: true,\n      },\n    },\n  },\n}\n```\n\n### 分割策略建议\n\n```\n入口 Chunk（app.js）        ← 业务核心逻辑，频繁更新\nreact-vendor.js             ← React 相关，极少更新，长期缓存\nvendors.js                  ← 其他 node_modules，较少更新\ncommon.js                   ← 公共业务组件\npage-home.js                ← 路由懒加载 Chunk\npage-detail.js\n```\n\n**Hash 策略配合缓存：**\n\n```js\noutput: {\n  filename: '[name].[contenthash:8].js',  // 内容 hash，内容不变则缓存不失效\n  chunkFilename: '[name].[contenthash:8].chunk.js',\n}\n```",
-    "tags": [
-      "Webpack",
-      "splitChunks",
-      "代码分割"
-    ],
+    "tags": ["Webpack", "splitChunks", "代码分割"],
     "source": "高频"
   },
   {
@@ -174,11 +122,7 @@
     "difficulty": 2,
     "question": "如何在项目中使用 Service Worker 实现离线缓存和性能优化？",
     "answer": "## Service Worker 缓存策略\n\n### 注册与生命周期\n\n```js\n// main.js\nif ('serviceWorker' in navigator) {\n  window.addEventListener('load', () => {\n    navigator.serviceWorker\n      .register('/sw.js')\n      .then((reg) => console.log('SW registered:', reg.scope))\n      .catch((err) => console.error('SW failed:', err))\n  })\n}\n```\n\n### 缓存策略实现\n\n```js\n// sw.js\nconst CACHE_NAME = 'app-v1.2.0'\nconst STATIC_ASSETS = ['/index.html', '/app.js', '/styles.css']\n\n// install：预缓存静态资源\nself.addEventListener('install', (event) => {\n  event.waitUntil(\n    caches\n      .open(CACHE_NAME)\n      .then((cache) => cache.addAll(STATIC_ASSETS))\n      .then(() => self.skipWaiting()), // 立即激活新 SW\n  )\n})\n\n// activate：清理旧缓存\nself.addEventListener('activate', (event) => {\n  event.waitUntil(\n    caches\n      .keys()\n      .then((keys) =>\n        Promise.all(\n          keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)),\n        ),\n      )\n      .then(() => self.clients.claim()),\n  )\n})\n\n// fetch：拦截请求，实现不同缓存策略\nself.addEventListener('fetch', (event) => {\n  const { request } = event\n  const url = new URL(request.url)\n\n  // API 请求：网络优先（Network First）\n  if (url.pathname.startsWith('/api/')) {\n    event.respondWith(networkFirst(request))\n    return\n  }\n\n  // 静态资源：缓存优先（Cache First）\n  event.respondWith(cacheFirst(request))\n})\n\n// 缓存优先策略\nasync function cacheFirst(request) {\n  const cached = await caches.match(request)\n  if (cached) return cached\n  const response = await fetch(request)\n  const cache = await caches.open(CACHE_NAME)\n  cache.put(request, response.clone())\n  return response\n}\n\n// 网络优先策略\nasync function networkFirst(request) {\n  try {\n    const response = await fetch(request)\n    const cache = await caches.open(CACHE_NAME)\n    cache.put(request, response.clone())\n    return response\n  } catch {\n    return caches.match(request)\n  }\n}\n```\n\n### Workbox（推荐生产使用）\n\n```js\n// vite-plugin-pwa 配置\nimport { VitePWA } from 'vite-plugin-pwa'\nplugins: [\n  VitePWA({\n    strategies: 'generateSW',\n    workbox: {\n      runtimeCaching: [\n        {\n          urlPattern: /^https:\\/\\/api\\.example\\.com\\//,\n          handler: 'NetworkFirst',\n          options: {\n            cacheName: 'api-cache',\n            expiration: { maxAgeSeconds: 60 * 60 },\n          },\n        },\n      ],\n    },\n  }),\n]\n```",
-    "tags": [
-      "Service Worker",
-      "缓存",
-      "PWA"
-    ],
+    "tags": ["Service Worker", "缓存", "PWA"],
     "source": "高频"
   },
   {
@@ -187,11 +131,7 @@
     "difficulty": 2,
     "question": "你在项目中是如何做技术选型的？以\"选 React 还是 Vue\"为例说明思路",
     "answer": "## 技术选型方法论\n\n### 选型维度\n\n**1. 团队因素**\n\n- 团队现有技术栈和经验\n- 学习成本和迁移成本\n- 招聘市场的候选人分布\n\n**2. 项目因素**\n\n- 项目规模（小型/中型/大型）\n- 功能复杂度（是否需要复杂状态管理）\n- 性能要求（是否需要 SSR/SSG）\n- 维护周期\n\n**3. 生态因素**\n\n- 社区活跃度和维护状态\n- 周边生态（UI 组件库、测试工具）\n- 企业级支持\n\n### React vs Vue 对比\n\n| 维度       | React                                | Vue                        |\n| ---------- | ------------------------------------ | -------------------------- |\n| 学习曲线   | 较陡（需要理解 JSX、Hooks 心智模型） | 较平缓（Options API 直观） |\n| 灵活性     | 高（更接近原生 JS）                  | 中（约定优于配置）         |\n| 性能       | 优秀（并发模式）                     | 优秀（编译时优化）         |\n| 生态       | 更大（尤其企业级）                   | 完善（官方一体化）         |\n| TypeScript | 优秀（类型推断好）                   | Vue 3 改善明显             |\n| 状态管理   | 需要 Redux/Zustand                   | Pinia 官方支持好           |\n| 适合场景   | 大型复杂应用、需要灵活性             | 中小型项目、快速开发       |\n\n### 实际决策流程\n\n```\n1. 明确约束条件（时间、团队、预算）\n2. 列出候选方案\n3. 评估各维度权重（不同项目权重不同）\n4. POC 验证（用候选方案实现核心功能，验证可行性）\n5. 做出决策并记录 ADR（Architecture Decision Record）\n```\n\n### ADR 示例\n\n```markdown\n# ADR-001: 选择 React 作为前端框架\n\n## 状态：已采纳\n\n## 背景\n\n需要构建一个大型 B2B SaaS 平台，团队 8 人，有 4 人有 React 经验。\n\n## 决策\n\n使用 React 18 + TypeScript + Vite。\n\n## 原因\n\n- 团队 50% 已有 React 经验，学习成本低\n- 需要高度定制化的组件，React 的灵活性更合适\n- 企业级生态更成熟（React Query、Radix UI）\n\n## 后果\n\n- 需要自选状态管理方案（选择 Zustand）\n- Vue 生态的部分工具无法使用\n```",
-    "tags": [
-      "技术选型",
-      "React",
-      "Vue"
-    ],
+    "tags": ["技术选型", "React", "Vue"],
     "source": "高频"
   },
   {
@@ -200,11 +140,7 @@
     "difficulty": 3,
     "question": "解释 CSR、SSR、SSG、ISR 四种渲染模式的区别和适用场景",
     "answer": "## 四种渲染模式详解\n\n### CSR（客户端渲染）\n\n```\n服务器 → 空 HTML + JS Bundle → 浏览器执行 JS → 渲染 DOM\n```\n\n**特点：** 首屏慢、SEO 差、后续交互快、服务器压力小\n**适用：** 后台管理系统、登录后的应用、对 SEO 无要求的页面\n\n### SSR（服务端渲染）\n\n```\n服务器 → 执行 React/Vue → 生成完整 HTML → 浏览器直接渲染 → Hydration\n```\n\n**Next.js SSR：**\n\n```tsx\n// pages/product/[id].tsx\nexport async function getServerSideProps(context) {\n  const { id } = context.params\n  const product = await fetchProduct(id) // 每次请求都执行\n  return { props: { product } }\n}\n\nexport default function ProductPage({ product }) {\n  return <div>{product.name}</div>\n}\n```\n\n**特点：** 首屏快、SEO 好、服务器压力大、TTFB 较慢\n**适用：** 需要 SEO 的动态页面（新闻、商品详情）\n\n### SSG（静态站点生成）\n\n```\n构建时 → 生成所有 HTML 文件 → 部署到 CDN → 请求直接返回 HTML\n```\n\n**Next.js SSG：**\n\n```tsx\nexport async function getStaticProps() {\n  const posts = await fetchAllPosts() // 构建时执行一次\n  return { props: { posts } }\n}\n\nexport async function getStaticPaths() {\n  const posts = await fetchAllPosts()\n  return {\n    paths: posts.map((p) => ({ params: { id: p.id } })),\n    fallback: false,\n  }\n}\n```\n\n**特点：** 最快（CDN 直接返回）、SEO 最好、内容静态（不适合频繁更新）\n**适用：** 博客、文档网站、营销页面\n\n### ISR（增量静态再生）\n\n```\n首次请求 → 生成并缓存 HTML → 后续请求返回缓存\n过期后 → 后台重新生成 → 下次请求返回新内容\n```\n\n```tsx\nexport async function getStaticProps() {\n  const data = await fetchData()\n  return {\n    props: { data },\n    revalidate: 60, // 60 秒后重新生成\n  }\n}\n```\n\n**特点：** 兼顾性能和实时性、适合中等频率更新的内容\n**适用：** 电商商品列表、新闻首页\n\n### 选择决策树\n\n```\n需要 SEO？\n├── 否 → CSR（SPA）\n└── 是 → 内容是否动态？\n          ├── 静态/极少更新 → SSG\n          ├── 需要实时数据 → SSR\n          └── 定期更新 → ISR\n```",
-    "tags": [
-      "SSR",
-      "Next.js",
-      "渲染模式"
-    ],
+    "tags": ["SSR", "Next.js", "渲染模式"],
     "source": "高频"
   },
   {
@@ -213,11 +149,7 @@
     "difficulty": 2,
     "question": "什么是 Monorepo？如何用 pnpm + Turborepo 管理 Monorepo 项目？",
     "answer": "## Monorepo 实践\n\n### 什么是 Monorepo\n\n将多个相关项目（packages）放在一个 Git 仓库中管理。\n\n**优势：**\n\n- 统一代码规范、依赖版本\n- 跨包修改在同一 PR 中完成\n- 共享构建缓存，CI 更快\n\n**劣势：**\n\n- 仓库体积大\n- 权限控制复杂\n- 对工具链要求高\n\n### pnpm workspace 配置\n\n```yaml\n# pnpm-workspace.yaml\npackages:\n  - 'apps/*' # 应用\n  - 'packages/*' # 共享包\n```\n\n```\nmonorepo/\n├── apps/\n│   ├── web/           # Next.js 主站\n│   └── admin/         # 后台管理\n├── packages/\n│   ├── ui/            # 共享组件库\n│   ├── utils/         # 工具函数\n│   └── config/        # 共享配置（ESLint、TSConfig）\n├── pnpm-workspace.yaml\n└── package.json\n```\n\n**包之间引用：**\n\n```json\n// apps/web/package.json\n{\n  \"dependencies\": {\n    \"@myorg/ui\": \"workspace:*\",\n    \"@myorg/utils\": \"workspace:*\"\n  }\n}\n```\n\n### Turborepo 配置\n\n```json\n// turbo.json\n{\n  \"pipeline\": {\n    \"build\": {\n      \"dependsOn\": [\"^build\"], // 先构建依赖包\n      \"outputs\": [\"dist/**\", \".next/**\"]\n    },\n    \"test\": {\n      \"dependsOn\": [\"^build\"],\n      \"outputs\": [\"coverage/**\"]\n    },\n    \"lint\": {\n      \"outputs\": []\n    },\n    \"dev\": {\n      \"cache\": false,\n      \"persistent\": true\n    }\n  }\n}\n```\n\n**常用命令：**\n\n```bash\n# 构建所有包（自动处理依赖顺序）\nturbo run build\n\n# 只构建受影响的包（基于 git diff）\nturbo run build --filter=...[HEAD^1]\n\n# 并行运行 + 本地缓存\nturbo run test lint --parallel\n```\n\n**Turborepo 缓存原理：**\n\n- 基于输入文件的哈希值判断是否需要重新构建\n- 支持远程缓存（Vercel Remote Cache），团队共享构建结果",
-    "tags": [
-      "monorepo",
-      "pnpm",
-      "Turborepo"
-    ],
+    "tags": ["monorepo", "pnpm", "Turborepo"],
     "source": "高频"
   },
   {
@@ -226,11 +158,7 @@
     "difficulty": 2,
     "question": "在前端项目中如何防御 XSS 和 CSRF 攻击？具体实践是什么？",
     "answer": "## XSS 和 CSRF 防御实践\n\n### XSS（跨站脚本）防御\n\n**1. 输出转义（最基本）**\n\n```js\n// 永远不要直接将用户输入插入 HTML\n// ❌ 危险\nelement.innerHTML = userInput\n\n// ✅ 安全\nelement.textContent = userInput\n\n// 需要富文本时，使用白名单过滤库\nimport DOMPurify from 'dompurify'\nelement.innerHTML = DOMPurify.sanitize(userInput, {\n  ALLOWED_TAGS: ['p', 'b', 'i', 'a'],\n  ALLOWED_ATTR: ['href'],\n})\n```\n\n**2. CSP（内容安全策略）**\n\n```http\nContent-Security-Policy:\n  default-src 'self';\n  script-src 'self' 'nonce-{随机数}';\n  style-src 'self' 'unsafe-inline';\n  img-src 'self' data: https:;\n  connect-src 'self' https://api.example.com;\n  frame-ancestors 'none';\n```\n\n```html\n<!-- CSP nonce：只允许带 nonce 的内联脚本执行 -->\n<script nonce=\"r4nd0m\">\n  // 合法脚本\n</script>\n```\n\n**3. React 中的 XSS**\n\n```jsx\n// React 默认转义，dangerouslySetInnerHTML 需要谨慎使用\n// ❌\n<div dangerouslySetInnerHTML={{ __html: userInput }} />\n\n// ✅\n<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userInput) }} />\n```\n\n### CSRF（跨站请求伪造）防御\n\n**1. CSRF Token（最常见）**\n\n```js\n// 服务端在 Cookie 或页面中设置随机 Token\n// 前端请求时带上 Token（攻击者无法读取其他域的 Cookie）\naxios.interceptors.request.use((config) => {\n  const token =\n    getCookie('csrf_token') ||\n    document.querySelector('meta[name=\"csrf-token\"]')?.content\n  if (token) config.headers['X-CSRF-Token'] = token\n  return config\n})\n```\n\n**2. SameSite Cookie**\n\n```http\nSet-Cookie: session=abc; SameSite=Strict; Secure; HttpOnly\n```\n\n- `SameSite=Strict`：Cookie 不会随跨站请求发送\n- `SameSite=Lax`：只有安全方法（GET）可以携带（默认值）\n\n**3. 验证 Origin/Referer**\n\n```js\n// 服务端验证\napp.use((req, res, next) => {\n  const origin = req.headers.origin || req.headers.referer\n  if (!origin?.startsWith('https://example.com')) {\n    return res.status(403).json({ error: 'Invalid origin' })\n  }\n  next()\n})\n```",
-    "tags": [
-      "安全",
-      "XSS",
-      "CSRF"
-    ],
+    "tags": ["安全", "XSS", "CSRF"],
     "source": "高频"
   },
   {
@@ -239,11 +167,7 @@
     "difficulty": 2,
     "question": "如何在团队项目中建立统一的代码规范体系？",
     "answer": "## 代码规范体系建设\n\n### 工具链\n\n**1. ESLint（代码质量）**\n\n```js\n// eslint.config.js（Flat Config，ESLint 9+）\nimport js from '@eslint/js'\nimport tsPlugin from '@typescript-eslint/eslint-plugin'\nimport reactPlugin from 'eslint-plugin-react-hooks'\n\nexport default [\n  js.configs.recommended,\n  {\n    files: ['**/*.{ts,tsx}'],\n    plugins: { '@typescript-eslint': tsPlugin, 'react-hooks': reactPlugin },\n    rules: {\n      'no-console': 'warn',\n      '@typescript-eslint/no-explicit-any': 'error',\n      'react-hooks/rules-of-hooks': 'error',\n      'react-hooks/exhaustive-deps': 'warn',\n    },\n  },\n]\n```\n\n**2. Prettier（代码格式）**\n\n```json\n// .prettierrc\n{\n  \"printWidth\": 100,\n  \"tabWidth\": 2,\n  \"singleQuote\": true,\n  \"trailingComma\": \"all\",\n  \"semi\": true\n}\n```\n\n**3. Husky + lint-staged（提交前检查）**\n\n```bash\npnpm add -D husky lint-staged\nnpx husky init\n```\n\n```json\n// package.json\n{\n  \"lint-staged\": {\n    \"*.{ts,tsx,js}\": [\"eslint --fix\", \"prettier --write\"],\n    \"*.{css,scss,md}\": \"prettier --write\"\n  }\n}\n```\n\n```sh\n# .husky/pre-commit\nnpx lint-staged\n```\n\n**4. commitlint（commit 信息规范）**\n\n```js\n// commitlint.config.js\nexport default {\n  extends: ['@commitlint/config-conventional'],\n  rules: {\n    'type-enum': [\n      2,\n      'always',\n      ['feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore'],\n    ],\n    'subject-max-length': [2, 'always', 72],\n  },\n}\n```\n\n```sh\n# .husky/commit-msg\nnpx --no -- commitlint --edit $1\n```\n\n### Commit 规范（Conventional Commits）\n\n```\n<type>(<scope>): <subject>\n\nfeat(auth): 添加 OAuth2 登录功能\nfix(cart): 修复商品数量为 0 时仍可下单的问题\nperf(list): 使用虚拟滚动优化大列表性能\ndocs(readme): 更新部署文档\n```\n\n### TypeScript 严格模式\n\n```json\n// tsconfig.json\n{\n  \"compilerOptions\": {\n    \"strict\": true,\n    \"noUnusedLocals\": true,\n    \"noUnusedParameters\": true,\n    \"noImplicitReturns\": true,\n    \"noFallthroughCasesInSwitch\": true\n  }\n}\n```",
-    "tags": [
-      "代码规范",
-      "ESLint",
-      "工程化"
-    ],
+    "tags": ["代码规范", "ESLint", "工程化"],
     "source": "高频"
   },
   {
@@ -252,11 +176,7 @@
     "difficulty": 3,
     "question": "项目中有一个包含 10 万条数据的列表，如何优化渲染性能？",
     "answer": "## 长列表性能优化\n\n### 方案对比\n\n| 方案     | 原理               | 优点         | 缺点                   |\n| -------- | ------------------ | ------------ | ---------------------- |\n| 分页     | 每次只加载 N 条    | 简单         | 用户体验差             |\n| 无限滚动 | 滚动到底部加载更多 | 体验好       | 数据积累后仍有性能问题 |\n| 虚拟滚动 | 只渲染可见区域 DOM | 根本解决方案 | 实现复杂               |\n\n### 虚拟滚动实现（React）\n\n**固定高度（最简单）：**\n\n```tsx\nimport { useVirtualizer } from '@tanstack/react-virtual'\n\nfunction VirtualList({ items }) {\n  const parentRef = useRef(null)\n\n  const virtualizer = useVirtualizer({\n    count: items.length,\n    getScrollElement: () => parentRef.current,\n    estimateSize: () => 50, // 每行 50px\n    overscan: 5, // 可见区域外额外渲染 5 条\n  })\n\n  return (\n    <div ref={parentRef} style={{ height: '600px', overflow: 'auto' }}>\n      <div style={{ height: virtualizer.getTotalSize() }}>\n        {virtualizer.getVirtualItems().map((virtualItem) => (\n          <div\n            key={virtualItem.key}\n            style={{\n              position: 'absolute',\n              top: 0,\n              transform: `translateY(${virtualItem.start}px)`,\n              height: `${virtualItem.size}px`,\n            }}\n          >\n            {items[virtualItem.index].name}\n          </div>\n        ))}\n      </div>\n    </div>\n  )\n}\n```\n\n**动态高度（测量实际高度）：**\n\n```tsx\nconst virtualizer = useVirtualizer({\n  count: items.length,\n  getScrollElement: () => parentRef.current,\n  estimateSize: () => 80, // 初始估算\n  measureElement: (element) => element.getBoundingClientRect().height, // 测量实际高度\n})\n```\n\n### 其他优化手段\n\n**1. 时间切片（requestIdleCallback）**\n\n```js\nfunction processInChunks(items, processItem) {\n  let index = 0\n  function process(deadline) {\n    while (index < items.length && deadline.timeRemaining() > 0) {\n      processItem(items[index++])\n    }\n    if (index < items.length) requestIdleCallback(process)\n  }\n  requestIdleCallback(process)\n}\n```\n\n**2. 减少重渲染（React.memo + key 稳定）**\n\n```tsx\nconst Row = React.memo(({ item }) => <div>{item.name}</div>)\n\n// key 必须稳定，不要用 index\nitems.map((item) => <Row key={item.id} item={item} />)\n```\n\n**3. Web Worker 处理数据**\n\n```js\n// 将排序、过滤等计算密集操作移到 Worker\nconst worker = new Worker('./list.worker.js')\nworker.postMessage({ type: 'SORT', data: items, field: 'date' })\nworker.onmessage = (e) => setSortedItems(e.data)\n```",
-    "tags": [
-      "性能",
-      "长列表",
-      "虚拟滚动"
-    ],
+    "tags": ["性能", "长列表", "虚拟滚动"],
     "source": "高频"
   },
   {
@@ -265,11 +185,7 @@
     "difficulty": 2,
     "question": "前端项目如何做单元测试？如何测试 React 组件和自定义 Hooks？",
     "answer": "## 前端测试实践\n\n### 测试工具栈\n\n- **Vitest / Jest**：单元测试框架\n- **React Testing Library**：组件测试（模拟用户行为）\n- **MSW**：Mock Service Worker，拦截 API 请求\n- **Playwright / Cypress**：E2E 测试\n\n### 单元测试（工具函数）\n\n```ts\n// utils/formatDate.test.ts\nimport { describe, it, expect } from 'vitest'\nimport { formatDate, formatRelativeTime } from './formatDate'\n\ndescribe('formatDate', () => {\n  it('formats timestamp to yyyy-MM-dd', () => {\n    expect(formatDate(1704067200000)).toBe('2024-01-01')\n  })\n\n  it('handles invalid date', () => {\n    expect(formatDate(NaN)).toBe('--')\n  })\n})\n```\n\n### React 组件测试\n\n```tsx\n// components/Button.test.tsx\nimport { render, screen, fireEvent } from '@testing-library/react'\nimport userEvent from '@testing-library/user-event'\nimport { Button } from './Button'\n\ndescribe('Button', () => {\n  it('renders with correct text', () => {\n    render(<Button>Click me</Button>)\n    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument()\n  })\n\n  it('calls onClick when clicked', async () => {\n    const user = userEvent.setup()\n    const handleClick = vi.fn()\n    render(<Button onClick={handleClick}>Click</Button>)\n    await user.click(screen.getByRole('button'))\n    expect(handleClick).toHaveBeenCalledOnce()\n  })\n\n  it('is disabled when loading', () => {\n    render(<Button loading>Submit</Button>)\n    expect(screen.getByRole('button')).toBeDisabled()\n  })\n})\n```\n\n### 自定义 Hook 测试\n\n```tsx\n// hooks/useCounter.test.ts\nimport { renderHook, act } from '@testing-library/react'\nimport { useCounter } from './useCounter'\n\ndescribe('useCounter', () => {\n  it('initializes with default value', () => {\n    const { result } = renderHook(() => useCounter(0))\n    expect(result.current.count).toBe(0)\n  })\n\n  it('increments count', () => {\n    const { result } = renderHook(() => useCounter(0))\n    act(() => result.current.increment())\n    expect(result.current.count).toBe(1)\n  })\n})\n```\n\n### 异步组件测试（MSW）\n\n```tsx\n// 设置 MSW handlers\nconst handlers = [\n  http.get('/api/users', () => HttpResponse.json([{ id: 1, name: 'Alice' }])),\n]\n\nit('displays user list after loading', async () => {\n  render(<UserList />)\n  expect(screen.getByText('Loading...')).toBeInTheDocument()\n  await waitFor(() => {\n    expect(screen.getByText('Alice')).toBeInTheDocument()\n  })\n})\n```",
-    "tags": [
-      "测试",
-      "Jest",
-      "单元测试"
-    ],
+    "tags": ["测试", "Jest", "单元测试"],
     "source": "高频"
   },
   {
@@ -278,11 +194,7 @@
     "difficulty": 2,
     "question": "前端静态资源如何部署到 CDN？有哪些需要注意的点？",
     "answer": "## 静态资源 CDN 部署\n\n### 部署流程\n\n```\n本地构建 → 上传 S3/OSS → CloudFront/CDN 分发 → 用户就近访问\n```\n\n**自动化部署脚本：**\n\n```js\n// scripts/deploy.js\nconst { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3')\nconst {\n  CloudFrontClient,\n  CreateInvalidationCommand,\n} = require('@aws-sdk/client-cloudfront')\nconst glob = require('fast-glob')\nconst fs = require('fs')\nconst path = require('path')\nconst mime = require('mime-types')\n\nasync function deploy() {\n  const s3 = new S3Client({ region: 'ap-east-1' })\n  const files = await glob('dist/**/*', { nodir: true })\n\n  // 并行上传\n  await Promise.all(\n    files.map(async (file) => {\n      const key = file.replace('dist/', '')\n      const isHashed = /\\.[a-f0-9]{8}\\.(js|css|png|woff2)$/.test(key)\n\n      await s3.send(\n        new PutObjectCommand({\n          Bucket: process.env.S3_BUCKET,\n          Key: key,\n          Body: fs.readFileSync(file),\n          ContentType: mime.lookup(file) || 'application/octet-stream',\n          CacheControl: isHashed\n            ? 'public, max-age=31536000, immutable' // 有 hash 的资源：永久缓存\n            : 'public, max-age=0, must-revalidate', // HTML 等：不缓存\n        }),\n      )\n    }),\n  )\n\n  // 清除 CDN 缓存（HTML 文件）\n  const cf = new CloudFrontClient({})\n  await cf.send(\n    new CreateInvalidationCommand({\n      DistributionId: process.env.CF_DISTRIBUTION_ID,\n      InvalidationBatch: {\n        Paths: { Quantity: 1, Items: ['/*.html'] },\n        CallerReference: Date.now().toString(),\n      },\n    }),\n  )\n}\n```\n\n### 缓存策略设计\n\n```\nindex.html          → no-cache（每次都验证）\napp.abc12345.js     → max-age=1年 immutable（contenthash，变了就是新文件名）\nvendor.def67890.js  → max-age=1年 immutable\nimage.png           → max-age=7天（无 hash 的静态图片）\n```\n\n### 常见问题\n\n**1. 部署后老用户缓存问题**\n\n- JS/CSS 使用 content hash 命名，更新后文件名变化，CDN 自然刷新\n- HTML 不缓存，用户每次都获取最新 HTML，进而加载新的 JS/CSS\n\n**2. CDN 预热**\n\n- 上传后主动回源预热，避免第一次请求慢\n\n**3. 多区域同步延迟**\n\n- CDN 节点同步需要时间（通常几分钟）\n- 可以在发布后等待几分钟再切流量\n\n**4. CORS 配置**\n\n```\nAccess-Control-Allow-Origin: https://example.com\n```",
-    "tags": [
-      "CDN",
-      "静态资源",
-      "部署"
-    ],
+    "tags": ["CDN", "静态资源", "部署"],
     "source": "高频"
   },
   {
@@ -291,11 +203,7 @@
     "difficulty": 3,
     "question": "如何在前端实现基于角色的权限控制（RBAC）？",
     "answer": "## 前端 RBAC 权限控制\n\n### 权限模型设计\n\n```ts\n// types/permission.ts\ntype Permission =\n  | 'user:read'\n  | 'user:write'\n  | 'user:delete'\n  | 'order:read'\n  | 'order:write'\n  | 'product:read'\n  | 'product:write'\n\ntype Role = 'admin' | 'editor' | 'viewer'\n\nconst ROLE_PERMISSIONS: Record<Role, Permission[]> = {\n  admin: [\n    'user:read',\n    'user:write',\n    'user:delete',\n    'order:read',\n    'order:write',\n    'product:read',\n    'product:write',\n  ],\n  editor: ['order:read', 'order:write', 'product:read', 'product:write'],\n  viewer: ['order:read', 'product:read'],\n}\n```\n\n### 权限 Hook\n\n```tsx\n// hooks/usePermission.ts\nimport { useAuthStore } from '@/store/auth'\n\nexport function usePermission() {\n  const { user } = useAuthStore()\n\n  const can = useCallback(\n    (permission: Permission): boolean => {\n      if (!user) return false\n      const permissions = ROLE_PERMISSIONS[user.role] ?? []\n      return permissions.includes(permission)\n    },\n    [user],\n  )\n\n  const canAny = useCallback(\n    (...permissions: Permission[]): boolean => {\n      return permissions.some(can)\n    },\n    [can],\n  )\n\n  const canAll = useCallback(\n    (...permissions: Permission[]): boolean => {\n      return permissions.every(can)\n    },\n    [can],\n  )\n\n  return { can, canAny, canAll }\n}\n```\n\n### 路由级权限控制\n\n```tsx\n// components/ProtectedRoute.tsx\nfunction ProtectedRoute({\n  permission,\n  children,\n}: {\n  permission?: Permission\n  children: React.ReactNode\n}) {\n  const { can } = usePermission()\n  const location = useLocation()\n\n  if (!isLoggedIn()) {\n    return <Navigate to='/login' state={{ from: location }} replace />\n  }\n\n  if (permission && !can(permission)) {\n    return <Navigate to='/403' replace />\n  }\n\n  return <>{children}</>\n}\n\n// 路由配置\n;<Route\n  path='/users'\n  element={\n    <ProtectedRoute permission='user:read'>\n      <UserListPage />\n    </ProtectedRoute>\n  }\n/>\n```\n\n### 按钮级权限控制\n\n```tsx\n// components/PermissionButton.tsx\nfunction PermissionButton({\n  permission,\n  children,\n  ...props\n}: {\n  permission: Permission\n} & ButtonProps) {\n  const { can } = usePermission()\n\n  if (!can(permission)) return null // 无权限直接不渲染\n\n  return <Button {...props}>{children}</Button>\n}\n\n// 使用\n;<PermissionButton\n  permission='user:delete'\n  onClick={handleDelete}\n  variant='danger'\n>\n  删除用户\n</PermissionButton>\n```\n\n### 后端权限同步\n\n```ts\n// 权限应同时在前端和后端校验\n// 前端校验：只做 UI 控制（隐藏/禁用），不能依赖作为安全保障\n// 后端校验：真正的安全防线\n\n// 登录后获取用户权限\nconst { data: userInfo } = useQuery(['me'], async () => {\n  const res = await api.get('/auth/me')\n  return res.data // { id, role, permissions: ['user:read', ...] }\n})\n```",
-    "tags": [
-      "架构",
-      "权限",
-      "RBAC"
-    ],
+    "tags": ["架构", "权限", "RBAC"],
     "source": "高频"
   },
   {
@@ -304,11 +212,7 @@
     "difficulty": 2,
     "question": "如何在 React 项目中实现国际化（i18n）？有哪些需要考虑的细节？",
     "answer": "## React 国际化实践\n\n### 方案选择\n\n推荐 `react-i18next`（最流行、功能最完整）或 `react-intl`（FormatJS，企业级）。\n\n### react-i18next 实现\n\n```tsx\n// i18n/index.ts\nimport i18n from 'i18next'\nimport { initReactI18next } from 'react-i18next'\n\ni18n.use(initReactI18next).init({\n  resources: {\n    en: {\n      translation: { greeting: 'Hello, {{name}}!', items: '{{count}} item' },\n    },\n    zh: {\n      translation: { greeting: '你好，{{name}}！', items: '{{count}} 件商品' },\n    },\n  },\n  lng: localStorage.getItem('lang') || navigator.language.split('-')[0] || 'en',\n  fallbackLng: 'en',\n  interpolation: { escapeValue: false }, // React 已处理 XSS\n})\n\nexport default i18n\n```\n\n```tsx\n// 使用\nimport { useTranslation } from 'react-i18next'\n\nfunction Header() {\n  const { t, i18n } = useTranslation()\n\n  return (\n    <div>\n      <p>{t('greeting', { name: 'Alice' })}</p>\n      <p>{t('items', { count: 5 })}</p> {/* 自动复数处理 */}\n      <button onClick={() => i18n.changeLanguage('zh')}>中文</button>\n      <button onClick={() => i18n.changeLanguage('en')}>English</button>\n    </div>\n  )\n}\n```\n\n### 需要考虑的细节\n\n**1. 日期/数字格式**\n\n```ts\n// 使用 Intl API，而非手动格式化\nconst fmt = new Intl.DateTimeFormat('zh-CN', {\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric',\n})\nfmt.format(new Date()) // '2024年1月1日'\n\nconst numFmt = new Intl.NumberFormat('de-DE', {\n  style: 'currency',\n  currency: 'EUR',\n})\nnumFmt.format(1234.56) // '1.234,56 €'\n```\n\n**2. RTL（从右到左）语言支持**\n\n```tsx\n// 阿拉伯语、希伯来语需要 RTL 布局\ndocument.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';\n\n// CSS Logical Properties\n.container {\n  margin-inline-start: 16px; /* 替代 margin-left，自动适配 RTL */\n  padding-inline: 24px;\n}\n```\n\n**3. 懒加载翻译文件**\n\n```ts\nimport Backend from 'i18next-http-backend'\ni18n.use(Backend).init({\n  backend: {\n    loadPath: '/locales/{{lng}}/{{ns}}.json',\n  },\n})\n```\n\n**4. 翻译键管理**\n\n```ts\n// 使用命名空间避免冲突\nconst { t } = useTranslation('product') // product.json 中的 key\nt('product:add_to_cart')\n```",
-    "tags": [
-      "国际化",
-      "i18n",
-      "多语言"
-    ],
+    "tags": ["国际化", "i18n", "多语言"],
     "source": "高频"
   },
   {
@@ -317,11 +221,7 @@
     "difficulty": 2,
     "question": "Zustand 和 Redux 的核心区别是什么？各自适用什么场景？",
     "answer": "## Zustand vs Redux 对比\n\n### Redux 核心概念\n\n```ts\n// 严格的单向数据流：Action → Reducer → Store → View\n// Redux Toolkit（现代 Redux）\nimport { createSlice, configureStore } from '@reduxjs/toolkit'\n\nconst counterSlice = createSlice({\n  name: 'counter',\n  initialState: { value: 0 },\n  reducers: {\n    increment: (state) => {\n      state.value += 1\n    }, // Immer 自动处理不可变\n    decrement: (state) => {\n      state.value -= 1\n    },\n  },\n})\n\nconst store = configureStore({ reducer: { counter: counterSlice.reducer } })\n\n// 组件中使用\nconst count = useSelector((state) => state.counter.value)\nconst dispatch = useDispatch()\ndispatch(increment())\n```\n\n### Zustand 核心概念\n\n```ts\n// 更简洁，基于 hooks，无样板代码\nimport { create } from 'zustand'\n\nconst useCounterStore = create<{\n  value: number\n  increment: () => void\n  decrement: () => void\n}>((set) => ({\n  value: 0,\n  increment: () => set((state) => ({ value: state.value + 1 })),\n  decrement: () => set((state) => ({ value: state.value - 1 })),\n}))\n\n// 组件中使用（自动精细订阅）\nconst value = useCounterStore((state) => state.value)\nconst increment = useCounterStore((state) => state.increment)\n```\n\n### 对比总结\n\n| 维度     | Redux Toolkit             | Zustand                  |\n| -------- | ------------------------- | ------------------------ |\n| 样板代码 | 较多（slice、selector）   | 极少                     |\n| 学习曲线 | 较陡                      | 平缓                     |\n| 调试工具 | Redux DevTools（强大）    | Zustand DevTools（基础） |\n| 中间件   | 丰富（redux-thunk、saga） | 内置 middleware          |\n| 适用规模 | 大型团队、复杂状态        | 中小型、轻量场景         |\n| 异步处理 | RTK Query（内置缓存）     | 配合 React Query         |\n| 代码组织 | 集中式                    | 可按需拆分               |\n\n### 选型建议\n\n```\n简单到中等复杂度 → Zustand\n需要时间旅行调试、复杂异步流 → Redux Toolkit\n服务端状态管理 → React Query / SWR（搭配任意客户端状态管理）\n```",
-    "tags": [
-      "状态管理",
-      "Zustand",
-      "Redux"
-    ],
+    "tags": ["状态管理", "Zustand", "Redux"],
     "source": "高频"
   },
   {
@@ -330,11 +230,7 @@
     "difficulty": 3,
     "question": "Webpack HMR（热模块替换）的原理是什么？",
     "answer": "## HMR 实现原理\n\n### 工作流程\n\n```\n1. Webpack Dev Server 启动，建立 WebSocket 连接\n2. 文件变化 → Webpack 重新编译变化的模块\n3. 编译完成 → 通过 WebSocket 发送 hash + changed modules 信息\n4. 浏览器收到通知 → 通过 JSONP 请求新模块代码\n5. HMR Runtime 用新模块替换旧模块 → 触发 accept 回调\n```\n\n### 详细步骤\n\n**Step 1：建立 WebSocket**\n\n```js\n// Webpack Dev Server 在 bundle 中注入客户端代码\n// webpack-dev-server/client/index.js\nconst socket = new WebSocket('ws://localhost:8080/ws')\nsocket.onmessage = (message) => {\n  const data = JSON.parse(message.data)\n  if (data.type === 'hash') currentHash = data.data\n  if (data.type === 'ok') hotApply()\n}\n```\n\n**Step 2：请求更新清单和新模块**\n\n```js\n// HMR Runtime 通过 JSONP 获取变更\nasync function hotApply() {\n  // 请求 [hash].hot-update.json（更新清单）\n  const manifest = await fetch(`/${currentHash}.hot-update.json`)\n  const { c: changedChunks } = await manifest.json()\n\n  // 请求变化的 chunk\n  // [chunkName].[hash].hot-update.js\n  await loadScript(`/main.${currentHash}.hot-update.js`)\n}\n```\n\n**Step 3：模块热替换**\n\n```js\n// hot-update.js 中包含新模块代码\n// HMR Runtime 执行替换\nwindow[webpackHotUpdate]('main', {\n  './src/App.tsx': (module) => {\n    // 新的模块代码\n  },\n})\n\n// 模块中声明 accept（React Fast Refresh 自动注入）\nif (module.hot) {\n  module.hot.accept('./App', () => {\n    // 模块更新后的回调\n    ReactDOM.render(<App />, document.getElementById('root'))\n  })\n}\n```\n\n### React Fast Refresh 原理\n\nReact Fast Refresh 在 HMR 基础上保留组件状态：\n\n1. 每个组件用 `register()` 注册，用 ID 标识\n2. 模块更新时，对比新旧组件签名\n3. 若只有函数体变化（hooks 不变）→ 只更新渲染，保留 state\n4. 若 hooks 变化 → 销毁重建组件（清除 state）",
-    "tags": [
-      "Webpack",
-      "HMR",
-      "热更新"
-    ],
+    "tags": ["Webpack", "HMR", "热更新"],
     "source": "高频"
   },
   {
@@ -343,11 +239,7 @@
     "difficulty": 2,
     "question": "前端有哪些本地存储方案？如何选择？各自的限制是什么？",
     "answer": "## 前端存储方案对比\n\n### 对比总览\n\n| 方案           | 容量             | 持久化         | 访问方式 | 跨域 | 适用场景             |\n| -------------- | ---------------- | -------------- | -------- | ---- | -------------------- |\n| Cookie         | 4KB              | 可配置         | 同步     | 限制 | 身份认证、服务端共享 |\n| sessionStorage | 5-10MB           | 标签页关闭清除 | 同步     | 否   | 单次会话数据         |\n| localStorage   | 5-10MB           | 永久           | 同步     | 否   | 用户设置、缓存数据   |\n| IndexedDB      | 50MB+            | 永久           | 异步     | 否   | 大量结构化数据       |\n| Cache API      | 无限制(磁盘限制) | 永久           | 异步     | 否   | HTTP 响应缓存（SW）  |\n\n### Cookie 最佳实践\n\n```js\n// 安全的 Cookie 设置（服务端）\nSet-Cookie: token=xxx; HttpOnly; Secure; SameSite=Strict; Max-Age=86400; Path=/\n\n// JS 只读 Cookie（HttpOnly 设置后 JS 无法读取）\ndocument.cookie = 'theme=dark; max-age=2592000; SameSite=Lax';\n```\n\n### localStorage 封装\n\n```ts\nclass Storage {\n  get<T>(key: string, defaultValue?: T): T | null {\n    try {\n      const item = localStorage.getItem(key)\n      if (item === null) return defaultValue ?? null\n      return JSON.parse(item) as T\n    } catch {\n      return defaultValue ?? null\n    }\n  }\n\n  set(key: string, value: unknown, ttl?: number) {\n    const data = ttl ? { value, expiry: Date.now() + ttl } : value\n    localStorage.setItem(key, JSON.stringify(data))\n  }\n\n  remove(key: string) {\n    localStorage.removeItem(key)\n  }\n  clear() {\n    localStorage.clear()\n  }\n}\n```\n\n### IndexedDB（idb 库封装）\n\n```ts\nimport { openDB } from 'idb'\n\nconst db = await openDB('my-app', 1, {\n  upgrade(db) {\n    const store = db.createObjectStore('users', { keyPath: 'id' })\n    store.createIndex('email', 'email', { unique: true })\n  },\n})\n\n// 读写操作\nawait db.put('users', { id: 1, name: 'Alice', email: 'alice@example.com' })\nconst user = await db.get('users', 1)\nconst allUsers = await db.getAll('users')\nconst byEmail = await db.getFromIndex('users', 'email', 'alice@example.com')\n```\n\n### 选择建议\n\n- **用户 Token**：Cookie（HttpOnly + Secure），JS 无法访问，更安全\n- **用户偏好设置**：localStorage\n- **表单临时数据**：sessionStorage\n- **离线数据/大量结构化数据**：IndexedDB\n- **HTTP 响应缓存**：Cache API（配合 Service Worker）",
-    "tags": [
-      "缓存",
-      "前端缓存",
-      "IndexedDB"
-    ],
+    "tags": ["缓存", "前端缓存", "IndexedDB"],
     "source": "高频"
   },
   {
@@ -356,11 +248,7 @@
     "difficulty": 2,
     "question": "前端项目中如何做图片优化？有哪些格式选择和加载策略？",
     "answer": "## 图片优化全攻略\n\n### 格式选择\n\n| 格式 | 优势                        | 适用场景                     |\n| ---- | --------------------------- | ---------------------------- |\n| WebP | 比 JPEG 小 25-34%，支持透明 | 通用场景（主流浏览器均支持） |\n| AVIF | 比 WebP 再小 50%，质量更好  | 现代浏览器，高质量图片       |\n| SVG  | 无损，可缩放                | 图标、Logo、简单插图         |\n| JPEG | 兼容性最好                  | 照片（无透明需求）           |\n| PNG  | 支持透明，无损              | 需要透明背景的图片           |\n\n### 格式降级（picture 元素）\n\n```html\n<picture>\n  <source srcset=\"image.avif\" type=\"image/avif\" />\n  <source srcset=\"image.webp\" type=\"image/webp\" />\n  <img src=\"image.jpg\" alt=\"描述\" width=\"800\" height=\"600\" loading=\"lazy\" />\n</picture>\n```\n\n### 响应式图片\n\n```html\n<!-- 根据设备宽度加载不同尺寸 -->\n<img\n  srcset=\"image-400.webp 400w, image-800.webp 800w, image-1200.webp 1200w\"\n  sizes=\"(max-width: 600px) 400px, (max-width: 1200px) 800px, 1200px\"\n  src=\"image-800.webp\"\n  alt=\"响应式图片\"\n/>\n```\n\n### 加载优化\n\n```html\n<!-- 首屏关键图片：预加载 -->\n<link rel=\"preload\" as=\"image\" href=\"hero.webp\" fetchpriority=\"high\" />\n\n<!-- 非首屏图片：懒加载 -->\n<img src=\"lazy.webp\" loading=\"lazy\" decoding=\"async\" alt=\"...\" />\n\n<!-- 明确宽高，避免 CLS -->\n<img src=\"photo.jpg\" width=\"800\" height=\"600\" alt=\"...\" />\n```\n\n### 构建时优化（Vite 插件）\n\n```ts\n// vite.config.ts\nimport { defineConfig } from 'vite'\nimport viteImageOptimizer from 'vite-plugin-image-optimizer'\n\nexport default defineConfig({\n  plugins: [\n    viteImageOptimizer({\n      jpg: { quality: 80 },\n      png: { quality: 80 },\n      webp: { lossless: true },\n    }),\n  ],\n})\n```\n\n### 图片 CDN（动态处理）\n\n```\n// 通过 URL 参数动态裁剪、压缩、转格式\nhttps://cdn.example.com/image.jpg?w=800&h=600&format=webp&q=80\n```",
-    "tags": [
-      "图片优化",
-      "WebP",
-      "资源优化"
-    ],
+    "tags": ["图片优化", "WebP", "资源优化"],
     "source": "高频"
   },
   {
@@ -369,11 +257,7 @@
     "difficulty": 3,
     "question": "项目中如何实现实时消息推送？WebSocket 连接断开如何处理重连？",
     "answer": "## 实时消息推送实现\n\n### 方案选择\n\n| 方案                      | 双向通信              | 适用场景               |\n| ------------------------- | --------------------- | ---------------------- |\n| 轮询                      | 否                    | 简单场景，实时性要求低 |\n| SSE（Server-Sent Events） | 单向（服务端→客户端） | 通知、实时日志         |\n| WebSocket                 | 是                    | 即时通讯、协同编辑     |\n\n### WebSocket 封装（含重连）\n\n```ts\nclass ReconnectingWebSocket {\n  private ws: WebSocket | null = null\n  private url: string\n  private protocols?: string[]\n  private reconnectAttempts = 0\n  private maxReconnectAttempts = 10\n  private reconnectDelay = 1000\n  private eventHandlers: Map<string, Set<Function>> = new Map()\n  private shouldClose = false\n\n  constructor(url: string, protocols?: string[]) {\n    this.url = url\n    this.protocols = protocols\n    this.connect()\n  }\n\n  private connect() {\n    this.ws = new WebSocket(this.url, this.protocols)\n\n    this.ws.onopen = () => {\n      console.log('[WS] Connected')\n      this.reconnectAttempts = 0\n      this.emit('open')\n    }\n\n    this.ws.onmessage = (event) => {\n      const data = JSON.parse(event.data)\n      this.emit('message', data)\n    }\n\n    this.ws.onclose = (event) => {\n      if (this.shouldClose) return // 主动关闭，不重连\n      console.log(`[WS] Closed (code: ${event.code}), reconnecting...`)\n      this.emit('close', event)\n      this.scheduleReconnect()\n    }\n\n    this.ws.onerror = (error) => {\n      console.error('[WS] Error', error)\n      this.emit('error', error)\n    }\n  }\n\n  private scheduleReconnect() {\n    if (this.reconnectAttempts >= this.maxReconnectAttempts) {\n      console.error('[WS] Max reconnect attempts reached')\n      this.emit('reconnect_failed')\n      return\n    }\n    // 指数退避：1s, 2s, 4s, 8s...（最多 30s）\n    const delay = Math.min(\n      this.reconnectDelay * Math.pow(2, this.reconnectAttempts),\n      30000,\n    )\n    this.reconnectAttempts++\n    setTimeout(() => this.connect(), delay)\n  }\n\n  send(data: unknown) {\n    if (this.ws?.readyState === WebSocket.OPEN) {\n      this.ws.send(JSON.stringify(data))\n    } else {\n      console.warn('[WS] Not connected, message dropped')\n    }\n  }\n\n  on(event: string, handler: Function) {\n    if (!this.eventHandlers.has(event)) this.eventHandlers.set(event, new Set())\n    this.eventHandlers.get(event)!.add(handler)\n    return () => this.eventHandlers.get(event)?.delete(handler)\n  }\n\n  private emit(event: string, ...args: unknown[]) {\n    this.eventHandlers.get(event)?.forEach((fn) => fn(...args))\n  }\n\n  close() {\n    this.shouldClose = true\n    this.ws?.close()\n  }\n}\n\n// React Hook 封装\nfunction useWebSocket(url: string) {\n  const [messages, setMessages] = useState<Message[]>([])\n  const [status, setStatus] = useState<\n    'connecting' | 'connected' | 'disconnected'\n  >('connecting')\n  const wsRef = useRef<ReconnectingWebSocket | null>(null)\n\n  useEffect(() => {\n    const ws = new ReconnectingWebSocket(url)\n    wsRef.current = ws\n\n    ws.on('open', () => setStatus('connected'))\n    ws.on('close', () => setStatus('disconnected'))\n    ws.on('message', (data: Message) => setMessages((prev) => [...prev, data]))\n\n    return () => ws.close()\n  }, [url])\n\n  const send = useCallback((data: unknown) => wsRef.current?.send(data), [])\n  return { messages, status, send }\n}\n```",
-    "tags": [
-      "WebSocket",
-      "实时通信",
-      "项目"
-    ],
+    "tags": ["WebSocket", "实时通信", "项目"],
     "source": "高频"
   },
   {
@@ -382,11 +266,7 @@
     "difficulty": 2,
     "question": "如何处理前端项目的浏览器兼容性？Babel 和 Polyfill 是如何工作的？",
     "answer": "## 浏览器兼容性处理\n\n### Babel 工作原理\n\n```\n源码(ES2024) → Parser(解析为AST) → Transform(转换AST) → Generator(生成代码)\n```\n\n**babel.config.js：**\n\n```js\nmodule.exports = {\n  presets: [\n    [\n      '@babel/preset-env',\n      {\n        targets: '> 0.5%, last 2 versions, not dead, not IE 11',\n        useBuiltIns: 'usage', // 按需自动注入 polyfill\n        corejs: 3,\n      },\n    ],\n    '@babel/preset-react',\n    '@babel/preset-typescript',\n  ],\n}\n```\n\n### 语法转换 vs Polyfill\n\n```js\n// 语法转换（Babel 处理）：\n// 箭头函数 → 普通函数\nconst fn = () => {};\n// ↓ 转换后\nvar fn = function() {};\n\n// Polyfill（core-js 处理）：\n// 新 API 的实现（Array.prototype.at、Promise 等）\nArray.prototype.at = function(index) { ... }; // 注入到原型\n```\n\n### useBuiltIns 三种模式\n\n```js\n// entry: 需要手动在入口引入，会引入所有 polyfill（大）\nimport 'core-js/stable'\n\n// usage: 自动按代码中的使用引入（推荐，最小化）\n// false: 不注入 polyfill（手动管理）\n```\n\n### browserslist 配置\n\n```\n# .browserslistrc\n> 0.5%          # 全球使用率超过 0.5%\nlast 2 versions # 每个浏览器最近 2 个版本\nnot dead        # 排除 24 月内无更新的浏览器\nnot IE 11       # 明确排除 IE 11\n```\n\n### 现代化部署（Module/NoModule）\n\n```html\n<!-- 现代浏览器：ES Module（无需转换，体积小）-->\n<script type=\"module\" src=\"app.modern.js\"></script>\n\n<!-- 旧浏览器：转换后的代码（仅旧浏览器执行）-->\n<script nomodule src=\"app.legacy.js\"></script>\n```\n\n**Vite 配置：**\n\n```ts\nplugins: [legacy({ targets: ['ie >= 11'] })]\n```",
-    "tags": [
-      "polyfill",
-      "兼容性",
-      "babel"
-    ],
+    "tags": ["polyfill", "兼容性", "babel"],
     "source": "高频"
   },
   {
@@ -395,11 +275,7 @@
     "difficulty": 2,
     "question": "如何将前端项目容器化部署？Dockerfile 如何编写？",
     "answer": "## 前端 Docker 部署\n\n### 多阶段构建 Dockerfile\n\n```dockerfile\n# 阶段1：构建\nFROM node:20-alpine AS builder\n\nWORKDIR /app\n\n# 先复制依赖文件（利用 Docker 层缓存）\nCOPY package.json pnpm-lock.yaml ./\nRUN corepack enable && pnpm install --frozen-lockfile\n\n# 再复制源码\nCOPY . .\nRUN pnpm build\n\n# 阶段2：运行（只包含 Nginx + 构建产物，体积小）\nFROM nginx:1.25-alpine AS runner\n\n# 复制构建产物\nCOPY --from=builder /app/dist /usr/share/nginx/html\n\n# 复制 Nginx 配置\nCOPY nginx.conf /etc/nginx/conf.d/default.conf\n\nEXPOSE 80\nCMD [\"nginx\", \"-g\", \"daemon off;\"]\n```\n\n**nginx.conf（SPA 路由支持）：**\n\n```nginx\nserver {\n    listen 80;\n    root /usr/share/nginx/html;\n    index index.html;\n\n    # gzip 压缩\n    gzip on;\n    gzip_types text/plain text/css application/javascript application/json;\n\n    # 静态资源长期缓存\n    location ~* \\.(js|css|png|jpg|ico|woff2)$ {\n        expires 1y;\n        add_header Cache-Control \"public, immutable\";\n    }\n\n    # HTML 不缓存\n    location / {\n        try_files $uri $uri/ /index.html;  # SPA 路由支持\n        add_header Cache-Control \"no-cache\";\n    }\n\n    # 反向代理 API\n    location /api/ {\n        proxy_pass http://backend:8080;\n        proxy_set_header Host $host;\n        proxy_set_header X-Real-IP $remote_addr;\n    }\n}\n```\n\n**docker-compose.yml：**\n\n```yaml\nversion: '3.8'\nservices:\n  frontend:\n    build:\n      context: .\n      dockerfile: Dockerfile\n    ports:\n      - '80:80'\n    environment:\n      - VITE_API_URL=https://api.example.com\n    restart: unless-stopped\n    healthcheck:\n      test: ['CMD', 'wget', '-qO-', 'http://localhost/health']\n      interval: 30s\n      timeout: 5s\n      retries: 3\n```",
-    "tags": [
-      "Docker",
-      "容器化",
-      "部署"
-    ],
+    "tags": ["Docker", "容器化", "部署"],
     "source": "高频"
   },
   {
@@ -408,11 +284,7 @@
     "difficulty": 2,
     "question": "React Query 解决了什么问题？核心概念是什么？如何处理缓存和数据同步？",
     "answer": "## React Query 深度解析\n\n### 解决的问题\n\n传统 `useEffect` + `useState` 管理异步数据的痛点：\n\n- 手动管理 loading/error/data 状态\n- 没有缓存，组件切换时重复请求\n- 没有后台数据同步（数据过期检测）\n- 竞态条件处理复杂\n\n### 核心概念\n\n```tsx\nimport { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'\n\n// useQuery：获取数据\nfunction ProductDetail({ id }) {\n  const { data, isLoading, error, isFetching } = useQuery({\n    queryKey: ['product', id], // 唯一 key，作为缓存 key\n    queryFn: () => api.getProduct(id),\n    staleTime: 5 * 60 * 1000, // 5分钟内认为数据新鲜，不重新请求\n    gcTime: 10 * 60 * 1000, // 10分钟未使用则清除缓存（原 cacheTime）\n    retry: 3, // 失败重试 3 次\n  })\n\n  if (isLoading) return <Skeleton />\n  if (error) return <Error message={error.message} />\n  return <div>{data.name}</div>\n}\n```\n\n### useMutation（修改数据）\n\n```tsx\nfunction ProductForm() {\n  const queryClient = useQueryClient()\n\n  const mutation = useMutation({\n    mutationFn: (newProduct) => api.createProduct(newProduct),\n    onSuccess: () => {\n      // 使相关查询缓存失效，触发重新获取\n      queryClient.invalidateQueries({ queryKey: ['products'] })\n    },\n    onError: (error) => {\n      toast.error(error.message)\n    },\n  })\n\n  return (\n    <button\n      onClick={() => mutation.mutate({ name: 'New Product' })}\n      disabled={mutation.isPending}\n    >\n      {mutation.isPending ? '提交中...' : '创建商品'}\n    </button>\n  )\n}\n```\n\n### 乐观更新（Optimistic Update）\n\n```tsx\nconst mutation = useMutation({\n  mutationFn: updateTodo,\n  onMutate: async (updatedTodo) => {\n    // 取消正在进行的同 key 查询（避免覆盖乐观更新）\n    await queryClient.cancelQueries({ queryKey: ['todos', updatedTodo.id] })\n    // 保存旧数据（用于回滚）\n    const previousTodo = queryClient.getQueryData(['todos', updatedTodo.id])\n    // 乐观更新缓存\n    queryClient.setQueryData(['todos', updatedTodo.id], updatedTodo)\n    return { previousTodo }\n  },\n  onError: (err, updatedTodo, context) => {\n    // 失败时回滚\n    queryClient.setQueryData(['todos', updatedTodo.id], context.previousTodo)\n  },\n  onSettled: () => {\n    // 无论成败，最终同步服务器数据\n    queryClient.invalidateQueries({ queryKey: ['todos'] })\n  },\n})\n```",
-    "tags": [
-      "React Query",
-      "数据请求",
-      "缓存"
-    ],
+    "tags": ["React Query", "数据请求", "缓存"],
     "source": "高频"
   },
   {
@@ -421,11 +293,7 @@
     "difficulty": 2,
     "question": "如何编写一个 Vite 插件？Vite 插件与 Rollup 插件的关系是什么？",
     "answer": "## Vite 插件开发\n\n### Vite 插件 = Rollup 插件的超集\n\nVite 插件兼容 Rollup 插件接口，并在此基础上扩展了 Vite 特有的钩子。\n\n### Rollup 通用钩子（开发+构建都执行）\n\n```ts\ninterface Plugin {\n  name: string\n  resolveId(id, importer): string | null // 解析模块 ID\n  load(id): string | null // 加载模块内容\n  transform(code, id): string | null // 转换模块代码\n  buildStart() // 构建开始\n  buildEnd() // 构建结束\n  generateBundle(options, bundle) // 生成产物\n}\n```\n\n### Vite 专有钩子\n\n```ts\n{\n  config(config) {},              // 修改 Vite 配置\n  configResolved(config) {},      // 配置解析完成\n  configureServer(server) {},     // 配置开发服务器\n  transformIndexHtml(html) {},    // 转换 index.html\n  handleHotUpdate(ctx) {},        // 处理 HMR 更新\n}\n```\n\n### 实战：编写 SVG 转 React 组件插件\n\n```ts\n// vite-plugin-svg-react.ts\nimport { readFileSync } from 'fs';\nimport { optimize } from 'svgo';\nimport { transform } from '@svgr/core';\n\nexport function svgReactPlugin() {\n  return {\n    name: 'vite-plugin-svg-react',\n\n    async transform(code, id) {\n      if (!id.endsWith('.svg?react')) return null;\n\n      const filePath = id.replace('?react', '');\n      const svgCode = readFileSync(filePath, 'utf-8');\n\n      // 使用 svgo 优化\n      const { data: optimized } = optimize(svgCode);\n\n      // 用 @svgr/core 转换为 React 组件\n      const componentCode = await transform(optimized, {\n        plugins: ['@svgr/plugin-jsx'],\n        typescript: true,\n      });\n\n      return { code: componentCode, map: null };\n    },\n  };\n}\n\n// 使用\nimport Logo from './logo.svg?react';\nfunction Header() {\n  return <Logo width={100} height={100} />;\n}\n```\n\n### 插件执行顺序控制\n\n```ts\n{\n  name: 'my-plugin',\n  enforce: 'pre',   // 'pre' | 'post' | 不填（正常顺序）\n  apply: 'build',   // 'serve' | 'build' | 不填（都执行）\n}\n```",
-    "tags": [
-      "Vite",
-      "插件",
-      "工程化"
-    ],
+    "tags": ["Vite", "插件", "工程化"],
     "source": "高频"
   },
   {
@@ -434,11 +302,7 @@
     "difficulty": 2,
     "question": "前端动画有哪些实现方案？如何选择和优化动画性能？",
     "answer": "## 前端动画方案对比\n\n### 实现方案\n\n| 方案                  | 性能           | 精细控制 | 适用场景             |\n| --------------------- | -------------- | -------- | -------------------- |\n| CSS Transition        | 高（GPU 合成） | 低       | 简单状态切换         |\n| CSS Animation         | 高             | 中       | 循环动画、关键帧动画 |\n| Web Animations API    | 高             | 高       | 复杂程序控制的动画   |\n| requestAnimationFrame | 高             | 最高     | 游戏、粒子效果       |\n| Canvas/WebGL          | 高             | 最高     | 大量元素、3D 效果    |\n| Framer Motion         | 中（封装 rAF） | 高       | React 组件动画       |\n\n### CSS 动画性能优化\n\n```css\n/* ✅ 只动画 transform 和 opacity（不触发重排/重绘）*/\n.btn:hover {\n  transform: scale(1.05); /* GPU 合成层处理 */\n  opacity: 0.9;\n}\n\n/* ❌ 触发重排（性能差）*/\n.btn:hover {\n  width: 110px;\n  top: -5px;\n}\n\n/* 提升为合成层（谨慎使用，避免过多合成层）*/\n.animated {\n  will-change: transform; /* 提示浏览器提前创建合成层 */\n}\n```\n\n### Web Animations API\n\n```js\n// 比 CSS Animation 更灵活，可编程控制\nconst element = document.querySelector('.box')\n\nconst animation = element.animate(\n  [\n    { transform: 'translateX(0)', opacity: 1 },\n    { transform: 'translateX(200px)', opacity: 0 },\n  ],\n  {\n    duration: 500,\n    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',\n    fill: 'forwards',\n  },\n)\n\nanimation.onfinish = () => console.log('Done')\nanimation.pause()\nanimation.play()\nanimation.reverse()\n```\n\n### Framer Motion（React）\n\n```tsx\nimport { motion, AnimatePresence } from 'framer-motion'\n\n// 进入/退出动画\nfunction Modal({ isOpen }) {\n  return (\n    <AnimatePresence>\n      {isOpen && (\n        <motion.div\n          initial={{ opacity: 0, scale: 0.9 }}\n          animate={{ opacity: 1, scale: 1 }}\n          exit={{ opacity: 0, scale: 0.9 }}\n          transition={{ duration: 0.2, ease: 'easeOut' }}\n        >\n          Modal Content\n        </motion.div>\n      )}\n    </AnimatePresence>\n  )\n}\n```\n\n### requestAnimationFrame 模式\n\n```js\nfunction animate(timestamp) {\n  // 每帧更新逻辑\n  element.style.transform = `translateX(${getPosition(timestamp)}px)`\n  requestAnimationFrame(animate) // 递归调用，与刷新率同步\n}\nrequestAnimationFrame(animate)\n```",
-    "tags": [
-      "动画",
-      "性能",
-      "CSS动画"
-    ],
+    "tags": ["动画", "性能", "CSS动画"],
     "source": "高频"
   },
   {
@@ -447,11 +311,7 @@
     "difficulty": 3,
     "question": "Webpack Module Federation（模块联邦）是什么？与 qiankun 微前端的区别？",
     "answer": "## Module Federation 详解\n\n### 核心概念\n\nModule Federation 允许多个独立构建的应用在运行时共享代码，无需打包到一起。\n\n```\nHost App（消费者）\n  ├── 运行时动态加载 → Remote App A（提供者）暴露的模块\n  └── 运行时动态加载 → Remote App B（提供者）暴露的模块\n```\n\n### 配置示例\n\n**Remote App（被消费方）：**\n\n```js\n// webpack.config.js\nnew ModuleFederationPlugin({\n  name: 'product_app', // 应用名\n  filename: 'remoteEntry.js', // 入口文件\n  exposes: {\n    './ProductList': './src/components/ProductList',\n    './useCart': './src/hooks/useCart',\n  },\n  shared: {\n    react: { singleton: true, requiredVersion: '^18.0.0' },\n    'react-dom': { singleton: true },\n  },\n})\n```\n\n**Host App（消费方）：**\n\n```js\nnew ModuleFederationPlugin({\n  name: 'host',\n  remotes: {\n    product_app: 'product_app@http://localhost:3001/remoteEntry.js',\n  },\n  shared: {\n    react: { singleton: true },\n    'react-dom': { singleton: true },\n  },\n})\n\n// 使用远程模块\nconst ProductList = React.lazy(() => import('product_app/ProductList'))\nfunction App() {\n  return (\n    <Suspense fallback='Loading...'>\n      <ProductList />\n    </Suspense>\n  )\n}\n```\n\n### Module Federation vs qiankun\n\n| 对比维度 | Module Federation    | qiankun                    |\n| -------- | -------------------- | -------------------------- |\n| 粒度     | 模块级（组件、函数） | 应用级                     |\n| 隔离方式 | 共享依赖             | JS 沙箱 + CSS 隔离         |\n| 通信     | 直接导入使用         | props / globalState        |\n| 适用场景 | 组件跨应用复用       | 独立团队、独立部署的子应用 |\n| 构建工具 | Webpack 5 / Rspack   | 框架无关                   |\n| 样式隔离 | 无内置方案           | Shadow DOM / Scoped        |\n\n**选择建议：**\n\n- 需要将 UI 组件在多个应用间复用 → Module Federation\n- 多团队完全独立开发和部署 → qiankun / single-spa",
-    "tags": [
-      "微前端",
-      "模块联邦",
-      "Webpack"
-    ],
+    "tags": ["微前端", "模块联邦", "Webpack"],
     "source": "高频"
   },
   {
@@ -460,11 +320,7 @@
     "difficulty": 2,
     "question": "如何在项目中集成 Sentry 进行错误监控？Source Map 是如何关联到原始代码的？",
     "answer": "## Sentry 集成实践\n\n### 基础配置\n\n```ts\n// main.ts\nimport * as Sentry from '@sentry/react'\n\nSentry.init({\n  dsn: 'https://xxx@o123.ingest.sentry.io/456',\n  environment: import.meta.env.MODE,\n  release: import.meta.env.VITE_APP_VERSION, // 对应 source map 版本\n  integrations: [\n    Sentry.browserTracingIntegration(), // 性能监控\n    Sentry.replayIntegration({\n      // 会话录制\n      maskAllText: true, // 遮盖敏感信息\n      blockAllMedia: false,\n    }),\n  ],\n  tracesSampleRate: 0.1, // 10% 的请求记录性能数据\n  replaysOnErrorSampleRate: 1.0, // 出错时 100% 录制\n  replaysSessionSampleRate: 0.05, // 正常情况 5% 录制\n\n  // 过滤噪音（第三方脚本错误等）\n  beforeSend(event, hint) {\n    const error = hint.originalException\n    if (error instanceof NetworkError) return null // 丢弃网络错误\n    return event\n  },\n})\n```\n\n### React 错误边界集成\n\n```tsx\nfunction App() {\n  return (\n    <Sentry.ErrorBoundary\n      fallback={<ErrorPage />}\n      onError={(error, componentStack) => {\n        console.error('React Error:', error, componentStack)\n      }}\n    >\n      <Router />\n    </Sentry.ErrorBoundary>\n  )\n}\n```\n\n### Source Map 上传\n\n```ts\n// vite.config.ts\nimport { sentryVitePlugin } from '@sentry/vite-plugin'\n\nexport default defineConfig({\n  build: {\n    sourcemap: true, // 生成 source map\n  },\n  plugins: [\n    sentryVitePlugin({\n      authToken: process.env.SENTRY_AUTH_TOKEN,\n      org: 'my-org',\n      project: 'my-project',\n      release: { name: process.env.npm_package_version },\n      // 上传 source map 后自动删除（不暴露给用户）\n      sourcemaps: {\n        assets: './dist/**',\n        deleteFilesAfterUpload: './dist/**/*.map',\n      },\n    }),\n  ],\n})\n```\n\n### Source Map 还原原理\n\n1. 构建时生成 `.js.map` 文件，包含原始文件路径、列号映射\n2. 上传到 Sentry 时关联 `release` 版本号\n3. 报错时的 stack trace 包含压缩后的文件名和行列号\n4. Sentry 服务端根据 `release` 找到对应的 source map，还原为原始代码位置",
-    "tags": [
-      "Sentry",
-      "错误监控",
-      "APM"
-    ],
+    "tags": ["Sentry", "错误监控", "APM"],
     "source": "高频"
   },
   {
@@ -473,11 +329,7 @@
     "difficulty": 2,
     "question": "GraphQL 相比 REST API 有什么优势？在项目中如何实践 GraphQL？",
     "answer": "## GraphQL vs REST\n\n### 核心差异\n\n**REST 的痛点：**\n\n```\n// 过度获取（Over-fetching）\nGET /users/1 → { id, name, email, avatar, address, phone, ... } // 只需要 name\n\n// 获取不足（Under-fetching）\nGET /users/1     → user info\nGET /posts?userId=1 → user posts（需要额外请求）\n```\n\n**GraphQL 解决方案：**\n\n```graphql\n# 客户端精确声明需要的字段\nquery GetUserWithPosts {\n  user(id: \"1\") {\n    name\n    posts(first: 5) {\n      title\n      createdAt\n    }\n  }\n}\n```\n\n### 前端集成（Apollo Client）\n\n```tsx\n// 配置\nimport { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';\n\nconst client = new ApolloClient({\n  uri: '/graphql',\n  cache: new InMemoryCache(),\n  defaultOptions: {\n    watchQuery: { fetchPolicy: 'cache-and-network' },\n  },\n});\n\n// 使用 useQuery\nconst GET_PRODUCTS = gql`\n  query GetProducts($limit: Int!, $category: String) {\n    products(limit: $limit, category: $category) {\n      id\n      name\n      price\n      image { url alt }\n    }\n  }\n`;\n\nfunction ProductList() {\n  const { data, loading, error } = useQuery(GET_PRODUCTS, {\n    variables: { limit: 20, category: 'electronics' },\n  });\n\n  if (loading) return <Skeleton count={20} />;\n  if (error) return <Error />;\n  return data.products.map(p => <ProductCard key={p.id} product={p} />);\n}\n\n// 使用 useMutation\nconst [createProduct, { loading }] = useMutation(CREATE_PRODUCT, {\n  update(cache, { data: { createProduct } }) {\n    // 手动更新缓存\n    cache.modify({\n      fields: {\n        products(existing = []) {\n          return [...existing, cache.writeFragment({ data: createProduct, ... })];\n        },\n      },\n    });\n  },\n});\n```\n\n### 适用场景\n\n**适合 GraphQL：** 数据关系复杂、多端消费（Web/App）、字段需求差异大\n**适合 REST：** 简单 CRUD、团队不熟悉 GraphQL、对缓存要求高（HTTP 缓存更简单）",
-    "tags": [
-      "GraphQL",
-      "API",
-      "数据层"
-    ],
+    "tags": ["GraphQL", "API", "数据层"],
     "source": "高频"
   },
   {
@@ -486,12 +338,7 @@
     "difficulty": 3,
     "question": "页面出现明显卡顿，如何排查和优化 Long Task？",
     "answer": "## Long Task 排查与优化\n\n### 什么是 Long Task\n\n执行时间超过 **50ms** 的任务称为 Long Task，会阻塞主线程，导致页面无法响应用户输入（INP 变差）。\n\n### 排查工具\n\n**1. Performance 面板**\n\n```\nChrome DevTools → Performance → 录制 → 查看红色三角（Long Task 标记）\n```\n\n**2. PerformanceObserver 监测**\n\n```js\nconst observer = new PerformanceObserver((list) => {\n  list.getEntries().forEach((entry) => {\n    console.warn(`Long Task: ${entry.duration.toFixed(0)}ms`, {\n      startTime: entry.startTime,\n      attribution: entry.attribution,\n    })\n    // 上报监控\n    report({ type: 'long_task', duration: entry.duration, url: location.href })\n  })\n})\nobserver.observe({ type: 'longtask', buffered: true })\n```\n\n### 常见原因与优化\n\n**1. 大量 DOM 操作**\n\n```js\n// ❌ 每次操作触发重排\nitems.forEach((item) => {\n  const li = document.createElement('li')\n  li.textContent = item.name\n  list.appendChild(li) // 每次都触发重排\n})\n\n// ✅ 使用 DocumentFragment 批量操作\nconst fragment = document.createDocumentFragment()\nitems.forEach((item) => {\n  const li = document.createElement('li')\n  li.textContent = item.name\n  fragment.appendChild(li)\n})\nlist.appendChild(fragment) // 只触发一次重排\n```\n\n**2. 复杂计算阻塞主线程**\n\n```js\n// ❌ 同步执行大量计算\nfunction processData(data) {\n  return data.map((item) => heavyCompute(item)) // 阻塞主线程\n}\n\n// ✅ 方案1：Web Worker\nconst worker = new Worker('./process.worker.js')\nworker.postMessage(data)\nworker.onmessage = (e) => setResult(e.data)\n\n// ✅ 方案2：时间切片（scheduler）\nasync function processInChunks(data, chunkSize = 100) {\n  const results = []\n  for (let i = 0; i < data.length; i += chunkSize) {\n    const chunk = data.slice(i, i + chunkSize)\n    results.push(...chunk.map(heavyCompute))\n    // 让出主线程，处理用户输入\n    await new Promise((r) => setTimeout(r, 0))\n  }\n  return results\n}\n```\n\n**3. React 渲染过多**\n\n```tsx\n// ❌ 父组件更新导致所有子组件重渲染\nfunction List({ items }) {\n  return items.map((item) => <Row item={item} />)\n}\n\n// ✅ memo + 稳定 key\nconst Row = React.memo(({ item }) => <div>{item.name}</div>)\n\n// ✅ React 18 useTransition（将非紧急更新标为低优先级）\nconst [isPending, startTransition] = useTransition()\nstartTransition(() => {\n  setFilteredItems(heavyFilter(items)) // 不阻塞输入响应\n})\n```",
-    "tags": [
-      "性能",
-      "卡顿",
-      "优化",
-      "Long Task"
-    ],
+    "tags": ["性能", "卡顿", "优化", "Long Task"],
     "source": "高频"
   },
   {
@@ -500,11 +347,7 @@
     "difficulty": 2,
     "question": "Web Font 加载会导致哪些性能问题？如何优化字体加载？",
     "answer": "## Web Font 优化策略\n\n### 字体加载问题\n\n- **FOIT（Flash of Invisible Text）**：字体加载完成前文字不可见（白块）\n- **FOUT（Flash of Unstyled Text）**：字体加载完成前显示备用字体，加载后闪烁\n- **字体文件体积大**：中文字体往往 3-10MB\n\n### font-display 策略\n\n```css\n@font-face {\n  font-family: 'MyFont';\n  src: url('/fonts/myfont.woff2') format('woff2');\n  font-display: swap; /* 优先用备用字体，加载完后替换（避免 FOIT）*/\n  /* optional: 只有极短窗口期，超时直接用备用字体（最稳定）*/\n  /* fallback: 短暂不可见后用备用字体 */\n  /* block: 最长不可见时间（不推荐）*/\n}\n```\n\n### 预加载关键字体\n\n```html\n<!-- 最高优先级预加载，消除 FOIT -->\n<link\n  rel=\"preload\"\n  href=\"/fonts/main.woff2\"\n  as=\"font\"\n  type=\"font/woff2\"\n  crossorigin\n/>\n```\n\n### 字体子集化（中文字体必备）\n\n```bash\n# 使用 fonttools 提取常用汉字子集\npyftsubset NotoSansSC.ttf \\\n  --text-file=used_chars.txt \\\n  --flavor=woff2 \\\n  --output-file=NotoSansSC.subset.woff2\n# 结果：3MB → 50KB\n```\n\n### 可变字体（Variable Font）\n\n```css\n/* 一个文件包含所有字重，比多个字体文件更小 */\n@font-face {\n  font-family: 'Inter';\n  src: url('inter-variable.woff2') format('woff2-variations');\n  font-weight: 100 900; /* 支持 100-900 所有字重 */\n}\n\n.text {\n  font-family: 'Inter';\n  font-weight: 450; /* 可以用任意字重值 */\n}\n```\n\n### 本地字体优先\n\n```css\n@font-face {\n  font-family: 'Inter';\n  src:\n    local('Inter'),\n    /* 先查本地 */ url('/fonts/inter.woff2') format('woff2'); /* 再下载 */\n}\n```",
-    "tags": [
-      "字体",
-      "性能",
-      "Web Font"
-    ],
+    "tags": ["字体", "性能", "Web Font"],
     "source": "高频"
   },
   {
@@ -513,11 +356,7 @@
     "difficulty": 3,
     "question": "什么是前端领域驱动设计（DDD）？如何在大型项目中落地？",
     "answer": "## 前端 DDD 实践\n\n### 核心思想\n\n将业务逻辑从 UI 层分离，按业务域（Domain）组织代码，而非按技术层次。\n\n### 传统分层 vs DDD 分层\n\n**传统（技术分层）：**\n\n```\ncomponents/     ← UI 层\nservices/       ← 业务逻辑（混杂）\nutils/          ← 工具函数\napi/            ← 接口调用\n```\n\n**DDD 分层（业务驱动）：**\n\n```\nsrc/\n├── domain/                    ← 领域层（纯业务逻辑，无框架依赖）\n│   ├── order/\n│   │   ├── Order.ts           ← 领域实体\n│   │   ├── OrderService.ts    ← 领域服务\n│   │   └── OrderRepository.ts ← 仓储接口\n│   └── product/\n├── application/               ← 应用层（编排领域逻辑）\n│   ├── order/\n│   │   ├── CreateOrderUseCase.ts\n│   │   └── CancelOrderUseCase.ts\n├── infrastructure/            ← 基础设施层（具体实现）\n│   ├── api/\n│   │   └── OrderApiRepository.ts  ← 实现 OrderRepository\n│   └── storage/\n└── presentation/              ← 表现层（React 组件）\n    ├── pages/\n    └── components/\n```\n\n### 领域实体示例\n\n```ts\n// domain/order/Order.ts\nexport class Order {\n  private readonly id: string\n  private items: OrderItem[]\n  private status: OrderStatus\n\n  constructor(params: { id: string; items: OrderItem[]; status: OrderStatus }) {\n    this.id = params.id\n    this.items = params.items\n    this.status = params.status\n  }\n\n  // 领域行为（业务规则封装在实体内）\n  addItem(item: OrderItem): void {\n    if (this.status !== 'draft') throw new Error('只有草稿订单可以添加商品')\n    if (this.items.length >= 100) throw new Error('订单商品不能超过100件')\n    this.items.push(item)\n  }\n\n  cancel(): void {\n    if (!['draft', 'pending'].includes(this.status)) {\n      throw new Error(`${this.status} 状态的订单不能取消`)\n    }\n    this.status = 'cancelled'\n  }\n\n  get totalPrice(): number {\n    return this.items.reduce((sum, item) => sum + item.price * item.quantity, 0)\n  }\n}\n```\n\n### 应用层 Use Case\n\n```ts\n// application/order/CreateOrderUseCase.ts\nexport class CreateOrderUseCase {\n  constructor(\n    private orderRepo: OrderRepository,\n    private productRepo: ProductRepository,\n    private eventBus: EventBus,\n  ) {}\n\n  async execute(command: CreateOrderCommand): Promise<string> {\n    // 1. 校验业务规则\n    const products = await Promise.all(\n      command.items.map((item) => this.productRepo.findById(item.productId)),\n    )\n\n    // 2. 创建领域实体\n    const order = new Order({\n      id: generateId(),\n      items: command.items.map((item, i) => ({\n        productId: item.productId,\n        quantity: item.quantity,\n        price: products[i].price,\n      })),\n      status: 'draft',\n    })\n\n    // 3. 持久化\n    await this.orderRepo.save(order)\n\n    // 4. 发布领域事件\n    this.eventBus.publish('order.created', { orderId: order.id })\n\n    return order.id\n  }\n}\n```",
-    "tags": [
-      "架构",
-      "DDD",
-      "前端架构"
-    ],
+    "tags": ["架构", "DDD", "前端架构"],
     "source": "高频"
   },
   {
@@ -526,11 +365,7 @@
     "difficulty": 2,
     "question": "如何设计一个低代码/可视化页面编辑器的前端架构？",
     "answer": "## 低代码编辑器架构设计\n\n### 核心数据模型（Schema）\n\n```ts\n// 页面由组件树描述，组件树可序列化为 JSON\ninterface ComponentSchema {\n  id: string // 唯一 ID\n  type: string // 组件类型（如 'Button', 'Input'）\n  props: Record<string, unknown> // 组件属性\n  children?: ComponentSchema[] // 子组件\n  style?: React.CSSProperties // 样式\n  events?: {\n    // 事件绑定\n    onClick?: ActionSchema\n    onChange?: ActionSchema\n  }\n}\n\n// 页面 Schema\ninterface PageSchema {\n  id: string\n  name: string\n  components: ComponentSchema[] // 根组件列表\n  dataBindings: DataBinding[] // 数据绑定\n  variables: Variable[] // 页面变量\n}\n```\n\n### 核心模块\n\n```ts\n// 1. 渲染引擎：将 Schema 渲染为真实组件\nfunction SchemaRenderer({ schema }: { schema: ComponentSchema }) {\n  const Component = componentRegistry.get(schema.type);\n  if (!Component) return <UnknownComponent type={schema.type} />;\n\n  return (\n    <Component {...schema.props} style={schema.style}>\n      {schema.children?.map(child => (\n        <SchemaRenderer key={child.id} schema={child} />\n      ))}\n    </Component>\n  );\n}\n\n// 2. 组件注册中心\nclass ComponentRegistry {\n  private map = new Map<string, ComponentDefinition>();\n\n  register(name: string, def: ComponentDefinition) {\n    this.map.set(name, def);\n  }\n\n  get(name: string) { return this.map.get(name)?.component; }\n  getMeta(name: string) { return this.map.get(name)?.meta; } // 属性面板配置\n}\n\n// 3. 状态管理（编辑器核心状态）\ninterface EditorState {\n  schema: PageSchema;\n  selectedId: string | null;\n  hoveredId: string | null;\n  history: PageSchema[];  // undo/redo 历史\n  clipboard: ComponentSchema | null;\n}\n```\n\n### 关键功能实现\n\n```ts\n// 拖拽排序（使用 @dnd-kit/core）\n// 撤销/重做（immer + 历史栈）\nfunction useEditorHistory(initialSchema: PageSchema) {\n  const [history, setHistory] = useState([initialSchema])\n  const [cursor, setCursor] = useState(0)\n\n  const current = history[cursor]\n\n  const commit = (newSchema: PageSchema) => {\n    const newHistory = history.slice(0, cursor + 1).concat(newSchema)\n    setHistory(newHistory)\n    setCursor(newHistory.length - 1)\n  }\n\n  const undo = () => cursor > 0 && setCursor((c) => c - 1)\n  const redo = () => cursor < history.length - 1 && setCursor((c) => c + 1)\n\n  return {\n    current,\n    commit,\n    undo,\n    redo,\n    canUndo: cursor > 0,\n    canRedo: cursor < history.length - 1,\n  }\n}\n```",
-    "tags": [
-      "低代码",
-      "可视化编辑器",
-      "架构"
-    ],
+    "tags": ["低代码", "可视化编辑器", "架构"],
     "source": "高频"
   },
   {
@@ -539,11 +374,7 @@
     "difficulty": 2,
     "question": "前端如何安全地存储和使用 JWT Token？Token 刷新机制如何实现？",
     "answer": "## JWT 安全存储与刷新\n\n### 存储方案对比\n\n| 方案            | XSS 风险        | CSRF 风险 | 推荐                  |\n| --------------- | --------------- | --------- | --------------------- |\n| localStorage    | 高（JS 可读）   | 低        | ❌                    |\n| sessionStorage  | 高              | 低        | ❌（仅临时场景）      |\n| HttpOnly Cookie | 无（JS 不可读） | 有        | ✅（配合 CSRF Token） |\n| 内存（变量）    | 低              | 无        | ✅（页面刷新丢失）    |\n\n**最佳实践：Access Token 存内存，Refresh Token 存 HttpOnly Cookie**\n\n### Token 刷新拦截器\n\n```ts\n// infrastructure/http/tokenRefresh.ts\nlet isRefreshing = false\nlet waitingQueue: Array<(token: string) => void> = []\n\nexport function setupTokenRefresh(client: AxiosInstance) {\n  client.interceptors.request.use((config) => {\n    const token = tokenStore.getAccessToken() // 内存中读取\n    if (token) config.headers.Authorization = `Bearer ${token}`\n    return config\n  })\n\n  client.interceptors.response.use(null, async (error) => {\n    const originalRequest = error.config\n\n    // 401 且未重试过\n    if (error.response?.status !== 401 || originalRequest._retry) {\n      return Promise.reject(error)\n    }\n\n    if (isRefreshing) {\n      // 等待刷新完成，复用新 Token\n      return new Promise((resolve) => {\n        waitingQueue.push((token) => {\n          originalRequest.headers.Authorization = `Bearer ${token}`\n          resolve(client(originalRequest))\n        })\n      })\n    }\n\n    originalRequest._retry = true\n    isRefreshing = true\n\n    try {\n      // 用 Refresh Token（HttpOnly Cookie 自动携带）换新 Access Token\n      const { data } = await client.post('/auth/refresh')\n      const newToken = data.accessToken\n\n      tokenStore.setAccessToken(newToken) // 存入内存\n      waitingQueue.forEach((cb) => cb(newToken))\n      waitingQueue = []\n\n      originalRequest.headers.Authorization = `Bearer ${newToken}`\n      return client(originalRequest)\n    } catch {\n      tokenStore.clearAccessToken()\n      waitingQueue = []\n      window.location.href = '/login'\n      return Promise.reject(error)\n    } finally {\n      isRefreshing = false\n    }\n  })\n}\n```",
-    "tags": [
-      "前端安全",
-      "JWT",
-      "认证"
-    ],
+    "tags": ["前端安全", "JWT", "认证"],
     "source": "高频"
   },
   {
@@ -552,11 +383,7 @@
     "difficulty": 2,
     "question": "前端项目如何管理多环境配置（开发、测试、生产）？有哪些最佳实践？",
     "answer": "## 多环境配置管理\n\n### Vite 环境变量\n\n```bash\n# .env                  ← 所有环境通用\n# .env.local            ← 本地覆盖（不提交 git）\n# .env.development      ← 开发环境\n# .env.staging          ← 测试环境\n# .env.production       ← 生产环境\n```\n\n```env\n# .env.development\nVITE_API_URL=http://localhost:8080\nVITE_APP_ENV=development\nVITE_ENABLE_DEVTOOLS=true\nVITE_LOG_LEVEL=debug\n```\n\n```env\n# .env.production\nVITE_API_URL=https://api.example.com\nVITE_APP_ENV=production\nVITE_ENABLE_DEVTOOLS=false\nVITE_LOG_LEVEL=error\n```\n\n### 类型安全的环境变量\n\n```ts\n// src/env.d.ts\ninterface ImportMetaEnv {\n  readonly VITE_API_URL: string\n  readonly VITE_APP_ENV: 'development' | 'staging' | 'production'\n  readonly VITE_ENABLE_DEVTOOLS: string\n  readonly VITE_LOG_LEVEL: 'debug' | 'info' | 'warn' | 'error'\n}\n\n// src/config/env.ts（统一导出，便于 mock 和测试）\nexport const config = {\n  apiUrl: import.meta.env.VITE_API_URL,\n  appEnv: import.meta.env.VITE_APP_ENV,\n  isDev: import.meta.env.DEV,\n  isProd: import.meta.env.PROD,\n  enableDevtools: import.meta.env.VITE_ENABLE_DEVTOOLS === 'true',\n  logLevel: import.meta.env.VITE_LOG_LEVEL,\n} as const\n```\n\n### 构建不同环境\n\n```json\n// package.json\n{\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build:staging\": \"vite build --mode staging\",\n    \"build:prod\": \"vite build --mode production\",\n    \"preview\": \"vite preview\"\n  }\n}\n```\n\n### 敏感配置处理\n\n```ts\n// ❌ 不要在前端存放真正的机密（API Secret Key 等）\n// ✅ 机密配置只放服务端\n\n// 运行时配置（部署后可以动态修改，不需要重新构建）\n// public/config.js（在 index.html 中同步加载）\nwindow.__APP_CONFIG__ = {\n  apiUrl: '#{API_URL}', // CI/CD 中替换占位符\n  featureFlags: { newUI: true },\n}\n```",
-    "tags": [
-      "工程化",
-      "环境变量",
-      "配置"
-    ],
+    "tags": ["工程化", "环境变量", "配置"],
     "source": "高频"
   },
   {
@@ -565,11 +392,7 @@
     "difficulty": 3,
     "question": "前端内存泄漏如何排查？常见的内存泄漏场景有哪些？",
     "answer": "## 内存泄漏排查\n\n### 排查工具\n\n**Chrome DevTools Memory 面板：**\n\n```\n1. 打开 DevTools → Memory\n2. 选择 Heap Snapshot，拍摄快照1\n3. 执行可能泄漏的操作（如打开关闭Modal多次）\n4. 再拍摄快照2\n5. 选择 \"Comparison\"，查看新增且未释放的对象\n```\n\n**Performance Monitor：**\n\n```\nDevTools → More tools → Performance monitor\n观察 JS heap size 是否持续增长（正常应该会被 GC 回收）\n```\n\n### 常见泄漏场景\n\n**1. 未清除的事件监听器**\n\n```js\n// ❌ 组件卸载后监听器还在\nfunction Component() {\n  useEffect(() => {\n    window.addEventListener('resize', handleResize)\n    // 忘记 return cleanup\n  }, [])\n}\n\n// ✅\nuseEffect(() => {\n  window.addEventListener('resize', handleResize)\n  return () => window.removeEventListener('resize', handleResize)\n}, [])\n```\n\n**2. 未清除的定时器**\n\n```js\n// ❌\nuseEffect(() => {\n  const timer = setInterval(fetchData, 5000)\n  // 组件卸载后 timer 仍然运行，且持有组件引用\n}, [])\n\n// ✅\nuseEffect(() => {\n  const timer = setInterval(fetchData, 5000)\n  return () => clearInterval(timer)\n}, [])\n```\n\n**3. 闭包持有大对象引用**\n\n```js\n// ❌ largeData 无法被 GC\nfunction setup() {\n  const largeData = new Array(1000000).fill('x')\n  return function handler() {\n    console.log('clicked') // 闭包持有 largeData 引用\n  }\n}\n\n// ✅ 只保留需要的数据\nfunction setup() {\n  const largeData = new Array(1000000).fill('x')\n  const summary = summarize(largeData) // 只保留摘要\n  // largeData 可以被 GC\n  return function handler() {\n    console.log(summary)\n  }\n}\n```\n\n**4. 未取消的 Observable/订阅**\n\n```ts\n// ❌ RxJS 订阅未取消\nuseEffect(() => {\n  const sub = stream$.subscribe(setData)\n  // 没有取消订阅\n}, [])\n\n// ✅\nuseEffect(() => {\n  const sub = stream$.subscribe(setData)\n  return () => sub.unsubscribe()\n}, [])\n```\n\n**5. React 中的 setState 在卸载后调用**\n\n```tsx\n// ❌\nuseEffect(() => {\n  fetchData().then((data) => setState(data)) // 组件卸载后 setState\n}, [])\n\n// ✅（AbortController）\nuseEffect(() => {\n  const controller = new AbortController()\n  fetch('/api/data', { signal: controller.signal })\n    .then((r) => r.json())\n    .then((data) => setState(data))\n    .catch((err) => {\n      if (err.name !== 'AbortError') console.error(err)\n    })\n  return () => controller.abort()\n}, [])\n```",
-    "tags": [
-      "性能",
-      "内存泄漏",
-      "排查"
-    ],
+    "tags": ["性能", "内存泄漏", "排查"],
     "source": "高频"
   },
   {
@@ -578,11 +401,7 @@
     "difficulty": 2,
     "question": "如何在前端实现 A/B 测试和功能开关（Feature Flag）？",
     "answer": "## A/B 测试与功能开关\n\n### Feature Flag 实现\n\n```ts\n// infrastructure/featureFlags.ts\ninterface FeatureFlags {\n  newCheckoutFlow: boolean\n  recommendationAlgorithm: 'v1' | 'v2' | 'v3'\n  darkModeDefault: boolean\n}\n\nclass FeatureFlagService {\n  private flags: FeatureFlags\n\n  constructor(flags: FeatureFlags) {\n    this.flags = flags\n  }\n\n  isEnabled(flag: keyof FeatureFlags): boolean {\n    return Boolean(this.flags[flag])\n  }\n\n  getValue<T extends keyof FeatureFlags>(flag: T): FeatureFlags[T] {\n    return this.flags[flag]\n  }\n}\n\n// 从服务端获取（支持运行时动态开关）\nasync function initFeatureFlags(userId: string): Promise<FeatureFlagService> {\n  const response = await fetch(`/api/feature-flags?userId=${userId}`)\n  const flags = await response.json()\n  return new FeatureFlagService(flags)\n}\n```\n\n### React 中使用\n\n```tsx\n// hooks/useFeatureFlag.ts\nfunction useFeatureFlag<T extends keyof FeatureFlags>(\n  flag: T,\n): FeatureFlags[T] {\n  const { flags } = useContext(FeatureFlagContext)\n  return flags[flag]\n}\n\n// 组件中使用\nfunction CheckoutPage() {\n  const useNewFlow = useFeatureFlag('newCheckoutFlow')\n\n  if (useNewFlow) {\n    return <NewCheckoutFlow />\n  }\n  return <LegacyCheckoutFlow />\n}\n```\n\n### A/B 测试分组\n\n```ts\n// 基于用户 ID 的一致性分组（同一用户总是进同一组）\nfunction assignVariant(\n  userId: string,\n  experimentId: string,\n  variants: string[],\n): string {\n  // 使用 FNV hash 确保一致性\n  const hash = fnv32a(`${userId}:${experimentId}`)\n  const index = hash % variants.length\n  return variants[index]\n}\n\n// 使用\nconst variant = assignVariant(userId, 'checkout_button_color', [\n  'control',\n  'blue',\n  'green',\n])\nanalytics.track('experiment_assigned', {\n  experimentId: 'checkout_button_color',\n  variant,\n})\n```\n\n### 与监控结合\n\n```ts\n// 上报实验曝光\nfunction useExperiment(experimentId: string, variants: string[]) {\n  const { userId } = useAuth()\n  const variant = assignVariant(userId, experimentId, variants)\n\n  useEffect(() => {\n    analytics.track('experiment_exposure', { experimentId, variant, userId })\n  }, [experimentId, variant])\n\n  return variant\n}\n```",
-    "tags": [
-      "A/B测试",
-      "功能开关",
-      "工程化"
-    ],
+    "tags": ["A/B测试", "功能开关", "工程化"],
     "source": "高频"
   },
   {
@@ -591,11 +410,7 @@
     "difficulty": 2,
     "question": "如何实现类似 ChatGPT 的流式文字输出效果？SSE 如何处理断线重连？",
     "answer": "## 流式输出实现\n\n### Fetch Streams API（推荐）\n\n```ts\nasync function* streamChat(message: string): AsyncGenerator<string> {\n  const response = await fetch('/api/chat', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json' },\n    body: JSON.stringify({ message }),\n  })\n\n  if (!response.ok) throw new Error(`HTTP ${response.status}`)\n  if (!response.body) throw new Error('No response body')\n\n  const reader = response.body.getReader()\n  const decoder = new TextDecoder()\n\n  try {\n    while (true) {\n      const { done, value } = await reader.read()\n      if (done) break\n\n      const chunk = decoder.decode(value, { stream: true })\n      // 解析 SSE 格式：data: {...}\\n\\n\n      for (const line of chunk.split('\\n')) {\n        if (line.startsWith('data: ')) {\n          const data = line.slice(6)\n          if (data === '[DONE]') return\n          try {\n            const parsed = JSON.parse(data)\n            yield parsed.content\n          } catch {\n            /* 忽略解析错误 */\n          }\n        }\n      }\n    }\n  } finally {\n    reader.releaseLock()\n  }\n}\n\n// React Hook\nfunction useStreamChat() {\n  const [content, setContent] = useState('')\n  const [isStreaming, setIsStreaming] = useState(false)\n  const abortRef = useRef<AbortController | null>(null)\n\n  const sendMessage = async (message: string) => {\n    abortRef.current = new AbortController()\n    setContent('')\n    setIsStreaming(true)\n\n    try {\n      for await (const chunk of streamChat(message)) {\n        setContent((prev) => prev + chunk)\n      }\n    } finally {\n      setIsStreaming(false)\n    }\n  }\n\n  const stop = () => abortRef.current?.abort()\n\n  return { content, isStreaming, sendMessage, stop }\n}\n```\n\n### SSE（EventSource）带重连\n\n```ts\nclass SSEClient {\n  private es: EventSource | null = null\n  private url: string\n  private handlers: Map<string, Function[]> = new Map()\n  private lastEventId = ''\n\n  connect() {\n    const url = this.lastEventId\n      ? `${this.url}?lastEventId=${this.lastEventId}`\n      : this.url\n\n    this.es = new EventSource(url, { withCredentials: true })\n\n    this.es.onopen = () => this.emit('open')\n    this.es.onerror = () => {\n      this.emit('error')\n      // EventSource 自动重连（浏览器内置，默认 3s）\n    }\n    this.es.onmessage = (e) => {\n      this.lastEventId = e.lastEventId // 记录最后 ID，断线重连时使用\n      this.emit('message', JSON.parse(e.data))\n    }\n\n    // 自定义事件类型\n    ;['notification', 'order_update'].forEach((type) => {\n      this.es!.addEventListener(type, (e: MessageEvent) => {\n        this.emit(type, JSON.parse(e.data))\n      })\n    })\n  }\n}\n```",
-    "tags": [
-      "SSE",
-      "流式输出",
-      "AI"
-    ],
+    "tags": ["SSE", "流式输出", "AI"],
     "source": "高频"
   },
   {
@@ -604,11 +419,7 @@
     "difficulty": 2,
     "question": "如何实现前端用户行为录制与回放（Session Replay）？rrweb 的原理是什么？",
     "answer": "## Session Replay 原理\n\n### rrweb 核心原理\n\n**录制阶段：** 将 DOM 变化序列化为事件流\n\n```\n1. 初始化：序列化整个 DOM 树为快照（full snapshot）\n2. MutationObserver：监听 DOM 变化（增删改）\n3. 事件监听：记录鼠标移动、点击、滚动、输入等交互\n4. 将事件打上时间戳，批量上报\n```\n\n**回放阶段：** 在沙箱 iframe 中重建 DOM 并重放事件\n\n```\n1. 用初始快照重建 DOM\n2. 按时间戳顺序应用增量变化\n3. 模拟鼠标移动（显示鼠标指针）\n4. 重放用户交互\n```\n\n### 集成示例\n\n```ts\nimport rrweb from 'rrweb'\n\n// 录制\nconst events: rrweb.eventWithTime[] = []\nconst stopRecording = rrweb.record({\n  emit(event) {\n    events.push(event)\n  },\n  // 隐私保护：遮盖敏感字段\n  maskAllInputs: true,\n  maskInputOptions: { password: true, email: true },\n  blockClass: 'privacy-block', // 带此类名的元素不录制\n  // 采样率优化（减少数据量）\n  sampling: {\n    mousemove: 50, // 每 50ms 记录一次鼠标位置\n    scroll: 150, // 每 150ms 记录一次滚动\n    input: 'last', // 只记录最后一次输入\n  },\n  // 录制 canvas\n  recordCanvas: false, // 开销大，按需开启\n})\n\n// 错误时上报最近 60 秒的录制\nwindow.addEventListener('unhandledrejection', () => {\n  const recent = events.filter((e) => Date.now() - e.timestamp < 60000)\n  uploadSessionReplay(recent)\n  stopRecording()\n})\n```\n\n### 隐私保护要点\n\n```ts\n// 1. 服务端不存储原始内容，只存 DOM 结构变化\n// 2. 敏感字段（密码、身份证等）在录制前屏蔽\n// 3. 用户可以选择退出录制\n// 4. 数据加密传输和存储\n// 5. 合规：GDPR 要求告知用户并获得同意\n```",
-    "tags": [
-      "前端监控",
-      "用户行为",
-      "Session Replay"
-    ],
+    "tags": ["前端监控", "用户行为", "Session Replay"],
     "source": "高频"
   },
   {
@@ -617,11 +428,7 @@
     "difficulty": 3,
     "question": "如何编写一个 Babel 插件？以自动添加函数执行时间日志为例",
     "answer": "## Babel 插件开发\n\n### Babel 插件基础\n\nBabel 插件通过访问者模式（Visitor Pattern）遍历 AST 并转换节点。\n\n```\n源码字符串 → @babel/parser → AST → Babel Traverse（插件）→ @babel/generator → 新代码\n```\n\n### 实战：自动注入函数性能日志\n\n**目标转换：**\n\n```js\n// 输入\nfunction fetchUser(id) {\n  return api.get('/user/' + id)\n}\n\n// 输出\nfunction fetchUser(id) {\n  const __start = performance.now()\n  const __result = api.get('/user/' + id)\n  console.log('[Perf] fetchUser:', performance.now() - __start, 'ms')\n  return __result\n}\n```\n\n**插件实现：**\n\n```js\n// babel-plugin-perf-logger.js\nmodule.exports = function ({ types: t }) {\n  return {\n    visitor: {\n      // 访问函数声明\n      FunctionDeclaration(path) {\n        const fnName = path.node.id?.name || 'anonymous'\n        injectPerfLog(path, t, fnName)\n      },\n      // 访问箭头函数和函数表达式\n      'ArrowFunctionExpression|FunctionExpression'(path) {\n        const parent = path.parent\n        const fnName =\n          t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)\n            ? parent.id.name\n            : 'anonymous'\n        injectPerfLog(path, t, fnName)\n      },\n    },\n  }\n}\n\nfunction injectPerfLog(path, t, fnName) {\n  const body = path.get('body')\n  if (!body.isBlockStatement()) {\n    // 箭头函数简写形式，先转为块语句\n    body.replaceWith(t.blockStatement([t.returnStatement(body.node)]))\n  }\n\n  const statements = body.get('body')\n  if (!statements.length) return\n\n  // 注入开始计时\n  const startDecl = t.variableDeclaration('const', [\n    t.variableDeclarator(\n      t.identifier('__perfStart'),\n      t.callExpression(\n        t.memberExpression(t.identifier('performance'), t.identifier('now')),\n        [],\n      ),\n    ),\n  ])\n\n  // 注入结束日志（在最后一个 return 前）\n  const logStmt = t.expressionStatement(\n    t.callExpression(\n      t.memberExpression(t.identifier('console'), t.identifier('log')),\n      [\n        t.stringLiteral(`[Perf] ${fnName}:`),\n        t.binaryExpression(\n          '-',\n          t.callExpression(\n            t.memberExpression(\n              t.identifier('performance'),\n              t.identifier('now'),\n            ),\n            [],\n          ),\n          t.identifier('__perfStart'),\n        ),\n        t.stringLiteral('ms'),\n      ],\n    ),\n  )\n\n  body.unshiftContainer('body', startDecl)\n  // 在每个 return 前插入日志\n  body.traverse({\n    ReturnStatement(returnPath) {\n      returnPath.insertBefore(logStmt)\n    },\n  })\n}\n```\n\n### AST Explorer\n\n使用 [astexplorer.net](https://astexplorer.net) 可视化查看任意代码的 AST 结构，是编写 Babel 插件的必备工具。",
-    "tags": [
-      "编译器",
-      "AST",
-      "Babel插件"
-    ],
+    "tags": ["编译器", "AST", "Babel插件"],
     "source": "高频"
   },
   {
@@ -630,11 +437,7 @@
     "difficulty": 2,
     "question": "什么是 BFF（Backend for Frontend）？前端为什么需要 BFF 层？",
     "answer": "## BFF 架构详解\n\n### 什么是 BFF\n\nBFF（Backend for Frontend）是专为前端设计的后端服务层，位于前端和微服务之间。\n\n```\n传统架构：\n前端 → 微服务A（用户）\n前端 → 微服务B（订单）\n前端 → 微服务C（商品）\n（前端需要聚合多个接口）\n\nBFF 架构：\n前端 → BFF → 微服务A\n            → 微服务B\n            → 微服务C\n（BFF 聚合并裁剪数据）\n```\n\n### BFF 解决的问题\n\n**1. 数据聚合（减少前端请求数）**\n\n```ts\n// BFF 层（Node.js）\napp.get('/api/order-detail/:id', async (req, res) => {\n  // 并行请求多个微服务\n  const [order, user, products] = await Promise.all([\n    orderService.getOrder(req.params.id),\n    userService.getUser(order.userId),\n    productService.getProducts(order.productIds),\n  ])\n\n  // 裁剪为前端需要的格式\n  res.json({\n    orderId: order.id,\n    status: order.status,\n    userName: user.name,\n    userAvatar: user.avatar,\n    items: products.map((p) => ({ id: p.id, name: p.name, price: p.price })),\n  })\n})\n```\n\n**2. 适配不同终端**\n\n```\n移动端 BFF → 返回精简数据（小图片、少字段）\nPC 端 BFF  → 返回完整数据（高清图片、全字段）\n```\n\n**3. 鉴权与安全**\n\n```ts\n// 在 BFF 层统一处理认证，后端微服务之间用内部 Token\napp.use(authMiddleware) // 验证用户 JWT\n\nasync function callMicroservice(service: string, path: string) {\n  return fetch(`http://${service}${path}`, {\n    headers: { 'X-Internal-Token': process.env.INTERNAL_TOKEN }, // 内部服务 Token\n  })\n}\n```\n\n**4. 接口版本管理**\n\n```ts\n// BFF 屏蔽后端 API 变化，前端只依赖 BFF 接口\nrouter.get('/v1/products', handleV1Products)\nrouter.get('/v2/products', handleV2Products) // 新版本只改 BFF\n```\n\n### BFF 技术栈选择\n\n```\nNode.js（Express/Koa/Fastify）← 前端团队维护，JS 生态\nNext.js API Routes           ← 与 React 前端同仓库\nGraphQL Gateway              ← 替代多 BFF 的统一数据图\ntRPC                         ← 全栈 TypeScript，类型安全的 RPC\n```",
-    "tags": [
-      "前端架构",
-      "BFF",
-      "接口层"
-    ],
+    "tags": ["前端架构", "BFF", "接口层"],
     "source": "高频"
   },
   {
@@ -643,11 +446,7 @@
     "difficulty": 3,
     "question": "什么是性能预算（Performance Budget）？如何在 CI 中强制执行性能预算？",
     "answer": "## 性能预算与 CI 集成\n\n### 什么是性能预算\n\n性能预算是对前端性能指标设定的硬性约束，超出即构建失败或告警。\n\n**常见预算指标：**\n\n```\nBundle 大小：\n  - 总 JS < 300KB (gzip)\n  - 首屏 JS < 100KB (gzip)\n  - 第三方 JS < 150KB\n\nCore Web Vitals：\n  - LCP < 2.5s\n  - INP < 200ms\n  - CLS < 0.1\n\nLighthouse 分数：\n  - Performance > 90\n  - Accessibility > 95\n```\n\n### Bundlesize 检查（构建产物）\n\n```json\n// package.json\n{\n  \"bundlesize\": [\n    { \"path\": \"./dist/assets/index-*.js\", \"maxSize\": \"100 kB\" },\n    { \"path\": \"./dist/assets/vendor-*.js\", \"maxSize\": \"200 kB\" },\n    { \"path\": \"./dist/assets/index-*.css\", \"maxSize\": \"30 kB\" }\n  ]\n}\n```\n\n```yaml\n# .github/workflows/ci.yml\n- name: Check bundle size\n  run: npx bundlesize\n  # 超出预算时返回非 0 退出码，CI 失败\n```\n\n### Lighthouse CI\n\n```yaml\n# lighthouserc.js\nmodule.exports = {\n  ci: {\n    collect: {\n      url: ['http://localhost:4173/'],\n      numberOfRuns: 3,\n    },\n    assert: {\n      assertions: {\n        'categories:performance': ['error', { minScore: 0.9 }],\n        'categories:accessibility': ['warn', { minScore: 0.95 }],\n        'first-contentful-paint': ['error', { maxNumericValue: 1800 }],\n        'largest-contentful-paint': ['error', { maxNumericValue: 2500 }],\n        'cumulative-layout-shift': ['error', { maxNumericValue: 0.1 }],\n        'total-blocking-time': ['warn', { maxNumericValue: 300 }],\n      },\n    },\n    upload: {\n      target: 'temporary-public-storage', // 上传报告，PR 中可查看\n    },\n  },\n};\n```\n\n```yaml\n# CI 流程\n- name: Build\n  run: pnpm build\n- name: Serve\n  run: pnpm preview &\n- name: Lighthouse CI\n  run: npx lhci autorun\n  env:\n    LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}\n```\n\n### 性能回归监控\n\n```ts\n// 在 PR 中自动评论性能变化\n// .github/workflows/bundle-diff.yml\n\n// 对比基线（main 分支）与 PR 分支的 bundle size\nconst baseline = await getBundleSize('main')\nconst current = await getBundleSize(prBranch)\n\nconst diff = current - baseline\nconst emoji = diff > 0 ? '📈' : '📉'\nconst status = diff > 10 * 1024 ? '❌ 超出预算' : '✅'\n\nawait github.issues.createComment({\n  body: `## Bundle Size ${emoji}\\n\\n${status}\\n- 基线: ${formatSize(baseline)}\\n- 当前: ${formatSize(current)}\\n- 变化: ${formatDiff(diff)}`,\n})\n```\n\n### 实际项目实践\n\n1. **制定合理预算**：参考竞品和用户网络状况\n2. **循序渐进**：先从当前值开始，逐步收紧\n3. **区分 alert 和 error**：重要指标超出立即失败，次要指标告警\n4. **定期审查**：随着项目发展调整预算\n5. **团队共识**：让所有开发者都了解并认同预算值",
-    "tags": [
-      "前端架构",
-      "性能预算",
-      "工程化"
-    ],
+    "tags": ["前端架构", "性能预算", "工程化"],
     "source": "高频"
   }
 ]
