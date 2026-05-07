@@ -1960,7 +1960,8 @@ interface AIDrawerProps {
   question: NonNullable<ReturnType<typeof useQuestion>['question']>
   answerVisible: boolean
   onOpenSettings: () => void
-  initialPrompt?: { id: string; text: string } | null
+  initialPrompt?: { id: string; questionId: string; text: string } | null
+  onInitialPromptConsumed?: (id: string) => void
 }
 
 function AIDrawer({
@@ -1970,6 +1971,7 @@ function AIDrawer({
   answerVisible,
   onOpenSettings,
   initialPrompt = null,
+  onInitialPromptConsumed,
 }: AIDrawerProps) {
   const { config } = useAIStore()
 
@@ -2174,6 +2176,7 @@ function AIDrawer({
             onOpenSettings={onOpenSettings}
             headless
             initialPrompt={initialPrompt}
+            onInitialPromptConsumed={onInitialPromptConsumed}
           />
         </div>
       </div>
@@ -2199,7 +2202,11 @@ export default function QuestionDetail() {
   const [justMarked, setJustMarked] = useState<StudyStatus | null>(null)
   const [lastPressedKey, setLastPressedKey] = useState<'1' | '2' | '3' | null>(null)
   const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
-  const [aiInitialPrompt, setAiInitialPrompt] = useState<{ id: string; text: string } | null>(null)
+  const [aiInitialPrompt, setAiInitialPrompt] = useState<{
+    id: string
+    questionId: string
+    text: string
+  } | null>(null)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
   const [starred, setStarred] = useState(false)
@@ -2231,12 +2238,17 @@ export default function QuestionDetail() {
 
       setAiInitialPrompt({
         id: `${preset}-${question.id}-${Date.now()}`,
+        questionId: question.id,
         text,
       })
       setAiDrawerOpen(true)
     },
     [question],
   )
+
+  const handleAIInitialPromptConsumed = useCallback((promptId: string) => {
+    setAiInitialPrompt((current) => (current?.id === promptId ? null : current))
+  }, [])
 
   useEffect(() => {
     setStoredSessionIds(readPracticeSession(sessionKey))
@@ -2354,6 +2366,7 @@ export default function QuestionDetail() {
     setAnswerVisible(shouldAutoRevealAnswer)
     setJustMarked(null)
     setLastPressedKey(null)
+    setAiInitialPrompt(null)
     setSessionFinished(false)
     setNoteDrawerOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -2482,6 +2495,7 @@ export default function QuestionDetail() {
     setAnswerVisible(shouldAutoRevealAnswer)
     setJustMarked(null)
     setLastPressedKey(null)
+    setAiInitialPrompt(null)
     setSessionFinished(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     navigate(createPracticeSessionPath(sessionStats.retryIds[0], sessionStats.retryIds))
@@ -3402,6 +3416,7 @@ export default function QuestionDetail() {
         question={question}
         answerVisible={answerVisible}
         initialPrompt={aiInitialPrompt}
+        onInitialPromptConsumed={handleAIInitialPromptConsumed}
         onOpenSettings={() => {
           setAiDrawerOpen(false)
           setSettingsOpen(true)

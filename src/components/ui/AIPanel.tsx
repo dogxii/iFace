@@ -699,7 +699,8 @@ interface AIPanelProps {
   onOpenSettings: () => void
   /** When true, the internal PanelHeader is hidden (the parent drawer provides its own) */
   headless?: boolean
-  initialPrompt?: { id: string; text: string } | null
+  initialPrompt?: { id: string; questionId: string; text: string } | null
+  onInitialPromptConsumed?: (id: string) => void
 }
 
 export function AIPanel({
@@ -708,6 +709,7 @@ export function AIPanel({
   onOpenSettings,
   headless = false,
   initialPrompt = null,
+  onInitialPromptConsumed,
 }: AIPanelProps) {
   const {
     config,
@@ -914,12 +916,14 @@ export function AIPanel({
 
   useEffect(() => {
     if (!initialPrompt || lastInitialPromptIdRef.current === initialPrompt.id) return
+    if (initialPrompt.questionId !== questionId) return
 
-    lastInitialPromptIdRef.current = initialPrompt.id
     if (!isReady || isStreaming) return
 
+    lastInitialPromptIdRef.current = initialPrompt.id
     void handleSend(initialPrompt.text)
-  }, [handleSend, initialPrompt, isReady, isStreaming])
+    onInitialPromptConsumed?.(initialPrompt.id)
+  }, [handleSend, initialPrompt, isReady, isStreaming, onInitialPromptConsumed, questionId])
 
   // ── Render: not configured ──
   if (!isReady) {
