@@ -13,7 +13,13 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'icons/*.png'],
+      includeAssets: [
+        'favicon.ico',
+        'favicon-16x16.png',
+        'favicon-32x32.png',
+        'apple-touch-icon.png',
+        'icons/*.png',
+      ],
       manifest: {
         name: 'iFace · 前端面试刷题助手',
         short_name: 'iFace',

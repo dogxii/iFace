@@ -65,6 +65,24 @@ if (existsSync(join(distDir, 'index.html'))) {
   if (!indexHtml.includes('rel="manifest"') || !indexHtml.includes('/manifest.webmanifest')) {
     addFailure(join(distDir, 'index.html'), 'HTML 缺少 manifest 引用')
   }
+  if (!indexHtml.includes('/favicon.ico')) {
+    addFailure(join(distDir, 'index.html'), 'HTML 缺少 favicon.ico 引用')
+  }
+  if (!indexHtml.includes('/favicon-32x32.png')) {
+    addFailure(join(distDir, 'index.html'), 'HTML 缺少 32x32 PNG favicon 引用')
+  }
+  if (
+    !indexHtml.includes('rel="apple-touch-icon"') ||
+    !indexHtml.includes('/apple-touch-icon.png')
+  ) {
+    addFailure(join(distDir, 'index.html'), 'HTML 缺少 Apple touch icon 引用')
+  }
+  if (indexHtml.includes('data:image/svg+xml')) {
+    addFailure(
+      join(distDir, 'index.html'),
+      'HTML favicon 不应使用 data URL，桌面保存时可能无法复用',
+    )
+  }
   if (!indexHtml.includes('id="root"')) {
     addFailure(join(distDir, 'index.html'), 'HTML 缺少 React root 节点')
   }
@@ -173,8 +191,21 @@ if (existsSync(join(distDir, 'manifest.webmanifest'))) {
   }
 }
 
-for (const icon of ['icon-180x180.png', 'icon-192x192.png', 'icon-512x512.png']) {
-  expectFile(join(distDir, 'icons', icon), 1024)
+expectFile(join(distDir, 'favicon.ico'), 512)
+expectFile(join(distDir, 'favicon-16x16.png'), 256)
+expectFile(join(distDir, 'favicon-32x32.png'), 1024)
+expectFile(join(distDir, 'apple-touch-icon.png'), 1024)
+
+const requiredIconFiles = [
+  { file: 'icon-16x16.png', minBytes: 256 },
+  { file: 'icon-32x32.png', minBytes: 1024 },
+  { file: 'icon-180x180.png', minBytes: 1024 },
+  { file: 'icon-192x192.png', minBytes: 1024 },
+  { file: 'icon-512x512.png', minBytes: 1024 },
+]
+
+for (const icon of requiredIconFiles) {
+  expectFile(join(distDir, 'icons', icon.file), icon.minBytes)
 }
 
 if (failures.length > 0) {
