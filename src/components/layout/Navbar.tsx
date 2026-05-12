@@ -7,10 +7,8 @@ const navItems = [
   { path: '/', label: '概览' },
   { path: '/questions', label: '题库' },
   { path: '/practice', label: '练习' },
-  { path: '/mock-interview', label: '面试' },
   { path: '/weak', label: '薄弱点' },
-  { path: '/import', label: '导入' },
-  { path: '/prompt', label: '出题' },
+  { path: '/tools', label: '工具', activePaths: ['/mock-interview', '/import', '/prompt'] },
 ]
 
 export function Navbar() {
@@ -44,8 +42,12 @@ export function Navbar() {
     }
   }, [mobileOpen])
 
-  const isActive = (path: string) =>
-    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path)
+  const isActive = (item: (typeof navItems)[number]) => {
+    if (item.path === '/') return location.pathname === '/'
+    return [item.path, ...(item.activePaths ?? [])].some((path) =>
+      location.pathname.startsWith(path),
+    )
+  }
 
   return (
     <>
@@ -110,7 +112,7 @@ export function Navbar() {
             className="hidden-mobile"
           >
             {navItems.map((item) => {
-              const active = isActive(item.path)
+              const active = isActive(item)
               return (
                 <Link
                   key={item.path}
@@ -360,7 +362,7 @@ export function Navbar() {
         className={mobileOpen ? 'mobile-menu-open' : ''}
       >
         {navItems.map((item) => {
-          const active = isActive(item.path)
+          const active = isActive(item)
           return (
             <Link
               key={item.path}
