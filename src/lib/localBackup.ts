@@ -1,5 +1,12 @@
 import type { AIMessage, AISession } from '../store/useAIStore'
-import type { Question, QuestionFlag, QuestionNote, StudyRecord, StudyStatus } from '../types'
+import type {
+  MockInterviewSession,
+  Question,
+  QuestionFlag,
+  QuestionNote,
+  StudyRecord,
+  StudyStatus,
+} from '../types'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP } from './db'
 
 export interface ImportPreview {
@@ -11,6 +18,7 @@ export interface ImportPreview {
   questionNotes: QuestionNote[]
   questionFlags: QuestionFlag[]
   aiSessions: AISession[]
+  mockInterviews: MockInterviewSession[]
   customSources: string[]
   customCategories: CategoryMap
   impact: ImportImpact
@@ -22,6 +30,7 @@ export interface ImportImpact {
   questionNotes: ImportImpactItem
   questionFlags: ImportImpactItem
   aiSessions: ImportImpactItem
+  mockInterviews: ImportImpactItem
 }
 
 export interface ImportImpactItem {
@@ -111,9 +120,86 @@ function isAISession(value: unknown): value is AISession {
   )
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function isMockInterviewDimension(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.label === 'string' &&
+    typeof value.score === 'number' &&
+    typeof value.comment === 'string'
+  )
+}
+
+function isMockInterviewSession(value: unknown): value is MockInterviewSession {
+  if (!isRecord(value)) return false
+
+  const statusOk =
+    value.status === 'planning' || value.status === 'interviewing' || value.status === 'completed'
+  const levelOk = value.level === 'junior' || value.level === 'mid' || value.level === 'senior'
+  const typeOk =
+    value.interviewType === 'technical' ||
+    value.interviewType === 'project' ||
+    value.interviewType === 'comprehensive'
+
+  return (
+    typeof value.id === 'string' &&
+    typeof value.title === 'string' &&
+    typeof value.roleTitle === 'string' &&
+    levelOk &&
+    typeOk &&
+    typeof value.durationMinutes === 'number' &&
+    typeof value.targetQuestionCount === 'number' &&
+    typeof value.jdText === 'string' &&
+    typeof value.resumeText === 'string' &&
+    (value.resumeFileName === undefined || typeof value.resumeFileName === 'string') &&
+    statusOk &&
+    typeof value.questionIndex === 'number' &&
+    typeof value.followUpDepth === 'number' &&
+    Array.isArray(value.turns) &&
+    value.turns.every((turn) => {
+      if (!isRecord(turn)) return false
+      const roleOk = turn.role === 'interviewer' || turn.role === 'candidate'
+      const kindOk =
+        turn.kind === 'question' ||
+        turn.kind === 'follow_up' ||
+        turn.kind === 'clarification' ||
+        turn.kind === 'answer' ||
+        turn.kind === 'closing'
+      return (
+        typeof turn.id === 'string' &&
+        roleOk &&
+        kindOk &&
+        typeof turn.content === 'string' &&
+        typeof turn.createdAt === 'number'
+      )
+    }) &&
+    (value.report === undefined ||
+      (isRecord(value.report) &&
+        typeof value.report.markdown === 'string' &&
+        (typeof value.report.overallScore === 'number' || value.report.overallScore === null) &&
+        Array.isArray(value.report.dimensions) &&
+        value.report.dimensions.every(isMockInterviewDimension) &&
+        isStringArray(value.report.recommendedQuestionIds) &&
+        typeof value.report.createdAt === 'number')) &&
+    (value.startedAt === undefined || typeof value.startedAt === 'number') &&
+    (value.completedAt === undefined || typeof value.completedAt === 'number') &&
+    typeof value.createdAt === 'number' &&
+    typeof value.updatedAt === 'number'
+  )
+}
+
 function parseImportArray<T>(
   data: Record<string, unknown>,
-  key: 'questions' | 'studyRecords' | 'questionNotes' | 'questionFlags' | 'aiSessions',
+  key:
+    | 'questions'
+    | 'studyRecords'
+    | 'questionNotes'
+    | 'questionFlags'
+    | 'aiSessions'
+    | 'mockInterviews',
   guard: (value: unknown) => value is T,
   label: string,
 ): T[] {
@@ -224,6 +310,12 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
   const questionNotes = parseImportArray(parsed, 'questionNotes', isQuestionNote, '题目笔记')
   const questionFlags = parseImportArray(parsed, 'questionFlags', isQuestionFlag, '题目标记')
   const aiSessions = parseImportArray(parsed, 'aiSessions', isAISession, 'AI 会话')
+  const mockInterviews = parseImportArray(
+    parsed,
+    'mockInterviews',
+    isMockInterviewSession,
+    '模拟面试',
+  )
   const customSources = [
     ...new Set([
       ...parseStringArray(parsed, 'customSources', '自定义来源'),
@@ -240,7 +332,8 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
       studyRecords.length +
       questionNotes.length +
       questionFlags.length +
-      aiSessions.length ===
+      aiSessions.length +
+      mockInterviews.length ===
     0
   ) {
     throw new Error('备份中没有可导入的数据')
@@ -255,6 +348,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
     questionNotes,
     questionFlags,
     aiSessions,
+    mockInterviews,
     customSources,
     customCategories,
     impact: {
@@ -263,6 +357,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
       questionNotes: { created: 0, overwritten: 0 },
       questionFlags: { created: 0, overwritten: 0 },
       aiSessions: { created: 0, overwritten: 0 },
+      mockInterviews: { created: 0, overwritten: 0 },
     },
   }
 }

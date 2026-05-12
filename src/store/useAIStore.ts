@@ -43,6 +43,7 @@ export interface AnswerFeedbackInput {
 
 const STORAGE_KEY = 'iface_ai_config'
 const SESSIONS_KEY = 'iface_ai_sessions'
+const CONFIG_SYNC_EVENT = 'iface_ai_config_updated'
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -291,6 +292,15 @@ function saveConfig(config: AIConfig): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
   } catch {}
+}
+
+function emitConfigSync(config: AIConfig): void {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(CONFIG_SYNC_EVENT, { detail: config }))
+}
+
+function isSameConfig(a: AIConfig, b: AIConfig): boolean {
+  return JSON.stringify(a) === JSON.stringify(b)
 }
 
 function loadSessions(): Record<string, AISession> {
@@ -574,10 +584,31 @@ export function useAIStore() {
   const stateRef = useRef(state)
   stateRef.current = state
 
-  // Persist config on change
   useEffect(() => {
-    saveConfig(state.config)
-  }, [state.config])
+    if (typeof window === 'undefined') return undefined
+
+    const syncConfig = (config: AIConfig) => {
+      if (isSameConfig(stateRef.current.config, config)) return
+      dispatch({ type: 'SET_CONFIG', config })
+    }
+
+    const handleCustomSync = (event: Event) => {
+      const next = event instanceof CustomEvent ? normalizeConfig(event.detail) : loadConfig()
+      syncConfig(next)
+    }
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY) return
+      syncConfig(loadConfig())
+    }
+
+    window.addEventListener(CONFIG_SYNC_EVENT, handleCustomSync)
+    window.addEventListener('storage', handleStorage)
+    return () => {
+      window.removeEventListener(CONFIG_SYNC_EVENT, handleCustomSync)
+      window.removeEventListener('storage', handleStorage)
+    }
+  }, [])
 
   // Persist sessions on change
   useEffect(() => {
@@ -587,11 +618,16 @@ export function useAIStore() {
   // ─── Config Actions ───────────────────────────────────────────────────────
 
   const updateConfig = useCallback((patch: Partial<AIConfig>) => {
-    dispatch({ type: 'SET_CONFIG', config: patch })
+    const next = normalizeConfig({ ...stateRef.current.config, ...patch })
+    saveConfig(next)
+    dispatch({ type: 'SET_CONFIG', config: next })
+    emitConfigSync(next)
   }, [])
 
   const resetConfig = useCallback(() => {
+    saveConfig(DEFAULT_AI_CONFIG)
     dispatch({ type: 'RESET_CONFIG' })
+    emitConfigSync(DEFAULT_AI_CONFIG)
   }, [])
 
   // ─── Session Actions ──────────────────────────────────────────────────────

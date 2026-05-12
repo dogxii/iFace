@@ -106,6 +106,80 @@ export interface PracticeSession {
   currentIndex: number
 }
 
+export type MockInterviewLevel = 'junior' | 'mid' | 'senior'
+
+export type MockInterviewType = 'technical' | 'project' | 'comprehensive'
+
+export type MockInterviewStatus = 'planning' | 'interviewing' | 'completed'
+
+export type MockInterviewTurnRole = 'interviewer' | 'candidate'
+
+export type MockInterviewTurnKind =
+  | 'question'
+  | 'follow_up'
+  | 'clarification'
+  | 'answer'
+  | 'closing'
+
+export interface MockInterviewPlanSection {
+  title: string
+  weight: number
+  intent: string
+}
+
+export interface MockInterviewPlan {
+  summary: string
+  focusAreas: string[]
+  sections: MockInterviewPlanSection[]
+  openingQuestion: string
+}
+
+export interface MockInterviewTurn {
+  id: string
+  role: MockInterviewTurnRole
+  kind: MockInterviewTurnKind
+  content: string
+  createdAt: number
+}
+
+export interface MockInterviewDimensionScore {
+  label: string
+  score: number
+  comment: string
+}
+
+export interface MockInterviewReport {
+  markdown: string
+  overallScore: number | null
+  dimensions: MockInterviewDimensionScore[]
+  recommendedQuestionIds: string[]
+  createdAt: number
+}
+
+export interface MockInterviewSession {
+  id: string
+  title: string
+  roleTitle: string
+  level: MockInterviewLevel
+  interviewType: MockInterviewType
+  durationMinutes: number
+  targetQuestionCount: number
+  jdText: string
+  resumeText: string
+  resumeFileName?: string
+  plan?: MockInterviewPlan
+  turns: MockInterviewTurn[]
+  status: MockInterviewStatus
+  questionIndex: number
+  followUpDepth: number
+  model?: string
+  report?: MockInterviewReport
+  startedAt?: number
+  completedAt?: number
+  createdAt: number
+  updatedAt: number
+}
+
 // Static built-in list (for sidebar defaults when no custom modules are imported)
 export const MODULE_LIST: Module[] = [...BUILTIN_MODULES]
 

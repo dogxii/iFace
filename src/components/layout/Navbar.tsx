@@ -7,6 +7,7 @@ const navItems = [
   { path: '/', label: '概览' },
   { path: '/questions', label: '题库' },
   { path: '/practice', label: '练习' },
+  { path: '/mock-interview', label: '面试' },
   { path: '/weak', label: '薄弱点' },
   { path: '/import', label: '导入' },
   { path: '/prompt', label: '出题' },

@@ -1,14 +1,21 @@
 import { type IDBPDatabase, openDB } from 'idb'
-import type { Question, QuestionFlag, QuestionNote, StudyRecord } from '../types'
+import type {
+  MockInterviewSession,
+  Question,
+  QuestionFlag,
+  QuestionNote,
+  StudyRecord,
+} from '../types'
 
 const DB_NAME = 'iface_db'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 export const STORES = {
   QUESTIONS: 'questions',
   STUDY_RECORDS: 'study_records',
   QUESTION_NOTES: 'question_notes',
   QUESTION_FLAGS: 'question_flags',
+  MOCK_INTERVIEWS: 'mock_interviews',
   META: 'meta',
 } as const
 
@@ -75,6 +82,15 @@ function getDB(): Promise<IDBPDatabase> {
           })
           flags.createIndex('starred', 'starred', { unique: false })
           flags.createIndex('updatedAt', 'updatedAt', { unique: false })
+        }
+
+        if (!db.objectStoreNames.contains(STORES.MOCK_INTERVIEWS)) {
+          const mockInterviews = db.createObjectStore(STORES.MOCK_INTERVIEWS, {
+            keyPath: 'id',
+          })
+          mockInterviews.createIndex('status', 'status', { unique: false })
+          mockInterviews.createIndex('createdAt', 'createdAt', { unique: false })
+          mockInterviews.createIndex('updatedAt', 'updatedAt', { unique: false })
         }
 
         // Meta store (for tracking loaded modules, version, etc.)
@@ -288,6 +304,43 @@ export async function getStarredQuestionIds(): Promise<string[]> {
   return flags.filter((flag) => flag.starred).map((flag) => flag.questionId)
 }
 
+// ─── Mock Interviews ─────────────────────────────────────────────────────────
+
+export async function getAllMockInterviews(): Promise<MockInterviewSession[]> {
+  const db = await getDB()
+  const sessions = await db.getAll(STORES.MOCK_INTERVIEWS)
+  return sessions.sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+export async function getMockInterviewById(id: string): Promise<MockInterviewSession | undefined> {
+  const db = await getDB()
+  return db.get(STORES.MOCK_INTERVIEWS, id)
+}
+
+export async function putMockInterview(session: MockInterviewSession): Promise<void> {
+  const db = await getDB()
+  await db.put(STORES.MOCK_INTERVIEWS, {
+    ...session,
+    updatedAt: Date.now(),
+  })
+}
+
+export async function bulkPutMockInterviews(sessions: MockInterviewSession[]): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(STORES.MOCK_INTERVIEWS, 'readwrite')
+  await Promise.all([...sessions.map((session) => tx.store.put(session)), tx.done])
+}
+
+export async function deleteMockInterview(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete(STORES.MOCK_INTERVIEWS, id)
+}
+
+export async function clearAllMockInterviews(): Promise<void> {
+  const db = await getDB()
+  await db.clear(STORES.MOCK_INTERVIEWS)
+}
+
 // ─── Meta ─────────────────────────────────────────────────────────────────────
 
 export async function getMeta<T>(key: string): Promise<T | undefined> {
@@ -481,36 +534,46 @@ export async function removeCustomSource(source: string): Promise<void> {
 // ─── Export all data (for backup) ────────────────────────────────────────────
 
 export async function exportAllData(): Promise<{
-  formatVersion: 3
+  formatVersion: 4
   exportedAt: string
   questions: Question[]
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
   questionFlags: QuestionFlag[]
+  mockInterviews: MockInterviewSession[]
   customSources: string[]
   customCategories: CategoryMap
 }> {
-  const [questions, studyRecords, questionNotes, questionFlags, customSources, categoryMap] =
-    await Promise.all([
-      getAllQuestions(),
-      getAllStudyRecords(),
-      getAllQuestionNotes(),
-      getAllQuestionFlags(),
-      getCustomSources(),
-      getCategoryMap(),
-    ])
+  const [
+    questions,
+    studyRecords,
+    questionNotes,
+    questionFlags,
+    mockInterviews,
+    customSources,
+    categoryMap,
+  ] = await Promise.all([
+    getAllQuestions(),
+    getAllStudyRecords(),
+    getAllQuestionNotes(),
+    getAllQuestionFlags(),
+    getAllMockInterviews(),
+    getCustomSources(),
+    getCategoryMap(),
+  ])
   const customCategories: CategoryMap = {}
   for (const [key, entry] of Object.entries(categoryMap)) {
     if (!entry.builtin) customCategories[key] = entry
   }
 
   return {
-    formatVersion: 3,
+    formatVersion: 4,
     exportedAt: new Date().toISOString(),
     questions,
     studyRecords,
     questionNotes,
     questionFlags,
+    mockInterviews,
     customSources,
     customCategories,
   }
@@ -525,6 +588,7 @@ export async function resetDatabase(): Promise<void> {
     db.clear(STORES.STUDY_RECORDS),
     db.clear(STORES.QUESTION_NOTES),
     db.clear(STORES.QUESTION_FLAGS),
+    db.clear(STORES.MOCK_INTERVIEWS),
     db.clear(STORES.META),
   ])
   dbPromise = null

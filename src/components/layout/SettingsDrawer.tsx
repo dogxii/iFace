@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { invalidateQuestionsCache } from '@/hooks/useQuestions'
 import {
+  bulkPutMockInterviews,
   bulkPutQuestionFlags,
   bulkPutQuestionNotes,
   bulkPutQuestions,
@@ -8,6 +9,7 @@ import {
   type CategoryMap,
   DEFAULT_CATEGORY_MAP,
   exportAllData,
+  getAllMockInterviews,
   getAllQuestionFlags,
   getAllQuestionNotes,
   getAllQuestions,
@@ -460,11 +462,12 @@ async function withImportImpact(
   preview: ImportPreview,
   existingAISessions: Record<string, AISession>,
 ): Promise<ImportPreview> {
-  const [questions, records, notes, flags] = await Promise.all([
+  const [questions, records, notes, flags, mockInterviews] = await Promise.all([
     getAllQuestions(),
     getAllStudyRecords(),
     getAllQuestionNotes(),
     getAllQuestionFlags(),
+    getAllMockInterviews(),
   ])
 
   return {
@@ -494,6 +497,11 @@ async function withImportImpact(
         preview.aiSessions,
         new Set(Object.keys(existingAISessions)),
         (session) => session.questionId,
+      ),
+      mockInterviews: countImportImpact(
+        preview.mockInterviews,
+        new Set(mockInterviews.map((session) => session.id)),
+        (session) => session.id,
       ),
     },
   }
@@ -572,6 +580,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     notes: number
     starred: number
     aiSessions: number
+    mockInterviews: number
   } | null>(null)
   const [importing, setImporting] = useState(false)
   const [importPreview, setImportPreview] = useState<ImportPreview | null>(null)
@@ -616,13 +625,15 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         getAllStudyRecords(),
         getAllQuestionNotes(),
         getAllQuestionFlags(),
-      ]).then(([questions, records, notes, flags]) => {
+        getAllMockInterviews(),
+      ]).then(([questions, records, notes, flags, mockInterviews]) => {
         setDataStats({
           questions: questions.length,
           records: records.length,
           notes: notes.length,
           starred: flags.filter((flag) => flag.starred).length,
           aiSessions: Object.keys(sessions).length,
+          mockInterviews: mockInterviews.length,
         })
       })
     }
@@ -818,7 +829,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       showToast(
-        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记、${data.questionFlags.filter((flag) => flag.starred).length} 个重点题、${aiSessions.length} 个 AI 会话`,
+        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记、${data.questionFlags.filter((flag) => flag.starred).length} 个重点题、${aiSessions.length} 个 AI 会话、${data.mockInterviews.length} 场模拟面试`,
       )
     } catch {
       showToast('导出失败，请重试', 'error')
@@ -858,6 +869,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       const flagCount = importPreview.questionFlags.length
       const starredCount = importPreview.questionFlags.filter((flag) => flag.starred).length
       const aiCount = importPreview.aiSessions.length
+      const mockInterviewCount = importPreview.mockInterviews.length
       const sourceCount = importPreview.customSources.length
       const categoryCount = Object.keys(importPreview.customCategories).length
 
@@ -894,16 +906,21 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         upsertSessions(importPreview.aiSessions)
       }
 
+      if (mockInterviewCount > 0) {
+        await bulkPutMockInterviews(importPreview.mockInterviews)
+      }
+
       showToast(
-        `导入成功：${qCount} 题、${rCount} 条记录、${nCount} 条笔记、${starredCount} 个重点题、${aiCount} 个 AI 会话、${sourceCount} 个来源、${categoryCount} 个分类`,
+        `导入成功：${qCount} 题、${rCount} 条记录、${nCount} 条笔记、${starredCount} 个重点题、${aiCount} 个 AI 会话、${mockInterviewCount} 场模拟面试、${sourceCount} 个来源、${categoryCount} 个分类`,
       )
       setImportPreview(null)
 
-      const [questions, records, notes, flags] = await Promise.all([
+      const [questions, records, notes, flags, mockInterviews] = await Promise.all([
         getAllQuestions(),
         getAllStudyRecords(),
         getAllQuestionNotes(),
         getAllQuestionFlags(),
+        getAllMockInterviews(),
       ])
       setDataStats({
         questions: questions.length,
@@ -911,6 +928,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         notes: notes.length,
         starred: flags.filter((flag) => flag.starred).length,
         aiSessions: countMergedAISessions(sessions, importPreview.aiSessions),
+        mockInterviews: mockInterviews.length,
       })
     } catch (err) {
       const msg = err instanceof Error ? err.message : '导入失败，请重试'
@@ -931,7 +949,14 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         await resetDatabase()
         await resetAll()
         clearAllSessions()
-        setDataStats({ questions: 0, records: 0, notes: 0, starred: 0, aiSessions: 0 })
+        setDataStats({
+          questions: 0,
+          records: 0,
+          notes: 0,
+          starred: 0,
+          aiSessions: 0,
+          mockInterviews: 0,
+        })
         showToast('所有数据已重置')
       }
     } catch {
@@ -2589,6 +2614,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     { label: '题目笔记', value: dataStats.notes, color: 'var(--warning)' },
                     { label: '重点题', value: dataStats.starred, color: '#f59e0b' },
                     { label: 'AI 会话', value: dataStats.aiSessions, color: 'var(--text-2)' },
+                    { label: '模拟面试', value: dataStats.mockInterviews, color: 'var(--primary)' },
                   ].map((stat) => (
                     <div
                       key={stat.label}
@@ -2638,7 +2664,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     lineHeight: 1.5,
                   }}
                 >
-                  将题目库、学习记录、题目笔记、重点题和 AI 对话导出为 JSON 文件；不会导出 API Key。
+                  将题目库、学习记录、题目笔记、重点题、AI 对话和模拟面试导出为 JSON 文件；不会导出
+                  API Key。模拟面试可能包含简历和 JD 文本，请妥善保管。
                 </p>
                 <button
                   type="button"
@@ -2698,7 +2725,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     lineHeight: 1.5,
                   }}
                 >
-                  从备份文件恢复数据。已存在的题目、记录、笔记、重点标记和 AI 会话将被覆盖更新。
+                  从备份文件恢复数据。已存在的题目、记录、笔记、重点标记、AI
+                  会话和模拟面试将被覆盖更新。
                 </p>
                 <input
                   ref={importRef}
@@ -2821,6 +2849,11 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                           value: importPreview.aiSessions.length,
                           impact: importPreview.impact.aiSessions,
                         },
+                        {
+                          label: '面试',
+                          value: importPreview.mockInterviews.length,
+                          impact: importPreview.impact.mockInterviews,
+                        },
                       ].map((item) => (
                         <div
                           key={item.label}
@@ -2854,8 +2887,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     </div>
 
                     <p style={{ fontSize: 11, color: 'var(--text-2)', lineHeight: 1.5 }}>
-                      确认后才会写入本地数据；标记为覆盖的同 ID 题目、学习记录、笔记、重点标记和 AI
-                      会话会被备份内容替换。
+                      确认后才会写入本地数据；标记为覆盖的同 ID 题目、学习记录、笔记、重点标记、AI
+                      会话和模拟面试会被备份内容替换。
                       {importPreview.customSources.length > 0 ||
                       Object.keys(importPreview.customCategories).length > 0
                         ? ` 还会恢复 ${importPreview.customSources.length} 个自定义来源和 ${Object.keys(importPreview.customCategories).length} 个自定义分类。`

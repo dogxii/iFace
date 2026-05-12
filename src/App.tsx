@@ -8,6 +8,7 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'))
 const QuestionList = lazy(() => import('@/pages/QuestionList'))
 const QuestionDetail = lazy(() => import('@/pages/QuestionDetail'))
 const Practice = lazy(() => import('@/pages/Practice'))
+const MockInterview = lazy(() => import('@/pages/MockInterview'))
 const WeakPoints = lazy(() => import('@/pages/WeakPoints'))
 const ImportPage = lazy(() => import('@/pages/ImportPage'))
 const PromptPage = lazy(() => import('@/pages/PromptPage'))
@@ -59,6 +60,7 @@ export default function App() {
               <Route path="/questions" element={<QuestionList />} />
               <Route path="/questions/:id" element={<QuestionDetail />} />
               <Route path="/practice" element={<Practice />} />
+              <Route path="/mock-interview" element={<MockInterview />} />
               <Route path="/weak" element={<WeakPoints />} />
               <Route path="/import" element={<ImportPage />} />
               <Route path="/prompt" element={<PromptPage />} />
