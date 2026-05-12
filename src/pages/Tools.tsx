@@ -4,7 +4,7 @@ interface ToolCard {
   title: string
   description: string
   href: string
-  icon: 'interview' | 'prompt' | 'import'
+  icon: 'interview' | 'match' | 'prompt' | 'import'
 }
 
 const toolCards: ToolCard[] = [
@@ -13,6 +13,12 @@ const toolCards: ToolCard[] = [
     description: '基于岗位 JD 和简历进行中文一问一答，结束后查看评分与改进建议。',
     href: '/mock-interview',
     icon: 'interview',
+  },
+  {
+    title: '简历 JD 诊断',
+    description: '对照目标岗位，找出简历里的匹配点、风险点和可能追问。',
+    href: '/tools/jd-match',
+    icon: 'match',
   },
   {
     title: 'AI 出题',
@@ -49,6 +55,19 @@ function ToolIcon({ type }: { type: ToolCard['icon'] }) {
     )
   }
 
+  if (type === 'match') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M8 6h8" />
+        <path d="M8 10h5" />
+        <path d="M8 14h4" />
+        <path d="m15 15 2 2 4-4" />
+        <path d="M6 21h8" />
+        <path d="M18 10V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2" />
+      </svg>
+    )
+  }
+
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 3v11" />
@@ -81,7 +100,7 @@ export default function Tools() {
       <section className="tools-section">
         <div className="tools-section-header">
           <h2>可用工具</h2>
-          <span>3 个</span>
+          <span>{toolCards.length} 个</span>
         </div>
         <div className="tools-list">
           {toolCards.map((tool) => (
@@ -128,7 +147,7 @@ export default function Tools() {
 
         .tools-list {
           display: grid;
-          grid-template-columns: repeat(3, minmax(0, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
           gap: 14px;
         }
 

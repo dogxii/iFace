@@ -11,6 +11,7 @@ const Practice = lazy(() => import('@/pages/Practice'))
 const MockInterview = lazy(() => import('@/pages/MockInterview'))
 const WeakPoints = lazy(() => import('@/pages/WeakPoints'))
 const Tools = lazy(() => import('@/pages/Tools'))
+const JdMatch = lazy(() => import('@/pages/JdMatch'))
 const ImportPage = lazy(() => import('@/pages/ImportPage'))
 const PromptPage = lazy(() => import('@/pages/PromptPage'))
 
@@ -64,6 +65,7 @@ export default function App() {
               <Route path="/mock-interview" element={<MockInterview />} />
               <Route path="/weak" element={<WeakPoints />} />
               <Route path="/tools" element={<Tools />} />
+              <Route path="/tools/jd-match" element={<JdMatch />} />
               <Route path="/import" element={<ImportPage />} />
               <Route path="/prompt" element={<PromptPage />} />
             </Routes>
