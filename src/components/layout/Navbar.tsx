@@ -8,7 +8,8 @@ const navItems = [
   { path: '/questions', label: '题库' },
   { path: '/practice', label: '练习' },
   { path: '/weak', label: '薄弱点' },
-  { path: '/tools', label: '工具', activePaths: ['/mock-interview', '/import', '/prompt'] },
+  { path: '/import', label: '导入' },
+  { path: '/tools', label: '工具', activePaths: ['/mock-interview', '/prompt'] },
 ]
 
 export function Navbar() {

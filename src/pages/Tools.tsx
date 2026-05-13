@@ -4,33 +4,37 @@ interface ToolCard {
   title: string
   description: string
   href: string
-  icon: 'interview' | 'match' | 'prompt' | 'import'
+  icon: 'interview' | 'match' | 'prompt'
 }
 
-const toolCards: ToolCard[] = [
+const toolSections: { title: string; tools: ToolCard[] }[] = [
   {
-    title: '模拟面试',
-    description: '基于岗位 JD 和简历进行中文一问一答，结束后查看评分与改进建议。',
-    href: '/mock-interview',
-    icon: 'interview',
-  },
-  {
-    title: '简历 JD 诊断',
-    description: '对照目标岗位，找出简历里的匹配点、风险点和可能追问。',
-    href: '/tools/jd-match',
-    icon: 'match',
+    title: '面试辅助',
+    tools: [
+      {
+        title: '模拟面试',
+        description: '基于岗位 JD 和简历进行中文一问一答，结束后查看评分与改进建议。',
+        href: '/mock-interview',
+        icon: 'interview',
+      },
+      {
+        title: '简历 JD 诊断',
+        description: '对照目标岗位，找出简历里的匹配点、风险点和可能追问。',
+        href: '/tools/jd-match',
+        icon: 'match',
+      },
+    ],
   },
   {
     title: 'AI 出题',
-    description: '复制结构化 Prompt，让 AI 批量生成符合 iFace 格式的面试题。',
-    href: '/prompt',
-    icon: 'prompt',
-  },
-  {
-    title: '题库导入',
-    description: '加载内置题库，或导入自定义 JSON 题库作为自己的训练素材。',
-    href: '/import',
-    icon: 'import',
+    tools: [
+      {
+        title: 'AI 出题',
+        description: '复制结构化 Prompt，让 AI 批量生成符合 iFace 格式的面试题。',
+        href: '/prompt',
+        icon: 'prompt',
+      },
+    ],
   },
 ]
 
@@ -55,24 +59,14 @@ function ToolIcon({ type }: { type: ToolCard['icon'] }) {
     )
   }
 
-  if (type === 'match') {
-    return (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M8 6h8" />
-        <path d="M8 10h5" />
-        <path d="M8 14h4" />
-        <path d="m15 15 2 2 4-4" />
-        <path d="M6 21h8" />
-        <path d="M18 10V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2" />
-      </svg>
-    )
-  }
-
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 3v11" />
-      <path d="m8 7 4-4 4 4" />
-      <path d="M5 13v5a3 3 0 0 0 3 3h8a3 3 0 0 0 3-3v-5" />
+      <path d="M8 6h8" />
+      <path d="M8 10h5" />
+      <path d="M8 14h4" />
+      <path d="m15 15 2 2 4-4" />
+      <path d="M6 21h8" />
+      <path d="M18 10V5a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2" />
     </svg>
   )
 }
@@ -97,32 +91,38 @@ export default function Tools() {
         </p>
       </div>
 
-      <section className="tools-section">
-        <div className="tools-section-header">
-          <h2>可用工具</h2>
-          <span>{toolCards.length} 个</span>
-        </div>
-        <div className="tools-list">
-          {toolCards.map((tool) => (
-            <Link key={tool.href} to={tool.href} className="tool-card">
-              <span className="tool-icon">
-                <ToolIcon type={tool.icon} />
-              </span>
-              <span className="tool-content">
-                <strong>{tool.title}</strong>
-                <span>{tool.description}</span>
-              </span>
-              <span className="tool-arrow" aria-hidden="true">
-                →
-              </span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {toolSections.map((section) => (
+        <section key={section.title} className="tools-section">
+          <div className="tools-section-header">
+            <h2>{section.title}</h2>
+            <span>{section.tools.length} 个</span>
+          </div>
+          <div className="tools-list">
+            {section.tools.map((tool) => (
+              <Link key={tool.href} to={tool.href} className="tool-card">
+                <span className="tool-icon">
+                  <ToolIcon type={tool.icon} />
+                </span>
+                <span className="tool-content">
+                  <strong>{tool.title}</strong>
+                  <span>{tool.description}</span>
+                </span>
+                <span className="tool-arrow" aria-hidden="true">
+                  →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ))}
 
       <style>{`
         .tools-page {
           max-width: 1100px;
+        }
+
+        .tools-section + .tools-section {
+          margin-top: 24px;
         }
 
         .tools-section-header {

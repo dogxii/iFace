@@ -296,6 +296,14 @@ function SessionPreview({
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {[
           {
+            label: '难度',
+            value: difficulty === 'all' ? '全部难度' : DIFFICULTY_LABELS[difficulty as Difficulty],
+          },
+          {
+            label: '状态',
+            value: statusFilter === 'all' ? '全部状态' : STATUS_LABELS[statusFilter as StudyStatus],
+          },
+          {
             label: '模块',
             value:
               modules.length === 0
@@ -303,14 +311,6 @@ function SessionPreview({
                 : modules.length === 1
                   ? modules[0]
                   : `${modules.length} 个模块`,
-          },
-          {
-            label: '难度',
-            value: difficulty === 'all' ? '全部难度' : DIFFICULTY_LABELS[difficulty as Difficulty],
-          },
-          {
-            label: '状态',
-            value: statusFilter === 'all' ? '全部状态' : STATUS_LABELS[statusFilter as StudyStatus],
           },
         ].map((row, i, arr) => (
           <div
@@ -445,47 +445,6 @@ function SessionPreview({
     </div>
   )
 }
-
-// ─── Quick Preset ─────────────────────────────────────────────────────────────
-
-interface Preset {
-  label: string
-  description: string
-  modules: Module[]
-  difficulty: Difficulty | 'all'
-  statusFilter: StudyStatus | 'all'
-}
-
-const PRESETS: Preset[] = [
-  {
-    label: '快速复习',
-    description: '所有待复习题目',
-    modules: [],
-    difficulty: 'all',
-    statusFilter: 'review',
-  },
-  {
-    label: '高频考点',
-    description: 'JS + React 初中级',
-    modules: ['JS基础', 'React'],
-    difficulty: 'all',
-    statusFilter: 'all',
-  },
-  {
-    label: '进阶挑战',
-    description: '全模块高级题',
-    modules: [],
-    difficulty: 3,
-    statusFilter: 'all',
-  },
-  {
-    label: '手写专项',
-    description: '手写题全集',
-    modules: ['手写题'],
-    difficulty: 'all',
-    statusFilter: 'all',
-  },
-]
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -630,12 +589,6 @@ export default function Practice() {
     })
   }, [])
 
-  const applyPreset = useCallback((preset: Preset) => {
-    setSelectedModules(preset.modules)
-    setSelectedDifficulty(preset.difficulty)
-    setSelectedStatus(preset.statusFilter)
-  }, [])
-
   const handleStart = useCallback(() => {
     if (filteredQuestions.length === 0) return
 
@@ -743,7 +696,7 @@ export default function Practice() {
               overflow: 'hidden',
             }}
           >
-            {/* Quick Presets */}
+            {/* Difficulty Selection */}
             <div className="animate-fade-in">
               <p
                 style={{
@@ -752,73 +705,63 @@ export default function Practice() {
                   color: 'var(--text-3)',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
-                  marginBottom: 12,
+                  marginBottom: 10,
                 }}
               >
-                快速预设
+                难度
               </p>
-              <div
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                <DifficultyChip
+                  difficulty="all"
+                  selected={selectedDifficulty === 'all'}
+                  count={
+                    selectedModules.length > 0
+                      ? allQuestions.filter((q) => selectedModules.includes(q.module)).length
+                      : allQuestions.length
+                  }
+                  onClick={() => setSelectedDifficulty('all')}
+                />
+                {([1, 2, 3] as Difficulty[]).map((d) => (
+                  <DifficultyChip
+                    key={d}
+                    difficulty={d}
+                    selected={selectedDifficulty === d}
+                    count={difficultyStats[d]}
+                    onClick={() => setSelectedDifficulty(d)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="animate-fade-in stagger-1">
+              <p
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: 8,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  color: 'var(--text-3)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  marginBottom: 10,
                 }}
-                className="presets-grid"
               >
-                {PRESETS.map((preset) => (
-                  <button
-                    type="button"
-                    key={preset.label}
-                    onClick={() => applyPreset(preset)}
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                      gap: 4,
-                      padding: '12px 14px',
-                      borderRadius: 10,
-                      border: '1px solid var(--border-subtle)',
-                      background: 'var(--surface)',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s',
-                      boxShadow: 'var(--shadow-xs)',
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLElement).style.borderColor =
-                        'rgba(var(--primary-rgb), 0.4)'
-                      ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'
-                      ;(e.currentTarget as HTMLElement).style.background = 'var(--surface)'
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: 'var(--text)',
-                      }}
-                    >
-                      {preset.label}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: 'var(--text-3)',
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      {preset.description}
-                    </span>
-                  </button>
+                学习状态
+              </p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {(['all', 'unlearned', 'review', 'mastered'] as const).map((s) => (
+                  <StatusChip
+                    key={s}
+                    status={s}
+                    selected={selectedStatus === s}
+                    count={statusCounts[s]}
+                    onClick={() => setSelectedStatus(s)}
+                  />
                 ))}
               </div>
             </div>
 
             {/* Module Selection — grouped by category */}
-            <div className="animate-fade-in stagger-1">
+            <div className="animate-fade-in stagger-2">
               <div
                 style={{
                   display: 'flex',
@@ -1014,70 +957,6 @@ export default function Practice() {
                 })}
               </div>
             </div>
-
-            {/* Difficulty Selection */}
-            <div className="animate-fade-in stagger-2">
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: 'var(--text-3)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 10,
-                }}
-              >
-                难度
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                <DifficultyChip
-                  difficulty="all"
-                  selected={selectedDifficulty === 'all'}
-                  count={
-                    selectedModules.length > 0
-                      ? allQuestions.filter((q) => selectedModules.includes(q.module)).length
-                      : allQuestions.length
-                  }
-                  onClick={() => setSelectedDifficulty('all')}
-                />
-                {([1, 2, 3] as Difficulty[]).map((d) => (
-                  <DifficultyChip
-                    key={d}
-                    difficulty={d}
-                    selected={selectedDifficulty === d}
-                    count={difficultyStats[d]}
-                    onClick={() => setSelectedDifficulty(d)}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Status Filter */}
-            <div className="animate-fade-in stagger-3">
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: 'var(--text-3)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: 10,
-                }}
-              >
-                学习状态
-              </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {(['all', 'unlearned', 'review', 'mastered'] as const).map((s) => (
-                  <StatusChip
-                    key={s}
-                    status={s}
-                    selected={selectedStatus === s}
-                    count={statusCounts[s]}
-                    onClick={() => setSelectedStatus(s)}
-                  />
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* ── Right: Session Preview ── */}
@@ -1190,9 +1069,6 @@ export default function Practice() {
 						.modules-grid {
 							grid-template-columns: repeat(3, 1fr) !important;
 						}
-						.presets-grid {
-							grid-template-columns: repeat(2, 1fr) !important;
-						}
 						.practice-session-preview {
 							position: static !important;
 							align-self: auto !important;
@@ -1200,9 +1076,6 @@ export default function Practice() {
 					}
 					@media (max-width: 640px) {
 						.modules-grid {
-							grid-template-columns: repeat(2, 1fr) !important;
-						}
-						.presets-grid {
 							grid-template-columns: repeat(2, 1fr) !important;
 						}
 						.practice-session-preview {
@@ -1217,9 +1090,6 @@ export default function Practice() {
 					}
 					@media (max-width: 480px) {
 						.modules-grid {
-							grid-template-columns: repeat(2, 1fr) !important;
-						}
-						.presets-grid {
 							grid-template-columns: repeat(2, 1fr) !important;
 						}
 					}

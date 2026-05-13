@@ -120,6 +120,295 @@ function FilterPanel({
         {totalAll} 题
       </div>
 
+      {/* Difficulty */}
+      <div>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            color: 'var(--text-3)',
+            marginBottom: 6,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}
+        >
+          难度
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {([1, 2, 3] as Difficulty[]).map((d) => {
+            const active = selectedDifficulties.includes(d)
+            return (
+              <button
+                type="button"
+                key={d}
+                onClick={() => onDifficultyToggle(d)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '5px 10px',
+                  borderRadius: 8,
+                  background: active ? 'var(--surface-2)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background = active
+                    ? 'var(--surface-2)'
+                    : 'transparent'
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid',
+                    color: DIFFICULTY_STYLES[d].color,
+                    background: DIFFICULTY_STYLES[d].background,
+                    borderColor: DIFFICULTY_STYLES[d].borderColor,
+                  }}
+                >
+                  {DIFFICULTY_LABELS[d]}
+                </span>
+                {active && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: 'var(--primary)', marginLeft: 'auto' }}
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Status */}
+      <div>
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 500,
+            color: 'var(--text-3)',
+            marginBottom: 6,
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}
+        >
+          学习状态
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {(['unlearned', 'review', 'mastered'] as StudyStatus[]).map((s) => {
+            const active = selectedStatuses.includes(s)
+            return (
+              <button
+                type="button"
+                key={s}
+                onClick={() => onStatusToggle(s)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '5px 10px',
+                  borderRadius: 8,
+                  background: active ? 'var(--surface-2)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.12s',
+                }}
+                onMouseEnter={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
+                }}
+                onMouseLeave={(e) => {
+                  ;(e.currentTarget as HTMLElement).style.background = active
+                    ? 'var(--surface-2)'
+                    : 'transparent'
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    border: '1px solid',
+                    color: STATUS_STYLES[s].color,
+                    background: STATUS_STYLES[s].background,
+                    borderColor: STATUS_STYLES[s].borderColor,
+                  }}
+                >
+                  {STATUS_LABELS[s]}
+                </span>
+                {active && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: 'var(--primary)', marginLeft: 'auto' }}
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Module */}
+      <div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 6,
+          }}
+        >
+          <p
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              color: 'var(--text-3)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+            }}
+          >
+            模块
+          </p>
+          {/* Show badge when custom modules exist */}
+          {availableModules.some((m) => !(BUILTIN_MODULES as readonly string[]).includes(m)) && (
+            <span
+              style={{
+                fontSize: 10,
+                padding: '1px 5px',
+                borderRadius: 4,
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                border: '1px solid rgba(var(--primary-rgb),0.2)',
+              }}
+            >
+              含自定义
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          {availableModules.map((mod) => {
+            const active = selectedModules.includes(mod)
+            const categoryLabel = BUILTIN_MODULE_CATEGORY[mod] ?? null
+            const isCustom = !(BUILTIN_MODULES as readonly string[]).includes(mod)
+            return (
+              <button
+                type="button"
+                key={mod}
+                onClick={() => onModuleToggle(mod)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: active ? 500 : 400,
+                  color: active ? 'var(--primary)' : 'var(--text-2)',
+                  background: active ? 'var(--primary-light)' : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.12s, color 0.12s',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    ;(e.currentTarget as HTMLElement).style.background = 'transparent'
+                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text-2)'
+                  }
+                }}
+              >
+                <span
+                  style={{
+                    flex: 1,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {mod}
+                </span>
+                {categoryLabel && (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      padding: '1px 4px',
+                      borderRadius: 3,
+                      background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface-3)',
+                      color: active ? 'rgba(255,255,255,0.8)' : 'var(--text-3)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {categoryLabel}
+                  </span>
+                )}
+                {isCustom && (
+                  <span
+                    style={{
+                      fontSize: 9,
+                      padding: '1px 4px',
+                      borderRadius: 3,
+                      background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface-3)',
+                      color: active ? 'rgba(255,255,255,0.8)' : 'var(--text-3)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    自定义
+                  </span>
+                )}
+                {active && (
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ flexShrink: 0 }}
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {/* Review */}
       <div>
         <p
@@ -299,295 +588,6 @@ function FilterPanel({
             )}
           </span>
         </button>
-      </div>
-
-      {/* Module */}
-      <div>
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 6,
-          }}
-        >
-          <p
-            style={{
-              fontSize: 11,
-              fontWeight: 500,
-              color: 'var(--text-3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}
-          >
-            模块
-          </p>
-          {/* Show badge when custom modules exist */}
-          {availableModules.some((m) => !(BUILTIN_MODULES as readonly string[]).includes(m)) && (
-            <span
-              style={{
-                fontSize: 10,
-                padding: '1px 5px',
-                borderRadius: 4,
-                background: 'var(--primary-light)',
-                color: 'var(--primary)',
-                border: '1px solid rgba(var(--primary-rgb),0.2)',
-              }}
-            >
-              含自定义
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {availableModules.map((mod) => {
-            const active = selectedModules.includes(mod)
-            const categoryLabel = BUILTIN_MODULE_CATEGORY[mod] ?? null
-            const isCustom = !(BUILTIN_MODULES as readonly string[]).includes(mod)
-            return (
-              <button
-                type="button"
-                key={mod}
-                onClick={() => onModuleToggle(mod)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '6px 10px',
-                  borderRadius: 8,
-                  fontSize: 13,
-                  fontWeight: active ? 500 : 400,
-                  color: active ? 'var(--primary)' : 'var(--text-2)',
-                  background: active ? 'var(--primary-light)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'background 0.12s, color 0.12s',
-                  width: '100%',
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) {
-                    ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) {
-                    ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text-2)'
-                  }
-                }}
-              >
-                <span
-                  style={{
-                    flex: 1,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {mod}
-                </span>
-                {categoryLabel && (
-                  <span
-                    style={{
-                      fontSize: 9,
-                      padding: '1px 4px',
-                      borderRadius: 3,
-                      background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface-3)',
-                      color: active ? 'rgba(255,255,255,0.8)' : 'var(--text-3)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {categoryLabel}
-                  </span>
-                )}
-                {isCustom && (
-                  <span
-                    style={{
-                      fontSize: 9,
-                      padding: '1px 4px',
-                      borderRadius: 3,
-                      background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface-3)',
-                      color: active ? 'rgba(255,255,255,0.8)' : 'var(--text-3)',
-                      flexShrink: 0,
-                    }}
-                  >
-                    自定义
-                  </span>
-                )}
-                {active && (
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ flexShrink: 0 }}
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Difficulty */}
-      <div>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 500,
-            color: 'var(--text-3)',
-            marginBottom: 6,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-        >
-          难度
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {([1, 2, 3] as Difficulty[]).map((d) => {
-            const active = selectedDifficulties.includes(d)
-            return (
-              <button
-                type="button"
-                key={d}
-                onClick={() => onDifficultyToggle(d)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '5px 10px',
-                  borderRadius: 8,
-                  background: active ? 'var(--surface-2)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'background 0.12s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = active
-                    ? 'var(--surface-2)'
-                    : 'transparent'
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 500,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    border: '1px solid',
-                    color: DIFFICULTY_STYLES[d].color,
-                    background: DIFFICULTY_STYLES[d].background,
-                    borderColor: DIFFICULTY_STYLES[d].borderColor,
-                  }}
-                >
-                  {DIFFICULTY_LABELS[d]}
-                </span>
-                {active && (
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ color: 'var(--primary)', marginLeft: 'auto' }}
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Status */}
-      <div>
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 500,
-            color: 'var(--text-3)',
-            marginBottom: 6,
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em',
-          }}
-        >
-          学习状态
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {(['unlearned', 'review', 'mastered'] as StudyStatus[]).map((s) => {
-            const active = selectedStatuses.includes(s)
-            return (
-              <button
-                type="button"
-                key={s}
-                onClick={() => onStatusToggle(s)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '5px 10px',
-                  borderRadius: 8,
-                  background: active ? 'var(--surface-2)' : 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  transition: 'background 0.12s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = active
-                    ? 'var(--surface-2)'
-                    : 'transparent'
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 500,
-                    padding: '2px 8px',
-                    borderRadius: 6,
-                    border: '1px solid',
-                    color: STATUS_STYLES[s].color,
-                    background: STATUS_STYLES[s].background,
-                    borderColor: STATUS_STYLES[s].borderColor,
-                  }}
-                >
-                  {STATUS_LABELS[s]}
-                </span>
-                {active && (
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ color: 'var(--primary)', marginLeft: 'auto' }}
-                  >
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )}
-              </button>
-            )
-          })}
-        </div>
       </div>
     </aside>
   )
@@ -1506,9 +1506,11 @@ export default function QuestionList() {
               display: 'none',
               alignItems: 'center',
               gap: 6,
+              flexShrink: 0,
               padding: '6px 12px',
               borderRadius: 8,
               fontSize: 13,
+              whiteSpace: 'nowrap',
               border: '1px solid var(--border)',
               color: 'var(--text-2)',
               background: 'var(--surface)',
@@ -1526,12 +1528,13 @@ export default function QuestionList() {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              style={{ flexShrink: 0 }}
             >
               <line x1="4" y1="6" x2="20" y2="6" />
               <line x1="8" y1="12" x2="16" y2="12" />
               <line x1="10" y1="18" x2="14" y2="18" />
             </svg>
-            筛选
+            <span style={{ whiteSpace: 'nowrap' }}>筛选</span>
             {hasFilters && (
               <span
                 style={{
@@ -1540,6 +1543,7 @@ export default function QuestionList() {
                   borderRadius: '50%',
                   background: 'var(--primary)',
                   display: 'inline-block',
+                  flexShrink: 0,
                 }}
               />
             )}
