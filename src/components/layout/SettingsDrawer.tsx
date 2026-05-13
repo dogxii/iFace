@@ -697,11 +697,13 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose])
 
-  // Lock body scroll
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
+    if (!open) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousOverflow
     }
   }, [open])
 

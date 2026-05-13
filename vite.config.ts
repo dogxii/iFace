@@ -60,6 +60,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,json,webmanifest}'],
+        globIgnores: [
+          '**/assets/pdf.worker-*.mjs',
+          '**/assets/pdf-*.js',
+          '**/assets/mammoth.browser-*.js',
+        ],
         // Never let the Service Worker intercept /api/* requests —
         // those must always reach the Vercel serverless functions via the network.
         navigateFallbackDenylist: [/^\/api\//],
@@ -68,6 +73,17 @@ export default defineConfig({
             // Force all /api/* fetches through the network — no caching ever.
             urlPattern: /^\/api\/.*/i,
             handler: 'NetworkOnly',
+          },
+          {
+            urlPattern: /^\/assets\/(?:pdf|pdf\.worker|mammoth\.browser)-.*\.(?:js|mjs)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'document-parser-chunks',
+              expiration: {
+                maxEntries: 6,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
           },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

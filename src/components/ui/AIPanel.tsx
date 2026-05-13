@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
+import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import {
   type AIMessage,
   buildQuestionSystemSuffix,
@@ -736,9 +736,42 @@ export function AIPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null)
   // Track whether user has manually scrolled up
   const userScrolledUp = useRef(false)
+  const streamingTextBufferRef = useRef('')
+  const streamingTextFrameRef = useRef<number | null>(null)
   const lastInitialPromptIdRef = useRef<string | null>(null)
   const isStreamingRef = useRef(isStreaming)
   isStreamingRef.current = isStreaming
+
+  const flushStreamingText = useCallback(() => {
+    streamingTextFrameRef.current = null
+    setStreamingText(streamingTextBufferRef.current)
+  }, [])
+
+  const appendStreamingText = useCallback(
+    (chunk: string) => {
+      streamingTextBufferRef.current += chunk
+      if (streamingTextFrameRef.current !== null) return
+      streamingTextFrameRef.current = window.requestAnimationFrame(flushStreamingText)
+    },
+    [flushStreamingText],
+  )
+
+  const resetStreamingText = useCallback(() => {
+    streamingTextBufferRef.current = ''
+    if (streamingTextFrameRef.current !== null) {
+      window.cancelAnimationFrame(streamingTextFrameRef.current)
+      streamingTextFrameRef.current = null
+    }
+    setStreamingText('')
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (streamingTextFrameRef.current !== null) {
+        window.cancelAnimationFrame(streamingTextFrameRef.current)
+      }
+    }
+  }, [])
 
   // Detect manual scroll: if user scrolls up during streaming, pause auto-scroll
   const handleScroll = useCallback(() => {
@@ -755,10 +788,17 @@ export function AIPanel({
   }, [])
 
   // Auto-scroll to bottom on new messages/chunks, unless user scrolled up
+  // biome-ignore lint/correctness/useExhaustiveDependencies: message count and streaming text intentionally drive chat autoscroll.
   useEffect(() => {
     if (userScrolledUp.current) return
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [])
+    const frame = window.requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: isStreaming ? 'auto' : 'smooth',
+        block: 'end',
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [isStreaming, messages.length, streamingText])
 
   // When streaming ends, reset the flag so next message auto-scrolls
   useEffect(() => {
@@ -770,9 +810,9 @@ export function AIPanel({
   // Reset streaming text when done
   useEffect(() => {
     if (!isStreaming) {
-      setStreamingText('')
+      resetStreamingText()
     }
-  }, [isStreaming])
+  }, [isStreaming, resetStreamingText])
 
   const isReady = config.enabled && config.apiKey.trim().length > 0
 
@@ -807,7 +847,7 @@ export function AIPanel({
 
       setInput('')
       setError(null)
-      setStreamingText('')
+      resetStreamingText()
 
       const { messages: ctxMessages, systemSuffix } = buildContextMessages()
 
@@ -817,18 +857,26 @@ export function AIPanel({
         ctxMessages,
         systemSuffix,
         (chunk) => {
-          setStreamingText((prev) => prev + chunk)
+          appendStreamingText(chunk)
         },
         () => {
-          setStreamingText('')
+          resetStreamingText()
         },
         (err) => {
           setError(err)
-          setStreamingText('')
+          resetStreamingText()
         },
       )
     },
-    [input, isStreaming, questionId, buildContextMessages, sendMessage],
+    [
+      input,
+      isStreaming,
+      questionId,
+      buildContextMessages,
+      sendMessage,
+      resetStreamingText,
+      appendStreamingText,
+    ],
   )
 
   const handleKeyDown = useCallback(
@@ -845,9 +893,9 @@ export function AIPanel({
     if (isStreaming) abortStream()
     clearSession(questionId)
     setError(null)
-    setStreamingText('')
+    resetStreamingText()
     setTimeout(() => inputRef.current?.focus(), 60)
-  }, [clearSession, abortStream, questionId, isStreaming])
+  }, [clearSession, abortStream, questionId, isStreaming, resetStreamingText])
 
   const handleCopyMessage = useCallback(async (messageId: string, text: string) => {
     setCopiedMessageId(messageId)
@@ -883,7 +931,7 @@ export function AIPanel({
       replaceSessionMessages(questionId, previousMessages)
       setInput('')
       setError(null)
-      setStreamingText('')
+      resetStreamingText()
 
       const { messages: ctxMessages, systemSuffix } = buildContextMessages(previousMessages)
 
@@ -893,18 +941,27 @@ export function AIPanel({
         ctxMessages,
         systemSuffix,
         (chunk) => {
-          setStreamingText((prev) => prev + chunk)
+          appendStreamingText(chunk)
         },
         () => {
-          setStreamingText('')
+          resetStreamingText()
         },
         (err) => {
           setError(err)
-          setStreamingText('')
+          resetStreamingText()
         },
       )
     },
-    [buildContextMessages, isStreaming, messages, questionId, replaceSessionMessages, sendMessage],
+    [
+      buildContextMessages,
+      isStreaming,
+      messages,
+      questionId,
+      replaceSessionMessages,
+      sendMessage,
+      resetStreamingText,
+      appendStreamingText,
+    ],
   )
 
   const handleQuickAction = useCallback(

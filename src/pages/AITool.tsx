@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Spinner } from '@/components/ui'
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
+import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
+import { useBufferedText } from '@/hooks/useBufferedText'
 import { type ChatCompletionMessage, requestChatCompletionStream } from '@/lib/aiClient'
 import { useAIStore } from '@/store/useAIStore'
 
@@ -298,7 +299,11 @@ export default function AITool() {
     tool ? createInitialValues(tool) : {},
   )
   const [result, setResult] = useState('')
-  const [streamingText, setStreamingText] = useState('')
+  const {
+    text: streamingText,
+    appendText: appendStreamingText,
+    resetText: setStreamingText,
+  } = useBufferedText()
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -310,7 +315,7 @@ export default function AITool() {
     setResult('')
     setStreamingText('')
     setError(null)
-  }, [tool])
+  }, [setStreamingText, tool])
 
   useEffect(() => {
     return () => abortRef.current?.abort()
@@ -358,7 +363,7 @@ export default function AITool() {
         },
         messages: buildMessages(tool, values),
         signal: controller.signal,
-        onDelta: (delta) => setStreamingText((prev) => prev + delta),
+        onDelta: appendStreamingText,
       })
       setResult(markdown)
       setStreamingText('')
@@ -369,7 +374,7 @@ export default function AITool() {
       if (abortRef.current === controller) abortRef.current = null
       setGenerating(false)
     }
-  }, [aiReady, config, missingRequired, tool, values])
+  }, [aiReady, appendStreamingText, config, missingRequired, setStreamingText, tool, values])
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort()

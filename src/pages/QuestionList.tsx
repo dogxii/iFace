@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, EmptyState, Skeleton } from '@/components/ui'
-import { applyFilters, useQuestions } from '@/hooks/useQuestions'
+import { applyFilters, type SortKey, useQuestions } from '@/hooks/useQuestions'
 import { getAllQuestionFlags, getAllQuestionNotes } from '@/lib/db'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
+import { preloadRoute } from '@/lib/routePreload'
 import { useStudyStore } from '@/store/useStudyStore'
 import {
   BUILTIN_MODULE_CATEGORY,
@@ -625,6 +626,8 @@ function QuestionCard({
     <Link
       to={`/questions/${q.id}${noteSearchMatched ? '?note=1' : ''}`}
       className="animate-fade-in card card-interactive"
+      onPointerEnter={() => preloadRoute('questionDetail')}
+      onFocus={() => preloadRoute('questionDetail')}
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -1119,40 +1122,22 @@ export default function QuestionList() {
   useEffect(() => {
     let cancelled = false
 
-    const loadQuestionNotes = async () => {
-      try {
-        const notes = await getAllQuestionNotes()
-        if (!cancelled) setQuestionNotes(notes)
-      } catch {
-        if (!cancelled) setQuestionNotes([])
-      }
+    const loadQuestionMeta = async () => {
+      const [notesResult, flagsResult] = await Promise.allSettled([
+        getAllQuestionNotes(),
+        getAllQuestionFlags(),
+      ])
+
+      if (cancelled) return
+      setQuestionNotes(notesResult.status === 'fulfilled' ? notesResult.value : [])
+      setQuestionFlags(flagsResult.status === 'fulfilled' ? flagsResult.value : [])
     }
 
-    loadQuestionNotes()
-    window.addEventListener('focus', loadQuestionNotes)
+    void loadQuestionMeta()
+    window.addEventListener('focus', loadQuestionMeta)
     return () => {
       cancelled = true
-      window.removeEventListener('focus', loadQuestionNotes)
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-
-    const loadQuestionFlags = async () => {
-      try {
-        const flags = await getAllQuestionFlags()
-        if (!cancelled) setQuestionFlags(flags)
-      } catch {
-        if (!cancelled) setQuestionFlags([])
-      }
-    }
-
-    loadQuestionFlags()
-    window.addEventListener('focus', loadQuestionFlags)
-    return () => {
-      cancelled = true
-      window.removeEventListener('focus', loadQuestionFlags)
+      window.removeEventListener('focus', loadQuestionMeta)
     }
   }, [])
 
@@ -1340,9 +1325,7 @@ export default function QuestionList() {
 
   // ── Filtered questions ──
   const filteredResult = useMemo(() => {
-    const recordMap = Object.fromEntries(
-      Object.entries(records).map(([k, v]) => [k, { status: v.status }]),
-    )
+    const structuralSort: SortKey = sort === 'note-updated' ? 'default' : (sort as SortKey)
     const structuralQuestions = applyFilters(
       allQuestions,
       {
@@ -1351,8 +1334,8 @@ export default function QuestionList() {
         statuses: selectedStatuses,
         search: '',
       },
-      recordMap,
-      (sort === 'note-updated' ? 'default' : sort) as any,
+      records,
+      structuralSort,
     )
 
     const keyword = normalizeKeyword(debouncedSearch)

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { preloadPath } from '@/lib/routePreload'
 
 interface ToolCard {
   title: string
@@ -195,7 +196,13 @@ export default function Tools() {
           </div>
           <div className="tools-list">
             {section.tools.map((tool) => (
-              <Link key={tool.href} to={tool.href} className="tool-card">
+              <Link
+                key={tool.href}
+                to={tool.href}
+                className="tool-card"
+                onPointerEnter={() => preloadPath(tool.href)}
+                onFocus={() => preloadPath(tool.href)}
+              >
                 <span className="tool-icon">
                   <ToolIcon type={tool.icon} />
                 </span>

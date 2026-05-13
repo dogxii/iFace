@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Spinner } from '@/components/ui'
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
+import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
+import { useBufferedText } from '@/hooks/useBufferedText'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import { type ChatCompletionMessage, requestChatCompletionStream } from '@/lib/aiClient'
 import {
@@ -224,7 +225,11 @@ export default function MockInterview() {
   const [questions, setQuestions] = useState<Question[]>([])
   const [draftAnswer, setDraftAnswer] = useState('')
   const [busy, setBusy] = useState<BusyState>('idle')
-  const [streamingText, setStreamingText] = useState('')
+  const {
+    text: streamingText,
+    appendText: appendStreamingText,
+    resetText: setStreamingText,
+  } = useBufferedText()
   const [error, setError] = useState<string | null>(null)
   const [resumeMessage, setResumeMessage] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -258,8 +263,14 @@ export default function MockInterview() {
 
   useEffect(() => {
     if (!transcriptScrollKey) return
-    transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [transcriptScrollKey])
+    const frame = window.requestAnimationFrame(() => {
+      transcriptEndRef.current?.scrollIntoView({
+        behavior: isBusy ? 'auto' : 'smooth',
+        block: 'end',
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [isBusy, transcriptScrollKey])
 
   useEffect(() => {
     if (!reportReadyKey || !scrollToReportOnReady) return
@@ -345,11 +356,7 @@ export default function MockInterview() {
       setError(null)
 
       try {
-        const rawReport = await requestAI(
-          buildReviewMessages(session),
-          (delta) => setStreamingText((prev) => prev + delta),
-          2600,
-        )
+        const rawReport = await requestAI(buildReviewMessages(session), appendStreamingText, 2600)
         const report = {
           markdown: rawReport,
           overallScore: extractOverallScore(rawReport),
@@ -379,7 +386,7 @@ export default function MockInterview() {
         setBusy('idle')
       }
     },
-    [questions, requestAI, saveSession],
+    [appendStreamingText, questions, requestAI, saveSession, setStreamingText],
   )
 
   const handleStartInterview = useCallback(async () => {
@@ -407,11 +414,7 @@ export default function MockInterview() {
     setActiveSession(draftSession)
 
     try {
-      const rawPlan = await requestAI(
-        buildPlanMessages(input),
-        (delta) => setStreamingText((prev) => prev + delta),
-        1400,
-      )
+      const rawPlan = await requestAI(buildPlanMessages(input), appendStreamingText, 1400)
       const fallbackQuestion = `我们先从你的经历开始。请结合简历，介绍一个和 ${form.roleTitle} 最相关的项目。`
       const plan = parsePlan(rawPlan, fallbackQuestion)
       const next: MockInterviewSession = {
@@ -431,7 +434,7 @@ export default function MockInterview() {
     } finally {
       setBusy('idle')
     }
-  }, [aiReady, config.model, form, requestAI, saveSession])
+  }, [aiReady, appendStreamingText, config.model, form, requestAI, saveSession, setStreamingText])
 
   const handleSubmitAnswer = useCallback(async () => {
     if (!activeSession || activeSession.status !== 'interviewing' || isBusy) return
@@ -452,7 +455,7 @@ export default function MockInterview() {
     try {
       const rawReply = await requestAI(
         buildInterviewerMessages(answeredSession, answer, 'answer'),
-        (delta) => setStreamingText((prev) => prev + delta),
+        appendStreamingText,
         900,
       )
       const reply = parseInterviewerReply(rawReply)
@@ -485,7 +488,17 @@ export default function MockInterview() {
     } finally {
       setBusy('idle')
     }
-  }, [activeSession, draftAnswer, finishSession, isBusy, requestAI, saveSession, speech])
+  }, [
+    activeSession,
+    appendStreamingText,
+    draftAnswer,
+    finishSession,
+    isBusy,
+    requestAI,
+    saveSession,
+    setStreamingText,
+    speech,
+  ])
 
   const handleClarify = useCallback(async () => {
     if (!activeSession || activeSession.status !== 'interviewing' || isBusy) return
@@ -503,7 +516,7 @@ export default function MockInterview() {
     try {
       const rawReply = await requestAI(
         buildInterviewerMessages(clarifiedSession, clarifyText, 'clarify'),
-        (delta) => setStreamingText((prev) => prev + delta),
+        appendStreamingText,
         600,
       )
       const reply = parseInterviewerReply(rawReply)
@@ -520,7 +533,7 @@ export default function MockInterview() {
     } finally {
       setBusy('idle')
     }
-  }, [activeSession, isBusy, requestAI, saveSession])
+  }, [activeSession, appendStreamingText, isBusy, requestAI, saveSession, setStreamingText])
 
   const handleRepeatQuestion = useCallback(async () => {
     if (!activeSession || activeSession.status !== 'interviewing' || isBusy) return
@@ -569,23 +582,26 @@ export default function MockInterview() {
     [activeSession?.id],
   )
 
-  const handleSelectSession = useCallback((session: MockInterviewSession) => {
-    setActiveSession(session)
-    setForm({
-      roleTitle: session.roleTitle,
-      level: session.level,
-      interviewType: session.interviewType,
-      durationMinutes: session.durationMinutes,
-      targetQuestionCount: session.targetQuestionCount,
-      jdText: session.jdText,
-      resumeText: session.resumeText,
-      resumeFileName: session.resumeFileName,
-    })
-    setDraftAnswer('')
-    setStreamingText('')
-    setError(null)
-    setSetupCollapsed(true)
-  }, [])
+  const handleSelectSession = useCallback(
+    (session: MockInterviewSession) => {
+      setActiveSession(session)
+      setForm({
+        roleTitle: session.roleTitle,
+        level: session.level,
+        interviewType: session.interviewType,
+        durationMinutes: session.durationMinutes,
+        targetQuestionCount: session.targetQuestionCount,
+        jdText: session.jdText,
+        resumeText: session.resumeText,
+        resumeFileName: session.resumeFileName,
+      })
+      setDraftAnswer('')
+      setStreamingText('')
+      setError(null)
+      setSetupCollapsed(true)
+    },
+    [setStreamingText],
+  )
 
   const handleNewInterview = useCallback(() => {
     speech.stop()
@@ -594,7 +610,7 @@ export default function MockInterview() {
     setStreamingText('')
     setError(null)
     setSetupCollapsed(false)
-  }, [speech.stop])
+  }, [setStreamingText, speech.stop])
 
   const activeRecommendations = useMemo(() => {
     const ids = activeSession?.report?.recommendedQuestionIds ?? []

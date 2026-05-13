@@ -3,18 +3,19 @@ import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
 import { Spinner } from '@/components/ui'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
+import { routeLoaders } from '@/lib/routePreload'
 
-const Dashboard = lazy(() => import('@/pages/Dashboard'))
-const QuestionList = lazy(() => import('@/pages/QuestionList'))
-const QuestionDetail = lazy(() => import('@/pages/QuestionDetail'))
-const Practice = lazy(() => import('@/pages/Practice'))
-const MockInterview = lazy(() => import('@/pages/MockInterview'))
-const WeakPoints = lazy(() => import('@/pages/WeakPoints'))
-const Tools = lazy(() => import('@/pages/Tools'))
-const JdMatch = lazy(() => import('@/pages/JdMatch'))
-const AITool = lazy(() => import('@/pages/AITool'))
-const ImportPage = lazy(() => import('@/pages/ImportPage'))
-const PromptPage = lazy(() => import('@/pages/PromptPage'))
+const Dashboard = lazy(routeLoaders.dashboard)
+const QuestionList = lazy(routeLoaders.questionList)
+const QuestionDetail = lazy(routeLoaders.questionDetail)
+const Practice = lazy(routeLoaders.practice)
+const MockInterview = lazy(routeLoaders.mockInterview)
+const WeakPoints = lazy(routeLoaders.weakPoints)
+const Tools = lazy(routeLoaders.tools)
+const JdMatch = lazy(routeLoaders.jdMatch)
+const AITool = lazy(routeLoaders.aiTool)
+const ImportPage = lazy(routeLoaders.importPage)
+const PromptPage = lazy(routeLoaders.promptPage)
 
 function PageLoader() {
   return (
@@ -61,7 +62,10 @@ function ScrollToTop() {
 
   useLayoutEffect(() => {
     if (!pathname) return
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior
+    document.documentElement.style.scrollBehavior = 'auto'
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    document.documentElement.style.scrollBehavior = previousScrollBehavior
   }, [pathname])
 
   return null

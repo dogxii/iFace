@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
+import { preloadPath } from '@/lib/routePreload'
 import { useStudyStore } from '@/store/useStudyStore'
 
 const navItems = [
@@ -18,11 +19,30 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const scrolledRef = useRef(false)
 
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 4)
+    let frame = 0
+
+    const updateScrolled = () => {
+      frame = 0
+      const next = window.scrollY > 4
+      if (scrolledRef.current === next) return
+      scrolledRef.current = next
+      setScrolled(next)
+    }
+
+    const handler = () => {
+      if (frame) return
+      frame = window.requestAnimationFrame(updateScrolled)
+    }
+
+    updateScrolled()
     window.addEventListener('scroll', handler, { passive: true })
-    return () => window.removeEventListener('scroll', handler)
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame)
+      window.removeEventListener('scroll', handler)
+    }
   }, [])
 
   useEffect(() => {
@@ -35,11 +55,13 @@ export function Navbar() {
     return () => window.removeEventListener('keydown', handler)
   }, [mobileOpen])
 
-  // Lock body scroll when mobile menu open
   useEffect(() => {
-    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    if (!mobileOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     return () => {
-      document.body.style.overflow = ''
+      document.body.style.overflow = previousOverflow
     }
   }, [mobileOpen])
 
@@ -81,6 +103,8 @@ export function Navbar() {
           {/* Logo */}
           <Link
             to="/"
+            onPointerEnter={() => preloadPath('/')}
+            onFocus={() => preloadPath('/')}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -118,6 +142,8 @@ export function Navbar() {
                 <Link
                   key={item.path}
                   to={item.path}
+                  onPointerEnter={() => preloadPath(item.path)}
+                  onFocus={() => preloadPath(item.path)}
                   style={{
                     padding: '5px 12px',
                     borderRadius: 8,
@@ -368,6 +394,8 @@ export function Navbar() {
             <Link
               key={item.path}
               to={item.path}
+              onPointerEnter={() => preloadPath(item.path)}
+              onFocus={() => preloadPath(item.path)}
               onClick={() => setMobileOpen(false)}
               style={{
                 padding: '10px 14px',

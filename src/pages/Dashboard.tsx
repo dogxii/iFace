@@ -621,34 +621,86 @@ function StudyPlanCard({
   streak: StreakData
 }) {
   const questionMap = useMemo(() => new Map(questions.map((q) => [q.id, q])), [questions])
-  const dailyQuestions = dailyIds.flatMap((id) => {
-    const q = questionMap.get(id)
-    return q ? [q] : []
-  })
-  const nextDailyQuestion = dailyQuestions.find((q) => records[q.id]?.status !== 'mastered')
-  const oldestReview = questions
-    .filter((q) => records[q.id]?.status === 'review')
-    .sort((a, b) => (records[a.id]?.lastUpdated ?? 0) - (records[b.id]?.lastUpdated ?? 0))[0]
+  const dailyQuestions = useMemo(
+    () =>
+      dailyIds.flatMap((id) => {
+        const q = questionMap.get(id)
+        return q ? [q] : []
+      }),
+    [dailyIds, questionMap],
+  )
+  const nextDailyQuestion = useMemo(
+    () => dailyQuestions.find((q) => records[q.id]?.status !== 'mastered'),
+    [dailyQuestions, records],
+  )
+  const oldestReview = useMemo(() => {
+    let oldest:
+      | {
+          id: string
+          question: string
+          module: Module
+          difficulty: number
+        }
+      | undefined
+    let oldestUpdated = Number.POSITIVE_INFINITY
 
-  const moduleFocus = moduleStats
-    .map(({ module, questions: qs }) => {
+    for (const question of questions) {
+      const record = records[question.id]
+      if (record?.status !== 'review') continue
+      const updated = record.lastUpdated ?? 0
+      if (updated < oldestUpdated) {
+        oldest = question
+        oldestUpdated = updated
+      }
+    }
+
+    return oldest
+  }, [questions, records])
+
+  const moduleFocus = useMemo(() => {
+    let best:
+      | {
+          module: Module
+          total: number
+          mastered: number
+          review: number
+          unlearned: number
+          percent: number
+          score: number
+        }
+      | undefined
+
+    for (const { module, questions: qs } of moduleStats) {
       const total = qs.length
-      const mastered = qs.filter((q) => records[q.id]?.status === 'mastered').length
-      const review = qs.filter((q) => records[q.id]?.status === 'review').length
+      let mastered = 0
+      let review = 0
+
+      for (const question of qs) {
+        const status = records[question.id]?.status
+        if (status === 'mastered') mastered++
+        if (status === 'review') review++
+      }
+
       const unlearned = total - mastered - review
       const percent = total > 0 ? Math.round((mastered / total) * 100) : 0
-      return {
+      const score = review * 4 + unlearned + (100 - percent) / 20
+      const item = {
         module,
         total,
         mastered,
         review,
         unlearned,
         percent,
-        score: review * 4 + unlearned + (100 - percent) / 20,
+        score,
       }
-    })
-    .filter((item) => item.total > 0 && item.percent < 100)
-    .sort((a, b) => b.score - a.score)[0]
+
+      if (item.total > 0 && item.percent < 100 && (!best || item.score > best.score)) {
+        best = item
+      }
+    }
+
+    return best
+  }, [moduleStats, records])
 
   const todayDone = streak.todayCount
   const remainingToday = Math.max(0, dailyGoal - todayDone)

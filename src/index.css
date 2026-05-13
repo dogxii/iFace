@@ -578,6 +578,21 @@ body {
   animation: spin 0.8s linear infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-down,
+  .animate-slide-up,
+  .animate-spin {
+    animation: none;
+  }
+}
+
 /* Stagger delays */
 .delay-1 {
   animation-delay: 40ms;

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Spinner } from '@/components/ui'
-import { MarkdownRenderer } from '@/components/ui/MarkdownRenderer'
+import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
+import { useBufferedText } from '@/hooks/useBufferedText'
 import { type ChatCompletionMessage, requestChatCompletionStream } from '@/lib/aiClient'
 import { deleteJdMatchReport, getAllJdMatchReports, putJdMatchReport } from '@/lib/db'
 import { parseResumeFile } from '@/lib/resumeParser'
@@ -164,7 +165,11 @@ export default function JdMatch() {
   const [report, setReport] = useState('')
   const [savedReports, setSavedReports] = useState<JdMatchReport[]>([])
   const [activeReportId, setActiveReportId] = useState<string | null>(null)
-  const [streamingText, setStreamingText] = useState('')
+  const {
+    text: streamingText,
+    appendText: appendStreamingText,
+    resetText: setStreamingText,
+  } = useBufferedText()
   const [error, setError] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [parsingResume, setParsingResume] = useState(false)
@@ -233,7 +238,7 @@ export default function JdMatch() {
           jdText: jdText.trim(),
           resumeText: resumeText.trim(),
         }),
-        onDelta: (delta) => setStreamingText((prev) => prev + delta),
+        onDelta: appendStreamingText,
       })
       const markdown = stripGeneratedTitle(result)
       const now = Date.now()
@@ -260,19 +265,31 @@ export default function JdMatch() {
     } finally {
       setAnalyzing(false)
     }
-  }, [aiReady, config, jdText, resumeFileName, resumeText, roleTitle])
+  }, [
+    aiReady,
+    appendStreamingText,
+    config,
+    jdText,
+    resumeFileName,
+    resumeText,
+    roleTitle,
+    setStreamingText,
+  ])
 
-  const handleSelectReport = useCallback((item: JdMatchReport) => {
-    setRoleTitle(item.roleTitle)
-    setJdText(item.jdText)
-    setResumeText(item.resumeText)
-    setResumeFileName(item.resumeFileName ?? null)
-    setResumeMessage(null)
-    setReport(item.markdown)
-    setStreamingText('')
-    setError(null)
-    setActiveReportId(item.id)
-  }, [])
+  const handleSelectReport = useCallback(
+    (item: JdMatchReport) => {
+      setRoleTitle(item.roleTitle)
+      setJdText(item.jdText)
+      setResumeText(item.resumeText)
+      setResumeFileName(item.resumeFileName ?? null)
+      setResumeMessage(null)
+      setReport(item.markdown)
+      setStreamingText('')
+      setError(null)
+      setActiveReportId(item.id)
+    },
+    [setStreamingText],
+  )
 
   const handleDeleteReport = useCallback(
     async (id: string) => {
@@ -296,7 +313,7 @@ export default function JdMatch() {
     setStreamingText('')
     setError(null)
     setActiveReportId(null)
-  }, [])
+  }, [setStreamingText])
 
   const handleCopyReport = useCallback(async () => {
     if (!displayReport) return
