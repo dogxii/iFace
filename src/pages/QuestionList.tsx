@@ -1117,6 +1117,8 @@ export default function QuestionList() {
   const [questionNotes, setQuestionNotes] = useState<QuestionNote[]>([])
 
   const searchRef = useRef<HTMLInputElement>(null)
+  const mobileFilterButtonRef = useRef<HTMLButtonElement>(null)
+  const mobileFilterPanelRef = useRef<HTMLDivElement>(null)
   const lastSyncedSearchRef = useRef(searchParams.toString())
 
   useEffect(() => {
@@ -1258,6 +1260,31 @@ export default function QuestionList() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+
+  useEffect(() => {
+    if (!mobileFilterOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    const frame = window.requestAnimationFrame(() => {
+      mobileFilterPanelRef.current?.focus({ preventScroll: true })
+    })
+
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileFilterOpen(false)
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('keydown', handler)
+      document.body.style.overflow = previousOverflow
+      if (mobileFilterButtonRef.current?.isConnected) {
+        mobileFilterButtonRef.current.focus({ preventScroll: true })
+      }
+    }
+  }, [mobileFilterOpen])
 
   // ── Filter helpers ──
   const toggleModule = useCallback((m: Module) => {
@@ -1487,6 +1514,7 @@ export default function QuestionList() {
           {/* Mobile filter toggle */}
           <button
             type="button"
+            ref={mobileFilterButtonRef}
             onClick={() => setMobileFilterOpen((v) => !v)}
             style={{
               display: 'none',
@@ -1935,12 +1963,18 @@ export default function QuestionList() {
               onClick={() => setMobileFilterOpen(false)}
             />
             <div
+              ref={mobileFilterPanelRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="题库筛选"
+              tabIndex={-1}
               style={{
                 position: 'fixed',
                 left: 0,
                 right: 0,
                 bottom: 0,
                 zIndex: 50,
+                outline: 'none',
               }}
               className="animate-slide-up"
             >
@@ -1952,6 +1986,8 @@ export default function QuestionList() {
                   boxShadow: 'var(--shadow-xl)',
                   maxHeight: '80dvh',
                   overflowY: 'auto',
+                  overscrollBehavior: 'contain',
+                  WebkitOverflowScrolling: 'touch',
                 }}
               >
                 <div
