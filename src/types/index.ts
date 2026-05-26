@@ -3,6 +3,7 @@ export const BUILTIN_MODULES = [
   // 前端
   'JS基础',
   'React',
+  'Vue',
   '性能优化',
   '网络',
   'CSS',
@@ -31,6 +32,7 @@ export const BUILTIN_MODULE_CATEGORY: Record<string, string> = {
   // 前端
   JS基础: '前端',
   React: '前端',
+  Vue: '前端',
   性能优化: '前端',
   网络: '前端',
   CSS: '前端',
@@ -255,6 +257,7 @@ export const STATUS_STYLES: Record<
 export const MODULE_ICONS: Record<string, string> = {
   JS基础: '⚡',
   React: '⚛️',
+  Vue: '🟩',
   性能优化: '🚀',
   网络: '🌐',
   CSS: '🎨',
@@ -289,6 +292,7 @@ export function getModuleIcon(module: string): string {
 export const MODULE_COLORS: Record<string, string> = {
   JS基础: 'from-yellow-400 to-orange-500',
   React: 'from-cyan-400 to-blue-500',
+  Vue: 'from-emerald-400 to-teal-500',
   性能优化: 'from-green-400 to-emerald-500',
   网络: 'from-violet-400 to-purple-500',
   CSS: 'from-pink-400 to-rose-500',

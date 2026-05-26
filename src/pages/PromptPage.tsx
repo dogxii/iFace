@@ -5,6 +5,7 @@ import { Badge, Button } from '@/components/ui'
 const BUILTIN_MODULE_VALUES = [
   'JS基础',
   'React',
+  'Vue',
   '性能优化',
   '网络',
   'CSS',
@@ -90,6 +91,7 @@ export function mdToQuestions(md: string): {
     javascript: 'JS基础',
     js基础: 'JS基础',
     react: 'React',
+    vue: 'Vue',
     css: 'CSS',
     ts: 'TypeScript',
     typescript: 'TypeScript',
