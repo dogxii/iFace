@@ -47,6 +47,7 @@ MODULE_FILES = {
     "js": "frontend/js.json",
     "js-basics": "frontend/js.json",
     "react": "frontend/react.json",
+    "vue": "frontend/vue.json",
     "css": "frontend/css.json",
     "typescript": "frontend/typescript.json",
     "ts": "frontend/typescript.json",
@@ -90,6 +91,7 @@ STATUS_TARGETS = {
     # Frontend
     "frontend/js.json": 65,
     "frontend/react.json": 65,
+    "frontend/vue.json": 65,
     "frontend/css.json": 55,
     "frontend/typescript.json": 55,
     "frontend/network.json": 60,

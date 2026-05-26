@@ -417,7 +417,17 @@ export const META_KEYS = {
 export const DEFAULT_CATEGORY_MAP: CategoryMap = {
   前端: {
     name: '前端',
-    modules: ['JS基础', 'React', 'CSS', 'TypeScript', '性能优化', '网络', '手写题', '项目深挖'],
+    modules: [
+      'JS基础',
+      'React',
+      'Vue',
+      'CSS',
+      'TypeScript',
+      '性能优化',
+      '网络',
+      '手写题',
+      '项目深挖',
+    ],
     builtin: true,
     order: 0,
   },
@@ -446,8 +456,30 @@ export const DEFAULT_CATEGORY_MAP: CategoryMap = {
 
 export async function getCategoryMap(): Promise<CategoryMap> {
   const stored = await getMeta<CategoryMap>(META_KEYS.CATEGORY_MAP)
-  if (stored && Object.keys(stored).length > 0) return stored
-  return { ...DEFAULT_CATEGORY_MAP }
+  if (!stored || Object.keys(stored).length === 0) return { ...DEFAULT_CATEGORY_MAP }
+
+  const merged: CategoryMap = { ...DEFAULT_CATEGORY_MAP }
+
+  for (const [key, entry] of Object.entries(stored)) {
+    const builtin = DEFAULT_CATEGORY_MAP[key]
+
+    if (!builtin) {
+      merged[key] = entry
+      continue
+    }
+
+    const modules = [...builtin.modules]
+    for (const module of entry.modules) {
+      if (!modules.includes(module)) modules.push(module)
+    }
+
+    merged[key] = {
+      ...builtin,
+      modules,
+    }
+  }
+
+  return merged
 }
 
 export async function saveCategoryMap(map: CategoryMap): Promise<void> {

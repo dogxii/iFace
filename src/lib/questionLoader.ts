@@ -37,6 +37,7 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
     files: [
       'frontend/js.json',
       'frontend/react.json',
+      'frontend/vue.json',
       'frontend/css.json',
       'frontend/typescript.json',
       'frontend/network.json',
@@ -71,7 +72,7 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
 
 /** Flat list of every built-in file path across all categories (for legacy compat). */
 export const BUILTIN_MODULE_FILES: readonly string[] = BUILTIN_CATEGORIES.flatMap((c) => c.files)
-export const BUILTIN_QUESTIONS_VERSION = '0.11.0'
+export const BUILTIN_QUESTIONS_VERSION = '0.12.0'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
