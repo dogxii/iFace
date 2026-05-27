@@ -16,6 +16,7 @@ import {
 // ─── Streak Banner ────────────────────────────────────────────────────────────
 
 const STREAK_DISMISS_KEY = 'iface_streak_banner_dismissed_date'
+const MODULE_PROGRESS_LIST_MAX_HEIGHT = 205
 
 function StreakBanner({ streak, dailyGoal }: { streak: StreakData; dailyGoal: number }) {
   const [dismissed, setDismissed] = useState(() => {
@@ -1752,7 +1753,7 @@ export default function Dashboard() {
 
               <div
                 style={{
-                  maxHeight: 280,
+                  maxHeight: MODULE_PROGRESS_LIST_MAX_HEIGHT,
                   overflowY: 'auto',
                 }}
                 className="no-scrollbar"
