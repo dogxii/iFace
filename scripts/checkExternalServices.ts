@@ -236,6 +236,14 @@ function createSmokeBackup(now: number): SyncData {
         updatedAt: now,
       },
     ],
+    questionAnswerOverrides: [
+      {
+        questionId: 'external-smoke-question',
+        content: 'External smoke custom answer',
+        createdAt: now - 1_000,
+        updatedAt: now,
+      },
+    ],
     questionFlags: [
       {
         questionId: 'external-smoke-question',
@@ -319,7 +327,7 @@ async function runGistExternalSmoke(): Promise<void> {
     const loaded = await githubFetch<GistResponse>(token, `/gists/${gistId}`)
     const loadedContent = await readGistFile(token, loaded, filename)
     const parsed = parseGistBackupPayload(loadedContent)
-    assert('Gist read payload', parsed.version === 6, '真实 Gist 读取到的备份版本不是 v6')
+    assert('Gist read payload', parsed.version === 7, '真实 Gist 读取到的备份版本不是 v7')
     assert(
       'Gist read data',
       parsed.questionNotes.some((note) => note.questionId === 'external-smoke-question'),
@@ -328,6 +336,7 @@ async function runGistExternalSmoke(): Promise<void> {
     addEvidence('gist.read', {
       backupVersion: parsed.version,
       noteCount: parsed.questionNotes.length,
+      answerOverrideCount: parsed.questionAnswerOverrides.length,
       starredCount: parsed.questionFlags.filter((flag) => flag.starred).length,
       aiSessionCount: parsed.aiSessions.length,
       customQuestionCount: parsed.customQuestions.length,

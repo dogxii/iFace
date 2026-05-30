@@ -107,6 +107,24 @@ export interface QuestionNote {
   updatedAt: number
 }
 
+export interface QuestionNoteImage {
+  id: string
+  questionId: string
+  name: string
+  mimeType: string
+  size: number
+  dataUrl: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuestionAnswerOverride {
+  questionId: string
+  content: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface QuestionFlag {
   questionId: string
   starred: boolean

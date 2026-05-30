@@ -3,6 +3,7 @@ import type {
   JdMatchReport,
   MockInterviewSession,
   Question,
+  QuestionAnswerOverride,
   QuestionFlag,
   QuestionNote,
   StudyRecord,
@@ -17,6 +18,7 @@ export interface ImportPreview {
   questions: Question[]
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
+  questionAnswerOverrides: QuestionAnswerOverride[]
   questionFlags: QuestionFlag[]
   aiSessions: AISession[]
   mockInterviews: MockInterviewSession[]
@@ -30,6 +32,7 @@ export interface ImportImpact {
   questions: ImportImpactItem
   studyRecords: ImportImpactItem
   questionNotes: ImportImpactItem
+  questionAnswerOverrides: ImportImpactItem
   questionFlags: ImportImpactItem
   aiSessions: ImportImpactItem
   mockInterviews: ImportImpactItem
@@ -74,6 +77,16 @@ function isStudyRecord(value: unknown): value is StudyRecord {
 }
 
 function isQuestionNote(value: unknown): value is QuestionNote {
+  return (
+    isRecord(value) &&
+    typeof value.questionId === 'string' &&
+    typeof value.content === 'string' &&
+    typeof value.createdAt === 'number' &&
+    typeof value.updatedAt === 'number'
+  )
+}
+
+function isQuestionAnswerOverride(value: unknown): value is QuestionAnswerOverride {
   return (
     isRecord(value) &&
     typeof value.questionId === 'string' &&
@@ -216,6 +229,7 @@ function parseImportArray<T>(
     | 'questions'
     | 'studyRecords'
     | 'questionNotes'
+    | 'questionAnswerOverrides'
     | 'questionFlags'
     | 'aiSessions'
     | 'mockInterviews'
@@ -328,6 +342,12 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
   const questions = parseImportArray(parsed, 'questions', isQuestion, '题目')
   const studyRecords = parseImportArray(parsed, 'studyRecords', isStudyRecord, '学习记录')
   const questionNotes = parseImportArray(parsed, 'questionNotes', isQuestionNote, '题目笔记')
+  const questionAnswerOverrides = parseImportArray(
+    parsed,
+    'questionAnswerOverrides',
+    isQuestionAnswerOverride,
+    '自定义答案',
+  )
   const questionFlags = parseImportArray(parsed, 'questionFlags', isQuestionFlag, '题目标记')
   const aiSessions = parseImportArray(parsed, 'aiSessions', isAISession, 'AI 会话')
   const mockInterviews = parseImportArray(
@@ -352,6 +372,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
     questions.length +
       studyRecords.length +
       questionNotes.length +
+      questionAnswerOverrides.length +
       questionFlags.length +
       aiSessions.length +
       mockInterviews.length +
@@ -368,6 +389,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
     questions,
     studyRecords,
     questionNotes,
+    questionAnswerOverrides,
     questionFlags,
     aiSessions,
     mockInterviews,
@@ -378,6 +400,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
       questions: { created: 0, overwritten: 0 },
       studyRecords: { created: 0, overwritten: 0 },
       questionNotes: { created: 0, overwritten: 0 },
+      questionAnswerOverrides: { created: 0, overwritten: 0 },
       questionFlags: { created: 0, overwritten: 0 },
       aiSessions: { created: 0, overwritten: 0 },
       mockInterviews: { created: 0, overwritten: 0 },
