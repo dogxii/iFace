@@ -6,7 +6,7 @@
 
 [立即体验](https://face.dogxi.me) · [报告问题](https://github.com/dogxii/iFace/issues) · [功能建议](https://github.com/dogxii/iFace/issues)
 
-![Version](https://img.shields.io/badge/version-1.3.0-6366f1?style=flat-square)
+![Version](https://img.shields.io/badge/version-1.4.0-6366f1?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-10b981?style=flat-square)
 ![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript)

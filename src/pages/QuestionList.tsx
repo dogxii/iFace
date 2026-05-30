@@ -2,8 +2,15 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, EmptyState, Skeleton } from '@/components/ui'
 import { applyFilters, type SortKey, useQuestions } from '@/hooks/useQuestions'
-import { getAllQuestionFlags, getAllQuestionNotes } from '@/lib/db'
+import {
+  type CategoryMap,
+  DEFAULT_CATEGORY_MAP,
+  getAllQuestionFlags,
+  getAllQuestionNotes,
+  getCategoryMap,
+} from '@/lib/db'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
+import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { preloadRoute } from '@/lib/routePreload'
 import { useStudyStore } from '@/store/useStudyStore'
 import {
@@ -1085,18 +1092,32 @@ export default function QuestionList() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { allQuestions, initializing } = useQuestions()
-  const { records, getStatus } = useStudyStore()
+  const { records, getStatus, hiddenCategories } = useStudyStore()
+  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
+
+  useEffect(() => {
+    getCategoryMap().then(setCategoryMap)
+  }, [])
+
+  const hiddenModules = useMemo(
+    () => getHiddenModules(categoryMap, hiddenCategories),
+    [categoryMap, hiddenCategories],
+  )
+  const visibleQuestions = useMemo(
+    () => filterVisibleQuestions(allQuestions, hiddenModules),
+    [allQuestions, hiddenModules],
+  )
 
   // ── Filter state (sync with URL) ──
   // Derive sorted module list from actual questions (built-ins first, then custom alphabetically)
   const availableModules = useMemo<Module[]>(() => {
-    const moduleSet = new Set(allQuestions.map((q) => q.module))
+    const moduleSet = new Set(visibleQuestions.map((q) => q.module))
     const builtins = (BUILTIN_MODULES as readonly string[]).filter((m) => moduleSet.has(m))
     const custom = [...moduleSet]
       .filter((m) => !(BUILTIN_MODULES as readonly string[]).includes(m))
       .sort((a, b) => a.localeCompare(b))
     return [...builtins, ...custom]
-  }, [allQuestions])
+  }, [visibleQuestions])
 
   const [selectedModules, setSelectedModules] = useState<Module[]>(() =>
     parseModuleParams(searchParams),
@@ -1354,7 +1375,7 @@ export default function QuestionList() {
   const filteredResult = useMemo(() => {
     const structuralSort: SortKey = sort === 'note-updated' ? 'default' : (sort as SortKey)
     const structuralQuestions = applyFilters(
-      allQuestions,
+      visibleQuestions,
       {
         modules: selectedModules,
         difficulties: selectedDifficulties,
@@ -1392,7 +1413,7 @@ export default function QuestionList() {
 
     return { questions: sortedQuestions, noteSearchMatchedIds, noteSearchSnippets }
   }, [
-    allQuestions,
+    visibleQuestions,
     selectedModules,
     selectedDifficulties,
     selectedStatuses,
@@ -1411,13 +1432,17 @@ export default function QuestionList() {
   const noteSearchSnippets = filteredResult.noteSearchSnippets
 
   const notedQuestionCount = useMemo(
-    () => allQuestions.reduce((count, question) => count + (noteIds.has(question.id) ? 1 : 0), 0),
-    [allQuestions, noteIds],
+    () =>
+      visibleQuestions.reduce((count, question) => count + (noteIds.has(question.id) ? 1 : 0), 0),
+    [visibleQuestions, noteIds],
   )
   const starredQuestionCount = useMemo(
     () =>
-      allQuestions.reduce((count, question) => count + (starredIds.has(question.id) ? 1 : 0), 0),
-    [allQuestions, starredIds],
+      visibleQuestions.reduce(
+        (count, question) => count + (starredIds.has(question.id) ? 1 : 0),
+        0,
+      ),
+    [visibleQuestions, starredIds],
   )
 
   const currentSessionIds = useMemo(() => filteredQuestions.map((q) => q.id), [filteredQuestions])
@@ -1458,28 +1483,33 @@ export default function QuestionList() {
 
   // Keep selectedModules valid when availableModules changes (e.g. after import)
   useEffect(() => {
-    if (availableModules.length === 0) return
+    if (allQuestions.length === 0 && availableModules.length === 0) return
     setSelectedModules((prev) => prev.filter((m) => availableModules.includes(m)))
-  }, [availableModules])
+  }, [allQuestions.length, availableModules])
 
-  const emptyStateTitle = !hasFilters
-    ? '题库为空'
-    : starredOnly && starredQuestionCount === 0
-      ? '还没有重点题'
-      : notesOnly && notedQuestionCount === 0
-        ? '还没有题目笔记'
-        : '没有匹配的题目'
-  const emptyStateDescription = !hasFilters
-    ? '请前往「导入题目」页面加载题库'
-    : starredOnly && starredQuestionCount === 0
-      ? '在题目详情中标记重点题后，可在这里集中复习'
-      : notesOnly && notedQuestionCount === 0
-        ? '打开任意题目的笔记入口，记录理解或把 AI 复盘保存为笔记'
-        : starredOnly
-          ? '当前筛选条件下没有重点题，可以清除部分条件再试'
-          : notesOnly
-            ? '当前筛选条件下没有带笔记的题目，可以清除部分条件再试'
-            : '试试调整筛选条件，或搜索题目、标签、模块和笔记内容'
+  const allHidden = allQuestions.length > 0 && visibleQuestions.length === 0
+  const emptyStateTitle = allHidden
+    ? '所有题库已关闭展示'
+    : !hasFilters
+      ? '题库为空'
+      : starredOnly && starredQuestionCount === 0
+        ? '还没有重点题'
+        : notesOnly && notedQuestionCount === 0
+          ? '还没有题目笔记'
+          : '没有匹配的题目'
+  const emptyStateDescription = allHidden
+    ? '在「设置 → 刷题偏好 → 题库展示」中启用题库后，这里会重新显示题目'
+    : !hasFilters
+      ? '请前往「导入题目」页面加载题库'
+      : starredOnly && starredQuestionCount === 0
+        ? '在题目详情中标记重点题后，可在这里集中复习'
+        : notesOnly && notedQuestionCount === 0
+          ? '打开任意题目的笔记入口，记录理解或把 AI 复盘保存为笔记'
+          : starredOnly
+            ? '当前筛选条件下没有重点题，可以清除部分条件再试'
+            : notesOnly
+              ? '当前筛选条件下没有带笔记的题目，可以清除部分条件再试'
+              : '试试调整筛选条件，或搜索题目、标签、模块和笔记内容'
 
   return (
     <div className="page-container">
@@ -1506,8 +1536,8 @@ export default function QuestionList() {
           </h1>
           <p style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
             {hasFilters
-              ? `当前显示 ${filteredQuestions.length} / ${allQuestions.length} 道题`
-              : `共 ${allQuestions.length} 道题`}
+              ? `当前显示 ${filteredQuestions.length} / ${visibleQuestions.length} 道题`
+              : `共 ${visibleQuestions.length} 道题`}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1938,7 +1968,7 @@ export default function QuestionList() {
             onNotesOnlyToggle={toggleNotesOnly}
             onClear={clearFilters}
             totalFiltered={filteredQuestions.length}
-            totalAll={allQuestions.length}
+            totalAll={visibleQuestions.length}
             availableModules={availableModules}
           />
         </div>
@@ -2026,7 +2056,7 @@ export default function QuestionList() {
                   onNotesOnlyToggle={toggleNotesOnly}
                   onClear={clearFilters}
                   totalFiltered={filteredQuestions.length}
-                  totalAll={allQuestions.length}
+                  totalAll={visibleQuestions.length}
                   availableModules={availableModules}
                 />
               </div>

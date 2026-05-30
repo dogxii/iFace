@@ -582,8 +582,10 @@ export async function getDailyRecommendations(
 ): Promise<string[]> {
   const cached = await getMeta<DailyCache>(META_KEYS.DAILY_RECS)
   if (cached && cached.date === todayString()) {
-    const valid = cached.ids.filter((id) => allIds.includes(id))
-    if (valid.length > 0) return valid
+    const allIdSet = new Set(allIds)
+    const valid = cached.ids.filter((id) => allIdSet.has(id))
+    const targetCount = Math.min(count, allIds.length)
+    if (valid.length >= targetCount) return valid.slice(0, count)
   }
 
   const reviewIds = allIds

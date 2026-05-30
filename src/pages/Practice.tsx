@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Button, EmptyState, Skeleton } from '@/components/ui'
 import { useQuestions } from '@/hooks/useQuestions'
-import { type CategoryMap, getCategoryMap } from '@/lib/db'
+import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
+import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { useStudyStore } from '@/store/useStudyStore'
 import {
   DIFFICULTY_LABELS,
@@ -452,7 +453,7 @@ export default function Practice() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { allQuestions, initializing } = useQuestions()
-  const { records } = useStudyStore()
+  const { records, hiddenCategories } = useStudyStore()
 
   const [selectedModules, setSelectedModules] = useState<Module[]>([])
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'all'>('all')
@@ -472,25 +473,34 @@ export default function Practice() {
   }, [searchParams, navigate])
 
   // ── Category map (for grouping modules) ──
-  const [categoryMap, setCategoryMap] = useState<CategoryMap>({})
+  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
 
   useEffect(() => {
     getCategoryMap().then(setCategoryMap)
-  }, []) // re-fetch when questions change (new imports)
+  }, [])
+
+  const hiddenModules = useMemo(
+    () => getHiddenModules(categoryMap, hiddenCategories),
+    [categoryMap, hiddenCategories],
+  )
+  const visibleQuestions = useMemo(
+    () => filterVisibleQuestions(allQuestions, hiddenModules),
+    [allQuestions, hiddenModules],
+  )
 
   // ── All unique modules that actually have questions ──
   const activeModules = useMemo(() => {
-    return [...new Set(allQuestions.map((q) => q.module))]
-  }, [allQuestions])
+    return [...new Set(visibleQuestions.map((q) => q.module))]
+  }, [visibleQuestions])
 
   // ── Derived stats — for ALL active modules (not just builtin) ──
   const moduleStats = useMemo(() => {
     return activeModules.map((mod) => {
-      const qs = allQuestions.filter((q) => q.module === mod)
+      const qs = visibleQuestions.filter((q) => q.module === mod)
       const mastered = qs.filter((q) => records[q.id]?.status === 'mastered').length
       return { module: mod, total: qs.length, mastered }
     })
-  }, [allQuestions, activeModules, records])
+  }, [visibleQuestions, activeModules, records])
 
   // ── Ordered categories with their modules (only those with questions) ──
   const categoriesWithModules = useMemo(() => {
@@ -521,18 +531,18 @@ export default function Practice() {
 
   const difficultyStats = useMemo(() => {
     const base = { 1: 0, 2: 0, 3: 0 }
-    let filtered = allQuestions
+    let filtered = visibleQuestions
     if (selectedModules.length > 0) {
       const set = new Set(selectedModules)
       filtered = filtered.filter((q) => set.has(q.module))
     }
     for (const q of filtered) base[q.difficulty]++
     return base
-  }, [allQuestions, selectedModules])
+  }, [visibleQuestions, selectedModules])
 
   // ── Filtered question list ──
   const filteredQuestions = useMemo(() => {
-    let result = allQuestions
+    let result = visibleQuestions
 
     if (selectedModules.length > 0) {
       const set = new Set(selectedModules)
@@ -551,10 +561,10 @@ export default function Practice() {
     }
 
     return result
-  }, [allQuestions, selectedModules, selectedDifficulty, selectedStatus, records])
+  }, [visibleQuestions, selectedModules, selectedDifficulty, selectedStatus, records])
 
   const statusCounts = useMemo(() => {
-    let pool = allQuestions
+    let pool = visibleQuestions
     if (selectedModules.length > 0) {
       const set = new Set(selectedModules)
       pool = pool.filter((q) => set.has(q.module))
@@ -568,7 +578,7 @@ export default function Practice() {
       counts[s]++
     }
     return counts
-  }, [allQuestions, selectedModules, selectedDifficulty, records])
+  }, [visibleQuestions, selectedModules, selectedDifficulty, records])
 
   // ── Handlers ──
   const toggleModule = useCallback((mod: Module) => {
@@ -588,6 +598,11 @@ export default function Practice() {
       return [...prev, ...toAdd]
     })
   }, [])
+
+  useEffect(() => {
+    const activeSet = new Set(activeModules)
+    setSelectedModules((prev) => prev.filter((module) => activeSet.has(module)))
+  }, [activeModules])
 
   const handleStart = useCallback(() => {
     if (filteredQuestions.length === 0) return
@@ -648,6 +663,7 @@ export default function Practice() {
   }
 
   const noQuestions = allQuestions.length === 0
+  const allHidden = allQuestions.length > 0 && visibleQuestions.length === 0
 
   return (
     <div className="page-container">
@@ -679,6 +695,13 @@ export default function Practice() {
                 前往导入
               </Button>
             }
+          />
+        </div>
+      ) : allHidden ? (
+        <div className="card" style={{ padding: '80px 20px' }}>
+          <EmptyState
+            title="所有题库已关闭展示"
+            description="在「设置 → 刷题偏好 → 题库展示」中启用题库后，可重新选择模块练习"
           />
         </div>
       ) : (
@@ -716,8 +739,8 @@ export default function Practice() {
                   selected={selectedDifficulty === 'all'}
                   count={
                     selectedModules.length > 0
-                      ? allQuestions.filter((q) => selectedModules.includes(q.module)).length
-                      : allQuestions.length
+                      ? visibleQuestions.filter((q) => selectedModules.includes(q.module)).length
+                      : visibleQuestions.length
                   }
                   onClick={() => setSelectedDifficulty('all')}
                 />
