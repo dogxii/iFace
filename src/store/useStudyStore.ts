@@ -406,6 +406,7 @@ export function useStudyStore() {
     saveHiddenCategories(next)
     const action: Action = { type: 'SET_HIDDEN_CATEGORIES', hiddenCategories: [...next] }
     broadcast(action)
+    void invalidateDailyCache()
   }, [])
 
   const isCategoryHidden = useCallback(

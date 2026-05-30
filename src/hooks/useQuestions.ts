@@ -23,6 +23,7 @@ interface UseQuestionsReturn {
   getDailyIds: (
     recordMap: Record<string, { status: string; lastUpdated: number }>,
     count?: number,
+    questionIds?: string[],
   ) => Promise<string[]>
   getAdjacentIds: (
     currentId: string,
@@ -222,8 +223,9 @@ export function useQuestions(
     async (
       rm: Record<string, { status: string; lastUpdated: number }>,
       count = 10,
+      questionIds?: string[],
     ): Promise<string[]> => {
-      const allIds = allQuestions.map((q) => q.id)
+      const allIds = questionIds ?? allQuestions.map((q) => q.id)
       return getDailyRecommendations(allIds, rm, count)
     },
     [allQuestions],

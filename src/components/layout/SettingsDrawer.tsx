@@ -1630,7 +1630,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                   </span>
                 </div>
                 <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6, margin: 0 }}>
-                  隐藏的题库不在首页展示统计和进度，但仍可在题库、练习页面访问。
+                  关闭的题库会从首页、题库和练习中隐藏，学习记录仍会保留。
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {(() => {
@@ -1652,9 +1652,10 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                           key={key}
                           type="button"
                           onClick={() => {
+                            const nextVisible = isHidden
                             toggleCategoryVisibility(key)
                             showToast(
-                              hiddenCategories.has(key)
+                              nextVisible
                                 ? `已显示「${cat.name}」题库`
                                 : `已隐藏「${cat.name}」题库`,
                             )
@@ -1665,7 +1666,9 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                             gap: 12,
                             padding: '10px 14px',
                             borderRadius: 10,
-                            border: `1px solid ${isHidden ? 'var(--border-subtle)' : 'rgba(var(--primary-rgb),0.3)'}`,
+                            border: `1px solid ${
+                              isHidden ? 'var(--border-subtle)' : 'rgba(var(--primary-rgb),0.3)'
+                            }`,
                             background: isHidden ? 'var(--surface-2)' : 'var(--primary-light)',
                             cursor: 'pointer',
                             textAlign: 'left',

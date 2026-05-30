@@ -3,7 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, EmptyState, SegmentedRing, Skeleton } from '@/components/ui'
 import { useQuestions } from '@/hooks/useQuestions'
-import { DEFAULT_CATEGORY_MAP, getAllQuestionNotes, getCategoryMap } from '@/lib/db'
+import {
+  type CategoryMap,
+  DEFAULT_CATEGORY_MAP,
+  getAllQuestionNotes,
+  getCategoryMap,
+} from '@/lib/db'
+import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { type StreakData, useStudyStore } from '@/store/useStudyStore'
 import {
   DIFFICULTY_LABELS,
@@ -1311,37 +1317,26 @@ const IconClock = () => (
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const { questions, allQuestions, loading, initializing, getDailyIds } = useQuestions()
-  const { records, getEstimatedDays, streak, dailyGoal, hiddenCategories } = useStudyStore()
+  const { allQuestions, loading, initializing, getDailyIds } = useQuestions()
+  const { records, streak, dailyGoal, hiddenCategories } = useStudyStore()
 
-  // ── Resolve which module names belong to hidden categories ────────────────
-  // We read from DEFAULT_CATEGORY_MAP synchronously for instant render, then
-  // upgrade with the full persisted map (which may include custom categories).
-  const [categoryModuleMap, setCategoryModuleMap] = useState<Record<string, string[]>>(() =>
-    Object.fromEntries(Object.entries(DEFAULT_CATEGORY_MAP).map(([k, v]) => [k, v.modules])),
-  )
+  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
 
   useEffect(() => {
-    getCategoryMap().then((map) => {
-      setCategoryModuleMap(Object.fromEntries(Object.entries(map).map(([k, v]) => [k, v.modules])))
-    })
+    getCategoryMap().then(setCategoryMap)
   }, [])
 
-  // Set of module names that are in at least one hidden category
-  const hiddenModules = useMemo<Set<string>>(() => {
-    const s = new Set<string>()
-    for (const [catName, modules] of Object.entries(categoryModuleMap)) {
-      if (hiddenCategories.has(catName)) {
-        for (const m of modules) s.add(m)
-      }
-    }
-    return s
-  }, [hiddenCategories, categoryModuleMap])
-
-  // Visible questions: exclude any question whose module is in a hidden category
+  const hiddenModules = useMemo(
+    () => getHiddenModules(categoryMap, hiddenCategories),
+    [categoryMap, hiddenCategories],
+  )
   const visibleQuestions = useMemo(
-    () => allQuestions.filter((q) => !hiddenModules.has(q.module)),
+    () => filterVisibleQuestions(allQuestions, hiddenModules),
     [allQuestions, hiddenModules],
+  )
+  const visibleQuestionIds = useMemo(
+    () => visibleQuestions.map((question) => question.id),
+    [visibleQuestions],
   )
 
   const [questionNotes, setQuestionNotes] = useState<QuestionNote[]>([])
@@ -1380,7 +1375,11 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    if (visibleQuestions.length === 0) return
+    if (visibleQuestionIds.length === 0) {
+      setDailyIds([])
+      setDailyLoading(false)
+      return
+    }
     setDailyLoading(true)
     getDailyIds(
       Object.fromEntries(
@@ -1390,10 +1389,11 @@ export default function Dashboard() {
         ]),
       ),
       dailyGoal,
+      visibleQuestionIds,
     )
       .then(setDailyIds)
       .finally(() => setDailyLoading(false))
-  }, [visibleQuestions.length, records, getDailyIds, dailyGoal])
+  }, [visibleQuestionIds, records, getDailyIds, dailyGoal])
 
   // Counts based on visible questions only
   const counts = useMemo(() => {
@@ -1413,7 +1413,9 @@ export default function Dashboard() {
   const totalQuestions = visibleQuestions.length
   const masteredPercent =
     totalQuestions > 0 ? Math.round((counts.mastered / totalQuestions) * 100) : 0
-  const estimatedDays = getEstimatedDays(totalQuestions, dailyGoal)
+  const remainingQuestions = Math.max(0, totalQuestions - counts.mastered)
+  const estimatedDays =
+    remainingQuestions === 0 ? 0 : Math.ceil(remainingQuestions / Math.max(1, dailyGoal))
 
   const recentNoteItems = useMemo<RecentNoteItem[]>(() => {
     const questionMap = new Map(visibleQuestions.map((q) => [q.id, q]))
@@ -1427,21 +1429,21 @@ export default function Dashboard() {
   }, [questionNotes, visibleQuestions])
 
   // Module progress: derive from visible questions grouped by module,
-  // preserving the order defined in categoryModuleMap, then appending any
-  // modules not covered by any category (e.g. freshly-imported custom ones).
+  // preserving the order defined in the category map, then appending any
+  // modules not covered by any category.
   const moduleStats = useMemo(() => {
     // Ordered module names from visible categories
     const orderedModules: string[] = []
     const seen = new Set<string>()
     // Sort categories by their order field
-    const sortedCategories = Object.entries(categoryModuleMap).sort(([a], [b]) => {
-      const aOrder = DEFAULT_CATEGORY_MAP[a]?.order ?? 99
-      const bOrder = DEFAULT_CATEGORY_MAP[b]?.order ?? 99
+    const sortedCategories = Object.entries(categoryMap).sort(([, a], [, b]) => {
+      const aOrder = a.order ?? 99
+      const bOrder = b.order ?? 99
       return aOrder - bOrder
     })
-    for (const [catName, modules] of sortedCategories) {
+    for (const [catName, category] of sortedCategories) {
       if (hiddenCategories.has(catName)) continue
-      for (const m of modules) {
+      for (const m of category.modules) {
         if (!seen.has(m)) {
           orderedModules.push(m)
           seen.add(m)
@@ -1462,7 +1464,7 @@ export default function Dashboard() {
         questions: visibleQuestions.filter((q) => q.module === mod),
       }))
       .filter((s) => s.questions.length > 0)
-  }, [visibleQuestions, categoryModuleMap, hiddenCategories])
+  }, [visibleQuestions, categoryMap, hiddenCategories])
 
   if (initializing) {
     return (
@@ -1497,7 +1499,7 @@ export default function Dashboard() {
           {hasNoQuestions
             ? '暂无题目，请先导入题库'
             : allHidden
-              ? '所有题库已隐藏，可在设置 → 刷题偏好中调整'
+              ? '所有题库已关闭展示，可在设置 → 刷题偏好中调整'
               : `共 ${totalQuestions} 道题，已掌握 ${counts.mastered} 道`}
         </p>
       </div>
@@ -1517,8 +1519,8 @@ export default function Dashboard() {
       ) : allHidden ? (
         <div className="card" style={{ padding: '80px 20px' }}>
           <EmptyState
-            title="所有题库已隐藏"
-            description="在「设置 → 刷题偏好 → 题库展示」中打开至少一个题库"
+            title="所有题库已关闭展示"
+            description="在「设置 → 刷题偏好 → 题库展示」中启用至少一个题库"
           />
         </div>
       ) : (
@@ -1898,7 +1900,7 @@ export default function Dashboard() {
                     key={id}
                     questionId={id}
                     index={i}
-                    questions={questions}
+                    questions={visibleQuestions}
                     records={records}
                   />
                 ))}
