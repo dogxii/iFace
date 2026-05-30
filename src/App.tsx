@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
+import { OnboardingGuide } from '@/components/layout/OnboardingGuide'
 import { Spinner } from '@/components/ui'
 import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
@@ -121,6 +122,7 @@ export default function App() {
         <main>
           <AppRoutes />
         </main>
+        <OnboardingGuide />
         <PWAUpdatePrompt />
       </div>
     </BrowserRouter>

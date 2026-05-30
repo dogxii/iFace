@@ -396,18 +396,33 @@ export function useStudyStore() {
     broadcast(action)
   }, [])
 
-  const toggleCategoryVisibility = useCallback((categoryName: string) => {
-    const next = new Set(stateRef.current.hiddenCategories)
-    if (next.has(categoryName)) {
-      next.delete(categoryName)
-    } else {
-      next.add(categoryName)
-    }
+  const setHiddenCategories = useCallback((categoryNames: string[]) => {
+    const next = new Set(categoryNames)
     saveHiddenCategories(next)
     const action: Action = { type: 'SET_HIDDEN_CATEGORIES', hiddenCategories: [...next] }
     broadcast(action)
     void invalidateDailyCache()
   }, [])
+
+  const setCategoryVisibility = useCallback(
+    (categoryName: string, visible: boolean) => {
+      const next = new Set(stateRef.current.hiddenCategories)
+      if (visible) {
+        next.delete(categoryName)
+      } else {
+        next.add(categoryName)
+      }
+      setHiddenCategories([...next])
+    },
+    [setHiddenCategories],
+  )
+
+  const toggleCategoryVisibility = useCallback(
+    (categoryName: string) => {
+      setCategoryVisibility(categoryName, stateRef.current.hiddenCategories.has(categoryName))
+    },
+    [setCategoryVisibility],
+  )
 
   const isCategoryHidden = useCallback(
     (categoryName: string): boolean => stateRef.current.hiddenCategories.has(categoryName),
@@ -502,6 +517,8 @@ export function useStudyStore() {
     toggleTheme,
     setStudyMode,
     setDailyGoal,
+    setHiddenCategories,
+    setCategoryVisibility,
     incrementStreak,
     resetStreak,
     toggleCategoryVisibility,
