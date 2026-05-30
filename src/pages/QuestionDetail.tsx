@@ -711,6 +711,143 @@ function appendSpeechTranscript(current: string, transcript: string): string {
   return `${current.trimEnd()} ${next}`
 }
 
+interface FeedbackScoreDimension {
+  label: string
+  score: number
+  max: number
+}
+
+interface FeedbackScoreSummary {
+  total: number
+  dimensions: FeedbackScoreDimension[]
+  note: string
+}
+
+function clampScore(score: number, max: number): number {
+  if (!Number.isFinite(score)) return 0
+  return Math.max(0, Math.min(max, Math.round(score)))
+}
+
+function parseScoreValue(section: string, labelPattern: string, max: number): number | null {
+  const match = section.match(
+    new RegExp(`${labelPattern}\\s*[：:]\\s*(\\d+(?:\\.\\d+)?)\\s*(?:[/／]\\s*${max})?`, 'i'),
+  )
+  if (!match) return null
+
+  return clampScore(Number.parseFloat(match[1]), max)
+}
+
+function splitFeedbackScore(markdown: string): {
+  content: string
+  score: FeedbackScoreSummary | null
+} {
+  const match = markdown.match(/\n?#{3,5}\s*参考评分\s*\n([\s\S]*?)\s*$/)
+  if (!match || match.index === undefined) return { content: markdown, score: null }
+
+  const section = match[1]
+  const total = parseScoreValue(section, '总分', 100)
+  if (total === null) return { content: markdown, score: null }
+
+  const dimensions = [
+    { label: '覆盖度', score: parseScoreValue(section, '覆盖度', 40), max: 40 },
+    { label: '准确性', score: parseScoreValue(section, '准确性', 40), max: 40 },
+    { label: '表达', score: parseScoreValue(section, '表达(?:质量)?', 20), max: 20 },
+  ].filter((item): item is FeedbackScoreDimension => item.score !== null)
+
+  const noteMatch = section.match(/提示\s*[：:]\s*(.+)/)
+  const note = noteMatch?.[1]?.trim() || '评分仅供自测参考，以具体改进建议优先。'
+
+  return {
+    content: markdown.slice(0, match.index).trimEnd(),
+    score: { total, dimensions, note },
+  }
+}
+
+function FeedbackScorePanel({ score }: { score: FeedbackScoreSummary }) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        paddingTop: 10,
+        borderTop: '1px dashed var(--border)',
+        color: 'var(--text-3)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>参考评分</span>
+        </div>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'var(--text-2)',
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {score.total}/100
+        </span>
+      </div>
+
+      {score.dimensions.length > 0 && (
+        <div style={{ display: 'grid', gap: 7 }}>
+          {score.dimensions.map((dimension) => {
+            const percent = dimension.max > 0 ? (dimension.score / dimension.max) * 100 : 0
+
+            return (
+              <div
+                key={dimension.label}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '48px minmax(56px, 112px) 42px',
+                  alignItems: 'center',
+                  gap: 8,
+                  justifyContent: 'start',
+                  fontSize: 11,
+                }}
+              >
+                <span>{dimension.label}</span>
+                <span
+                  style={{
+                    height: 4,
+                    width: '100%',
+                    borderRadius: 999,
+                    background: 'var(--surface-3)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'block',
+                      width: `${percent}%`,
+                      height: '100%',
+                      borderRadius: 999,
+                      background: 'var(--text-3)',
+                    }}
+                  />
+                </span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {dimension.score}/{dimension.max}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <p style={{ marginTop: 8, fontSize: 11, lineHeight: 1.55 }}>{score.note}</p>
+    </div>
+  )
+}
+
 interface MyAnswerInputProps {
   questionId: string
   questionText: string
@@ -866,6 +1003,9 @@ function MyAnswerInput({
   }, [feedback, noteSaved, onNoteSaved, questionId, questionText, savingNote, text])
 
   const displayFeedback = feedback ?? (streamingFeedback || null)
+  const parsedFeedback = feedback ? splitFeedbackScore(feedback) : null
+  const feedbackContent = parsedFeedback?.content || displayFeedback
+  const feedbackScore = parsedFeedback?.score ?? null
 
   const wrapperStyle: React.CSSProperties = compact
     ? { borderTop: '1px solid var(--border-subtle)', marginTop: 4, paddingTop: 14 }
@@ -1252,9 +1392,10 @@ function MyAnswerInput({
                   </span>
                 )}
               </div>
-              {displayFeedback && (
+              {feedbackContent && (
                 <div className="prose" style={{ fontSize: 13 }}>
-                  <MarkdownRenderer content={displayFeedback} />
+                  <MarkdownRenderer content={feedbackContent} />
+                  {feedbackScore && <FeedbackScorePanel score={feedbackScore} />}
                 </div>
               )}
             </div>
