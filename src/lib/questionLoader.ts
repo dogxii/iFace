@@ -2,6 +2,7 @@ import { normalizeQuestionsForImport, validateQuestions } from '../data/schema'
 import type { Question } from '../types'
 import {
   addCustomSource,
+  bulkPutQuestionAnswerOverrides,
   bulkPutQuestionFlags,
   bulkPutQuestionNotes,
   bulkPutQuestions,
@@ -9,6 +10,7 @@ import {
   type CategoryMap,
   DEFAULT_CATEGORY_MAP,
   deleteQuestionById,
+  getAllQuestionAnswerOverrides,
   getAllQuestionFlags,
   getAllQuestionNotes,
   getAllQuestions,
@@ -215,6 +217,7 @@ interface BuiltinReplacementMigrationResult {
   migratedQuestions: number
   migratedRecords: number
   migratedNotes: number
+  migratedAnswerOverrides: number
   migratedFlags: number
   removedSources: number
   removedCategories: number
@@ -224,6 +227,7 @@ const emptyMigrationResult: BuiltinReplacementMigrationResult = {
   migratedQuestions: 0,
   migratedRecords: 0,
   migratedNotes: 0,
+  migratedAnswerOverrides: 0,
   migratedFlags: 0,
   removedSources: 0,
   removedCategories: 0,
@@ -294,6 +298,15 @@ function mergeQuestionNote(
     createdAt: Math.min(to.createdAt, from.createdAt),
     updatedAt: Math.max(to.updatedAt, from.updatedAt),
   }
+}
+
+function mergeQuestionAnswerOverride(
+  from: Awaited<ReturnType<typeof getAllQuestionAnswerOverrides>>[number],
+  to: Awaited<ReturnType<typeof getAllQuestionAnswerOverrides>>[number] | undefined,
+  questionId: string,
+) {
+  if (!to) return { ...from, questionId }
+  return from.updatedAt > to.updatedAt ? { ...from, questionId } : to
 }
 
 function mergeQuestionFlag(
@@ -387,17 +400,22 @@ export async function migrateBuiltinQuestionReplacements(): Promise<BuiltinRepla
   }
 
   if (replacements.size > 0) {
-    const [records, notes, flags] = await Promise.all([
+    const [records, notes, answerOverrides, flags] = await Promise.all([
       getAllStudyRecords(),
       getAllQuestionNotes(),
+      getAllQuestionAnswerOverrides(),
       getAllQuestionFlags(),
     ])
     const recordsById = new Map(records.map((record) => [record.questionId, record]))
     const notesById = new Map(notes.map((note) => [note.questionId, note]))
+    const answerOverridesById = new Map(
+      answerOverrides.map((override) => [override.questionId, override]),
+    )
     const flagsById = new Map(flags.map((flag) => [flag.questionId, flag]))
 
     const nextRecords = []
     const nextNotes = []
+    const nextAnswerOverrides = []
     const nextFlags = []
 
     for (const [fromId, toId] of replacements) {
@@ -411,6 +429,13 @@ export async function migrateBuiltinQuestionReplacements(): Promise<BuiltinRepla
         nextNotes.push(mergeQuestionNote(fromNote, notesById.get(toId), toId))
       }
 
+      const fromAnswerOverride = answerOverridesById.get(fromId)
+      if (fromAnswerOverride) {
+        nextAnswerOverrides.push(
+          mergeQuestionAnswerOverride(fromAnswerOverride, answerOverridesById.get(toId), toId),
+        )
+      }
+
       const fromFlag = flagsById.get(fromId)
       if (fromFlag) {
         nextFlags.push(mergeQuestionFlag(fromFlag, flagsById.get(toId), toId))
@@ -420,11 +445,15 @@ export async function migrateBuiltinQuestionReplacements(): Promise<BuiltinRepla
     await Promise.all([
       nextRecords.length > 0 ? bulkPutStudyRecords(nextRecords) : Promise.resolve(),
       nextNotes.length > 0 ? bulkPutQuestionNotes(nextNotes) : Promise.resolve(),
+      nextAnswerOverrides.length > 0
+        ? bulkPutQuestionAnswerOverrides(nextAnswerOverrides)
+        : Promise.resolve(),
       nextFlags.length > 0 ? bulkPutQuestionFlags(nextFlags) : Promise.resolve(),
     ])
 
     result.migratedRecords = nextRecords.length
     result.migratedNotes = nextNotes.length
+    result.migratedAnswerOverrides = nextAnswerOverrides.length
     result.migratedFlags = nextFlags.length
 
     for (const customId of replacements.keys()) {

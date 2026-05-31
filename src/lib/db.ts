@@ -3,18 +3,22 @@ import type {
   JdMatchReport,
   MockInterviewSession,
   Question,
+  QuestionAnswerOverride,
   QuestionFlag,
   QuestionNote,
+  QuestionNoteImage,
   StudyRecord,
 } from '../types'
 
 const DB_NAME = 'iface_db'
-const DB_VERSION = 5
+const DB_VERSION = 7
 
 export const STORES = {
   QUESTIONS: 'questions',
   STUDY_RECORDS: 'study_records',
   QUESTION_NOTES: 'question_notes',
+  QUESTION_NOTE_IMAGES: 'question_note_images',
+  QUESTION_ANSWER_OVERRIDES: 'question_answer_overrides',
   QUESTION_FLAGS: 'question_flags',
   MOCK_INTERVIEWS: 'mock_interviews',
   JD_MATCH_REPORTS: 'jd_match_reports',
@@ -75,6 +79,23 @@ function getDB(): Promise<IDBPDatabase> {
             keyPath: 'questionId',
           })
           notes.createIndex('updatedAt', 'updatedAt', { unique: false })
+        }
+
+        // Local-only images embedded into question notes.
+        if (!db.objectStoreNames.contains(STORES.QUESTION_NOTE_IMAGES)) {
+          const noteImages = db.createObjectStore(STORES.QUESTION_NOTE_IMAGES, {
+            keyPath: 'id',
+          })
+          noteImages.createIndex('questionId', 'questionId', { unique: false })
+          noteImages.createIndex('updatedAt', 'updatedAt', { unique: false })
+        }
+
+        // Per-question custom reference answers. The original question stays intact.
+        if (!db.objectStoreNames.contains(STORES.QUESTION_ANSWER_OVERRIDES)) {
+          const answerOverrides = db.createObjectStore(STORES.QUESTION_ANSWER_OVERRIDES, {
+            keyPath: 'questionId',
+          })
+          answerOverrides.createIndex('updatedAt', 'updatedAt', { unique: false })
         }
 
         // Per-question flags such as starred/重点题.
@@ -157,15 +178,19 @@ export async function deleteQuestionsBySource(source: string): Promise<void> {
   if (deletedIds.length > 0) {
     const recordTx = db.transaction(STORES.STUDY_RECORDS, 'readwrite')
     const noteTx = db.transaction(STORES.QUESTION_NOTES, 'readwrite')
+    const answerOverrideTx = db.transaction(STORES.QUESTION_ANSWER_OVERRIDES, 'readwrite')
     const flagTx = db.transaction(STORES.QUESTION_FLAGS, 'readwrite')
     await Promise.all([
       ...deletedIds.map((id) => recordTx.store.delete(id)),
       recordTx.done,
       ...deletedIds.map((id) => noteTx.store.delete(id)),
       noteTx.done,
+      ...deletedIds.map((id) => answerOverrideTx.store.delete(id)),
+      answerOverrideTx.done,
       ...deletedIds.map((id) => flagTx.store.delete(id)),
       flagTx.done,
     ])
+    await Promise.all(deletedIds.map((id) => deleteQuestionNoteImagesByQuestionId(id)))
   }
 }
 
@@ -175,6 +200,8 @@ export async function deleteQuestionById(id: string): Promise<void> {
     db.delete(STORES.QUESTIONS, id),
     db.delete(STORES.STUDY_RECORDS, id),
     db.delete(STORES.QUESTION_NOTES, id),
+    deleteQuestionNoteImagesByQuestionId(id),
+    db.delete(STORES.QUESTION_ANSWER_OVERRIDES, id),
     db.delete(STORES.QUESTION_FLAGS, id),
   ])
 }
@@ -231,7 +258,10 @@ export async function putQuestionNote(note: QuestionNote): Promise<void> {
   const trimmed = note.content.trim()
 
   if (!trimmed) {
-    await db.delete(STORES.QUESTION_NOTES, note.questionId)
+    await Promise.all([
+      db.delete(STORES.QUESTION_NOTES, note.questionId),
+      deleteQuestionNoteImagesByQuestionId(note.questionId),
+    ])
     return
   }
 
@@ -276,6 +306,103 @@ export async function appendQuestionNoteContent(
   }
   await db.put(STORES.QUESTION_NOTES, next)
   return next
+}
+
+// ─── Local-only Question Note Images ────────────────────────────────────────
+
+export async function getQuestionNoteImages(questionId: string): Promise<QuestionNoteImage[]> {
+  const db = await getDB()
+  return db.getAllFromIndex(STORES.QUESTION_NOTE_IMAGES, 'questionId', questionId)
+}
+
+export async function putQuestionNoteImage(image: QuestionNoteImage): Promise<QuestionNoteImage> {
+  const db = await getDB()
+  const now = Date.now()
+  const next: QuestionNoteImage = {
+    ...image,
+    createdAt: image.createdAt || now,
+    updatedAt: now,
+  }
+  await db.put(STORES.QUESTION_NOTE_IMAGES, next)
+  return next
+}
+
+export async function deleteQuestionNoteImagesByQuestionId(questionId: string): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(STORES.QUESTION_NOTE_IMAGES, 'readwrite')
+  const index = tx.store.index('questionId')
+  let cursor = await index.openCursor(questionId)
+  while (cursor) {
+    await cursor.delete()
+    cursor = await cursor.continue()
+  }
+  await tx.done
+}
+
+export async function deleteUnusedQuestionNoteImages(
+  questionId: string,
+  keepIds: string[],
+): Promise<void> {
+  const keep = new Set(keepIds)
+  const db = await getDB()
+  const tx = db.transaction(STORES.QUESTION_NOTE_IMAGES, 'readwrite')
+  const index = tx.store.index('questionId')
+  let cursor = await index.openCursor(questionId)
+  while (cursor) {
+    if (!keep.has(cursor.value.id)) await cursor.delete()
+    cursor = await cursor.continue()
+  }
+  await tx.done
+}
+
+// ─── Question Answer Overrides ──────────────────────────────────────────────
+
+export async function getAllQuestionAnswerOverrides(): Promise<QuestionAnswerOverride[]> {
+  const db = await getDB()
+  return db.getAll(STORES.QUESTION_ANSWER_OVERRIDES)
+}
+
+export async function getQuestionAnswerOverride(
+  questionId: string,
+): Promise<QuestionAnswerOverride | undefined> {
+  const db = await getDB()
+  return db.get(STORES.QUESTION_ANSWER_OVERRIDES, questionId)
+}
+
+export async function putQuestionAnswerOverride(
+  override: QuestionAnswerOverride,
+): Promise<QuestionAnswerOverride | null> {
+  const db = await getDB()
+  const now = Date.now()
+  const existing = await getQuestionAnswerOverride(override.questionId)
+  const trimmed = override.content.trim()
+
+  if (!trimmed) {
+    await db.delete(STORES.QUESTION_ANSWER_OVERRIDES, override.questionId)
+    return null
+  }
+
+  const next: QuestionAnswerOverride = {
+    questionId: override.questionId,
+    content: override.content,
+    createdAt: existing?.createdAt ?? override.createdAt ?? now,
+    updatedAt: now,
+  }
+  await db.put(STORES.QUESTION_ANSWER_OVERRIDES, next)
+  return next
+}
+
+export async function bulkPutQuestionAnswerOverrides(
+  overrides: QuestionAnswerOverride[],
+): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(STORES.QUESTION_ANSWER_OVERRIDES, 'readwrite')
+  await Promise.all([...overrides.map((override) => tx.store.put(override)), tx.done])
+}
+
+export async function deleteQuestionAnswerOverride(questionId: string): Promise<void> {
+  const db = await getDB()
+  await db.delete(STORES.QUESTION_ANSWER_OVERRIDES, questionId)
 }
 
 // ─── Question Flags ─────────────────────────────────────────────────────────
@@ -627,11 +754,12 @@ export async function removeCustomSource(source: string): Promise<void> {
 // ─── Export all data (for backup) ────────────────────────────────────────────
 
 export async function exportAllData(): Promise<{
-  formatVersion: 5
+  formatVersion: 6
   exportedAt: string
   questions: Question[]
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
+  questionAnswerOverrides: QuestionAnswerOverride[]
   questionFlags: QuestionFlag[]
   mockInterviews: MockInterviewSession[]
   jdMatchReports: JdMatchReport[]
@@ -642,6 +770,7 @@ export async function exportAllData(): Promise<{
     questions,
     studyRecords,
     questionNotes,
+    questionAnswerOverrides,
     questionFlags,
     mockInterviews,
     jdMatchReports,
@@ -651,6 +780,7 @@ export async function exportAllData(): Promise<{
     getAllQuestions(),
     getAllStudyRecords(),
     getAllQuestionNotes(),
+    getAllQuestionAnswerOverrides(),
     getAllQuestionFlags(),
     getAllMockInterviews(),
     getAllJdMatchReports(),
@@ -663,11 +793,12 @@ export async function exportAllData(): Promise<{
   }
 
   return {
-    formatVersion: 5,
+    formatVersion: 6,
     exportedAt: new Date().toISOString(),
     questions,
     studyRecords,
     questionNotes,
+    questionAnswerOverrides,
     questionFlags,
     mockInterviews,
     jdMatchReports,
@@ -684,6 +815,8 @@ export async function resetDatabase(): Promise<void> {
     db.clear(STORES.QUESTIONS),
     db.clear(STORES.STUDY_RECORDS),
     db.clear(STORES.QUESTION_NOTES),
+    db.clear(STORES.QUESTION_NOTE_IMAGES),
+    db.clear(STORES.QUESTION_ANSWER_OVERRIDES),
     db.clear(STORES.QUESTION_FLAGS),
     db.clear(STORES.MOCK_INTERVIEWS),
     db.clear(STORES.JD_MATCH_REPORTS),
