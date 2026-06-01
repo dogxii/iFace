@@ -3232,6 +3232,7 @@ function AnswerAnnotationToolbar({
   commentDraft,
   saving,
   onHighlight,
+  onClearHighlight,
   onOpenComment,
   onCommentDraftChange,
   onSaveComment,
@@ -3243,6 +3244,7 @@ function AnswerAnnotationToolbar({
   commentDraft: string
   saving: boolean
   onHighlight: (color: AnswerAnnotationColor) => void
+  onClearHighlight: () => void
   onOpenComment: () => void
   onCommentDraftChange: (value: string) => void
   onSaveComment: () => void
@@ -3334,6 +3336,41 @@ function AnswerAnnotationToolbar({
             </button>
           )
         })}
+        <button
+          type="button"
+          title="取消高亮"
+          aria-label="取消高亮"
+          disabled={saving}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onClearHighlight}
+          style={{
+            height: toolbarButtonSize,
+            width: toolbarButtonSize,
+            borderRadius: 7,
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--text-3)',
+            cursor: saving ? 'default' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: saving ? 0.6 : 1,
+          }}
+        >
+          <svg
+            width={isBottomToolbar ? 16 : 14}
+            height={isBottomToolbar ? 16 : 14}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="7" />
+            <path d="M5 19 19 5" />
+          </svg>
+        </button>
         <span
           style={{ width: 1, height: 16, background: 'var(--border-subtle)', margin: '0 3px' }}
         />
@@ -4549,6 +4586,60 @@ export default function QuestionDetail() {
     handleCreateAnswerAnnotation('comment', 'blue', answerCommentDraft)
   }, [answerCommentDraft, handleCreateAnswerAnnotation])
 
+  const handleClearAnswerHighlight = useCallback(async () => {
+    if (!answerSelection || answerAnnotationSaving) return
+
+    const highlightedAnnotations = answerAnnotationsForDisplayedAnswer.filter(
+      (annotation) =>
+        answerAnnotationRangesOverlap(annotation, answerSelection) &&
+        getAnswerAnnotationHighlightColor(annotation),
+    )
+    if (highlightedAnnotations.length === 0) {
+      setAnswerSelection(null)
+      window.getSelection()?.removeAllRanges()
+      return
+    }
+
+    setAnswerAnnotationSaving(true)
+    try {
+      const now = Date.now()
+      const deletedIds = new Set<string>()
+      const updatedAnnotations: QuestionAnswerAnnotation[] = []
+
+      for (const annotation of highlightedAnnotations) {
+        if (hasAnswerAnnotationNote(annotation)) {
+          const saved = await putQuestionAnswerAnnotation({
+            ...annotation,
+            kind: 'comment',
+            highlightColor: null,
+            updatedAt: now,
+          })
+          updatedAnnotations.push(saved)
+        } else {
+          await deleteQuestionAnswerAnnotation(annotation.id)
+          deletedIds.add(annotation.id)
+        }
+      }
+
+      setAnswerAnnotations((current) =>
+        current
+          .filter((item) => !deletedIds.has(item.id))
+          .map((item) => updatedAnnotations.find((updated) => updated.id === item.id) ?? item),
+      )
+      setActiveAnswerCommentId((current) => (current && deletedIds.has(current) ? null : current))
+      setAnswerSelection(null)
+      setAnswerCommentOpen(false)
+      setAnswerCommentDraft('')
+      window.getSelection()?.removeAllRanges()
+    } catch {
+      getQuestionAnswerAnnotations(id ?? '')
+        .then(setAnswerAnnotations)
+        .catch(() => {})
+    } finally {
+      setAnswerAnnotationSaving(false)
+    }
+  }, [answerAnnotationSaving, answerAnnotationsForDisplayedAnswer, answerSelection, id])
+
   const handleCancelAnswerAnnotation = useCallback(() => {
     setAnswerSelection(null)
     setAnswerCommentOpen(false)
@@ -5419,6 +5510,7 @@ export default function QuestionDetail() {
                 commentDraft={answerCommentDraft}
                 saving={answerAnnotationSaving}
                 onHighlight={(color) => handleCreateAnswerAnnotation('highlight', color)}
+                onClearHighlight={handleClearAnswerHighlight}
                 onOpenComment={() => setAnswerCommentOpen(true)}
                 onCommentDraftChange={setAnswerCommentDraft}
                 onSaveComment={handleSaveAnswerComment}
