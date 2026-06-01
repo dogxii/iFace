@@ -2823,8 +2823,7 @@ const ANSWER_ANNOTATION_HIGHLIGHT_NAMES: Record<AnswerAnnotationColor, string> =
   pink: 'iface-answer-annotation-pink',
 }
 
-const ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME = 'iface-answer-annotation-comment'
-const ANSWER_COMMENT_DESKTOP_CLOSE_DELAY = 70
+const ANSWER_COMMENT_DESKTOP_CLOSE_DELAY = 20
 const ANSWER_COMMENT_MOBILE_SCROLL_CLOSE_DISTANCE = 28
 
 function getAnswerAnnotationColor(color: AnswerAnnotationColor): {
@@ -3054,12 +3053,61 @@ type AnswerCommentTargetRect = {
   bottom: number
 }
 
+type AnswerCommentUnderlineRect = {
+  left: number
+  top: number
+  width: number
+}
+
 type AnswerCommentTarget = {
   annotation: QuestionAnswerAnnotation
   rects: AnswerCommentTargetRect[]
+  underlineRects: AnswerCommentUnderlineRect[]
   popoverLeft: number
   popoverTop: number
   popoverPlacement: 'top' | 'bottom'
+}
+
+function getAnswerCommentUnderlineRects(
+  root: HTMLElement,
+  annotation: QuestionAnswerAnnotation,
+  rootRect: DOMRect,
+): AnswerCommentUnderlineRect[] {
+  const rects: AnswerCommentUnderlineRect[] = []
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  let offset = 0
+  let current = walker.nextNode()
+
+  while (current) {
+    const textLength = current.textContent?.length ?? 0
+    const nextOffset = offset + textLength
+    const start = Math.max(annotation.start, offset)
+    const end = Math.min(annotation.end, nextOffset)
+
+    if (start < end) {
+      const range = document.createRange()
+      try {
+        range.setStart(current, start - offset)
+        range.setEnd(current, end - offset)
+        for (const rect of Array.from(range.getClientRects())) {
+          if (rect.width <= 1 || rect.height <= 1) continue
+          rects.push({
+            left: rect.left - rootRect.left + root.scrollLeft,
+            top: rect.bottom - rootRect.top + root.scrollTop + 1,
+            width: Math.max(0, rect.width),
+          })
+        }
+      } finally {
+        range.detach()
+      }
+    }
+
+    offset = nextOffset
+    if (offset >= annotation.end) break
+    current = walker.nextNode()
+  }
+
+  return rects
 }
 
 function getAnswerCommentTarget(
@@ -3070,6 +3118,7 @@ function getAnswerCommentTarget(
   if (!range) return null
 
   try {
+    const rootRect = root.getBoundingClientRect()
     const rects = Array.from(range.getClientRects()).filter(
       (rect) => rect.width > 1 && rect.height > 1,
     )
@@ -3100,6 +3149,7 @@ function getAnswerCommentTarget(
         top: item.top,
         bottom: item.bottom,
       })),
+      underlineRects: getAnswerCommentUnderlineRects(root, annotation, rootRect),
       popoverLeft,
       popoverTop: popoverPlacement === 'top' ? rect.top : rect.bottom,
       popoverPlacement,
@@ -3142,10 +3192,8 @@ function applyAnswerAnnotationHighlights(
   for (const name of Object.values(ANSWER_ANNOTATION_HIGHLIGHT_NAMES)) {
     registry.delete(name)
   }
-  registry.delete(ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME)
 
   const grouped = new Map<AnswerAnnotationColor, Range[]>()
-  const commentRanges: Range[] = []
   for (const annotation of annotations) {
     const range = createTextRange(root, annotation.start, annotation.end)
     if (!range) continue
@@ -3157,10 +3205,6 @@ function applyAnswerAnnotationHighlights(
       grouped.set(highlightColor, ranges)
     }
 
-    if (hasAnswerAnnotationNote(annotation)) {
-      commentRanges.push(range.cloneRange())
-    }
-
     range.detach()
   }
 
@@ -3168,18 +3212,11 @@ function applyAnswerAnnotationHighlights(
     if (ranges.length === 0) continue
     registry.set(ANSWER_ANNOTATION_HIGHLIGHT_NAMES[color], new HighlightConstructor(...ranges))
   }
-  if (commentRanges.length > 0) {
-    registry.set(
-      ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME,
-      new HighlightConstructor(...commentRanges),
-    )
-  }
 
   return () => {
     for (const name of Object.values(ANSWER_ANNOTATION_HIGHLIGHT_NAMES)) {
       registry.delete(name)
     }
-    registry.delete(ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME)
   }
 }
 
@@ -3544,87 +3581,125 @@ function AnswerCommentMarkers({
   }, [activeId, onActiveChange])
 
   const activeTarget = targets.find((target) => target.annotation.id === activeId)
-  if (typeof document === 'undefined' || !activeTarget) return null
+  const root = rootRef.current
+  if (typeof document === 'undefined' || !root || targets.length === 0) return null
 
-  return createPortal(
-    <div
-      ref={layerRef}
-      onMouseEnter={cancelClose}
-      onMouseLeave={() => scheduleClose()}
-      style={{
-        position: 'fixed',
-        left: activeTarget.popoverLeft,
-        top: activeTarget.popoverTop,
-        transform:
-          activeTarget.popoverPlacement === 'top'
-            ? 'translate(-50%, calc(-100% - 10px))'
-            : 'translate(-50%, 10px)',
-        zIndex: 155,
-        width: 'min(264px, calc(100vw - 24px))',
-        padding: 10,
-        borderRadius: 10,
-        border: '1px solid var(--border-subtle)',
-        background: 'var(--surface)',
-        boxShadow: '0 10px 28px rgba(15,23,42,0.12)',
-      }}
-      role="dialog"
-      aria-label="答案批注"
-    >
-      <p
-        style={{
-          fontSize: 12,
-          lineHeight: 1.6,
-          color: 'var(--text)',
-          wordBreak: 'break-word',
-        }}
-      >
-        {activeTarget.annotation.note}
-      </p>
-      <div
-        style={{
-          marginTop: 8,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: 6,
-        }}
-      >
-        <button
-          type="button"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => onDelete(activeTarget.annotation.id)}
+  return (
+    <>
+      {createPortal(
+        <span
+          aria-hidden="true"
           style={{
-            height: 24,
-            padding: '0 8px',
-            borderRadius: 7,
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--text-3)',
-            fontSize: 12,
-            cursor: 'pointer',
+            position: 'absolute',
+            inset: 0,
+            zIndex: 1,
+            pointerEvents: 'none',
           }}
         >
-          删除批注
-        </button>
-        <button
-          type="button"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => onActiveChange(null)}
-          style={{
-            height: 24,
-            padding: '0 8px',
-            borderRadius: 7,
-            border: 'none',
-            background: 'var(--surface-2)',
-            color: 'var(--text-2)',
-            fontSize: 12,
-            cursor: 'pointer',
-          }}
-        >
-          收起
-        </button>
-      </div>
-    </div>,
-    document.body,
+          {targets.flatMap((target) =>
+            target.underlineRects.map((rect, index) => (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: rects are derived from transient layout boxes.
+                key={`${target.annotation.id}-${index}`}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  left: rect.left,
+                  top: rect.top,
+                  width: rect.width,
+                  height: 0,
+                  borderBottom: '1.5px dotted rgba(37, 99, 235, 0.82)',
+                  pointerEvents: 'none',
+                }}
+              />
+            )),
+          )}
+        </span>,
+        root,
+      )}
+
+      {activeTarget &&
+        createPortal(
+          <div
+            ref={layerRef}
+            onMouseEnter={cancelClose}
+            onMouseLeave={() => scheduleClose()}
+            style={{
+              position: 'fixed',
+              left: activeTarget.popoverLeft,
+              top: activeTarget.popoverTop,
+              transform:
+                activeTarget.popoverPlacement === 'top'
+                  ? 'translate(-50%, calc(-100% - 10px))'
+                  : 'translate(-50%, 10px)',
+              zIndex: 155,
+              width: 'min(264px, calc(100vw - 24px))',
+              padding: 10,
+              borderRadius: 10,
+              border: '1px solid var(--border-subtle)',
+              background: 'var(--surface)',
+              boxShadow: '0 10px 28px rgba(15,23,42,0.12)',
+            }}
+            role="dialog"
+            aria-label="答案批注"
+          >
+            <p
+              style={{
+                fontSize: 12,
+                lineHeight: 1.6,
+                color: 'var(--text)',
+                wordBreak: 'break-word',
+              }}
+            >
+              {activeTarget.annotation.note}
+            </p>
+            <div
+              style={{
+                marginTop: 8,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 6,
+              }}
+            >
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => onDelete(activeTarget.annotation.id)}
+                style={{
+                  height: 24,
+                  padding: '0 8px',
+                  borderRadius: 7,
+                  border: 'none',
+                  background: 'transparent',
+                  color: 'var(--text-3)',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                }}
+              >
+                删除批注
+              </button>
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => onActiveChange(null)}
+                style={{
+                  height: 24,
+                  padding: '0 8px',
+                  borderRadius: 7,
+                  border: 'none',
+                  background: 'var(--surface-2)',
+                  color: 'var(--text-2)',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                }}
+              >
+                收起
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   )
 }
 
@@ -5330,7 +5405,7 @@ export default function QuestionDetail() {
                 ref={answerContentRef}
                 className="prose answer-annotation-content"
                 aria-label="答案内容"
-                style={{ minWidth: 0 }}
+                style={{ minWidth: 0, position: 'relative' }}
               >
                 <MarkdownRenderer content={displayedAnswerText} />
               </section>
@@ -5680,13 +5755,6 @@ export default function QuestionDetail() {
 				}
 				::highlight(iface-answer-annotation-pink) {
 					background: rgba(236, 72, 153, 0.22);
-				}
-				::highlight(iface-answer-annotation-comment) {
-					text-decoration-line: underline;
-					text-decoration-style: dotted;
-					text-decoration-color: rgba(37, 99, 235, 0.96);
-					text-decoration-thickness: 2px;
-					text-underline-offset: 5px;
 				}
 				@media (max-width: 520px) {
 					.note-drawer-panel {
