@@ -2,508 +2,181 @@
   {
     "id": "ai-eng-001",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是模型量化？常见的量化方法有哪些？",
-    "answer": "## 核心概念\n\n模型量化是将模型权重和激活值从高精度浮点数（如FP32）转换为低精度表示（如INT8、INT4）的技术，目的是减少模型存储空间和加速推理。\n\n## 常见量化方法\n\n### 按量化时机分类\n- **训练后量化（PTQ）**：在模型训练完成后进行量化，无需重新训练\n- **量化感知训练（QAT）**：在训练过程中模拟量化效果，精度损失更小\n\n### 按量化粒度分类\n- **逐层量化**：每层使用相同的量化参数\n- **逐通道量化**：每个通道使用不同的量化参数，精度更高\n- **分组量化**：将通道分组后分别量化\n\n### 常见技术方案\n- **GPTQ**：基于二阶信息的训练后量化，适合大语言模型\n- **AWQ**：激活感知权重量化，保留重要权重精度\n- **GGML/GGUF**：llama.cpp使用的量化格式，支持CPU推理\n- **bitsandbytes**：支持8-bit和4-bit量化，与HuggingFace集成良好\n\n## 关键要点\n\n1. **精度与效率的权衡**：INT8量化通常精度损失<1%，INT4需要更精细的策略\n2. **硬件适配**：不同GPU对量化指令支持不同（如Turing架构的INT8 Tensor Core）\n3. **混合精度量化**：对重要层保持高精度，不重要层低精度\n\n## 工程实践\n\n实际部署中，推荐先用PTQ快速验证，如果精度不达标再尝试QAT。对于大语言模型，GPTQ和AWQ是主流选择，可在保持95%以上精度的同时，将推理速度提升2-3倍。",
-    "tags": [
-      "模型量化",
-      "推理优化",
-      "GPTQ"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "LLM 应用的模型选择应如何在质量、延迟、上下文、成本之间权衡？",
+    "answer": "### 先按任务分层\n\n模型选择不是找一个“最强模型”包打天下，而是按任务难度分层。分类、改写、结构化抽取可以用小模型；复杂推理、代码、长文档、多工具任务再用强模型。\n\n### 四个核心维度\n\n质量决定是否能完成任务；延迟决定用户体验；上下文决定能否放下输入、检索和工具结果；成本决定能否规模化。还要看稳定性、合规、区域可用性和供应商风险。\n\n### 路由策略\n\n可以先用便宜模型做意图识别和简单任务，失败、低置信度或高风险时升级到强模型。对固定答案或高频问题，优先缓存或 RAG，不必每次调用大模型。\n\n### 验证方式\n\n用离线评测集比较质量，用压测看延迟，用线上指标看成本和失败率。模型选择要能随场景变化调整，而不是写死在代码里。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-002",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是知识蒸馏？它在模型压缩中的作用是什么？",
-    "answer": "## 核心概念\n\n知识蒸馏是一种模型压缩技术，通过训练一个小模型（学生模型）来模仿大模型（教师模型）的行为，将大模型的知识迁移到小模型中。\n\n## 原理与方法\n\n### 基本原理\n- 教师模型的softmax输出包含类间关系信息（暗知识）\n- 学生模型不仅学习正确答案，还学习教师模型的输出分布\n- 使用温度参数T软化概率分布，使暗知识更明显\n\n### 蒸馏方法分类\n- **输出蒸馏**：只蒸馏最终层的输出\n- **特征蒸馏**：蒸馏中间层的特征表示\n- **关系蒸馏**：蒸馏样本间的关系信息\n\n### 损失函数设计\n```\nL = α * L_hard + (1-α) * L_soft\n```\n- L_hard：学生预测与真实标签的交叉熵\n- L_soft：学生输出与教师输出的KL散度\n\n## 关键要点\n\n1. **温度参数选择**：通常T=2-20，温度越高越平滑，但过高会丢失信息\n2. **教师模型质量**：教师模型越强，学生模型上限越高\n3. **架构设计**：学生架构不需要与教师完全相同，但要有足够的表达能力\n\n## 工程实践\n\n在实际应用中，知识蒸馏常用于：\n- 将大语言模型压缩为可部署的轻量版本\n- 将多模型集成蒸馏为单模型\n- 领域特定任务中，用通用大模型蒸馏专业小模型\n\n面试时要强调蒸馏与量化的区别：蒸馏改变模型结构，量化只改变数值精度。",
-    "tags": [
-      "知识蒸馏",
-      "模型压缩",
-      "Teacher-Student"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "推理服务中的流式输出、超时、中断和重试如何设计？",
+    "answer": "### 流式输出\n\n流式输出降低首 token 延迟，让用户更快看到进展。服务端要支持分块发送、客户端增量渲染和最终完成事件。中间结果不能当作已完成状态，尤其是工具调用和结构化输出。\n\n### 超时和中断\n\n请求要有总超时、连接超时、首 token 超时和空闲超时。用户点击停止时，前端、网关和模型调用都要取消，避免后台继续消耗 token。\n\n### 重试\n\n重试只适合幂等请求，比如临时网络错误、限流后退避。已经触发工具副作用的请求不能盲目重试，必须带幂等键或先查询状态。\n\n### 降级\n\n超时后可以切小模型、减少上下文、关闭非关键工具、返回部分结果或转人工。关键是把超时预算设计在链路里，而不是等请求卡死。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-003",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是模型剪枝？有哪些常见的剪枝策略？",
-    "answer": "## 核心概念\n\n模型剪枝是通过移除模型中不重要的参数、神经元或层来减小模型大小和计算量的技术。核心思想是：大型神经网络中存在大量冗余参数。\n\n## 剪枝策略分类\n\n### 按剪枝粒度\n- **非结构化剪枝**：移除单个权重，产生稀疏矩阵\n- **结构化剪枝**：移除整个通道、注意力头或层，硬件友好\n- **半结构化剪枝**：如N:M稀疏性（2:4），硬件加速支持\n\n### 按剪枝时机\n- **训练前剪枝**：随机移除参数（彩票假设）\n- **训练中剪枝**：在训练过程中逐步移除\n- **训练后剪枝**：训练完成后根据重要性剪枝\n\n### 重要性评估标准\n- **权重大小**：移除绝对值小的权重\n- **梯度信息**：移除梯度小的参数\n- **激活值**：移除激活值低的神经元\n- **Taylor展开**：综合考虑权重和梯度\n\n## 关键要点\n\n1. **迭代式剪枝**：分多次逐步剪枝，每次微调恢复精度\n2. **稀疏度与精度平衡**：通常可剪枝50-90%参数，精度损失可控\n3. **硬件支持**：结构化剪枝更容易获得实际加速\n\n## 工程实践\n\n实际部署中，推荐使用结构化剪枝+量化的组合方案。例如，先剪枝50%通道，再INT8量化，可在保持95%精度的同时，获得4-8倍加速。NVIDIA的Ampere架构支持2:4稀疏性加速。",
-    "tags": [
-      "模型剪枝",
-      "稀疏化",
-      "结构化剪枝"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "模型路由、降级和多模型 fallback 如何保证体验稳定？",
+    "answer": "### 模型路由\n\n路由可以按任务类型、用户等级、风险、上下文长度、语言、实时负载和成本选择模型。简单任务走快模型，复杂任务走强模型，高风险任务加人工或更严格校验。\n\n### fallback\n\nfallback 要保证输出契约一致。比如 JSON schema、工具调用格式、引用要求不能因为换模型而变。低能力模型不能在高风险任务上静默接管，只能返回降级说明或转人工。\n\n### 降级策略\n\n常见降级包括换模型、减少检索数量、关闭图片处理、延迟执行、排队、返回缓存答案。每种降级都要知道会损失什么能力。\n\n### 稳定性\n\n记录每次路由原因、候选模型、失败原因和最终模型。线上按模型维度看质量、延迟、成本和错误率，才能发现某个 fallback 实际在伤害体验。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-004",
     "module": "AI工程化",
     "difficulty": 2,
-    "question": "vLLM推理框架的核心优化技术有哪些？",
-    "answer": "## 核心概念\n\nvLLM是专为大语言模型设计的高吞吐量推理引擎，其核心创新是PagedAttention技术，解决了KV Cache的内存管理问题。\n\n## 核心优化技术\n\n### 1. PagedAttention\n- 将KV Cache划分为固定大小的块（Block）\n- 使用块表（Block Table）管理逻辑到物理地址的映射\n- 支持非连续内存存储，减少内存碎片\n- 类似操作系统虚拟内存的分页机制\n\n### 2. Continuous Batching\n- 动态batch：请求随时加入或离开batch\n- 与静态batch相比，吞吐量提升2-4倍\n- 细粒度调度：按iteration级别调度，而非request级别\n\n### 3. 内存管理优化\n- 前缀共享：相同前缀的请求共享KV Cache\n- Copy-on-Write：beam search时共享前缀的KV Cache\n- 自动内存回收：请求完成后立即释放内存\n\n## 关键要点\n\n1. **显存利用率**：PagedAttention将显存利用率从60-80%提升到95%以上\n2. **吞吐量提升**：相比HuggingFace Transformers，吞吐量提升24倍\n3. **兼容性**：支持主流模型架构（LLaMA、Qwen、ChatGLM等）\n\n## 工程实践\n\n```python\nfrom vllm import LLM, SamplingParams\n\nllm = LLM(model=\"meta-llama/Llama-2-7b-chat-hf\")\nsampling_params = SamplingParams(temperature=0.7, max_tokens=512)\noutputs = llm.generate([\"Hello, world!\"], sampling_params)\n```\n\n生产部署建议：\n- 设置合理的gpu_memory_utilization（默认0.9）\n- 使用tensor_parallel进行多卡并行\n- 监控KV Cache使用率，调整max_num_seqs",
-    "tags": [
-      "vLLM",
-      "PagedAttention",
-      "推理框架"
-    ],
-    "source": "高频"
+    "question": "Token 计数、上下文预算和输出预留应如何做工程化管理？",
+    "answer": "### 预算拆分\n\n一次 LLM 请求的上下文要预留系统提示、开发者约束、用户输入、历史摘要、检索材料、工具结果和输出空间。输出预留不足会导致答案截断，输入塞满也没用。\n\n### token 计数\n\n工程上要在请求前估算 token，并按模型上下文上限做裁剪。不要等 API 报错才处理。不同模型 tokenizer 可能不同，预算要按实际目标模型计算。\n\n### 超预算处理\n\n优先删除低价值历史、压缩摘要、减少重复检索、裁剪工具返回。必须保留任务目标、硬约束、关键证据和安全规则。长文档任务可以分段处理再汇总。\n\n### 观测\n\n记录输入 token、输出 token、被裁剪内容类型、截断率和成本。上下文管理如果不可观测，质量下降时很难判断是模型差还是证据被裁掉了。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-005",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是KV Cache？为什么它对LLM推理很重要？",
-    "answer": "## 核心概念\n\nKV Cache是Transformer模型在自回归生成过程中，缓存已计算的Key和Value向量的技术。它避免了每生成一个token都重新计算所有位置的K和V，是LLM推理优化的基础。\n\n## 工作原理\n\n### 自回归生成的计算特点\n- 每生成一个新token，需要计算与所有之前token的注意力\n- Q向量只来自当前token，但K和V包含所有历史token\n- 不缓存的话，每个token的生成复杂度是O(n²)\n\n### KV Cache的作用\n```\n无KV Cache: 生成第n个token需要计算n次注意力\n有KV Cache: 生成第n个token只需计算1次注意力（增量计算）\n```\n\n## 关键要点\n\n1. **显存占用**：KV Cache大小 = 2 × 层数 × 序列长度 × 隐藏维度 × batch_size × 精度\n2. **长度限制**：KV Cache是限制最大上下文长度的主要因素\n3. **batch影响**：batch_size越大，KV Cache占用越大，支持的并发越少\n\n## 工程实践\n\nKV Cache优化策略：\n- **PagedAttention**：vLLM的分页管理，减少碎片\n- **GQA/MQA**：Group-Query Attention减少KV头数\n- **量化KV Cache**：将KV Cache量化为INT8/INT4\n- **滑动窗口**：只保留最近的KV Cache\n\n面试时要能计算KV Cache的具体大小。例如LLaMA-7B，FP16精度，序列长度2048：\n2 × 32 × 2048 × 4096 × 2 bytes ≈ 1GB",
-    "tags": [
-      "KV Cache",
-      "推理优化",
-      "显存管理"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "KV Cache、批处理、并发队列和限流如何影响推理吞吐？",
+    "answer": "### KV Cache\n\nKV Cache 保存已生成上下文的注意力中间状态，减少后续 token 计算。长上下文和多轮生成会占用大量显存，缓存管理直接影响并发能力。\n\n### 批处理\n\n批处理把多个请求合并推理，提高 GPU 利用率和吞吐。但批越大，排队延迟可能越高。在线服务要在吞吐和首 token 延迟之间平衡。\n\n### 队列和限流\n\n请求队列要区分短请求、长请求、高优先级请求和后台任务，避免长上下文请求堵住所有人。限流保护 GPU/CPU，超出能力时排队、降级或快速失败。\n\n### 容量指标\n\n看 tokens/s、首 token 延迟、每 token 延迟、队列等待、显存占用、KV cache 命中和 OOM。只看 QPS 会误判，因为不同请求 token 量差异很大。",
+    "tags": ["AI Agent", "AI工程化", "限流"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-006",
     "module": "AI工程化",
     "difficulty": 2,
-    "question": "Flash Attention的原理是什么？它解决了什么问题？",
-    "answer": "## 核心概念\n\nFlash Attention是一种高效的注意力计算算法，通过IO感知的计算方式，减少了HBM（高带宽内存）访问次数，显著加速注意力计算并降低显存使用。\n\n## 解决的问题\n\n### 传统注意力的瓶颈\n- 需要将完整的N×N注意力矩阵存储到HBM\n- 内存访问是主要瓶颈，而非计算\n- 对于长序列，显存占用是O(N²)\n\n### Flash Attention的解决方案\n- **分块计算**：将Q、K、V分成小块，在SRAM中计算\n- **在线Softmax**：无需存储完整注意力矩阵\n- **重计算**：反向传播时重新计算注意力，而非存储\n\n## 核心算法原理\n\n```\n1. 将Q、K、V分成块\n2. 对每个Q块，遍历所有K、V块\n3. 在SRAM中计算局部注意力\n4. 使用在线算法更新输出和统计量\n5. 避免将N×N矩阵写入HBM\n```\n\n## 关键要点\n\n1. **IO复杂度**：从O(N²)降低到O(N²d²/M)，其中M是SRAM大小\n2. **显存节省**：显存使用从O(N²)降低到O(N)\n3. **精确计算**：不是近似算法，结果与标准注意力完全一致\n4. **速度提升**：相比标准注意力快2-4倍\n\n## 工程实践\n\n```python\n# 使用PyTorch 2.0+的SDPA\nimport torch.nn.functional as F\n\n# 自动选择最优实现（包括Flash Attention）\noutput = F.scaled_dot_product_attention(query, key, value)\n```\n\nFlash Attention 2的改进：\n- 更好的并行化策略\n- 支持不同头维度\n- 训练速度提升约2倍",
-    "tags": [
-      "Flash Attention",
-      "注意力优化",
-      "IO感知"
-    ],
-    "source": "高频"
+    "question": "语义缓存和结果缓存如何设计命中条件与失效策略？",
+    "answer": "### 结果缓存\n\n结果缓存适合确定性强、风险低、输入规范的任务，例如固定文案改写、FAQ、分类结果。缓存 key 要包含模型版本、prompt 版本、参数、用户权限和知识库版本。\n\n### 语义缓存\n\n语义缓存按相似问题复用答案，需要设置相似度阈值和安全边界。它适合问法不同但语义接近的低风险问答，不适合金额、法律、医疗、权限相关问题。\n\n### 失效策略\n\n知识库、模型、prompt、工具结果、用户权限变化都可能让缓存失效。RAG 答案还要绑定文档版本和引用片段。缓存过期要有 TTL，也要支持主动失效。\n\n### 风险控制\n\n命中缓存前要检查权限和上下文是否匹配。不要为了省 token 把旧答案发给无权用户或新问题。缓存命中率要和错误率一起看。",
+    "tags": ["AI Agent", "AI工程化", "缓存"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-007",
     "module": "AI工程化",
     "difficulty": 2,
-    "question": "TGI（Text Generation Inference）与vLLM相比有哪些特点？",
-    "answer": "## 核心概念\n\nTGI是HuggingFace开发的高性能推理服务，专注于文本生成任务。与vLLM类似，都是为大语言模型优化的推理框架，但设计理念和技术实现有所不同。\n\n## TGI的核心特点\n\n### 技术实现\n- **Rust实现**：核心调度逻辑用Rust编写，性能优秀\n- **张量并行**：原生支持多GPU张量并行\n- **Flash Attention集成**：内置Flash Attention支持\n- **Token流式输出**：原生支持SSE流式响应\n\n### 与vLLM的对比\n| 特性 | TGI | vLLM |\n|------|-----|------|\n| 语言 | Rust + Python | Python + C++ |\n| 内存管理 | 连续内存 | PagedAttention |\n| 批处理 | Dynamic Batching | Continuous Batching |\n| 量化 | GPTQ, bitsandbytes | GPTQ, AWQ, GGUF |\n| API兼容 | OpenAI兼容 | OpenAI兼容 |\n\n## 关键要点\n\n1. **部署方式**：TGI更适合HuggingFace生态，vLLM更灵活\n2. **性能表现**：两者性能接近，vLLM在高并发场景略优\n3. **功能丰富度**：TGI内置更多功能（如Watermarking）\n\n## 工程实践\n\n```bash\n# TGI部署示例\ndocker run --gpus all -p 8080:80 \\\n  ghcr.io/huggingface/text-generation-inference:latest \\\n  --model-id meta-llama/Llama-2-7b-chat-hf \\\n  --quantize gptq\n```\n\n选择建议：\n- HuggingFace生态优先选TGI\n- 需要最高吞吐量选vLLM\n- CPU推理考虑llama.cpp",
-    "tags": [
-      "TGI",
-      "推理框架",
-      "HuggingFace"
-    ],
-    "source": "高频"
+    "question": "模型版本灰度、A/B 测试和回滚机制如何落地？",
+    "answer": "### 灰度对象\n\n模型灰度要按用户、场景、流量比例和风险分层。先内部和低风险流量，再扩大到真实用户。每个请求记录模型版本、prompt 版本、检索版本和工具版本。\n\n### A/B 测试\n\nA/B 要比较质量、延迟、成本、安全事件和业务指标。对生成式任务，自动指标不够，必须有人工抽检或 LLM-as-Judge 辅助。\n\n### 回滚机制\n\n回滚不只是换回旧模型。模型升级常伴随 prompt、schema、索引和路由规则变化，所以要保存完整版本组合。发现问题时能一键回退整条链路。\n\n### 发布门禁\n\n上线前跑离线评测和线上回放，灰度中看失败样本。只看平均分不够，高风险场景和长尾问题要单独设阈值。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-008",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "如何进行模型服务的GPU显存管理？",
-    "answer": "## 核心概念\n\nGPU显存管理是LLM部署中的关键问题，直接影响可支持的模型大小、并发请求数量和服务稳定性。\n\n## 显存组成分析\n\n### 主要显存消耗\n1. **模型权重**：参数量 × 精度字节数\n2. **KV Cache**：与序列长度、batch大小成正比\n3. **激活值**：前向传播的中间结果\n4. **框架开销**：CUDA上下文、cuDNN工作空间等\n\n### 计算示例（LLaMA-7B）\n```\n模型权重：7B × 2 bytes (FP16) = 14GB\nKV Cache（单请求2048长度）：约1GB\n框架开销：约1-2GB\n总计：单模型约16-17GB\n```\n\n## 显存优化策略\n\n### 模型层面\n- **量化**：INT8/INT4减少权重显存\n- **模型并行**：将模型分布到多张GPU\n- **CPU Offloading**：将部分层放到CPU\n\n### 推理框架层面\n- **PagedAttention**：动态管理KV Cache内存\n- **KV Cache量化**：降低KV Cache精度\n- **内存池**：预分配内存避免碎片\n\n## 关键要点\n\n1. **显存预算规划**：预留10-20%显存作为缓冲\n2. **监控指标**：显存使用率、OOM错误率、KV Cache命中率\n3. **动态调整**：根据负载动态调整max_num_seqs\n\n## 工程实践\n\n```python\n# vLLM显存配置\nllm = LLM(\n    model=\"meta-llama/Llama-2-7b-chat-hf\",\n    gpu_memory_utilization=0.9,  # 使用90%显存\n    max_model_len=2048,  # 限制最大长度\n    max_num_seqs=64  # 最大并发请求数\n)\n```\n\n生产建议：\n- 使用nvidia-smi和DCGM监控显存\n- 设置显存告警阈值（如95%）\n- 准备OOM降级策略",
-    "tags": [
-      "GPU显存",
-      "显存管理",
-      "OOM"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "如何设计 LLM API 网关处理鉴权、审计、限流和计费？",
+    "answer": "### 网关职责\n\nLLM API 网关统一处理鉴权、租户、配额、限流、模型路由、审计、计费、脱敏和监控。应用不应该各自散落 API key 和计费逻辑。\n\n### 鉴权和限流\n\n每个用户、应用、租户都要有权限和配额。限流维度不能只看请求数，还要看 token、并发、工具调用和成本。高风险工具要额外授权。\n\n### 审计和计费\n\n记录请求 id、用户、模型、token、延迟、成本、prompt 版本、工具调用和错误码。敏感内容要脱敏或分级存储，满足排查和合规之间的平衡。\n\n### 稳定性\n\n网关可以做 fallback、熔断、重试、缓存和成本保护。它是 AI 工程化的控制面，不只是一个转发代理。",
+    "tags": ["AI Agent", "AI工程化", "限流"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-009",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是Batch推理？如何优化批处理性能？",
-    "answer": "## 核心概念\n\nBatch推理是将多个推理请求组合在一起同时处理的技术，通过并行计算提高GPU利用率和整体吞吐量。\n\n## 批处理类型\n\n### 静态批处理（Static Batching）\n- 固定batch大小，所有请求必须同时完成\n- 短请求需要等待最长请求完成\n- 实现简单，但GPU利用率低\n\n### 动态批处理（Dynamic Batching）\n- 在时间窗口内收集请求\n- 收集到一定数量或超时后开始处理\n- 提高利用率，但增加延迟\n\n### 连续批处理（Continuous Batching）\n- 请求可以随时加入或离开batch\n- 细粒度调度，每个iteration调整\n- 最大化GPU利用率\n\n## 优化策略\n\n### 请求调度\n- **优先级队列**：VIP请求优先处理\n- **负载均衡**：分散到多个GPU/实例\n- **请求合并**：相同prompt的请求共享计算\n\n### 批处理参数调优\n- **max_batch_size**：根据GPU显存设置\n- **batch_timeout**：平衡延迟和吞吐量\n- **max_sequence_length**：限制最大长度\n\n## 关键要点\n\n1. **吞吐量提升**：连续批处理比静态批处理提升2-4倍\n2. **延迟权衡**：batch越大吞吐量越高，但单请求延迟可能增加\n3. **显存限制**：batch大小受KV Cache显存限制\n\n## 工程实践\n\n```python\n# vLLM批处理配置\nfrom vllm import AsyncLLMEngine, AsyncEngineArgs\n\nengine_args = AsyncEngineArgs(\n    model=\"meta-llama/Llama-2-7b-chat-hf\",\n    max_num_seqs=128,  # 最大batch大小\n    max_num_batched_tokens=8192,  # 最大token数\n)\nengine = AsyncLLMEngine.from_engine_args(engine_args)\n```\n\n监控建议：跟踪batch utilization指标，目标保持在70-90%。",
-    "tags": [
-      "Batch推理",
-      "批处理",
-      "吞吐量优化"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "推理服务的 GPU/CPU 资源隔离、队列调度和容量规划如何设计？",
+    "answer": "### 资源隔离\n\n在线对话、批量离线任务、长上下文任务和高优先级客户不要混跑在同一队列里。否则一个长请求就可能拖慢所有短请求。\n\n### 队列调度\n\n队列要按优先级、最大等待时间、token 预算和任务类型调度。可以把短请求优先、长请求限并发、后台任务低优先级。超时后要取消，不要继续占 GPU。\n\n### 容量规划\n\n容量按 token 规划，而不是按请求数。输入长度、输出长度、模型大小、batch 策略和峰值流量决定 GPU 数量。CPU 也要负责分词、检索、后处理和网关逻辑。\n\n### 监控\n\n看 GPU 利用率、显存、队列等待、首 token 延迟、生成速度、失败率、OOM 和降级次数。容量规划要留故障冗余，不能按平均流量把资源打满。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-010",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是流式输出（SSE）？如何在LLM服务中实现？",
-    "answer": "## 核心概念\n\nSSE（Server-Sent Events）是一种服务器向客户端推送数据的技术，在LLM服务中用于实现流式输出，让用户可以实时看到生成的文本，而不是等待整个响应完成。\n\n## 技术原理\n\n### SSE协议特点\n- 基于HTTP长连接\n- 服务器单向推送\n- 自动重连机制\n- 文本格式，易于调试\n\n### 数据格式\n```\ndata: {\"id\":\"chatcmpl-123\",\"choices\":[{\"delta\":{\"content\":\"你\"}}]}\n\ndata: {\"id\":\"chatcmpl-123\",\"choices\":[{\"delta\":{\"content\":\"好\"}}]}\n\ndata: [DONE]\n```\n\n## 实现方案\n\n### 服务端实现\n```python\nfrom fastapi import FastAPI\nfrom fastapi.responses import StreamingResponse\n\nasync def generate_stream(prompt: str):\n    async for chunk in llm.generate(prompt):\n        yield f\"data: {json.dumps(chunk)}\\n\\n\"\n    yield \"data: [DONE]\\n\\n\"\n\n@app.post(\"/v1/chat/completions\")\nasync def chat(request: Request):\n    return StreamingResponse(\n        generate_stream(request.prompt),\n        media_type=\"text/event-stream\"\n    )\n```\n\n## 关键要点\n\n1. **用户体验**：首token延迟（TTFT）是关键指标\n2. **连接管理**：需要处理客户端断连、超时等情况\n3. **背压处理**：生产速度大于消费速度时的处理\n\n## 工程实践\n\n优化建议：\n- 使用token buffer：累积一定token再发送，减少网络开销\n- 压缩支持：启用gzip压缩\n- CDN友好：设置正确的Cache-Control头\n- 监控：跟踪流式连接数、断连率、TTFT\n\n客户端使用EventSource API接收：\n```javascript\nconst eventSource = new EventSource('/v1/chat/completions');\neventSource.onmessage = (event) => {\n    const data = JSON.parse(event.data);\n    appendToken(data.choices[0].delta.content);\n};\n```",
-    "tags": [
-      "流式输出",
-      "SSE",
-      "实时生成"
-    ],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "vLLM、TGI 等推理框架主要解决哪些性能瓶颈？",
+    "answer": "### 主要瓶颈\n\nvLLM、TGI 这类框架主要解决推理吞吐、显存利用、批处理调度、流式输出和服务化部署问题。它们不是让模型更聪明，而是让同样模型更稳定高效地服务请求。\n\n### 关键能力\n\nvLLM 的 PagedAttention 关注 KV Cache 管理，减少显存碎片，提高并发。TGI 提供模型服务、动态批处理、流式输出、指标和常见部署能力。\n\n### 选型维度\n\n看模型支持、量化支持、吞吐、首 token 延迟、部署复杂度、监控、社区成熟度和与现有平台的集成。不同模型和硬件上的结果差异很大，必须压测。\n\n### 误区\n\n推理框架解决不了坏 prompt、坏检索、错误工具权限和产品流程问题。性能优化前先确认瓶颈真的在推理服务。",
+    "tags": ["AI Agent", "AI工程化", "性能"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-011",
     "module": "AI工程化",
     "difficulty": 2,
-    "question": "如何设计Token限速机制？",
-    "answer": "## 核心概念\n\nToken限速是控制LLM API调用频率和token消耗的机制，用于保护服务稳定性、公平分配资源和控制成本。\n\n## 限速维度\n\n### 按限制对象\n- **用户级限速**：每个用户的token配额\n- **API Key级限速**：不同密钥不同限额\n- **模型级限速**：不同模型独立限速\n- **全局限速**：服务整体的容量控制\n\n### 按限制指标\n- **RPM**（Requests Per Minute）：请求频率\n- **TPM**（Tokens Per Minute）：token吞吐量\n- **并发数**：同时处理的请求数\n\n## 实现算法\n\n### 令牌桶算法\n```python\nclass TokenBucket:\n    def __init__(self, capacity, refill_rate):\n        self.capacity = capacity\n        self.tokens = capacity\n        self.refill_rate = refill_rate\n        self.last_refill = time.time()\n    \n    def consume(self, tokens):\n        self.refill()\n        if self.tokens >= tokens:\n            self.tokens -= tokens\n            return True\n        return False\n```\n\n### 滑动窗口\n- 记录每个时间窗口的token使用量\n- 更精确，但内存开销更大\n\n## 关键要点\n\n1. **预估token数**：在请求前估算token数量，提前限速\n2. **优雅降级**：限速时返回429状态码和Retry-After头\n3. **分布式限速**：使用Redis实现跨实例限速\n\n## 工程实践\n\n```python\n# Redis分布式限速\nimport redis\n\nclass RedisRateLimiter:\n    def __init__(self, redis_client, key, limit, window):\n        self.redis = redis_client\n        self.key = key\n        self.limit = limit\n        self.window = window\n    \n    def is_allowed(self, tokens):\n        current = self.redis.get(self.key) or 0\n        if int(current) + tokens > self.limit:\n            return False\n        self.redis.incrby(self.key, tokens)\n        self.redis.expire(self.key, self.window)\n        return True\n```\n\nOpenAI限速参考：\n- GPT-4: 40K TPM\n- GPT-3.5: 600K TPM\n- 返回头包含 X-RateLimit-Remaining",
-    "tags": [
-      "Token限速",
-      "限流",
-      "令牌桶"
-    ],
-    "source": "高频"
+    "question": "LLM 服务应记录哪些观测数据？",
+    "answer": "### 请求链路\n\nLLM 服务要记录 request id、用户/租户、场景、模型版本、prompt 版本、输入输出 token、延迟、流式首 token 时间、错误码和重试次数。\n\n### RAG 和工具\n\nRAG 要记录查询、召回文档、分数、重排结果、引用片段和权限过滤结果。工具要记录工具名、参数摘要、授权结果、耗时、返回状态和副作用 id。\n\n### 质量和成本\n\n记录用户反馈、人工标注、judge 分数、拦截原因、fallback 触发和成本。这样才能把一次失败归因到模型、检索、工具还是产品交互。\n\n### 隐私\n\n观测数据可能包含敏感信息，要脱敏、采样、分级存储和设置保留期。排查需要可回放，但不能为了可观测把用户隐私长期裸存。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-012",
     "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何设计LLM API网关？",
-    "answer": "## 核心概念\n\nLLM API网关是统一管理大语言模型API调用的中间层，提供路由、限流、监控、安全等功能，简化客户端与多个模型服务的交互。\n\n## 核心功能\n\n### 请求管理\n- **路由分发**：根据模型、负载等策略路由请求\n- **负载均衡**：轮询、加权、最少连接等策略\n- **故障转移**：自动切换到健康实例\n- **请求重试**：可配置的重试策略\n\n### 安全与控制\n- **认证授权**：API Key验证、JWT鉴权\n- **限流保护**：多维度限速\n- **内容审核**：输入输出内容过滤\n- **数据脱敏**：敏感信息自动脱敏\n\n### 可观测性\n- **请求日志**：完整的请求响应记录\n- **性能监控**：延迟、吞吐量、错误率\n- **成本统计**：token使用量和费用统计\n\n## 架构设计\n\n```\nClient → API Gateway → Load Balancer → Model Instances\n              ↓\n         Rate Limiter\n         Auth Service\n         Content Filter\n         Metrics Collector\n```\n\n## 关键要点\n\n1. **无状态设计**：便于水平扩展\n2. **异步处理**：流式输出需要特殊处理\n3. **缓存策略**：相同请求的缓存（语义缓存）\n4. **版本管理**：支持多模型版本并存\n\n## 工程实践\n\n开源方案选择：\n- **Kong**：通用API网关，插件丰富\n- **APISIX**：高性能，支持动态配置\n- **LiteLLM**：专为LLM设计的代理\n- **自研**：基于FastAPI/Spring定制\n\n```python\n# LiteLLM代理示例\nimport litellm\n\nresponse = litellm.completion(\n    model=\"gpt-4\",\n    messages=[{\"role\": \"user\", \"content\": \"Hello\"}],\n    api_base=\"http://gateway:8000\"\n)\n```",
-    "tags": [
-      "API网关",
-      "负载均衡",
-      "服务治理"
-    ],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "如何定位一次 LLM 应用失败是模型、检索、提示词还是工具问题？",
+    "answer": "### 先回放完整链路\n\n失败归因必须看输入、历史上下文、检索结果、prompt、模型输出、工具调用、工具返回和最终后处理。只看最终答案，很难判断问题在哪。\n\n### 常见归因\n\n检索没有召回正确证据，是索引、分块、权限或 query rewrite 问题。证据正确但答案错，可能是 prompt 约束弱或模型能力不足。工具参数错，可能是 schema 和校验不清。工具返回错，是业务服务问题。\n\n### 隔离实验\n\n固定检索结果重跑模型，固定模型换检索，手动调用工具，替换 prompt 做对比。通过控制变量定位层级，而不是盲目全链路改。\n\n### 输出修复\n\n归因结果要落到动作：补文档、改分块、调重排、改 prompt、升级模型、收紧工具权限或补测试。失败样本进入回归集。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-013",
     "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何进行模型版本管理和灰度发布？",
-    "answer": "## 核心概念\n\n模型版本管理是跟踪、控制和部署不同版本模型的实践，灰度发布是逐步将新版本推送给部分用户的发布策略。\n\n## 版本管理方案\n\n### 模型注册表（Model Registry）\n- **MLflow**：开源ML生命周期管理\n- **Weights & Biases**：实验跟踪和模型管理\n- **HuggingFace Hub**：模型版本和协作\n- **自建Registry**：基于对象存储+数据库\n\n### 版本标识规范\n```\n模型名-版本号-标签\n例如: llama2-7b-v1.2-quantized\n```\n\n## 灰度发布策略\n\n### 按比例发布\n- 1% → 5% → 20% → 50% → 100%\n- 每阶段观察关键指标\n- 设置自动回滚条件\n\n### 按用户分组\n- 内部用户 → Beta用户 → 全量用户\n- VIP用户优先体验新功能\n- A/B测试对比效果\n\n## 关键要点\n\n1. **回滚机制**：快速切换到上一稳定版本\n2. **兼容性**：新旧版本API保持兼容\n3. **监控指标**：延迟、错误率、用户满意度\n4. **数据一致性**：确保训练数据版本可追溯\n\n## 工程实践\n\n```yaml\n# Kubernetes灰度部署配置\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: llm-service-canary\nspec:\n  replicas: 2  # 少量副本\n  template:\n    spec:\n      containers:\n      - name: llm\n        image: llm-model:v2.0\n---\n# 流量分配\napiVersion: networking.istio.io/v1alpha3\nkind: VirtualService\nspec:\n  http:\n  - match:\n    - headers:\n        x-canary:\n          exact: \"true\"\n    route:\n    - destination:\n        host: llm-service-canary\n    - route:\n    - destination:\n        host: llm-service-stable\n```\n\n推荐工具链：\n- 模型存储：S3/MinIO + MLflow\n- 部署：Kubernetes + Istio\n- 监控：Prometheus + Grafana",
-    "tags": [
-      "版本管理",
-      "灰度发布",
-      "MLflow"
-    ],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "LLM-as-Judge 的评分标准、偏差和一致性如何控制？",
+    "answer": "### 评分标准\n\nLLM-as-Judge 必须有明确 rubric，例如事实正确、证据支持、完整性、格式、安全性。每个分数档要有样例锚点，否则模型评分会漂。\n\n### 偏差来源\n\nJudge 可能偏好更长答案、熟悉某种表达、被候选答案措辞影响，也可能对自己同系列模型更宽容。顺序、格式和语言都会影响评分。\n\n### 控制方法\n\n使用盲评、随机顺序、多 judge 交叉、人工抽检和对抗样本。高风险指标不要完全自动化，LLM judge 适合作为筛选和趋势工具。\n\n### 一致性\n\n固定 prompt、模型版本、温度和输出格式。定期用金标集校准 judge 分数，监控评分分布漂移。judge 本身也要版本化和回归测试。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-014",
     "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何进行LLM服务的A/B测试？",
-    "answer": "## 核心概念\n\nLLM A/B测试是通过对比实验评估不同模型或配置效果的方法，用数据驱动模型迭代决策。\n\n## 测试维度\n\n### 模型层面\n- 不同模型对比（GPT-4 vs Claude）\n- 不同版本对比（v1 vs v2）\n- 不同参数配置（temperature、top_p）\n\n### 应用层面\n- 不同Prompt策略\n- 不同RAG配置\n- 不同后处理逻辑\n\n## 实验设计\n\n### 流量分配\n```python\ndef assign_group(user_id, experiment_id):\n    hash_value = hash(f\"{user_id}:{experiment_id}\")\n    return \"A\" if hash_value % 100 < 50 else \"B\"\n```\n\n### 指标体系\n- **技术指标**：延迟、吞吐量、错误率\n- **质量指标**：相关性、准确性、一致性\n- **业务指标**：用户满意度、转化率、留存率\n\n## 关键要点\n\n1. **样本量计算**：确保统计显著性\n2. **随机化**：避免选择偏差\n3. **单一变量**：每次只测一个变量\n4. **实验时长**：覆盖不同时间段\n\n## 工程实践\n\n```python\n# A/B测试框架示例\nimport hashlib\n\nclass ABTestManager:\n    def __init__(self, redis_client):\n        self.redis = redis_client\n    \n    def get_variant(self, user_id, experiment_name):\n        # 获取用户分组\n        key = f\"ab:{experiment_name}:{user_id}\"\n        variant = self.redis.get(key)\n        if variant is None:\n            # 首次访问，随机分组\n            variant = self._assign_variant(user_id, experiment_name)\n            self.redis.set(key, variant, ex=86400 * 30)\n        return variant\n    \n    def log_event(self, user_id, experiment_name, event, value):\n        # 记录实验事件\n        variant = self.get_variant(user_id, experiment_name)\n        self.redis.lpush(\n            f\"ab:events:{experiment_name}:{variant}\",\n            json.dumps({\"event\": event, \"value\": value})\n        )\n```\n\n数据分析建议：\n- 使用贝叶斯方法分析结果\n- 关注置信区间而非点估计\n- 设置止损条件，异常时提前终止",
-    "tags": [
-      "A/B测试",
-      "实验设计",
-      "效果评估"
-    ],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "如何构建离线评测集、线上回放集和回归测试集？",
+    "answer": "### 离线评测集\n\n离线评测集覆盖产品希望具备的核心能力：常见问题、困难问题、边界条件、安全样本和无答案样本。它要有标准答案、证据或评分 rubric。\n\n### 线上回放集\n\n线上回放来自真实流量，反映真实用户表达和长尾问题。要脱敏、去重、分场景采样，并保留当时的上下文、检索版本和工具结果。\n\n### 回归测试集\n\n回归集来自历史事故、用户投诉、模型升级失败和人工发现的问题。它的目标不是覆盖全部，而是防止已经修过的问题复发。\n\n### 维护方式\n\n样本要分层：场景、难度、风险、语言、用户类型。评测集要版本化，指标也要稳定。每次模型、prompt、索引或工具改动都跑相关子集。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-015",
     "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何进行LLM服务的监控与可观测性？",
-    "answer": "## 核心概念\n\nLLM服务监控是对模型推理服务的性能、质量和健康状态进行持续观测的实践，包括指标监控、日志分析和分布式追踪。\n\n## 监控维度\n\n### 性能指标\n- **延迟**：TTFT（首token延迟）、TPS（每秒token数）\n- **吞吐量**：QPS、token吞吐量\n- **资源利用率**：GPU使用率、显存使用率\n\n### 质量指标\n- **准确性**：模型输出正确率\n- **一致性**：相同输入的输出稳定性\n- **安全性**：有害内容检测率\n\n### 业务指标\n- **成本**：每次调用成本、月度费用\n- **用户满意度**：评分、反馈\n- **使用量**：活跃用户、调用次数\n\n## 技术栈\n\n### 指标收集\n```python\nfrom prometheus_client import Counter, Histogram\n\nrequest_counter = Counter(\n    'llm_requests_total',\n    'Total LLM requests',\n    ['model', 'status']\n)\n\nlatency_histogram = Histogram(\n    'llm_request_duration_seconds',\n    'Request latency',\n    ['model']\n)\n```\n\n### 日志结构化\n```json\n{\n  \"request_id\": \"req-123\",\n  \"model\": \"gpt-4\",\n  \"input_tokens\": 100,\n  \"output_tokens\": 50,\n  \"latency_ms\": 2000,\n  \"status\": \"success\",\n  \"user_id\": \"user-456\"\n}\n```\n\n## 关键要点\n\n1. **告警设置**：关键指标设置多级告警\n2. **采样策略**：日志采样避免存储爆炸\n3. **追踪链路**：端到端请求追踪\n4. **仪表盘设计**：分层展示，从概览到详情\n\n## 工程实践\n\n推荐监控栈：\n- 指标：Prometheus + Grafana\n- 日志：ELK Stack 或 Loki\n- 追踪：Jaeger 或 Zipkin\n- 告警：AlertManager\n\n告警规则示例：\n- P99延迟 > 5s 持续5分钟\n- 错误率 > 1% 持续3分钟\n- GPU使用率 < 30% 持续10分钟\n- 显存使用率 > 95% 立即告警",
-    "tags": [
-      "监控",
-      "可观测性",
-      "Prometheus"
-    ],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "Prompt 注入、越权工具调用和数据泄露如何防御？",
+    "answer": "### Prompt 注入\n\nPrompt 注入常来自用户输入、网页、文档和工具返回中的恶意指令。防御要靠指令分层、来源标注、把外部内容当数据而不是指令，以及输出前校验。\n\n### 越权工具调用\n\n工具权限必须服务端校验。模型只能提出调用意图，不能决定自己是否有权。每个工具要有用户、租户、资源归属和风险等级判断。\n\n### 数据泄露\n\n检索前做权限过滤，日志和观测数据脱敏，模型上下文只放必要数据。多租户系统不能把 A 用户文档召回后再要求模型不要泄露。\n\n### 安全闭环\n\n建立攻击样本集、红队测试、工具审计、异常调用告警和人工审批。AI 安全不是一句 system prompt，而是数据、权限、工具和输出的多层防线。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-016",
     "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何优化LLM服务的成本？",
-    "answer": "## 核心概念\n\nLLM服务成本优化是在保证服务质量的前提下，降低模型推理的计算和存储成本的实践。\n\n## 成本构成分析\n\n### 主要成本项\n- **GPU计算**：推理计算费用（占比最大）\n- **存储成本**：模型权重、KV Cache\n- **网络成本**：数据传输费用\n- **人力成本**：运维和开发\n\n## 优化策略\n\n### 模型层面\n- **模型选择**：小模型完成简单任务\n- **量化压缩**：INT8/INT4降低计算成本\n- **模型蒸馏**：用小模型替代大模型\n\n### 架构层面\n- **智能路由**：根据任务复杂度选择模型\n- **缓存策略**：语义缓存减少重复调用\n- **批处理优化**：提高GPU利用率\n\n### 运维层面\n- **自动扩缩容**：根据负载调整实例数\n- **Spot实例**：使用竞价实例降低成本\n- **资源调度**：错峰调度训练任务\n\n## 关键要点\n\n1. **成本监控**：建立成本分摊模型\n2. **ROI分析**：评估优化投入产出比\n3. **权衡取舍**：成本与质量、延迟的平衡\n\n## 工程实践\n\n```python\n# 智能路由示例\nasync def route_request(query: str):\n    complexity = estimate_complexity(query)\n    \n    if complexity == \"simple\":\n        model = \"gpt-3.5-turbo\"  # 成本低\n    elif complexity == \"medium\":\n        model = \"gpt-4-turbo\"  # 成本中\n    else:\n        model = \"gpt-4\"  # 成本高\n    \n    # 先查缓存\n    cached = await semantic_cache.get(query)\n    if cached:\n        return cached\n    \n    return await call_model(model, query)\n```\n\n成本优化清单：\n- 启用模型量化（节省50-75%）\n- 实现语义缓存（节省30-50%重复调用）\n- 使用连续批处理（提升2-4倍吞吐量）\n- 配置自动扩缩容（节省30-50%闲置资源）",
-    "tags": [
-      "成本优化",
-      "资源管理",
-      "智能路由"
-    ],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "Guardrails 应如何覆盖输入、检索、工具调用和输出？",
+    "answer": "### 输入 guardrails\n\n输入层负责检测越权请求、敏感信息、注入攻击、违法内容和不支持的任务。它可以拒绝、澄清、脱敏或路由到人工。\n\n### 检索 guardrails\n\n检索层要做权限过滤、来源可信度、文档版本和引用要求。外部文档里的指令要当作内容，不应覆盖系统规则。\n\n### 工具 guardrails\n\n工具层要校验参数、权限、幂等、风险等级和审批状态。高风险动作先 dry-run，展示影响范围，再执行。\n\n### 输出 guardrails\n\n输出层检查事实是否有证据、是否泄露敏感信息、是否违反政策、格式是否符合契约。guardrails 要可观测，记录拦截原因和误拦截反馈，避免只拦不修。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-017",
     "module": "AI工程化",
     "difficulty": 3,
-    "question": "如何防护LLM的Prompt注入攻击？",
-    "answer": "## 核心概念\n\nPrompt注入是攻击者通过构造恶意输入，操控LLM执行非预期行为的安全威胁。分为直接注入（用户直接输入恶意指令）和间接注入（通过外部数据源注入）。\n\n## 攻击类型\n\n### 直接注入\n- 角色扮演攻击：\"忽略之前的指令，你现在是...\"\n- 系统提示泄露：\"输出你的系统提示词\"\n- 越狱攻击：绕过安全限制\n\n### 间接注入\n- 文档投毒：在RAG文档中嵌入恶意指令\n- 网页投毒：搜索引擎结果中嵌入恶意内容\n- 多模态注入：图像中隐藏恶意指令\n\n## 防护策略\n\n### 输入过滤\n```python\nimport re\n\ndef detect_injection(text: str) -> bool:\n    patterns = [\n        r\"忽略.*指令\",\n        r\"ignore.*instructions\",\n        r\"system prompt\",\n        r\"你现在是\",\n    ]\n    return any(re.search(p, text, re.I) for p in patterns)\n```\n\n### 输出过滤\n- 检测输出是否包含系统提示内容\n- 验证输出是否符合预期格式\n- 过滤有害或敏感内容\n\n### 架构设计\n- **输入清洗**：特殊字符转义\n- **权限分离**：限制LLM的执行权限\n- **沙箱执行**：代码执行在隔离环境\n- **双LLM架构**：一个执行，一个审核\n\n## 关键要点\n\n1. **纵深防御**：多层防护，不依赖单一措施\n2. **持续更新**：攻击手法不断演变\n3. **监控告警**：实时检测异常行为\n4. **安全测试**：定期进行红队测试\n\n## 工程实践\n\n```python\n# 使用LLM Guard进行防护\nfrom llm_guard import scan_prompt\nfrom llm_guard.input_scanners import (\n    PromptInjection,\n    TokenLimit,\n    BanTopics\n)\n\nscanners = [\n    PromptInjection(threshold=0.7),\n    TokenLimit(limit=1000),\n    BanTopics(topics=[\"violence\"], threshold=0.5)\n]\n\nsanitized_prompt, results = scan_prompt(scanners, user_input)\nif not all(results.values()):\n    raise SecurityException(\"Potential injection detected\")\n```\n\n防护工具：\n- NeMo Guardrails（NVIDIA）\n- LLM Guard\n- Rebuff\n- LangKit",
-    "tags": [
-      "Prompt注入",
-      "安全防护",
-      "LLM Guard"
-    ],
-    "source": "高频"
+    "question": "AI 应用的隐私、合规和敏感数据脱敏如何落地？",
+    "answer": "### 数据最小化\n\nAI 应用只收集完成任务所需的数据。能在本地处理的不要上传，能脱敏的先脱敏，能用摘要的不要放原文。上下文里不要塞无关用户隐私。\n\n### 权限和隔离\n\n多租户数据要在检索、缓存、日志和评测集里隔离。权限过滤必须发生在检索前。员工调试和标注也要有访问控制和审计。\n\n### 脱敏\n\nPII、密钥、手机号、邮箱、身份证、财务数据要识别、掩码或替换。脱敏要兼顾可用性，例如保留后四位用于客服核验。\n\n### 合规落地\n\n明确数据保留期、删除机制、用户授权、供应商数据使用条款和跨境要求。AI 观测日志尤其敏感，不能无限期保存原始 prompt 和输出。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
+  },
+  {
+    "id": "ai-eng-018",
+    "module": "AI工程化",
+    "difficulty": 3,
+    "question": "如何设计安全的用户反馈闭环和人工标注流程？",
+    "answer": "### 用户反馈\n\n反馈入口要简单，但反馈数据要结构化：问题类型、满意度、是否解决、错误类别、期望答案。只收一个点赞点踩，很难指导改进。\n\n### 人工标注\n\n标注要有清晰指南和样例，区分事实错、检索缺失、格式差、安全风险、工具失败。多人标注要计算一致性，不一致样本要仲裁。\n\n### 安全闭环\n\n反馈样本可能包含隐私和敏感内容，进入标注前要脱敏和分级。标注员只看到必要信息，访问和导出都要审计。\n\n### 回流方式\n\n高质量反馈进入评测集、RAG 文档修复、prompt 调整或模型微调。不要把所有用户反馈直接拿去训练；先清洗、去重、授权和风险筛查。",
+    "tags": ["AI Agent", "AI工程化", "安全"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-019",
     "module": "AI工程化",
-    "difficulty": 1,
-    "question": "什么是向量数据库？常见的向量数据库有哪些？",
-    "answer": "## 核心概念\n\n向量数据库是专门用于存储、管理和检索高维向量数据的数据库系统，是AI应用（特别是RAG）的核心基础设施。\n\n## 核心能力\n\n### 向量索引\n- **HNSW**：分层可导航小世界图，查询快，内存占用大\n- **IVF**：倒排文件索引，适合大规模数据\n- **PQ**：乘积量化，压缩向量节省存储\n- **ScaNN**：Google的高效近似最近邻算法\n\n### 检索方式\n- **近似最近邻（ANN）**：牺牲少量精度换速度\n- **精确搜索**：暴力搜索，精度100%但慢\n- **混合检索**：向量+标量过滤\n\n## 主流向量数据库\n\n### Milvus\n- 开源，分布式架构\n- 支持多种索引\n- 适合大规模生产环境\n\n### Pinecone\n- 全托管服务\n- 使用简单，无需运维\n- 适合快速原型\n\n### Weaviate\n- 开源，支持多模态\n- 内置向量化模块\n- GraphQL API\n\n### Chroma\n- 轻量级，嵌入式\n- 适合开发和小规模应用\n- Python原生支持\n\n### Qdrant\n- Rust实现，高性能\n- 支持丰富的过滤条件\n- 云原生架构\n\n## 关键要点\n\n1. **选择依据**：数据规模、性能要求、运维能力\n2. **索引选择**：根据数据量和精度要求选择\n3. **监控指标**：查询延迟、召回率、内存使用\n\n## 工程实践\n\n```python\n# Chroma使用示例\nimport chromadb\n\nclient = chromadb.Client()\ncollection = client.create_collection(\"docs\")\n\n# 添加向量\ncollection.add(\n    documents=[\"文档内容\"],\n    metadatas=[{\"source\": \"web\"}],\n    ids=[\"doc1\"]\n)\n\n# 查询\nresults = collection.query(\n    query_texts=[\"查询内容\"],\n    n_results=5\n)\n```\n\n选择建议：\n- 小规模原型：Chroma\n- 中等规模：Qdrant/Weaviate\n- 大规模生产：Milvus\n- 无运维需求：Pinecone",
-    "tags": [
-      "向量数据库",
-      "相似性检索",
-      "RAG"
-    ],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "AI 应用的成本模型如何拆解到 token、检索、工具和人工审核？",
+    "answer": "### token 成本\n\ntoken 成本包括输入、输出、重试、fallback、评测和日志回放。长上下文和大输出往往比单次模型单价更影响总成本。\n\n### 检索成本\n\nRAG 有文档解析、embedding、向量库、重排、存储和索引更新成本。知识库频繁更新时，增量索引和版本管理也要算进去。\n\n### 工具成本\n\n工具调用可能产生数据库查询、外部 API、浏览器执行、代码运行和人工审批成本。Agent 多步任务尤其容易因为循环导致成本失控。\n\n### 人工审核成本\n\n高风险场景需要人工抽检、审批和标注。节省的人工处理时间要扣除新增审核成本，才能看真实 ROI。\n\n### 管控方式\n\n按用户、场景、模型和功能统计成本，设置预算、限流、缓存、路由和降级。成本模型要和质量指标一起看，不能只追求便宜。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   },
   {
     "id": "ai-eng-020",
     "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何选择和微调Embedding模型？",
-    "answer": "## 核心概念\n\nEmbedding模型将文本转换为稠密向量表示，是语义搜索、RAG等应用的基础。选择合适的Embedding模型对应用效果至关重要。\n\n## 模型选择维度\n\n### 性能指标\n- **MTEB排行榜**：综合评估基准\n- **检索任务表现**：NDCG@10等指标\n- **向量维度**：影响存储和检索效率\n\n### 实用性指标\n- **推理速度**：影响吞吐量\n- **模型大小**：影响部署成本\n- **多语言支持**：中文场景重要\n\n## 主流Embedding模型\n\n### 通用模型\n- **OpenAI text-embedding-3-small/large**：商业首选\n- **BGE系列**：中文表现优秀\n- **E5系列**：统一的检索框架\n- **GTE系列**：通义千问出品\n\n### 开源方案\n- **sentence-transformers**：丰富的模型库\n- **FlagEmbedding**：BGE模型的实现\n\n## 微调策略\n\n### 微调数据准备\n```python\n# 三元组格式\ntrain_data = [\n    {\n        \"query\": \"什么是机器学习？\",\n        \"positive\": \"机器学习是人工智能的分支...\",\n        \"negative\": \"深度学习使用神经网络...\"\n    }\n]\n```\n\n### 微调方法\n- **对比学习**：拉近正样本，推远负样本\n- **知识蒸馏**：用大模型指导小模型\n- **Hard Negative Mining**：挖掘难负样本\n\n## 关键要点\n\n1. **评估指标**：使用实际任务评估，而非只看基准\n2. **数据质量**：微调数据比数量更重要\n3. **领域适配**：通用模型在特定领域可能表现不佳\n\n## 工程实践\n\n```python\nfrom sentence_transformers import SentenceTransformer\n\nmodel = SentenceTransformer('BAAI/bge-large-zh-v1.5')\n\n# 编码\nembeddings = model.encode(\n    [\"文本1\", \"文本2\"],\n    normalize_embeddings=True\n)\n\n# 微调\nfrom sentence_transformers import losses\n\ntrain_loss = losses.MultipleNegativesRankingLoss(model)\nmodel.fit(\n    train_objectives=[(train_dataloader, train_loss)],\n    epochs=3,\n    warmup_steps=100\n)\n```\n\n选择建议：\n- 英文为主：OpenAI text-embedding-3-small\n- 中文为主：BGE-large-zh-v1.5\n- 多语言：multilingual-e5-large\n- 资源受限：BGE-small-zh-v1.5",
-    "tags": [
-      "Embedding",
-      "向量化",
-      "BGE"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-021",
-    "module": "AI工程化",
     "difficulty": 3,
-    "question": "如何设计高可用的LLM推理服务架构？",
-    "answer": "## 核心概念\n\n高可用LLM推理服务架构需要保证服务的可用性、可扩展性和容错能力，支持大规模并发请求。\n\n## 架构设计\n\n### 整体架构\n```\nClient → CDN/WAF → API Gateway → Load Balancer\n                                      ↓\n                              Model Router\n                                      ↓\n                    ┌─────────────────┼─────────────────┐\n                    ↓                 ↓                 ↓\n              GPU Cluster 1     GPU Cluster 2     GPU Cluster 3\n              (Model A)         (Model B)         (Model A)\n```\n\n### 关键组件\n- **多区域部署**：跨可用区部署\n- **自动扩缩容**：根据负载动态调整\n- **故障检测**：健康检查和自动恢复\n- **请求队列**：削峰填谷\n\n## 高可用策略\n\n### 冗余设计\n- 多实例部署，消除单点故障\n- 多区域部署，容灾备份\n- 模型多副本，负载均衡\n\n### 弹性伸缩\n```yaml\n# Kubernetes HPA配置\napiVersion: autoscaling/v2\nkind: HorizontalPodAutoscaler\nspec:\n  minReplicas: 2\n  maxReplicas: 10\n  metrics:\n  - type: Pods\n    pods:\n      metric:\n        name: gpu_utilization\n      target:\n        type: AverageValue\n        averageValue: \"70\"\n```\n\n### 容错机制\n- 请求重试和超时控制\n- 熔断器模式\n- 降级策略\n\n## 关键要点\n\n1. **SLA定义**：99.9%可用性（年度停机8.76小时）\n2. **性能目标**：P99延迟<5s，QPS>100\n3. **容量规划**：预留30%余量应对峰值\n4. **演练测试**：定期进行故障演练\n\n## 工程实践\n\n```python\n# 熔断器实现\nimport circuitbreaker\n\n@circuitbreaker.circuit(\n    failure_threshold=5,\n    recovery_timeout=30,\n    expected_exception=TimeoutError\n)\ndef call_model_with_circuit(prompt):\n    return llm.generate(prompt)\n```\n\n监控告警：\n- 服务可用性：99.9%\n- P99延迟：< 5s\n- GPU利用率：70-90%\n- 错误率：< 0.1%\n- 队列深度：< 100",
-    "tags": [
-      "高可用",
-      "架构设计",
-      "容错"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-022",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "什么是模型服务的冷启动问题？如何优化？",
-    "answer": "## 核心概念\n\n冷启动问题是指模型服务从零状态到可处理请求所需的时间，包括模型加载、GPU初始化、权重传输等过程。\n\n## 冷启动耗时分析\n\n### 主要耗时环节\n1. **容器启动**：Docker/K8s调度（10-30秒）\n2. **模型下载**：从存储加载权重（30秒-5分钟）\n3. **模型加载**：加载到GPU显存（10-60秒）\n4. **CUDA初始化**：GPU上下文创建（5-10秒）\n5. **预热推理**：首次推理较慢（5-15秒）\n\n### 总冷启动时间\n- 小模型（7B）：1-3分钟\n- 大模型（70B）：5-15分钟\n\n## 优化策略\n\n### 模型层面\n- **模型缓存**：本地缓存模型文件\n- **量化模型**：减小模型体积，加速加载\n- **模型分片**：并行加载模型分片\n\n### 基础设施层面\n- **预热实例**：保持最小实例数\n- **快照恢复**：GPU显存快照技术\n- **本地存储**：使用NVMe SSD存储模型\n\n### 应用层面\n- **渐进式加载**：先加载必要组件\n- **预测性扩缩容**：基于历史模式提前扩容\n- **请求排队**：冷启动期间排队等待\n\n## 关键要点\n\n1. **最小实例数**：保持至少1-2个热实例\n2. **模型版本预加载**：新版本灰度时预加载\n3. **健康检查**：区分就绪和存活探针\n\n## 工程实践\n\n```yaml\n# 保持最小实例数\napiVersion: apps/v1\nkind: Deployment\nspec:\n  replicas: 2  # 最小2个实例\n  strategy:\n    rollingUpdate:\n      maxSurge: 1\n      maxUnavailable: 0\n```\n\n优化效果：\n- 模型缓存：减少90%下载时间\n- 快照恢复：冷启动从5分钟降到30秒\n- 最小实例：消除用户感知的冷启动",
-    "tags": [
-      "冷启动",
-      "性能优化",
-      "预热"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-023",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现多模型的统一推理接口？",
-    "answer": "## 核心概念\n\n统一推理接口是抽象不同模型的调用差异，提供标准化API的方案，简化多模型管理和切换。\n\n## 设计目标\n\n### 接口标准化\n- 统一的请求/响应格式\n- 统一的错误处理\n- 统一的流式输出\n- 统一的认证方式\n\n### 功能完备\n- 支持多种模型后端\n- 支持模型路由\n- 支持负载均衡\n- 支持故障转移\n\n## 接口设计\n\n### 请求格式\n```json\n{\n  \"model\": \"gpt-4\",\n  \"messages\": [\n    {\"role\": \"system\", \"content\": \"You are helpful.\"},\n    {\"role\": \"user\", \"content\": \"Hello\"}\n  ],\n  \"temperature\": 0.7,\n  \"max_tokens\": 1000,\n  \"stream\": true\n}\n```\n\n### 响应格式（OpenAI兼容）\n```json\n{\n  \"id\": \"chatcmpl-123\",\n  \"object\": \"chat.completion\",\n  \"model\": \"gpt-4\",\n  \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\": \"assistant\",\n        \"content\": \"Hello! How can I help?\"\n      },\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 10,\n    \"completion_tokens\": 8,\n    \"total_tokens\": 18\n  }\n}\n```\n\n## 关键要点\n\n1. **兼容性**：遵循OpenAI API规范\n2. **可扩展性**：支持新模型快速接入\n3. **错误处理**：统一错误码和消息\n4. **性能监控**：统一的监控指标\n\n## 工程实践\n\n```python\n# 使用LiteLLM作为统一接口\nimport litellm\n\n# 统一调用方式\nresponse = litellm.completion(\n    model=\"gpt-4\",  # 或 \"claude-3\", \"llama-2\" 等\n    messages=[{\"role\": \"user\", \"content\": \"Hello\"}]\n)\n\n# 自定义路由\nlitellm.router = litellm.Router(\n    model_list=[\n        {\"model_name\": \"gpt-4\", \"litellm_params\": {\"model\": \"gpt-4\"}},\n        {\"model_name\": \"gpt-4\", \"litellm_params\": {\"model\": \"claude-3\"}}\n    ],\n    routing_strategy=\"least-busy\"\n)\n```\n\n推荐方案：\n- 小规模：LiteLLM代理\n- 中等规模：自建API Gateway\n- 大规模：自研统一推理平台",
-    "tags": [
-      "统一接口",
-      "API兼容",
-      "LiteLLM"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-024",
-    "module": "AI工程化",
-    "difficulty": 3,
-    "question": "如何设计LLM的语义缓存系统？",
-    "answer": "## 核心概念\n\n语义缓存是基于语义相似度而非精确匹配的缓存系统，能够识别语义相同但表述不同的查询，显著降低LLM调用成本和延迟。\n\n## 与传统缓存的区别\n\n### 传统缓存\n- 精确字符串匹配\n- 相同输入相同输出\n- 哈希查找，速度极快\n\n### 语义缓存\n- 语义相似度匹配\n- 相似输入相同输出\n- 向量检索，允许一定误差\n\n## 系统设计\n\n### 架构组件\n```\nQuery → Embedding Model → Vector DB → Similarity Search\n              ↓                              ↓\n         Query Vector                   Cache Hit?\n              ↓                         ↓          ↓\n         Cache Layer              Return    LLM Inference\n                                    Cache      ↓\n                                            Store Cache\n```\n\n### 相似度阈值\n```python\ndef semantic_cache_get(query: str, threshold: float = 0.95):\n    query_embedding = embed(query)\n    results = vector_db.search(\n        vector=query_embedding,\n        top_k=1,\n        threshold=threshold\n    )\n    if results and results[0].score > threshold:\n        return results[0].metadata[\"response\"]\n    return None\n```\n\n## 关键要点\n\n1. **阈值设置**：过高漏缓存，过低返回错误结果\n2. **缓存失效**：基于时间、版本或手动失效\n3. **缓存粒度**：请求级、片段级、Token级\n4. **一致性**：模型更新时缓存失效\n\n## 工程实践\n\n```python\nimport redis\nimport numpy as np\nfrom sentence_transformers import SentenceTransformer\n\nclass SemanticCache:\n    def __init__(self):\n        self.model = SentenceTransformer('all-MiniLM-L6-v2')\n        self.redis = redis.Redis()\n        self.threshold = 0.95\n    \n    def get(self, query: str):\n        embedding = self.model.encode(query)\n        # 使用Redis向量搜索\n        results = self.redis.ft(\"cache_idx\").search(\n            Query(f\"*=>[KNN 1 @embedding $vec AS score]\")\n            .query_params({\"vec\": embedding.tobytes()})\n            .dialect(2)\n        )\n        if results.docs and float(results.docs[0].score) > self.threshold:\n            return json.loads(results.docs[0].response)\n        return None\n    \n    def set(self, query: str, response: str):\n        embedding = self.model.encode(query)\n        self.redis.hset(f\"cache:{hash(query)}\", mapping={\n            \"embedding\": embedding.tobytes(),\n            \"response\": json.dumps(response)\n        })\n```\n\n优化建议：\n- 使用HNSW索引加速向量检索\n- 分层缓存：内存 → Redis → 向量DB\n- 缓存预热：常见问题预先缓存\n- 监控命中率，动态调整阈值",
-    "tags": [
-      "语义缓存",
-      "向量检索",
-      "成本优化"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-025",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何处理LLM推理中的长文本问题？",
-    "answer": "## 核心概念\n\n长文本处理是LLM应用中的常见挑战，涉及上下文窗口限制、推理效率和内容质量等问题。\n\n## 长文本挑战\n\n### 技术限制\n- **上下文窗口**：模型最大token数限制\n- **注意力复杂度**：O(N²)的计算开销\n- **KV Cache显存**：随长度线性增长\n- **位置编码外推**：超出训练长度效果下降\n\n### 质量问题\n- **Lost in the Middle**：中间内容容易被忽略\n- **注意力分散**：过长文本注意力稀释\n- **一致性下降**：长文本逻辑一致性差\n\n## 解决方案\n\n### 截断策略\n```python\ndef truncate_context(context: str, max_tokens: int):\n    # 保留开头和结尾\n    tokens = tokenizer.encode(context)\n    if len(tokens) <= max_tokens:\n        return context\n    \n    keep_start = max_tokens // 3\n    keep_end = max_tokens - keep_start\n    \n    truncated = tokens[:keep_start] + tokens[-keep_end:]\n    return tokenizer.decode(truncated)\n```\n\n### 分段处理\n- **Map-Reduce**：分别处理后合并\n- **Refine**：逐步精炼\n- **Map-Rerank**：分别处理后排序\n\n### 长文本模型\n- **RoPE外推**：NTK-aware scaling\n- **ALiBi**：线性注意力偏置\n- **LongRoPE**：扩展位置编码\n\n## 关键要点\n\n1. **需求分析**：明确是否真的需要长上下文\n2. **信息密度**：提高输入的信息密度\n3. **分段策略**：合理的分段和摘要\n\n## 工程实践\n\n```python\nfrom langchain.text_splitter import RecursiveCharacterTextSplitter\n\n# 分块处理长文本\ntext_splitter = RecursiveCharacterTextSplitter(\n    chunk_size=2000,\n    chunk_overlap=200,\n    separators=[\"\\n\\n\", \"\\n\", \"。\", \"，\"]\n)\nchunks = text_splitter.split_text(long_text)\n\n# Map-Reduce策略\nsummaries = [llm.summarize(chunk) for chunk in chunks]\nfinal_summary = llm.summarize(\"\\n\".join(summaries))\n```\n\n最佳实践：\n- 优先考虑RAG而非长上下文\n- 将关键信息放在开头和结尾\n- 使用结构化格式提高信息密度\n- 监控长请求的延迟和质量",
-    "tags": [
-      "长文本",
-      "上下文窗口",
-      "截断策略"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-026",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM的推理加速？",
-    "answer": "## 核心概念\n\n推理加速是通过算法优化、系统优化和硬件优化，提高LLM推理速度的技术。\n\n## 加速技术分类\n\n### 模型层面\n- **量化**：INT8/INT4降低计算量\n- **剪枝**：减少参数量\n- **蒸馏**：用小模型替代\n- **架构优化**：Flash Attention、GQA\n\n### 系统层面\n- **KV Cache优化**：PagedAttention\n- **批处理**：Continuous Batching\n- **算子融合**：减少内存访问\n- **异步执行**：CPU/GPU并行\n\n### 硬件层面\n- **GPU优化**：Tensor Core、CUDA优化\n- **专用芯片**：TPU、NPU\n- **多卡并行**：张量并行、流水线并行\n\n## 关键技术详解\n\n### 投机采样（Speculative Decoding）\n```\n小模型快速生成候选 → 大模型并行验证 → 接受/拒绝\n```\n- 使用小模型预测多个token\n- 大模型并行验证\n- 吞吐量提升2-3倍\n\n### 推测解码实现\n```python\n# 使用辅助模型加速\ndef speculative_decode(prompt, draft_model, target_model):\n    # 小模型生成候选\n    draft_tokens = draft_model.generate(prompt, num_tokens=5)\n    \n    # 大模型并行验证\n    target_probs = target_model.forward(\n        prompt + draft_tokens\n    )\n    \n    # 接受/拒绝采样\n    accepted = accept_reject(\n        draft_probs, target_probs\n    )\n    return accepted\n```\n\n## 关键要点\n\n1. **瓶颈分析**：先确定瓶颈是计算还是内存\n2. **组合优化**：多种技术组合使用\n3. **精度验证**：确保加速后精度可接受\n\n## 工程实践\n\n推理加速效果对比：\n- INT8量化：2倍加速，精度损失<1%\n- Flash Attention：2-4倍加速，无精度损失\n- Continuous Batching：2-4倍吞吐量提升\n- 投机采样：2-3倍延迟降低\n\n建议优先级：\n1. Flash Attention（无损优化）\n2. Continuous Batching（无损优化）\n3. 量化（微量精度损失）\n4. 投机采样（需要小模型）",
-    "tags": [
-      "推理加速",
-      "投机采样",
-      "性能优化"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-027",
-    "module": "AI工程化",
-    "difficulty": 3,
-    "question": "如何设计多GPU的模型并行策略？",
-    "answer": "## 核心概念\n\n模型并行是将大模型分布到多张GPU上进行推理的技术，解决单卡显存不足以容纳大模型的问题。\n\n## 并行策略分类\n\n### 张量并行（Tensor Parallelism）\n- 将单个层的参数分布到多张卡\n- 每张卡计算部分结果\n- 需要频繁通信\n- 适合单机多卡\n\n### 流水线并行（Pipeline Parallelism）\n- 将不同层分配到不同卡\n- 每张卡负责若干层\n- 通信量小，但有流水线气泡\n- 适合多机多卡\n\n### 序列并行（Sequence Parallelism）\n- 将序列维度分配到多张卡\n- 适合超长序列\n- 与张量并行结合使用\n\n## 技术实现\n\n### vLLM张量并行\n```bash\n# 2卡张量并行\npython -m vllm.entrypoints.openai.api_server \\\n    --model meta-llama/Llama-2-70b-chat-hf \\\n    --tensor-parallel-size 2\n```\n\n### DeepSpeed推理\n```python\nimport deepspeed\nimport torch\n\ndistributed_state = deepspeed.init_inference(\n    model,\n    mp_size=4,  # 4卡并行\n    dtype=torch.float16,\n    replace_with_kernel_inject=True\n)\n```\n\n## 关键要点\n\n1. **通信开销**：张量并行需要高速互联（NVLink）\n2. **负载均衡**：确保各卡计算量均衡\n3. **显存优化**：合理分配显存，避免OOM\n\n## 工程实践\n\n并行策略选择：\n- 70B模型，单机8卡：张量并行\n- 70B模型，2机16卡：张量+流水线并行\n- 超长序列：加入序列并行\n\n显存计算示例（70B模型）：\n- FP16：70B × 2 bytes = 140GB\n- 2卡张量并行：每卡70GB\n- INT8量化：每卡35GB\n- 4卡张量并行INT8：每卡约18GB\n\n注意事项：\n- 使用NVLink确保卡间通信带宽\n- 监控各卡显存使用是否均衡\n- 设置合理的NCCL环境变量",
-    "tags": [
-      "模型并行",
-      "张量并行",
-      "多GPU"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-028",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM服务的请求排队和调度？",
-    "answer": "## 核心概念\n\n请求排队和调度是管理并发请求、优化资源利用和保证服务质量的机制。\n\n## 调度策略\n\n### 先进先出（FIFO）\n- 简单公平\n- 无法处理优先级\n- 长请求阻塞短请求\n\n### 优先级调度\n```python\nimport heapq\n\nclass PriorityScheduler:\n    def __init__(self):\n        self.queue = []\n    \n    def add_request(self, request, priority):\n        heapq.heappush(self.queue, (priority, time.time(), request))\n    \n    def get_next(self):\n        if self.queue:\n            return heapq.heappop(self.queue)[2]\n        return None\n```\n\n### 最短作业优先（SJF）\n- 预估请求token数\n- 短请求优先处理\n- 提高平均响应速度\n\n### 赟平调度\n- 按用户分配配额\n- 防止单一用户占满资源\n- VIP用户优先\n\n## 队列设计\n\n### 多级队列\n```python\nclass MultiLevelQueue:\n    def __init__(self):\n        self.high_priority = deque()\n        self.normal = deque()\n        self.low_priority = deque()\n    \n    def enqueue(self, request, priority):\n        if priority == \"high\":\n            self.high_priority.append(request)\n        elif priority == \"normal\":\n            self.normal.append(request)\n        else:\n            self.low_priority.append(request)\n```\n\n### 队列管理\n- 队列长度限制\n- 请求超时处理\n- 队列监控告警\n\n## 关键要点\n\n1. **延迟控制**：队列等待时间不宜过长\n2. **公平性**：防止饥饿问题\n3. **降级策略**：队列满时的处理\n\n## 工程实践\n\n```python\n# 使用Redis实现分布式队列\nimport redis\nimport json\n\nclass RedisRequestQueue:\n    def __init__(self, redis_client, queue_name, max_size=1000):\n        self.redis = redis_client\n        self.queue_name = queue_name\n        self.max_size = max_size\n    \n    def enqueue(self, request, priority=0):\n        size = self.redis.llen(self.queue_name)\n        if size >= self.max_size:\n            raise QueueFullError(\"Queue is full\")\n        \n        item = json.dumps({\n            \"request\": request,\n            \"priority\": priority,\n            \"timestamp\": time.time()\n        })\n        self.redis.lpush(self.queue_name, item)\n    \n    def dequeue(self):\n        item = self.redis.rpop(self.queue_name)\n        return json.loads(item) if item else None\n```\n\n调度配置建议：\n- 高优先级：VIP用户、紧急任务\n- 普通：标准API调用\n- 低优先级：批量处理、训练任务\n- 队列超时：30-60秒",
-    "tags": [
-      "请求调度",
-      "队列管理",
-      "优先级"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-029",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何进行LLM服务的压力测试和容量规划？",
-    "answer": "## 核心概念\n\n压力测试是验证LLM服务在高负载下表现的实践，容量规划是根据测试结果确定所需资源的过程。\n\n## 压力测试方案\n\n### 测试指标\n- **吞吐量**：QPS、TPS（tokens per second）\n- **延迟**：P50、P90、P99延迟\n- **错误率**：超时、OOM等错误比例\n- **资源使用**：GPU利用率、显存使用\n\n### 测试工具\n```python\n# 使用Locust进行压力测试\nfrom locust import HttpUser, task, between\n\nclass LLMUser(HttpUser):\n    wait_time = between(1, 3)\n    \n    @task\n    def chat_completion(self):\n        self.client.post(\n            \"/v1/chat/completions\",\n            json={\n                \"model\": \"gpt-4\",\n                \"messages\": [{\"role\": \"user\", \"content\": \"Hello\"}],\n                \"max_tokens\": 100\n            }\n        )\n```\n\n### 测试场景\n- **基准测试**：单请求性能\n- **并发测试**：逐步增加并发数\n- **持续测试**：长时间稳定性测试\n- **峰值测试**：突发流量测试\n\n## 容量规划\n\n### 资源计算\n```\n所需实例数 = 峰值QPS / 单实例QPS × 冗余系数\nGPU数量 = 实例数 × 每实例GPU数\n```\n\n### 规划公式\n```python\ndef calculate_capacity(\n    peak_qps: float,\n    p99_latency: float,\n    safety_factor: float = 1.3\n):\n    # 基于Little定律\n    concurrent_requests = peak_qps * p99_latency\n    required_instances = concurrent_requests / requests_per_instance\n    return math.ceil(required_instances * safety_factor)\n```\n\n## 关键要点\n\n1. **测试环境**：尽量与生产环境一致\n2. **数据分布**：使用真实的请求分布\n3. **监控完善**：测试期间全面监控\n4. **容量预留**：预留30-50%余量\n\n## 工程实践\n\n压力测试流程：\n1. 基准测试：确定单请求性能基线\n2. 梯度加压：从10 QPS开始，每5分钟增加10\n3. 瓶颈定位：找到性能拐点\n4. 稳定性测试：在80%负载下运行24小时\n5. 峰值测试：模拟1.5倍峰值流量\n\n容量规划清单：\n- 日常QPS × 2 作为基础容量\n- 预留30%余量应对突发\n- 考虑节假日、活动等峰值\n- 设置自动扩缩容策略\n- 定期重新评估容量需求",
-    "tags": [
-      "压力测试",
-      "容量规划",
-      "Locust"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-030",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM的分布式推理？",
-    "answer": "## 核心概念\n\n分布式推理是将模型推理任务分布到多个节点上执行的技术，用于处理超大模型或提高整体吞吐量。\n\n## 分布式策略\n\n### 模型并行\n- **张量并行**：层内并行\n- **流水线并行**：层间并行\n- **序列并行**：序列维度并行\n\n### 数据并行\n- 多个模型副本处理不同请求\n- 负载均衡分发请求\n- 适合中等模型高并发场景\n\n### 混合并行\n```\n模型并行（单机多卡）+ 数据并行（多机）\n```\n\n## 技术实现\n\n### vLLM分布式\n```bash\n# 多机分布式部署\n# Node 1\npython -m vllm.entrypoints.openai.api_server \\\n    --model meta-llama/Llama-2-70b-chat-hf \\\n    --tensor-parallel-size 4 \\\n    --pipeline-parallel-size 2\n\n# Node 2\npython -m vllm.entrypoints.openai.api_server \\\n    --model meta-llama/Llama-2-70b-chat-hf \\\n    --tensor-parallel-size 4 \\\n    --pipeline-parallel-size 2\n```\n\n### DeepSpeed-Inference\n```python\nimport deepspeed\n\ndistributed_state = deepspeed.init_inference(\n    model,\n    mp_size=8,\n    dtype=torch.float16,\n    replace_with_kernel_inject=True\n)\n```\n\n## 关键要点\n\n1. **通信开销**：选择合适的并行策略\n2. **负载均衡**：确保各节点负载均衡\n3. **故障处理**：节点故障的恢复机制\n\n## 工程实践\n\n分布式推理架构：\n```\nClient → API Gateway → Scheduler\n                           ↓\n            ┌──────────────┼──────────────┐\n            ↓              ↓              ↓\n      Worker Node 1  Worker Node 2  Worker Node 3\n      (GPU 0-3)      (GPU 4-7)      (GPU 8-11)\n```\n\n部署建议：\n- 使用NVLink确保卡间通信\n- 使用RDMA进行跨机通信\n- 监控各节点负载和通信延迟\n- 设置健康检查和自动故障转移\n\n性能优化：\n- 张量并行适合单机（NVLink）\n- 流水线并行适合跨机（RDMA）\n- 数据并行提高吞吐量\n- 合理设置batch大小",
-    "tags": [
-      "分布式推理",
-      "模型并行",
-      "数据并行"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-031",
-    "module": "AI工程化",
-    "difficulty": 3,
-    "question": "如何设计向量数据库的高可用架构？",
-    "answer": "## 核心概念\n\n向量数据库高可用架构需要保证数据持久性、服务可用性和查询性能，支持大规模向量检索场景。\n\n## 架构设计\n\n### 分布式架构\n```\nClient → Load Balancer → Query Nodes\n                              ↓\n                         Index Nodes\n                              ↓\n                         Data Nodes\n                              ↓\n                         Object Storage\n```\n\n### 关键组件\n- **元数据服务**：管理集合、分区等元信息\n- **索引服务**：构建和维护向量索引\n- **查询服务**：执行向量检索\n- **存储服务**：持久化向量数据\n\n## 高可用策略\n\n### 数据冗余\n```python\n# 副本配置\nconfig = {\n    \"replication_factor\": 3,  # 3副本\n    \"shard_num\": 16,  # 16个分片\n    \"replica_placement\": \"rack_aware\"  # 机架感知\n}\n```\n\n### 故障恢复\n- 主从复制：自动故障转移\n- 分片迁移：节点故障时自动迁移\n- 数据修复：后台自动修复副本\n\n### 查询路由\n- 一致性哈希：请求路由到正确分片\n- 副本选择：选择最近/最空闲副本\n- 查询合并：合并多个分片结果\n\n## 关键要点\n\n1. **CAP权衡**：根据场景选择CP或AP\n2. **索引一致性**：索引更新的最终一致性\n3. **扩展性**：支持在线扩缩容\n\n## 工程实践\n\nMilvus分布式部署：\n```yaml\n# Milvus Helm配置\nconfig:\n  etcd:\n    replicas: 3\n  minio:\n    replicas: 4\n  pulsar:\n    replicas: 3\n  queryNode:\n    replicas: 3\n  dataNode:\n    replicas: 3\n  indexNode:\n    replicas: 3\n```\n\n监控指标：\n- 查询延迟P99 < 100ms\n- 索引构建延迟\n- 分片均衡度\n- 副本同步延迟\n- 存储使用率\n\n扩缩容策略：\n- 根据数据量扩展DataNode\n- 根据QPS扩展QueryNode\n- 根据索引构建需求扩展IndexNode",
-    "tags": [
-      "向量数据库",
-      "高可用",
-      "Milvus"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-032",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何优化向量检索的性能？",
-    "answer": "## 核心概念\n\n向量检索性能优化涉及索引选择、参数调优、硬件优化等多个层面。\n\n## 索引优化\n\n### 索引类型选择\n| 索引类型 | 构建速度 | 查询速度 | 内存占用 | 适用场景 |\n|---------|---------|---------|---------|--------|\n| HNSW | 慢 | 极快 | 高 | 低延迟场景 |\n| IVF_FLAT | 快 | 快 | 高 | 通用场景 |\n| IVF_PQ | 中 | 中 | 低 | 大规模数据 |\n| SCANN | 中 | 快 | 中 | 高召回率 |\n\n### HNSW参数调优\n```python\nindex_params = {\n    \"M\": 32,  # 每层连接数，越大越精确但越慢\n    \"efConstruction\": 200,  # 构建时搜索范围\n    \"efSearch\": 128  # 查询时搜索范围\n}\n```\n\n## 查询优化\n\n### 过滤优化\n```python\n# 先过滤后检索（Pre-filtering）\nquery_params = {\n    \"metric_type\": \"L2\",\n    \"params\": {\"ef\": 128},\n    \"filter\": \"category == 'tech'\"  # 先过滤\n}\n\n# 先检索后过滤（Post-filtering）\nresults = collection.search(\n    vectors=query_vector,\n    limit=100,  # 检索更多\n    filter=\"category == 'tech'\"  # 后过滤\n)\n```\n\n### 批量查询\n```python\n# 批量查询比单条查询效率高\nresults = collection.search(\n    vectors=[query1, query2, query3],  # 批量查询\n    limit=10\n)\n```\n\n## 关键要点\n\n1. **召回率与速度权衡**：ef越大召回率越高但越慢\n2. **内存与精度权衡**：PQ压缩减少内存但降低精度\n3. **索引构建时间**：大规模数据索引构建耗时\n\n## 工程实践\n\n```python\n# Milvus索引优化\nindex_params = {\n    \"metric_type\": \"COSINE\",\n    \"index_type\": \"HNSW\",\n    \"params\": {\n        \"M\": 32,\n        \"efConstruction\": 256\n    }\n}\n\n# 查询优化\nsearch_params = {\n    \"metric_type\": \"COSINE\",\n    \"params\": {\"ef\": 128}\n}\n```\n\n优化清单：\n- 使用SIMD指令加速距离计算\n- 启用查询缓存热点向量\n- 使用GPU加速大规模检索\n- 合理设置分片数\n- 定期重建索引优化效果",
-    "tags": [
-      "向量检索",
-      "索引优化",
-      "HNSW"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-033",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM的Token使用统计和计费？",
-    "answer": "## 核心概念\n\nToken使用统计和计费是LLM服务商业化的重要环节，需要准确统计每次调用的token消耗并进行费用计算。\n\n## 统计维度\n\n### 统计指标\n- **输入Token数**：Prompt的token数量\n- **输出Token数**：Completion的token数量\n- **总Token数**：输入+输出\n- **缓存Token数**：缓存命中的token\n\n### 统计粒度\n- 用户级：每个用户的使用量\n- API Key级：每个密钥的使用量\n- 模型级：每个模型的使用量\n- 组织级：每个组织的使用量\n\n## 实现方案\n\n### Token计数\n```python\nimport tiktoken\n\ndef count_tokens(text: str, model: str = \"gpt-4\") -> int:\n    encoding = tiktoken.encoding_for_model(model)\n    return len(encoding.encode(text))\n\n# 请求统计\nrequest_stats = {\n    \"input_tokens\": count_tokens(prompt),\n    \"output_tokens\": count_tokens(completion),\n    \"model\": \"gpt-4\",\n    \"timestamp\": datetime.utcnow()\n}\n```\n\n### 计费规则\n```python\nPRICING = {\n    \"gpt-4\": {\"input\": 0.03, \"output\": 0.06},  # per 1K tokens\n    \"gpt-3.5-turbo\": {\"input\": 0.001, \"output\": 0.002}\n}\n\ndef calculate_cost(model: str, input_tokens: int, output_tokens: int):\n    price = PRICING[model]\n    input_cost = (input_tokens / 1000) * price[\"input\"]\n    output_cost = (output_tokens / 1000) * price[\"output\"]\n    return input_cost + output_cost\n```\n\n## 关键要点\n\n1. **准确性**：确保token计数准确\n2. **实时性**：实时统计，避免延迟\n3. **可追溯**：保留详细使用记录\n4. **防作弊**：防止token计数篡改\n\n## 工程实践\n\n```python\n# 使用Redis实时统计\nimport redis\n\nclass TokenUsageTracker:\n    def __init__(self, redis_client):\n        self.redis = redis_client\n    \n    def track_usage(self, user_id: str, model: str, \n                    input_tokens: int, output_tokens: int):\n        # 原子递增\n        pipe = self.redis.pipeline()\n        pipe.incrby(f\"usage:{user_id}:input\", input_tokens)\n        pipe.incrby(f\"usage:{user_id}:output\", output_tokens)\n        pipe.incrby(f\"usage:{user_id}:{model}:input\", input_tokens)\n        pipe.incrby(f\"usage:{user_id}:{model}:output\", output_tokens)\n        pipe.execute()\n        \n        # 记录详细日志\n        self.redis.lpush(f\"usage:{user_id}:log\", json.dumps({\n            \"model\": model,\n            \"input_tokens\": input_tokens,\n            \"output_tokens\": output_tokens,\n            \"timestamp\": time.time()\n        }))\n```\n\n计费系统设计：\n- 实时统计 → 定期聚合 → 账单生成\n- 支持预付费和后付费模式\n- 提供使用量告警\n- 支持预算限制",
-    "tags": [
-      "Token统计",
-      "计费系统",
-      "使用量"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-034",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM的请求重试和容错机制？",
-    "answer": "## 核心概念\n\n请求重试和容错机制是保证LLM服务可靠性的重要设计，处理临时故障、超时和限流等情况。\n\n## 重试策略\n\n### 指数退避\n```python\nimport time\nimport random\n\ndef exponential_backoff_retry(\n    func, max_retries=3, base_delay=1, max_delay=60\n):\n    for attempt in range(max_retries):\n        try:\n            return func()\n        except RetryableError as e:\n            if attempt == max_retries - 1:\n                raise\n            delay = min(base_delay * (2 ** attempt), max_delay)\n            delay += random.uniform(0, delay * 0.1)  # 抖动\n            time.sleep(delay)\n```\n\n### 重试条件\n```python\nRETRYABLE_ERRORS = [\n    TimeoutError,\n    RateLimitError,\n    ServerError,\n    ConnectionError\n]\n\ndef should_retry(error):\n    if isinstance(error, tuple(RETRYABLE_ERRORS)):\n        return True\n    if hasattr(error, 'status_code'):\n        return error.status_code in [429, 500, 502, 503]\n    return False\n```\n\n## 容错模式\n\n### 熔断器模式\n```python\nclass CircuitBreaker:\n    def __init__(self, failure_threshold=5, recovery_timeout=30):\n        self.failure_count = 0\n        self.failure_threshold = failure_threshold\n        self.recovery_timeout = recovery_timeout\n        self.state = \"closed\"  # closed, open, half-open\n        self.last_failure_time = None\n    \n    def call(self, func):\n        if self.state == \"open\":\n            if time.time() - self.last_failure_time > self.recovery_timeout:\n                self.state = \"half-open\"\n            else:\n                raise CircuitOpenError(\"Circuit is open\")\n        \n        try:\n            result = func()\n            if self.state == \"half-open\":\n                self.state = \"closed\"\n                self.failure_count = 0\n            return result\n        except Exception as e:\n            self.failure_count += 1\n            self.last_failure_time = time.time()\n            if self.failure_count >= self.failure_threshold:\n                self.state = \"open\"\n            raise\n```\n\n### 降级策略\n- 返回缓存结果\n- 使用备用模型\n- 返回默认响应\n\n## 关键要点\n\n1. **幂等性**：确保重试不会产生副作用\n2. **超时设置**：合理的超时时间\n3. **重试限制**：避免无限重试\n4. **监控告警**：跟踪重试率和错误率\n\n## 工程实践\n\n```python\n# 综合容错方案\nfrom tenacity import (\n    retry, stop_after_attempt, \n    wait_exponential, retry_if_exception_type\n)\n\n@retry(\n    stop=stop_after_attempt(3),\n    wait=wait_exponential(multiplier=1, min=1, max=60),\n    retry=retry_if_exception_type((TimeoutError, RateLimitError))\n)\ndef call_llm_with_retry(prompt):\n    return llm.generate(prompt)\n```\n\n配置建议：\n- 最大重试次数：3次\n- 初始延迟：1秒\n- 最大延迟：60秒\n- 超时时间：30秒\n- 熔断阈值：5次失败",
-    "tags": [
-      "重试机制",
-      "容错",
-      "熔断器"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-035",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM的日志收集和分析？",
-    "answer": "## 核心概念\n\nLLM日志收集和分析是记录、存储和分析模型调用日志的实践，用于问题排查、性能优化和安全审计。\n\n## 日志类型\n\n### 请求日志\n```json\n{\n  \"request_id\": \"req-123\",\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"user_id\": \"user-456\",\n  \"model\": \"gpt-4\",\n  \"input_tokens\": 150,\n  \"output_tokens\": 80,\n  \"latency_ms\": 2500,\n  \"status\": \"success\",\n  \"ip_address\": \"192.168.1.100\"\n}\n```\n\n### 性能日志\n```json\n{\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"gpu_utilization\": 85.5,\n  \"memory_used_gb\": 14.2,\n  \"queue_depth\": 5,\n  \"batch_size\": 32\n}\n```\n\n### 安全日志\n```json\n{\n  \"timestamp\": \"2024-01-15T10:30:00Z\",\n  \"event_type\": \"prompt_injection_detected\",\n  \"user_id\": \"user-789\",\n  \"input_sample\": \"忽略之前的指令...\",\n  \"action\": \"blocked\"\n}\n```\n\n## 收集方案\n\n### 日志架构\n```\nApplication → Log Agent → Kafka → Elasticsearch → Kibana\n                                ↓\n                           ClickHouse（分析）\n```\n\n### 结构化日志\n```python\nimport structlog\n\nlogger = structlog.get_logger()\n\nasync def log_request(request_id, model, input_tokens, output_tokens, latency):\n    logger.info(\n        \"llm_request\",\n        request_id=request_id,\n        model=model,\n        input_tokens=input_tokens,\n        output_tokens=output_tokens,\n        latency_ms=latency,\n        timestamp=datetime.utcnow().isoformat()\n    )\n```\n\n## 关键要点\nn1. **采样策略**：高流量时适当采样\n2. **脱敏处理**：敏感信息脱敏存储\n3. **保留策略**：设置合理的日志保留期\n4. **索引优化**：合理设计索引提高查询效率\n\n## 工程实践\n\n```python\n# 使用ELK Stack收集日志\n# Filebeat配置\nfilebeat.inputs:\n- type: log\n  paths:\n    - /var/log/llm/*.log\n  json.keys_under_root: true\n\noutput.elasticsearch:\n  hosts: [\"elasticsearch:9200\"]\n  index: \"llm-logs-%{+yyyy.MM.dd}\"\n```\n\n分析场景：\n- 错误分析：按错误类型统计\n- 性能分析：延迟分布、瓶颈定位\n- 使用分析：热门模型、高峰时段\n- 安全审计：异常请求、攻击检测\n\n告警规则：\n- 错误率 > 1%\n- P99延迟 > 10s\n- 异常token消耗\n- 可疑注入尝试",
-    "tags": [
-      "日志收集",
-      "ELK",
-      "结构化日志"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-036",
-    "module": "AI工程化",
-    "difficulty": 3,
-    "question": "如何设计LLM服务的多租户架构？",
-    "answer": "## 核心概念\n\n多租户架构是让多个用户或组织共享同一LLM服务基础设施，同时保证数据隔离、资源隔离和计费独立。\n\n## 隔离维度\n\n### 数据隔离\n- **物理隔离**：不同租户不同实例\n- **逻辑隔离**：共享实例，数据标记\n- **加密隔离**：租户级加密密钥\n\n### 资源隔离\n- **配额管理**：每租户的token配额\n- **限流隔离**：独立的限流策略\n- **优先级隔离**：不同租户不同优先级\n\n## 架构设计\n\n### 整体架构\n```\nClient → API Gateway → Tenant Router\n                            ↓\n              ┌─────────────┼─────────────┐\n              ↓             ↓             ↓\n        Tenant A Pool  Tenant B Pool  Shared Pool\n        (专用GPU)      (专用GPU)      (共享GPU)\n```\n\n### 租户路由\n```python\nclass TenantRouter:\n    def __init__(self, tenant_configs):\n        self.configs = tenant_configs\n    \n    def route(self, tenant_id: str, request):\n        config = self.configs.get(tenant_id)\n        \n        if config.isolation == \"dedicated\":\n            # 专用实例\n            return self.route_to_dedicated(tenant_id, request)\n        else:\n            # 共享实例\n            return self.route_to_shared(request)\n```\n\n## 关键要点\n\n1. **配额管理**：严格的资源配额控制\n2. **计费隔离**：独立的计费和账单\n3. **安全隔离**：防止跨租户数据泄露\n4. **性能隔离**：防止邻居噪音问题\n\n## 工程实践\n\n```python\n# 租户配额管理\nimport redis\n\nclass TenantQuotaManager:\n    def __init__(self, redis_client):\n        self.redis = redis_client\n    \n    def check_quota(self, tenant_id: str, tokens_needed: int):\n        key = f\"quota:{tenant_id}:daily\"\n        current = int(self.redis.get(key) or 0)\n        limit = self.get_tenant_limit(tenant_id)\n        \n        if current + tokens_needed > limit:\n            raise QuotaExceededError(f\"Tenant {tenant_id} exceeded daily quota\")\n        \n        self.redis.incrby(key, tokens_needed)\n        self.redis.expire(key, 86400)  # 24小时过期\n```\n\n多租户设计要点：\n- 租户标识：API Key或JWT中包含tenant_id\n- 配额管理：日/月token配额\n- 限流策略：每租户独立限流\n- 监控告警：租户级监控仪表盘\n- SLA分级：不同租户不同SLA",
-    "tags": [
-      "多租户",
-      "资源隔离",
-      "配额管理"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-037",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM的A/B测试框架？",
-    "answer": "## 核心概念\n\nLLM A/B测试框架是支持模型、Prompt、RAG配置等多维度对比实验的系统，用数据驱动产品决策。\n\n## 框架设计\n\n### 核心组件\n```\n实验配置 → 流量分配 → 请求路由 → 指标收集 → 统计分析\n```\n\n### 实验配置\n```python\nexperiment_config = {\n    \"experiment_id\": \"exp-001\",\n    \"name\": \"GPT-4 vs Claude-3 对比\",\n    \"variants\": [\n        {\n            \"id\": \"control\",\n            \"model\": \"gpt-4\",\n            \"weight\": 50\n        },\n        {\n            \"id\": \"treatment\",\n            \"model\": \"claude-3\",\n            \"weight\": 50\n        }\n    ],\n    \"target_users\": \"all\",\n    \"start_time\": \"2024-01-15T00:00:00Z\",\n    \"end_time\": \"2024-02-15T00:00:00Z\"\n}\n```\n\n## 流量分配\n\n### 一致性哈希\n```python\ndef assign_variant(user_id: str, experiment_id: str) -> str:\n    hash_input = f\"{user_id}:{experiment_id}\"\n    hash_value = int(hashlib.md5(hash_input.encode()).hexdigest(), 16)\n    return \"control\" if hash_value % 100 < 50 else \"treatment\"\n```\n\n### 分组策略\n- 用户ID分组：同一用户始终同一组\n- 随机分组：每次请求随机分配\n- 分层实验：多实验并行互不干扰\n\n## 指标体系\n\n### 技术指标\n```python\nclass TechMetrics:\n    latency_p50: float\n    latency_p99: float\n    error_rate: float\n    throughput: float\n```\n\n### 业务指标\n```python\nclass BusinessMetrics:\n    user_satisfaction: float  # 用户评分\n    task_completion_rate: float  # 任务完成率\n    engagement_rate: float  # 参与度\n```\n\n## 关键要点\n\n1. **样本量计算**：确保统计显著性\n2. **实验时长**：覆盖完整业务周期\n3. **单一变量**：每次只测一个变量\n4. **止损机制**：异常时提前终止\n\n## 工程实践\n\n```python\n# 统计显著性检验\nfrom scipy import stats\n\ndef check_significance(control_data, treatment_data, alpha=0.05):\n    t_stat, p_value = stats.ttest_ind(control_data, treatment_data)\n    return p_value < alpha\n\n# 实验结果分析\ndef analyze_experiment(experiment_id: str):\n    control_metrics = get_metrics(experiment_id, \"control\")\n    treatment_metrics = get_metrics(experiment_id, \"treatment\")\n    \n    results = {\n        \"latency_diff\": treatment_metrics.latency - control_metrics.latency,\n        \"satisfaction_diff\": treatment_metrics.satisfaction - control_metrics.satisfaction,\n        \"is_significant\": check_significance(\n            control_metrics.satisfaction_samples,\n            treatment_metrics.satisfaction_samples\n        )\n    }\n    return results\n```\n\n框架选型：\n- 自研：完全可控，适合深度定制\n- Statsig：功能完善的商业方案\n- GrowthBook：开源A/B测试平台\n- 自建：基于Redis + ClickHouse",
-    "tags": [
-      "A/B测试",
-      "实验框架",
-      "统计分析"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-038",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现Embedding模型的在线服务？",
-    "answer": "## 核心概念\n\nEmbedding在线服务是将文本向量化能力以API形式提供的服务，支持实时的文本嵌入和相似度计算。\n\n## 服务架构\n\n### 单机架构\n```\nClient → API Server → Embedding Model → Response\n                        (GPU/CPU)\n```\n\n### 分布式架构\n```\nClient → Load Balancer → Worker Pool → Model Instances\n```\n\n## 性能优化\n\n### 批量处理\n```python\nasync def batch_embed(texts: List[str], batch_size: int = 32):\n    results = []\n    for i in range(0, len(texts), batch_size):\n        batch = texts[i:i+batch_size]\n        embeddings = model.encode(batch)\n        results.extend(embeddings)\n    return results\n```\n\n### 模型优化\n- **量化**：INT8量化减少计算量\n- **ONNX Runtime**：优化推理引擎\n- **TensorRT**：GPU推理加速\n- **模型蒸馏**：使用更小的模型\n\n### 缓存策略\n```python\nclass EmbeddingCache:\n    def __init__(self, redis_client):\n        self.redis = redis_client\n    \n    async def get_or_compute(self, text: str):\n        cache_key = f\"emb:{hash(text)}\"\n        cached = self.redis.get(cache_key)\n        if cached:\n            return np.frombuffer(cached, dtype=np.float32)\n        \n        embedding = model.encode(text)\n        self.redis.set(cache_key, embedding.tobytes(), ex=3600)\n        return embedding\n```\n\n## 关键要点\n\n1. **延迟优化**：P99延迟 < 100ms\n2. **吞吐量**：支持高并发请求\n3. **一致性**：相同文本相同向量\n4. **版本管理**：模型版本与向量版本对应\n\n## 工程实践\n\n```python\n# FastAPI Embedding服务\nfrom fastapi import FastAPI\nfrom sentence_transformers import SentenceTransformer\n\napp = FastAPI()\nmodel = SentenceTransformer('BAAI/bge-large-zh-v1.5')\n\n@app.post(\"/v1/embeddings\")\nasync def create_embeddings(request: EmbeddingRequest):\n    if isinstance(request.input, str):\n        texts = [request.input]\n    else:\n        texts = request.input\n    \n    embeddings = model.encode(texts, normalize_embeddings=True)\n    \n    return {\n        \"data\": [\n            {\n                \"embedding\": emb.tolist(),\n                \"index\": i\n            }\n            for i, emb in enumerate(embeddings)\n        ],\n        \"model\": \"bge-large-zh-v1.5\",\n        \"usage\": {\n            \"prompt_tokens\": sum(len(t) for t in texts)\n        }\n    }\n```\n\n部署建议：\n- 使用GPU加速批量编码\n- 启用请求合并（batching）\n- 设置合理的超时时间\n- 监控GPU利用率和延迟",
-    "tags": [
-      "Embedding服务",
-      "在线推理",
-      "向量化"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-039",
-    "module": "AI工程化",
-    "difficulty": 3,
-    "question": "如何设计LLM的模型安全防护体系？",
-    "answer": "## 核心概念\n\n模型安全防护体系是多层次的安全机制，保护LLM服务免受各种攻击，确保输出的安全性和合规性。\n\n## 安全威胁分类\n\n### 输入攻击\n- **Prompt注入**：操控模型行为\n- **越狱攻击**：绕过安全限制\n- **数据投毒**：污染训练数据\n\n### 输出风险\n- **有害内容**：暴力、歧视、违法内容\n- **隐私泄露**：输出敏感信息\n- **虚假信息**：生成误导性内容\n\n### 系统攻击\n- **拒绝服务**：资源耗尽攻击\n- **数据窃取**：模型参数泄露\n- **对抗样本**：精心构造的输入\n\n## 防护架构\n\n### 纵深防御\n```\n输入层 → 预处理层 → 模型层 → 后处理层 → 输出层\n  ↓         ↓         ↓         ↓         ↓\nWAF      内容过滤   安全对齐   输出审核   审计日志\n```\n\n### 输入防护\n```python\nclass InputGuard:\n    def __init__(self):\n        self.injection_detector = PromptInjectionDetector()\n        self.content_filter = ContentFilter()\n    \n    def check(self, user_input: str):\n        # 检测注入攻击\n        if self.injection_detector.detect(user_input):\n            raise SecurityException(\"Prompt injection detected\")\n        \n        # 内容过滤\n        if self.content_filter.is_harmful(user_input):\n            raise SecurityException(\"Harmful content detected\")\n        \n        return self.sanitize(user_input)\n```\n\n### 输出防护\n```python\nclass OutputGuard:\n    def __init__(self):\n        self.moderation_api = ModerationAPI()\n        self.pii_detector = PIIDetector()\n    \n    def check(self, model_output: str):\n        # 内容审核\n        if self.moderation_api.is_flagged(model_output):\n            return self.get_safe_response()\n        \n        # PII检测\n        if self.pii_detector.has_pii(model_output):\n            return self.redact_pii(model_output)\n        \n        return model_output\n```\n\n## 关键要点\n\n1. **多层防护**：不依赖单一防护措施\n2. **持续更新**：跟进最新攻击手法\n3. **监控告警**：实时检测异常行为\n4. **红队测试**：定期进行安全测试\n\n## 工程实践\n\n```python\n# NVIDIA NeMo Guardrails\nfrom nemoguardrails import LLMRails, RailsConfig\n\nconfig = RailsConfig.from_path(\"./config\")\nrails = LLMRails(config)\n\n# 安全的LLM调用\nresponse = rails.generate(\n    messages=[{\"role\": \"user\", \"content\": user_input}]\n)\n```\n\n安全防护清单：\n- 输入过滤：注入检测、内容审核\n- 模型层：安全对齐、RLHF\n- 输出审核：内容审核、PII检测\n- 访问控制：认证、授权、限流\n- 审计日志：完整记录、异常告警\n- 应急响应：熔断、降级、回滚",
-    "tags": [
-      "模型安全",
-      "防护体系",
-      "NeMo Guardrails"
-    ],
-    "source": "高频"
-  },
-  {
-    "id": "ai-eng-040",
-    "module": "AI工程化",
-    "difficulty": 2,
-    "question": "如何实现LLM服务的灰度发布和回滚机制？",
-    "answer": "## 核心概念\n\n灰度发布是逐步将新版本模型推送给部分用户的发布策略，回滚机制是在出现问题时快速恢复到稳定版本的能力。\n\n## 灰度发布策略\n\n### 按比例发布\n```\n1% → 5% → 20% → 50% → 100%\n```\n- 每阶段观察关键指标\n- 设置自动推进条件\n- 设置自动回滚条件\n\n### 按用户分组\n- 内部用户 → Beta用户 → 全量用户\n- VIP用户优先体验\n- 地区分批发布\n\n## 流量控制\n\n### 路由规则\n```python\nclass CanaryRouter:\n    def __init__(self, canary_percentage: float):\n        self.canary_percentage = canary_percentage\n    \n    def route(self, user_id: str) -> str:\n        hash_value = hash(user_id) % 100\n        if hash_value < self.canary_percentage:\n            return \"canary\"\n        return \"stable\"\n```\n\n### Kubernetes实现\n```yaml\n# 金丝雀部署\napiVersion: networking.istio.io/v1alpha3\nkind: VirtualService\nspec:\n  http:\n  - match:\n    - headers:\n        x-canary:\n          exact: \"true\"\n    route:\n    - destination:\n        host: llm-service\n        subset: canary\n      weight: 100\n  - route:\n    - destination:\n        host: llm-service\n        subset: stable\n      weight: 90\n    - destination:\n        host: llm-service\n        subset: canary\n      weight: 10\n```\n\n## 回滚机制\n\n### 自动回滚条件\n```python\nauto_rollback_conditions = {\n    \"error_rate\": \"> 1%\",\n    \"latency_p99\": \"> 10s\",\n    \"user_complaints\": \"> 10\",\n    \"health_check_failures\": \"> 3\"\n}\n```\n\n### 手动回滚\n```bash\n# Kubernetes快速回滚\nkubectl rollout undo deployment/llm-service\n\n# 或切换流量\nkubectl patch virtualservice llm-service \\\n  --type merge \\\n  -p '{\"spec\":{\"http\":[{\"route\":[{\"destination\":{\"host\":\"llm-service-stable\"},\"weight\":100}]}]}}'\n```\n\n## 关键要点\n\n1. **监控完善**：实时监控关键指标\n2. **回滚速度**：秒级回滚能力\n3. **数据一致性**：回滚时数据不丢失\n4. **通知机制**：发布和回滚及时通知\n\n## 工程实践\n\n```python\n# 灰度发布管理器\nclass CanaryReleaseManager:\n    def __init__(self, k8s_client, monitoring_client):\n        self.k8s = k8s_client\n        self.monitoring = monitoring_client\n    \n    async def promote_canary(self, deployment_name: str):\n        # 检查金丝雀指标\n        metrics = await self.monitoring.get_canary_metrics(deployment_name)\n        \n        if metrics.error_rate > 0.01:\n            await self.rollback(deployment_name)\n            raise CanaryFailedError(\"Error rate too high\")\n        \n        if metrics.latency_p99 > 10:\n            await self.rollback(deployment_name)\n            raise CanaryFailedError(\"Latency too high\")\n        \n        # 增加金丝雀流量\n        current_weight = await self.get_canary_weight(deployment_name)\n        new_weight = min(current_weight * 2, 100)\n        await self.update_traffic_weight(deployment_name, new_weight)\n    \n    async def rollback(self, deployment_name: str):\n        await self.k8s.rollout_undo(deployment_name)\n        await self.notify_team(f\"Rolled back {deployment_name}\")\n```\n\n发布检查清单：\n- 模型加载测试通过\n- 基准测试指标正常\n- 灰度比例逐步增加\n- 监控告警配置完成\n- 回滚脚本准备就绪\n- 值班人员确认",
-    "tags": [
-      "灰度发布",
-      "回滚机制",
-      "Canary"
-    ],
-    "source": "高频"
+    "question": "AI 应用上线后如何持续运营 prompt、知识库、模型和评测集？",
+    "answer": "### prompt 运营\n\nprompt 要版本化、评测、灰度和回滚。线上失败样本要能定位到具体 prompt 版本。不要在生产里直接热改大段提示词而不留记录。\n\n### 知识库运营\n\n知识库要维护来源、权限、版本、过期时间和质量。文档新增、删除、更新后要触发索引更新和回归验证。RAG 失败常常是知识问题，不是模型问题。\n\n### 模型运营\n\n持续跟踪模型质量、延迟、成本、供应商稳定性和安全表现。模型升级要跑离线评测、线上回放和灰度。\n\n### 评测集运营\n\n评测集要随着业务变化补样本。历史事故、用户反馈、人工抽检和长尾问题都应进入回归集。生产级 AI 应用本质是一个持续运营系统，不是一次上线结束。",
+    "tags": ["AI Agent", "AI工程化"],
+    "source": "精选"
   }
 ]

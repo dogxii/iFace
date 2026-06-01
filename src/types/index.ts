@@ -23,6 +23,16 @@ export const BUILTIN_MODULES = [
   'RAG与知识库',
   '工具调用与工作流',
   '评测与线上优化',
+  'AI工程化',
+  'AI应用实践',
+  // Java
+  'Java基础',
+  'Java并发',
+  'JVM',
+  'Spring框架',
+  '计算机网络',
+  'MySQL',
+  'Redis',
 ] as const
 
 export type BuiltinModule = (typeof BUILTIN_MODULES)[number]
@@ -52,6 +62,16 @@ export const BUILTIN_MODULE_CATEGORY: Record<string, string> = {
   RAG与知识库: 'AI Agent',
   工具调用与工作流: 'AI Agent',
   评测与线上优化: 'AI Agent',
+  AI工程化: 'AI Agent',
+  AI应用实践: 'AI Agent',
+  // Java
+  Java基础: 'Java',
+  Java并发: 'Java',
+  JVM: 'Java',
+  Spring框架: 'Java',
+  计算机网络: 'Java',
+  MySQL: 'Java',
+  Redis: 'Java',
 }
 
 // Module is now open — any string is valid, enabling custom topics like Golang, Java, etc.
@@ -81,6 +101,24 @@ export interface StudyRecord {
 export type StudyRecordMap = Record<string, StudyRecord>
 
 export interface QuestionNote {
+  questionId: string
+  content: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuestionNoteImage {
+  id: string
+  questionId: string
+  name: string
+  mimeType: string
+  size: number
+  dataUrl: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuestionAnswerOverride {
   questionId: string
   content: string
   createdAt: number

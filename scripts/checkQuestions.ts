@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url'
 import { normalizeQuestionsForImport, validateQuestions } from '../src/data/schema.ts'
 import { DEFAULT_CATEGORY_MAP } from '../src/lib/db.ts'
 import { BUILTIN_CATEGORIES, BUILTIN_MODULE_FILES } from '../src/lib/questionLoader.ts'
-import type { Difficulty, Question } from '../src/types'
+import {
+  BUILTIN_MODULE_CATEGORY,
+  BUILTIN_MODULES,
+  type Difficulty,
+  type Question,
+} from '../src/types'
 
 interface QuestionWithFile extends Question {
   file: string
@@ -237,6 +242,26 @@ for (const category of BUILTIN_CATEGORIES) {
     `${category.category} 题库模块`,
     'DEFAULT_CATEGORY_MAP',
   )
+}
+
+const defaultBuiltinModules = Object.values(DEFAULT_CATEGORY_MAP).flatMap((category) =>
+  category.builtin ? category.modules : [],
+)
+reportSetDiff(
+  'src/types/index.ts',
+  [...BUILTIN_MODULES].sort(),
+  [...defaultBuiltinModules].sort(),
+  'BUILTIN_MODULES',
+  'DEFAULT_CATEGORY_MAP 内置模块',
+)
+
+for (const module of defaultBuiltinModules) {
+  if (!BUILTIN_MODULE_CATEGORY[module]) {
+    failures.push({
+      file: 'src/types/index.ts',
+      message: `BUILTIN_MODULE_CATEGORY 缺少内置模块 ${module}`,
+    })
+  }
 }
 
 if (failures.length > 0) {

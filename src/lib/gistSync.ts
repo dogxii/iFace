@@ -22,6 +22,11 @@
  *                      These are authored content, so they are backed up for
  *                      both built-in and custom questions.
  *
+ *   questionAnswerOverrides
+ *                    — User-authored replacement reference answers for built-in
+ *                      and custom questions. Original question objects remain
+ *                      untouched.
+ *
  *   aiSessions       — AI chat history for each question. API keys and model
  *                      settings are NOT included; only conversation content is
  *                      synced.
@@ -71,17 +76,26 @@
  *   v4  adds per-question notes
  *   v5  adds AI chat sessions
  *   v6  adds per-question flags
+ *   v7  adds custom per-question reference answers
  */
 
 import type { AISession } from '@/store/useAIStore'
-import type { Question, QuestionFlag, QuestionNote, StudyRecord } from '@/types'
+import type {
+  Question,
+  QuestionAnswerOverride,
+  QuestionFlag,
+  QuestionNote,
+  StudyRecord,
+} from '@/types'
 import {
+  bulkPutQuestionAnswerOverrides,
   bulkPutQuestionFlags,
   bulkPutQuestionNotes,
   bulkPutQuestions,
   bulkPutStudyRecords,
   type CategoryMap,
   DEFAULT_CATEGORY_MAP,
+  getAllQuestionAnswerOverrides,
   getAllQuestionFlags,
   getAllQuestionNotes,
   getAllQuestions,
@@ -98,7 +112,7 @@ import {
 const GIST_FILENAME = 'iface-backup.json'
 const GIST_DESCRIPTION = 'iFace study progress backup (auto-generated)'
 
-const BACKUP_VERSION = 6
+const BACKUP_VERSION = 7
 const MINIMUM_SUPPORTED_VERSION = 1
 
 const GH_API = 'https://api.github.com'
@@ -269,6 +283,9 @@ function normalizeSyncData(data: Partial<SyncData>): SyncData {
   return {
     studyRecords: Array.isArray(data.studyRecords) ? data.studyRecords : [],
     questionNotes: Array.isArray(data.questionNotes) ? data.questionNotes : [],
+    questionAnswerOverrides: Array.isArray(data.questionAnswerOverrides)
+      ? data.questionAnswerOverrides
+      : [],
     questionFlags: Array.isArray(data.questionFlags) ? data.questionFlags : [],
     aiSessions: Array.isArray(data.aiSessions) ? data.aiSessions : [],
     customQuestions: Array.isArray(data.customQuestions) ? data.customQuestions : [],
@@ -296,6 +313,7 @@ function mergeSyncData(
       stats: {
         remoteRecordsApplied: 0,
         remoteNotesApplied: 0,
+        remoteAnswerOverridesApplied: 0,
         remoteFlagsApplied: 0,
         remoteAISessionsApplied: 0,
         remoteQuestionsAdded: 0,
@@ -316,6 +334,12 @@ function mergeSyncData(
     remoteData.questionNotes,
     (note) => note.questionId,
     (note) => note.updatedAt,
+  )
+  const answerOverrides = mergeByTimestamp(
+    localData.questionAnswerOverrides,
+    remoteData.questionAnswerOverrides,
+    (override) => override.questionId,
+    (override) => override.updatedAt,
   )
   const aiSessions = mergeByTimestamp(
     localData.aiSessions,
@@ -341,6 +365,7 @@ function mergeSyncData(
     backup: {
       studyRecords: records.items,
       questionNotes: notes.items,
+      questionAnswerOverrides: answerOverrides.items,
       questionFlags: flags.items,
       aiSessions: aiSessions.items,
       customQuestions: questions.items,
@@ -350,6 +375,7 @@ function mergeSyncData(
     stats: {
       remoteRecordsApplied: records.remoteApplied,
       remoteNotesApplied: notes.remoteApplied,
+      remoteAnswerOverridesApplied: answerOverrides.remoteApplied,
       remoteFlagsApplied: flags.remoteApplied,
       remoteAISessionsApplied: aiSessions.remoteApplied,
       remoteQuestionsAdded: questions.remoteAdded,
@@ -370,11 +396,13 @@ function syncResultFromBackup(
     recordCount: backup.studyRecords.length,
     questionCount: backup.customQuestions.length,
     noteCount: backup.questionNotes.length,
+    answerOverrideCount: backup.questionAnswerOverrides.length,
     questionFlagCount: backup.questionFlags.filter((flag) => flag.starred).length,
     aiSessionCount: backup.aiSessions.length,
     aiSessions: backup.aiSessions,
     mergedRemoteRecordCount: stats?.remoteRecordsApplied,
     mergedRemoteNoteCount: stats?.remoteNotesApplied,
+    mergedRemoteAnswerOverrideCount: stats?.remoteAnswerOverridesApplied,
     mergedRemoteQuestionFlagCount: stats?.remoteFlagsApplied,
     mergedRemoteAISessionCount: stats?.remoteAISessionsApplied,
     mergedRemoteQuestionCount: stats?.remoteQuestionsAdded,
@@ -385,7 +413,28 @@ function syncResultFromBackup(
 
 // ─── Payload types ────────────────────────────────────────────────────────────
 
-/** Shape written to / read from Gist (v6) */
+/** Shape written to / read from Gist (v7) */
+interface GistPayloadV7 {
+  version: 7
+  exportedAt: string
+  /** Compact columnar study records */
+  records: CompactRecords
+  /** User-authored notes for built-in and custom questions */
+  questionNotes: QuestionNote[]
+  /** Custom reference answers for built-in and custom questions */
+  questionAnswerOverrides: QuestionAnswerOverride[]
+  /** Per-question flags such as starred/重点题 */
+  questionFlags: QuestionFlag[]
+  /** AI chat history, without API keys or provider config */
+  aiSessions: AISession[]
+  /** User-imported questions only (no built-in question text) */
+  customQuestions: Question[]
+  /** Non-builtin categories only */
+  customCategories: CategoryMap
+  customSources: string[]
+}
+
+/** Legacy v6 shape */
 interface GistPayloadV6 {
   version: 6
   exportedAt: string
@@ -470,6 +519,7 @@ export interface GistBackup {
   exportedAt: string
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
+  questionAnswerOverrides: QuestionAnswerOverride[]
   questionFlags: QuestionFlag[]
   aiSessions: AISession[]
   customQuestions: Question[]
@@ -485,11 +535,13 @@ export interface SyncResult {
   recordCount?: number
   questionCount?: number
   noteCount?: number
+  answerOverrideCount?: number
   questionFlagCount?: number
   aiSessionCount?: number
   aiSessions?: AISession[]
   mergedRemoteRecordCount?: number
   mergedRemoteNoteCount?: number
+  mergedRemoteAnswerOverrideCount?: number
   mergedRemoteQuestionFlagCount?: number
   mergedRemoteAISessionCount?: number
   mergedRemoteQuestionCount?: number
@@ -500,6 +552,7 @@ export interface SyncResult {
 interface SyncMergeStats {
   remoteRecordsApplied: number
   remoteNotesApplied: number
+  remoteAnswerOverridesApplied: number
   remoteFlagsApplied: number
   remoteAISessionsApplied: number
   remoteQuestionsAdded: number
@@ -513,13 +566,14 @@ export type { SyncMergeStats }
 export function buildGistBackupPayload(
   backup: SyncData,
   exportedAt = new Date().toISOString(),
-): GistPayloadV6 {
+): GistPayloadV7 {
   const data = normalizeSyncData(backup)
   return {
-    version: 6,
+    version: BACKUP_VERSION,
     exportedAt,
     records: encodeRecords(data.studyRecords),
     questionNotes: data.questionNotes,
+    questionAnswerOverrides: data.questionAnswerOverrides,
     questionFlags: data.questionFlags,
     aiSessions: data.aiSessions,
     customQuestions: data.customQuestions,
@@ -693,7 +747,7 @@ async function fetchTruncatedContent(
 // ─── Payload parser / normaliser ──────────────────────────────────────────────
 
 /**
- * Parse raw JSON text → GistBackup, handling v1/v2/v3/v4/v5/v6.
+ * Parse raw JSON text → GistBackup, handling v1 through the current version.
  * Throws on invalid JSON, unsupported version, or missing required fields.
  */
 function parsePayload(raw: string): GistBackup {
@@ -720,9 +774,14 @@ function parsePayload(raw: string): GistBackup {
     )
   }
 
-  // ── v3 / v4 / v5 / v6 ──
-  if (v === 3 || v === 4 || v === 5 || v === 6) {
-    const p = data as unknown as GistPayloadV3 | GistPayloadV4 | GistPayloadV5 | GistPayloadV6
+  // ── v3 / v4 / v5 / v6 / v7 ──
+  if (v === 3 || v === 4 || v === 5 || v === 6 || v === 7) {
+    const p = data as unknown as
+      | GistPayloadV3
+      | GistPayloadV4
+      | GistPayloadV5
+      | GistPayloadV6
+      | GistPayloadV7
     const compact = p.records
     const studyRecords =
       compact && Array.isArray(compact.ids) && compact.ids.length > 0 ? decodeRecords(compact) : []
@@ -734,17 +793,22 @@ function parsePayload(raw: string): GistBackup {
       questionNotes:
         v === 4 && Array.isArray((p as GistPayloadV4).questionNotes)
           ? (p as GistPayloadV4).questionNotes
-          : (v === 5 || v === 6) &&
-              Array.isArray((p as GistPayloadV5 | GistPayloadV6).questionNotes)
-            ? (p as GistPayloadV5 | GistPayloadV6).questionNotes
+          : (v === 5 || v === 6 || v === 7) &&
+              Array.isArray((p as GistPayloadV5 | GistPayloadV6 | GistPayloadV7).questionNotes)
+            ? (p as GistPayloadV5 | GistPayloadV6 | GistPayloadV7).questionNotes
             : [],
+      questionAnswerOverrides:
+        v === 7 && Array.isArray((p as GistPayloadV7).questionAnswerOverrides)
+          ? (p as GistPayloadV7).questionAnswerOverrides
+          : [],
       questionFlags:
-        v === 6 && Array.isArray((p as GistPayloadV6).questionFlags)
-          ? (p as GistPayloadV6).questionFlags
+        (v === 6 || v === 7) && Array.isArray((p as GistPayloadV6 | GistPayloadV7).questionFlags)
+          ? (p as GistPayloadV6 | GistPayloadV7).questionFlags
           : [],
       aiSessions:
-        (v === 5 || v === 6) && Array.isArray((p as GistPayloadV5 | GistPayloadV6).aiSessions)
-          ? (p as GistPayloadV5 | GistPayloadV6).aiSessions
+        (v === 5 || v === 6 || v === 7) &&
+        Array.isArray((p as GistPayloadV5 | GistPayloadV6 | GistPayloadV7).aiSessions)
+          ? (p as GistPayloadV5 | GistPayloadV6 | GistPayloadV7).aiSessions
           : [],
       customQuestions: Array.isArray(p.customQuestions) ? p.customQuestions : [],
       customCategories:
@@ -780,6 +844,7 @@ function parsePayload(raw: string): GistBackup {
       exportedAt: typeof p.exportedAt === 'string' ? p.exportedAt : new Date().toISOString(),
       studyRecords,
       questionNotes: [],
+      questionAnswerOverrides: [],
       questionFlags: [],
       aiSessions: [],
       customQuestions,
@@ -906,6 +971,7 @@ export async function deleteBackupGist(token: string): Promise<SyncResult> {
  * Only uploads:
  *   • Study records for ALL questions (built-in and custom)
  *   • Question notes for ALL questions (user-authored content)
+ *   • Custom answer overrides for ALL questions
  *   • AI sessions for ALL questions (conversation content only)
  *   • Custom (user-imported) question objects
  *   • Custom (user-created) categories
@@ -916,15 +982,23 @@ export async function deleteBackupGist(token: string): Promise<SyncResult> {
  */
 export async function pushToGist(token: string, aiSessions: AISession[] = []): Promise<SyncResult> {
   try {
-    const [studyRecords, questionNotes, questionFlags, allQuestions, customSources, categoryMap] =
-      await Promise.all([
-        getAllStudyRecords(),
-        getAllQuestionNotes(),
-        getAllQuestionFlags(),
-        getAllQuestions(),
-        getCustomSources(),
-        getCategoryMap(),
-      ])
+    const [
+      studyRecords,
+      questionNotes,
+      questionAnswerOverrides,
+      questionFlags,
+      allQuestions,
+      customSources,
+      categoryMap,
+    ] = await Promise.all([
+      getAllStudyRecords(),
+      getAllQuestionNotes(),
+      getAllQuestionAnswerOverrides(),
+      getAllQuestionFlags(),
+      getAllQuestions(),
+      getCustomSources(),
+      getCategoryMap(),
+    ])
 
     // Only back up user-imported questions (id starts with "custom_")
     const customQuestions = allQuestions.filter(
@@ -940,6 +1014,7 @@ export async function pushToGist(token: string, aiSessions: AISession[] = []): P
     const localBackup: SyncData = {
       studyRecords,
       questionNotes,
+      questionAnswerOverrides,
       questionFlags,
       aiSessions,
       customQuestions,
@@ -958,6 +1033,7 @@ export async function pushToGist(token: string, aiSessions: AISession[] = []): P
       await Promise.all([
         bulkPutStudyRecords(merged.backup.studyRecords),
         bulkPutQuestionNotes(merged.backup.questionNotes),
+        bulkPutQuestionAnswerOverrides(merged.backup.questionAnswerOverrides),
         bulkPutQuestionFlags(merged.backup.questionFlags),
         merged.backup.customQuestions.length > 0
           ? bulkPutQuestions(merged.backup.customQuestions)
@@ -982,6 +1058,7 @@ export async function pushToGist(token: string, aiSessions: AISession[] = []): P
  * Merge strategy:
  *   studyRecords     — merge by lastUpdated (newer wins)
  *   questionNotes    — merge by updatedAt (newer wins)
+ *   questionAnswerOverrides — merge by updatedAt (newer wins)
  *   aiSessions       — merge by updatedAt (newer wins)
  *   customQuestions  — union by id (never delete existing ones)
  *   customSources    — union
@@ -1000,15 +1077,23 @@ export async function pullFromGist(
 
     const ops: Promise<unknown>[] = []
 
-    const [localRecords, localNotes, localFlags, allQuestions, localSources, currentMap] =
-      await Promise.all([
-        getAllStudyRecords(),
-        getAllQuestionNotes(),
-        getAllQuestionFlags(),
-        getAllQuestions(),
-        getCustomSources(),
-        getCategoryMap(),
-      ])
+    const [
+      localRecords,
+      localNotes,
+      localAnswerOverrides,
+      localFlags,
+      allQuestions,
+      localSources,
+      currentMap,
+    ] = await Promise.all([
+      getAllStudyRecords(),
+      getAllQuestionNotes(),
+      getAllQuestionAnswerOverrides(),
+      getAllQuestionFlags(),
+      getAllQuestions(),
+      getCustomSources(),
+      getCategoryMap(),
+    ])
 
     const localCustomQuestions = allQuestions.filter(
       (q) => typeof q.id === 'string' && q.id.startsWith('custom_'),
@@ -1022,6 +1107,7 @@ export async function pullFromGist(
       {
         studyRecords: localRecords,
         questionNotes: localNotes,
+        questionAnswerOverrides: localAnswerOverrides,
         questionFlags: localFlags,
         aiSessions: localAISessions,
         customQuestions: localCustomQuestions,
@@ -1033,6 +1119,7 @@ export async function pullFromGist(
 
     ops.push(bulkPutStudyRecords(merged.backup.studyRecords))
     ops.push(bulkPutQuestionNotes(merged.backup.questionNotes))
+    ops.push(bulkPutQuestionAnswerOverrides(merged.backup.questionAnswerOverrides))
     ops.push(bulkPutQuestionFlags(merged.backup.questionFlags))
 
     if (merged.backup.customQuestions.length > 0) {

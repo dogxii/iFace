@@ -40,6 +40,8 @@ Git history and README use Conventional Commits, for example `feat: update conte
 
 Pull requests should include a short summary, validation commands run, linked issues when applicable, and screenshots for visible UI changes. Mention data migration, IndexedDB, localStorage, or bundled question JSON changes explicitly.
 
+Pull request titles and descriptions should be written in Chinese.
+
 ## Security & Configuration Tips
 
 Do not commit secrets. Use `.env.example` as the public template, and keep API keys in local browser settings or environment-specific configuration. Treat imported question JSON as untrusted input and validate changes against the existing schema before publishing.

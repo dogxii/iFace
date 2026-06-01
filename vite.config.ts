@@ -21,9 +21,9 @@ export default defineConfig({
         'icons/*.png',
       ],
       manifest: {
-        name: 'iFace · 前端面试刷题助手',
+        name: 'iFace · 面试刷题助手',
         short_name: 'iFace',
-        description: '前端面试刷题助手，覆盖 JS、React、CSS、TypeScript、性能优化等核心模块',
+        description: '面试刷题助手，覆盖 JS、Golang、Java、网络、项目实践等核心模块',
         theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',

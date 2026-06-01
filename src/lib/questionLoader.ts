@@ -2,14 +2,28 @@ import { normalizeQuestionsForImport, validateQuestions } from '../data/schema'
 import type { Question } from '../types'
 import {
   addCustomSource,
+  bulkPutQuestionAnswerOverrides,
+  bulkPutQuestionFlags,
+  bulkPutQuestionNotes,
   bulkPutQuestions,
+  bulkPutStudyRecords,
+  type CategoryMap,
+  DEFAULT_CATEGORY_MAP,
+  deleteQuestionById,
+  getAllQuestionAnswerOverrides,
+  getAllQuestionFlags,
+  getAllQuestionNotes,
   getAllQuestions,
+  getAllStudyRecords,
+  getCustomSources,
   getLoadedModules,
   getMeta,
   getQuestionsByModule,
   META_KEYS,
   markModuleLoaded,
   registerModulesInCategory,
+  removeCustomSource,
+  saveCategoryMap,
   setMeta,
 } from './db'
 
@@ -74,44 +88,19 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
     category: 'Java',
     files: [
       'java/basics.json',
-      'java/oop.json',
       'java/concurrency.json',
       'java/jvm.json',
       'java/spring.json',
-    ],
-  },
-  {
-    category: '计算机网络',
-    files: [
-      'network/basics.json',
-      'network/tcp.json',
-      'network/http.json',
-      'network/security.json',
-    ],
-  },
-  {
-    category: 'Redis',
-    files: [
-      'redis/basics.json',
-      'redis/data-structures.json',
-      'redis/persistence.json',
-      'redis/cluster.json',
-    ],
-  },
-  {
-    category: 'MySQL',
-    files: [
-      'mysql/basics.json',
-      'mysql/index.json',
-      'mysql/transaction.json',
-      'mysql/optimization.json',
+      'java/network.json',
+      'java/mysql.json',
+      'java/redis.json',
     ],
   },
 ] as const
 
 /** Flat list of every built-in file path across all categories (for legacy compat). */
 export const BUILTIN_MODULE_FILES: readonly string[] = BUILTIN_CATEGORIES.flatMap((c) => c.files)
-export const BUILTIN_QUESTIONS_VERSION = '0.13.0'
+export const BUILTIN_QUESTIONS_VERSION = '0.18.0'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -222,6 +211,275 @@ export async function loadAllBuiltinModules(
   return results
 }
 
+// ─── Built-in replacement migration ──────────────────────────────────────────
+
+interface BuiltinReplacementMigrationResult {
+  migratedQuestions: number
+  migratedRecords: number
+  migratedNotes: number
+  migratedAnswerOverrides: number
+  migratedFlags: number
+  removedSources: number
+  removedCategories: number
+}
+
+const emptyMigrationResult: BuiltinReplacementMigrationResult = {
+  migratedQuestions: 0,
+  migratedRecords: 0,
+  migratedNotes: 0,
+  migratedAnswerOverrides: 0,
+  migratedFlags: 0,
+  removedSources: 0,
+  removedCategories: 0,
+}
+
+function normalizeQuestionText(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[“”‘’"'`]/g, '')
+    .replace(/\s+/g, '')
+}
+
+function findBuiltinReplacementId(
+  question: Question,
+  builtinQuestionsById: Map<string, Question>,
+  builtinIdsByLength: string[],
+  builtinIdsByModuleAndQuestion: Map<string, string>,
+): string | null {
+  for (const builtinId of builtinIdsByLength) {
+    const builtinQuestion = builtinQuestionsById.get(builtinId)
+    if (question.id.endsWith(`_${builtinId}`) && builtinQuestion?.module === question.module) {
+      return builtinId
+    }
+  }
+
+  return (
+    builtinIdsByModuleAndQuestion.get(
+      `${question.module}\u0000${normalizeQuestionText(question.question)}`,
+    ) ?? null
+  )
+}
+
+function mergeStudyRecord(
+  from: Awaited<ReturnType<typeof getAllStudyRecords>>[number],
+  to: Awaited<ReturnType<typeof getAllStudyRecords>>[number] | undefined,
+  questionId: string,
+) {
+  if (!to) return { ...from, questionId }
+  if (from.lastUpdated > to.lastUpdated) {
+    return {
+      ...from,
+      questionId,
+      reviewCount: Math.max(from.reviewCount, to.reviewCount),
+    }
+  }
+  return {
+    ...to,
+    reviewCount: Math.max(from.reviewCount, to.reviewCount),
+  }
+}
+
+function mergeQuestionNote(
+  from: Awaited<ReturnType<typeof getAllQuestionNotes>>[number],
+  to: Awaited<ReturnType<typeof getAllQuestionNotes>>[number] | undefined,
+  questionId: string,
+) {
+  if (!to) return { ...from, questionId }
+
+  const fromContent = from.content.trim()
+  const toContent = to.content.trim()
+  if (!fromContent || toContent.includes(fromContent)) return to
+  if (!toContent) return { ...from, questionId }
+
+  return {
+    questionId,
+    content: `${to.content.trim()}\n\n---\n\n${from.content.trim()}`,
+    createdAt: Math.min(to.createdAt, from.createdAt),
+    updatedAt: Math.max(to.updatedAt, from.updatedAt),
+  }
+}
+
+function mergeQuestionAnswerOverride(
+  from: Awaited<ReturnType<typeof getAllQuestionAnswerOverrides>>[number],
+  to: Awaited<ReturnType<typeof getAllQuestionAnswerOverrides>>[number] | undefined,
+  questionId: string,
+) {
+  if (!to) return { ...from, questionId }
+  return from.updatedAt > to.updatedAt ? { ...from, questionId } : to
+}
+
+function mergeQuestionFlag(
+  from: Awaited<ReturnType<typeof getAllQuestionFlags>>[number],
+  to: Awaited<ReturnType<typeof getAllQuestionFlags>>[number] | undefined,
+  questionId: string,
+) {
+  if (!to) return { ...from, questionId }
+  return {
+    questionId,
+    starred: to.starred || from.starred,
+    createdAt: Math.min(to.createdAt, from.createdAt),
+    updatedAt: Math.max(to.updatedAt, from.updatedAt),
+  }
+}
+
+async function cleanupBuiltinReplacementCategories(): Promise<number> {
+  const stored = await getMeta<CategoryMap>(META_KEYS.CATEGORY_MAP)
+  if (!stored || Object.keys(stored).length === 0) return 0
+
+  const builtinModules = new Set(
+    Object.values(DEFAULT_CATEGORY_MAP)
+      .filter((category) => category.builtin)
+      .flatMap((category) => category.modules),
+  )
+  const builtinCategories = new Set(Object.keys(DEFAULT_CATEGORY_MAP))
+  const customCategories: CategoryMap = {}
+  let removedCategories = 0
+  let changed = false
+
+  for (const [key, entry] of Object.entries(stored)) {
+    if (builtinCategories.has(key)) continue
+
+    const customModules = entry.modules.filter((module) => !builtinModules.has(module))
+    if (customModules.length === 0) {
+      removedCategories += 1
+      changed = true
+      continue
+    }
+
+    customCategories[key] = { ...entry, modules: customModules }
+    if (customModules.length !== entry.modules.length) changed = true
+  }
+
+  const nextMap = { ...DEFAULT_CATEGORY_MAP, ...customCategories }
+  if (changed || Object.keys(stored).some((key) => !nextMap[key])) {
+    await saveCategoryMap(nextMap)
+  }
+
+  return removedCategories
+}
+
+export async function migrateBuiltinQuestionReplacements(): Promise<BuiltinReplacementMigrationResult> {
+  const current = await getMeta<string>(META_KEYS.BUILTIN_REPLACEMENT_MIGRATION)
+  if (current === BUILTIN_QUESTIONS_VERSION) return emptyMigrationResult
+
+  const allQuestions = await getAllQuestions()
+  const builtinQuestions = allQuestions.filter((question) => !question.id.startsWith('custom_'))
+  const customQuestions = allQuestions.filter((question) => question.id.startsWith('custom_'))
+  const builtinQuestionsById = new Map(
+    builtinQuestions.map((question) => [question.id, question] as const),
+  )
+  const builtinIdsByLength = builtinQuestions
+    .map((question) => question.id)
+    .sort((a, b) => b.length - a.length)
+  const builtinIdsByModuleAndQuestion = new Map(
+    builtinQuestions.map((question) => [
+      `${question.module}\u0000${normalizeQuestionText(question.question)}`,
+      question.id,
+    ]),
+  )
+
+  const replacements = new Map<string, string>()
+  const migratedSources = new Set<string>()
+  for (const question of customQuestions) {
+    const replacementId = findBuiltinReplacementId(
+      question,
+      builtinQuestionsById,
+      builtinIdsByLength,
+      builtinIdsByModuleAndQuestion,
+    )
+    if (!replacementId) continue
+
+    replacements.set(question.id, replacementId)
+    if (question.source?.trim()) migratedSources.add(question.source.trim())
+  }
+
+  const result: BuiltinReplacementMigrationResult = {
+    ...emptyMigrationResult,
+    migratedQuestions: replacements.size,
+  }
+
+  if (replacements.size > 0) {
+    const [records, notes, answerOverrides, flags] = await Promise.all([
+      getAllStudyRecords(),
+      getAllQuestionNotes(),
+      getAllQuestionAnswerOverrides(),
+      getAllQuestionFlags(),
+    ])
+    const recordsById = new Map(records.map((record) => [record.questionId, record]))
+    const notesById = new Map(notes.map((note) => [note.questionId, note]))
+    const answerOverridesById = new Map(
+      answerOverrides.map((override) => [override.questionId, override]),
+    )
+    const flagsById = new Map(flags.map((flag) => [flag.questionId, flag]))
+
+    const nextRecords = []
+    const nextNotes = []
+    const nextAnswerOverrides = []
+    const nextFlags = []
+
+    for (const [fromId, toId] of replacements) {
+      const fromRecord = recordsById.get(fromId)
+      if (fromRecord) {
+        nextRecords.push(mergeStudyRecord(fromRecord, recordsById.get(toId), toId))
+      }
+
+      const fromNote = notesById.get(fromId)
+      if (fromNote) {
+        nextNotes.push(mergeQuestionNote(fromNote, notesById.get(toId), toId))
+      }
+
+      const fromAnswerOverride = answerOverridesById.get(fromId)
+      if (fromAnswerOverride) {
+        nextAnswerOverrides.push(
+          mergeQuestionAnswerOverride(fromAnswerOverride, answerOverridesById.get(toId), toId),
+        )
+      }
+
+      const fromFlag = flagsById.get(fromId)
+      if (fromFlag) {
+        nextFlags.push(mergeQuestionFlag(fromFlag, flagsById.get(toId), toId))
+      }
+    }
+
+    await Promise.all([
+      nextRecords.length > 0 ? bulkPutStudyRecords(nextRecords) : Promise.resolve(),
+      nextNotes.length > 0 ? bulkPutQuestionNotes(nextNotes) : Promise.resolve(),
+      nextAnswerOverrides.length > 0
+        ? bulkPutQuestionAnswerOverrides(nextAnswerOverrides)
+        : Promise.resolve(),
+      nextFlags.length > 0 ? bulkPutQuestionFlags(nextFlags) : Promise.resolve(),
+    ])
+
+    result.migratedRecords = nextRecords.length
+    result.migratedNotes = nextNotes.length
+    result.migratedAnswerOverrides = nextAnswerOverrides.length
+    result.migratedFlags = nextFlags.length
+
+    for (const customId of replacements.keys()) {
+      await deleteQuestionById(customId)
+    }
+
+    const remainingQuestions = await getAllQuestions()
+    const remainingCustomSources = new Set(
+      remainingQuestions
+        .filter((question) => question.id.startsWith('custom_') && question.source?.trim())
+        .map((question) => question.source?.trim() ?? ''),
+    )
+    const registeredSources = await getCustomSources()
+    for (const source of registeredSources) {
+      if (migratedSources.has(source) && !remainingCustomSources.has(source)) {
+        await removeCustomSource(source)
+        result.removedSources += 1
+      }
+    }
+  }
+
+  result.removedCategories = await cleanupBuiltinReplacementCategories()
+  await setMeta(META_KEYS.BUILTIN_REPLACEMENT_MIGRATION, BUILTIN_QUESTIONS_VERSION)
+  return result
+}
+
 // ─── Load all built-in modules in parallel (faster initial load) ──────────────
 
 export async function loadAllBuiltinModulesParallel(force = false): Promise<LoadResult[]> {
@@ -230,6 +488,7 @@ export async function loadAllBuiltinModulesParallel(force = false): Promise<Load
     result.errors.some((error) => error.index === -1 && result.loaded === 0),
   )
   if (!hasLoadFailure) {
+    await migrateBuiltinQuestionReplacements()
     const loadedModules = new Set(await getLoadedModules())
     for (const file of BUILTIN_MODULE_FILES) {
       loadedModules.add(file)
@@ -352,8 +611,10 @@ export async function getDailyRecommendations(
 ): Promise<string[]> {
   const cached = await getMeta<DailyCache>(META_KEYS.DAILY_RECS)
   if (cached && cached.date === todayString()) {
-    const valid = cached.ids.filter((id) => allIds.includes(id))
-    if (valid.length > 0) return valid
+    const allIdSet = new Set(allIds)
+    const valid = cached.ids.filter((id) => allIdSet.has(id))
+    const targetCount = Math.min(count, allIds.length)
+    if (valid.length >= targetCount) return valid.slice(0, count)
   }
 
   const reviewIds = allIds

@@ -1,13 +1,16 @@
 import { useCallback, useState } from 'react'
 import type { Components } from 'react-markdown'
-import ReactMarkdown from 'react-markdown'
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import remarkGfm from 'remark-gfm'
 
 export interface MarkdownRendererProps {
   content: string
   className?: string
+  resolveImageSrc?: (src: string) => string | undefined
 }
+
+const LOCAL_NOTE_IMAGE_SRC_PREFIX = 'iface-note-image:'
 
 // ─── Copy Button ──────────────────────────────────────────────────────────────
 
@@ -431,13 +434,71 @@ const components: Components = {
   },
 }
 
-export function MarkdownRenderer({ content, className = '' }: MarkdownRendererProps) {
+function transformMarkdownUrl(value: string, key: string) {
+  if (key === 'src' && value.startsWith(LOCAL_NOTE_IMAGE_SRC_PREFIX)) return value
+  return defaultUrlTransform(value)
+}
+
+export function MarkdownRenderer({
+  content,
+  className = '',
+  resolveImageSrc,
+}: MarkdownRendererProps) {
+  const markdownComponents: Components = {
+    ...components,
+    img({ src, alt, ...props }) {
+      const rawSrc = typeof src === 'string' ? src : ''
+      const resolvedByResolver = rawSrc ? resolveImageSrc?.(rawSrc) : undefined
+      const missingLocalImage =
+        rawSrc.startsWith(LOCAL_NOTE_IMAGE_SRC_PREFIX) && !resolvedByResolver
+      const resolvedSrc = resolvedByResolver ?? rawSrc
+
+      if (missingLocalImage) {
+        return (
+          <span
+            style={{
+              display: 'block',
+              margin: '12px 0',
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: '1px dashed var(--border)',
+              color: 'var(--text-3)',
+              fontSize: 12,
+              lineHeight: 1.5,
+            }}
+          >
+            本地图片不可用
+          </span>
+        )
+      }
+
+      return (
+        <img
+          src={resolvedSrc}
+          alt={alt ?? ''}
+          loading="lazy"
+          style={{
+            display: 'block',
+            maxWidth: '100%',
+            maxHeight: 520,
+            objectFit: 'contain',
+            borderRadius: 8,
+            border: '1px solid var(--border-subtle)',
+            margin: '12px 0',
+          }}
+          {...props}
+        />
+      )
+    },
+  }
+
   return (
     <div className={`min-w-0 ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
-        components={components}
+        components={markdownComponents}
+        urlTransform={transformMarkdownUrl}
       >
         {content}
       </ReactMarkdown>

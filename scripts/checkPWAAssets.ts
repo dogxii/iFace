@@ -145,7 +145,7 @@ if (existsSync(join(distDir, 'manifest.webmanifest'))) {
 
   if (isRecord(manifest)) {
     const requiredFields: Record<string, unknown> = {
-      name: 'iFace · 前端面试刷题助手',
+      name: 'iFace · 面试刷题助手',
       short_name: 'iFace',
       start_url: '/',
       scope: '/',

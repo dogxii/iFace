@@ -3,6 +3,7 @@ import { invalidateQuestionsCache } from '@/hooks/useQuestions'
 import {
   bulkPutJdMatchReports,
   bulkPutMockInterviews,
+  bulkPutQuestionAnswerOverrides,
   bulkPutQuestionFlags,
   bulkPutQuestionNotes,
   bulkPutQuestions,
@@ -12,6 +13,7 @@ import {
   exportAllData,
   getAllJdMatchReports,
   getAllMockInterviews,
+  getAllQuestionAnswerOverrides,
   getAllQuestionFlags,
   getAllQuestionNotes,
   getAllQuestions,
@@ -464,14 +466,16 @@ async function withImportImpact(
   preview: ImportPreview,
   existingAISessions: Record<string, AISession>,
 ): Promise<ImportPreview> {
-  const [questions, records, notes, flags, mockInterviews, jdMatchReports] = await Promise.all([
-    getAllQuestions(),
-    getAllStudyRecords(),
-    getAllQuestionNotes(),
-    getAllQuestionFlags(),
-    getAllMockInterviews(),
-    getAllJdMatchReports(),
-  ])
+  const [questions, records, notes, answerOverrides, flags, mockInterviews, jdMatchReports] =
+    await Promise.all([
+      getAllQuestions(),
+      getAllStudyRecords(),
+      getAllQuestionNotes(),
+      getAllQuestionAnswerOverrides(),
+      getAllQuestionFlags(),
+      getAllMockInterviews(),
+      getAllJdMatchReports(),
+    ])
 
   return {
     ...preview,
@@ -490,6 +494,11 @@ async function withImportImpact(
         preview.questionNotes,
         new Set(notes.map((note) => note.questionId)),
         (note) => note.questionId,
+      ),
+      questionAnswerOverrides: countImportImpact(
+        preview.questionAnswerOverrides,
+        new Set(answerOverrides.map((override) => override.questionId)),
+        (override) => override.questionId,
       ),
       questionFlags: countImportImpact(
         preview.questionFlags,
@@ -586,6 +595,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     questions: number
     records: number
     notes: number
+    answerOverrides: number
     starred: number
     aiSessions: number
     mockInterviews: number
@@ -634,20 +644,24 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         getAllQuestions(),
         getAllStudyRecords(),
         getAllQuestionNotes(),
+        getAllQuestionAnswerOverrides(),
         getAllQuestionFlags(),
         getAllMockInterviews(),
         getAllJdMatchReports(),
-      ]).then(([questions, records, notes, flags, mockInterviews, jdMatchReports]) => {
-        setDataStats({
-          questions: questions.length,
-          records: records.length,
-          notes: notes.length,
-          starred: flags.filter((flag) => flag.starred).length,
-          aiSessions: Object.keys(sessions).length,
-          mockInterviews: mockInterviews.length,
-          jdMatchReports: jdMatchReports.length,
-        })
-      })
+      ]).then(
+        ([questions, records, notes, answerOverrides, flags, mockInterviews, jdMatchReports]) => {
+          setDataStats({
+            questions: questions.length,
+            records: records.length,
+            notes: notes.length,
+            answerOverrides: answerOverrides.length,
+            starred: flags.filter((flag) => flag.starred).length,
+            aiSessions: Object.keys(sessions).length,
+            mockInterviews: mockInterviews.length,
+            jdMatchReports: jdMatchReports.length,
+          })
+        },
+      )
     }
   }, [open, sessions, tab])
 
@@ -863,7 +877,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       showToast(
-        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记、${data.questionFlags.filter((flag) => flag.starred).length} 个重点题、${aiSessions.length} 个 AI 会话、${data.mockInterviews.length} 场模拟面试、${data.jdMatchReports.length} 份 JD 诊断`,
+        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记、${data.questionAnswerOverrides.length} 个自定义答案、${data.questionFlags.filter((flag) => flag.starred).length} 个重点题、${aiSessions.length} 个 AI 会话、${data.mockInterviews.length} 场模拟面试、${data.jdMatchReports.length} 份 JD 诊断`,
       )
     } catch {
       showToast('导出失败，请重试', 'error')
@@ -900,6 +914,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       const qCount = importPreview.questions.length
       const rCount = importPreview.studyRecords.length
       const nCount = importPreview.questionNotes.length
+      const answerOverrideCount = importPreview.questionAnswerOverrides.length
       const flagCount = importPreview.questionFlags.length
       const starredCount = importPreview.questionFlags.filter((flag) => flag.starred).length
       const aiCount = importPreview.aiSessions.length
@@ -933,6 +948,10 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         await bulkPutQuestionNotes(importPreview.questionNotes)
       }
 
+      if (answerOverrideCount > 0) {
+        await bulkPutQuestionAnswerOverrides(importPreview.questionAnswerOverrides)
+      }
+
       if (flagCount > 0) {
         await bulkPutQuestionFlags(importPreview.questionFlags)
       }
@@ -950,22 +969,25 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       }
 
       showToast(
-        `导入成功：${qCount} 题、${rCount} 条记录、${nCount} 条笔记、${starredCount} 个重点题、${aiCount} 个 AI 会话、${mockInterviewCount} 场模拟面试、${jdMatchReportCount} 份 JD 诊断、${sourceCount} 个来源、${categoryCount} 个分类`,
+        `导入成功：${qCount} 题、${rCount} 条记录、${nCount} 条笔记、${answerOverrideCount} 个自定义答案、${starredCount} 个重点题、${aiCount} 个 AI 会话、${mockInterviewCount} 场模拟面试、${jdMatchReportCount} 份 JD 诊断、${sourceCount} 个来源、${categoryCount} 个分类`,
       )
       setImportPreview(null)
 
-      const [questions, records, notes, flags, mockInterviews, jdMatchReports] = await Promise.all([
-        getAllQuestions(),
-        getAllStudyRecords(),
-        getAllQuestionNotes(),
-        getAllQuestionFlags(),
-        getAllMockInterviews(),
-        getAllJdMatchReports(),
-      ])
+      const [questions, records, notes, answerOverrides, flags, mockInterviews, jdMatchReports] =
+        await Promise.all([
+          getAllQuestions(),
+          getAllStudyRecords(),
+          getAllQuestionNotes(),
+          getAllQuestionAnswerOverrides(),
+          getAllQuestionFlags(),
+          getAllMockInterviews(),
+          getAllJdMatchReports(),
+        ])
       setDataStats({
         questions: questions.length,
         records: records.length,
         notes: notes.length,
+        answerOverrides: answerOverrides.length,
         starred: flags.filter((flag) => flag.starred).length,
         aiSessions: countMergedAISessions(sessions, importPreview.aiSessions),
         mockInterviews: mockInterviews.length,
@@ -994,6 +1016,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
           questions: 0,
           records: 0,
           notes: 0,
+          answerOverrides: 0,
           starred: 0,
           aiSessions: 0,
           mockInterviews: 0,
@@ -1630,7 +1653,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                   </span>
                 </div>
                 <p style={{ fontSize: 11, color: 'var(--text-3)', lineHeight: 1.6, margin: 0 }}>
-                  隐藏的题库不在首页展示统计和进度，但仍可在题库、练习页面访问。
+                  关闭的题库会从首页、题库和练习中隐藏，学习记录仍会保留。
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {(() => {
@@ -1652,9 +1675,10 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                           key={key}
                           type="button"
                           onClick={() => {
+                            const nextVisible = isHidden
                             toggleCategoryVisibility(key)
                             showToast(
-                              hiddenCategories.has(key)
+                              nextVisible
                                 ? `已显示「${cat.name}」题库`
                                 : `已隐藏「${cat.name}」题库`,
                             )
@@ -1665,7 +1689,9 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                             gap: 12,
                             padding: '10px 14px',
                             borderRadius: 10,
-                            border: `1px solid ${isHidden ? 'var(--border-subtle)' : 'rgba(var(--primary-rgb),0.3)'}`,
+                            border: `1px solid ${
+                              isHidden ? 'var(--border-subtle)' : 'rgba(var(--primary-rgb),0.3)'
+                            }`,
                             background: isHidden ? 'var(--surface-2)' : 'var(--primary-light)',
                             cursor: 'pointer',
                             textAlign: 'left',
@@ -2658,6 +2684,11 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     { label: '题目总数', value: dataStats.questions, color: 'var(--primary)' },
                     { label: '学习记录', value: dataStats.records, color: 'var(--success)' },
                     { label: '题目笔记', value: dataStats.notes, color: 'var(--warning)' },
+                    {
+                      label: '自定义答案',
+                      value: dataStats.answerOverrides,
+                      color: 'var(--primary)',
+                    },
                     { label: '重点题', value: dataStats.starred, color: '#f59e0b' },
                     { label: 'AI 会话', value: dataStats.aiSessions, color: 'var(--text-2)' },
                     { label: '模拟面试', value: dataStats.mockInterviews, color: 'var(--primary)' },
@@ -2885,6 +2916,11 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                           label: '笔记',
                           value: importPreview.questionNotes.length,
                           impact: importPreview.impact.questionNotes,
+                        },
+                        {
+                          label: '答案',
+                          value: importPreview.questionAnswerOverrides.length,
+                          impact: importPreview.impact.questionAnswerOverrides,
                         },
                         {
                           label: '重点',

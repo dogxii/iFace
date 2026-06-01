@@ -9,9 +9,15 @@ import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import {
   appendQuestionNoteContent,
+  deleteQuestionAnswerOverride,
+  deleteUnusedQuestionNoteImages,
+  getQuestionAnswerOverride,
   getQuestionFlag,
   getQuestionNote,
+  getQuestionNoteImages,
+  putQuestionAnswerOverride,
   putQuestionNote,
+  putQuestionNoteImage,
   setQuestionStarred,
 } from '@/lib/db'
 import { buildReviewNoteMarkdown, formatReviewNoteTime } from '@/lib/feedbackNote'
@@ -26,7 +32,9 @@ import {
   DIFFICULTY_LABELS,
   DIFFICULTY_STYLES,
   type Question,
+  type QuestionAnswerOverride,
   type QuestionNote,
+  type QuestionNoteImage,
   STATUS_LABELS,
   STATUS_STYLES,
   type StudyStatus,
@@ -711,6 +719,143 @@ function appendSpeechTranscript(current: string, transcript: string): string {
   return `${current.trimEnd()} ${next}`
 }
 
+interface FeedbackScoreDimension {
+  label: string
+  score: number
+  max: number
+}
+
+interface FeedbackScoreSummary {
+  total: number
+  dimensions: FeedbackScoreDimension[]
+  note: string
+}
+
+function clampScore(score: number, max: number): number {
+  if (!Number.isFinite(score)) return 0
+  return Math.max(0, Math.min(max, Math.round(score)))
+}
+
+function parseScoreValue(section: string, labelPattern: string, max: number): number | null {
+  const match = section.match(
+    new RegExp(`${labelPattern}\\s*[：:]\\s*(\\d+(?:\\.\\d+)?)\\s*(?:[/／]\\s*${max})?`, 'i'),
+  )
+  if (!match) return null
+
+  return clampScore(Number.parseFloat(match[1]), max)
+}
+
+function splitFeedbackScore(markdown: string): {
+  content: string
+  score: FeedbackScoreSummary | null
+} {
+  const match = markdown.match(/\n?#{3,5}\s*参考评分\s*\n([\s\S]*?)\s*$/)
+  if (!match || match.index === undefined) return { content: markdown, score: null }
+
+  const section = match[1]
+  const total = parseScoreValue(section, '总分', 100)
+  if (total === null) return { content: markdown, score: null }
+
+  const dimensions = [
+    { label: '覆盖度', score: parseScoreValue(section, '覆盖度', 40), max: 40 },
+    { label: '准确性', score: parseScoreValue(section, '准确性', 40), max: 40 },
+    { label: '表达', score: parseScoreValue(section, '表达(?:质量)?', 20), max: 20 },
+  ].filter((item): item is FeedbackScoreDimension => item.score !== null)
+
+  const noteMatch = section.match(/提示\s*[：:]\s*(.+)/)
+  const note = noteMatch?.[1]?.trim() || '评分仅供自测参考，以具体改进建议优先。'
+
+  return {
+    content: markdown.slice(0, match.index).trimEnd(),
+    score: { total, dimensions, note },
+  }
+}
+
+function FeedbackScorePanel({ score }: { score: FeedbackScoreSummary }) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        paddingTop: 10,
+        borderTop: '1px dashed var(--border)',
+        color: 'var(--text-3)',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginBottom: 8,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>参考评分</span>
+        </div>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: 'var(--text-2)',
+            fontVariantNumeric: 'tabular-nums',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {score.total}/100
+        </span>
+      </div>
+
+      {score.dimensions.length > 0 && (
+        <div style={{ display: 'grid', gap: 7 }}>
+          {score.dimensions.map((dimension) => {
+            const percent = dimension.max > 0 ? (dimension.score / dimension.max) * 100 : 0
+
+            return (
+              <div
+                key={dimension.label}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '48px minmax(56px, 112px) 42px',
+                  alignItems: 'center',
+                  gap: 8,
+                  justifyContent: 'start',
+                  fontSize: 11,
+                }}
+              >
+                <span>{dimension.label}</span>
+                <span
+                  style={{
+                    height: 4,
+                    width: '100%',
+                    borderRadius: 999,
+                    background: 'var(--surface-3)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  <span
+                    style={{
+                      display: 'block',
+                      width: `${percent}%`,
+                      height: '100%',
+                      borderRadius: 999,
+                      background: 'var(--text-3)',
+                    }}
+                  />
+                </span>
+                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {dimension.score}/{dimension.max}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <p style={{ marginTop: 8, fontSize: 11, lineHeight: 1.55 }}>{score.note}</p>
+    </div>
+  )
+}
+
 interface MyAnswerInputProps {
   questionId: string
   questionText: string
@@ -866,6 +1011,9 @@ function MyAnswerInput({
   }, [feedback, noteSaved, onNoteSaved, questionId, questionText, savingNote, text])
 
   const displayFeedback = feedback ?? (streamingFeedback || null)
+  const parsedFeedback = feedback ? splitFeedbackScore(feedback) : null
+  const feedbackContent = parsedFeedback?.content || displayFeedback
+  const feedbackScore = parsedFeedback?.score ?? null
 
   const wrapperStyle: React.CSSProperties = compact
     ? { borderTop: '1px solid var(--border-subtle)', marginTop: 4, paddingTop: 14 }
@@ -1252,9 +1400,10 @@ function MyAnswerInput({
                   </span>
                 )}
               </div>
-              {displayFeedback && (
+              {feedbackContent && (
                 <div className="prose" style={{ fontSize: 13 }}>
-                  <MarkdownRenderer content={displayFeedback} />
+                  <MarkdownRenderer content={feedbackContent} />
+                  {feedbackScore && <FeedbackScorePanel score={feedbackScore} />}
                 </div>
               )}
             </div>
@@ -1482,12 +1631,57 @@ interface QuestionNotesProps {
 
 type NoteSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
-const NOTE_TEMPLATES = [
-  { id: 'understanding', label: '理解', text: '## 我的理解\n- ' },
-  { id: 'pitfall', label: '易错', text: '## 易错点\n- ' },
-  { id: 'speech', label: '口述', text: '## 面试口述\n- ' },
-  { id: 'followup', label: '追问', text: '## 追问\n- ' },
+const NOTE_IMAGE_SRC_PREFIX = 'iface-note-image:'
+const MAX_NOTE_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+
+const NOTE_FORMAT_ACTIONS = [
+  { id: 'bold', label: 'B', title: '加粗' },
+  { id: 'heading', label: 'H2', title: '二级标题' },
+  { id: 'bullet', label: '- ', title: '无序列表' },
+  { id: 'todo', label: '[ ]', title: '待办项' },
+  { id: 'quote', label: '>', title: '引用' },
+  { id: 'code', label: '</>', title: '代码块' },
+  { id: 'link', label: 'link', title: '链接' },
+  { id: 'table', label: 'table', title: '表格' },
 ] as const
+
+type NoteFormatActionId = (typeof NOTE_FORMAT_ACTIONS)[number]['id']
+
+function createLocalNoteImageId() {
+  const cryptoId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  return `note-image-${Date.now()}-${cryptoId}`
+}
+
+function sanitizeImageAlt(name: string) {
+  const baseName = name.replace(/\.[^.]+$/, '').trim()
+  return (baseName || '本地图片').replace(/[[\]\n\r]/g, ' ')
+}
+
+function extractNoteImageIds(content: string): string[] {
+  const ids = new Set<string>()
+  const regex = /!\[[^\]]*]\(iface-note-image:([^)]+)\)/g
+  let match = regex.exec(content)
+  while (match) {
+    if (match[1]) ids.add(match[1])
+    match = regex.exec(content)
+  }
+  return Array.from(ids)
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') resolve(reader.result)
+      else reject(new Error('invalid image data'))
+    }
+    reader.onerror = () => reject(reader.error ?? new Error('failed to read image'))
+    reader.readAsDataURL(file)
+  })
+}
 
 function buildNoteInsertion(
   content: string,
@@ -1507,6 +1701,131 @@ function buildNoteInsertion(
   }
 }
 
+function getSelectedLineRange(content: string, start: number, end: number) {
+  const lineStart = content.lastIndexOf('\n', Math.max(0, start - 1)) + 1
+  const nextNewline = content.indexOf('\n', end)
+  const lineEnd = nextNewline === -1 ? content.length : nextNewline
+  return { lineStart, lineEnd }
+}
+
+function prefixSelectedLines(
+  content: string,
+  start: number,
+  end: number,
+  prefix: string,
+): { nextContent: string; nextCursor: number } {
+  const { lineStart, lineEnd } = getSelectedLineRange(content, start, end)
+  const block = content.slice(lineStart, lineEnd)
+  const nextBlock = block
+    .split('\n')
+    .map((line) =>
+      line.trim()
+        ? `${prefix}${line.replace(/^(- \[ \] |- |\* |\d+\. |> )/, '')}`
+        : prefix.trimEnd(),
+    )
+    .join('\n')
+
+  return {
+    nextContent: `${content.slice(0, lineStart)}${nextBlock}${content.slice(lineEnd)}`,
+    nextCursor: lineStart + nextBlock.length,
+  }
+}
+
+function wrapSelection(
+  content: string,
+  start: number,
+  end: number,
+  before: string,
+  after: string,
+  fallback: string,
+): { nextContent: string; nextCursor: number } {
+  const selected = content.slice(start, end)
+  const value = selected || fallback
+  const insertion = `${before}${value}${after}`
+
+  return {
+    nextContent: `${content.slice(0, start)}${insertion}${content.slice(end)}`,
+    nextCursor: selected ? start + insertion.length : start + before.length + value.length,
+  }
+}
+
+function applyNoteFormat(
+  content: string,
+  actionId: NoteFormatActionId,
+  start: number,
+  end: number,
+): { nextContent: string; nextCursor: number } {
+  switch (actionId) {
+    case 'bold':
+      return wrapSelection(content, start, end, '**', '**', '重点')
+    case 'heading':
+      return prefixSelectedLines(content, start, end, '## ')
+    case 'bullet':
+      return prefixSelectedLines(content, start, end, '- ')
+    case 'todo':
+      return prefixSelectedLines(content, start, end, '- [ ] ')
+    case 'quote':
+      return prefixSelectedLines(content, start, end, '> ')
+    case 'code': {
+      const selected = content.slice(start, end).trim()
+      return buildNoteInsertion(content, `\`\`\`ts\n${selected || '代码'}\n\`\`\``, start, end)
+    }
+    case 'link':
+      return wrapSelection(content, start, end, '[', '](https://)', '链接文字')
+    case 'table':
+      return buildNoteInsertion(content, '| 项目 | 说明 |\n| --- | --- |\n|  |  |', start, end)
+  }
+}
+
+function NoteToolbarButton({
+  label,
+  title,
+  onClick,
+  disabled,
+}: {
+  label: string
+  title: string
+  onClick: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      style={{
+        minWidth: 28,
+        height: 26,
+        padding: '0 7px',
+        borderRadius: 7,
+        border: '1px solid transparent',
+        background: 'transparent',
+        color: 'var(--text-3)',
+        fontSize: 11,
+        fontWeight: 600,
+        fontFamily: label === 'B' || label === 'H2' ? 'var(--font-sans)' : 'var(--font-mono)',
+        cursor: disabled ? 'default' : 'pointer',
+        opacity: disabled ? 0.5 : 1,
+        transition: 'border-color 0.15s, color 0.15s, background 0.15s',
+      }}
+      onMouseEnter={(event) => {
+        if (disabled) return
+        event.currentTarget.style.borderColor = 'rgba(var(--primary-rgb),0.28)'
+        event.currentTarget.style.color = 'var(--primary)'
+        event.currentTarget.style.background = 'var(--primary-light)'
+      }}
+      onMouseLeave={(event) => {
+        event.currentTarget.style.borderColor = 'transparent'
+        event.currentTarget.style.color = 'var(--text-3)'
+        event.currentTarget.style.background = 'transparent'
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
 function QuestionNotes({
   questionId,
   refreshKey,
@@ -1517,15 +1836,19 @@ function QuestionNotes({
   const [content, setContent] = useState('')
   const [createdAt, setCreatedAt] = useState<number | null>(null)
   const [updatedAt, setUpdatedAt] = useState<number | null>(null)
+  const [noteImages, setNoteImages] = useState<Record<string, QuestionNoteImage>>({})
   const [loading, setLoading] = useState(true)
   const [saveStatus, setSaveStatus] = useState<NoteSaveStatus>('idle')
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
+  const [mode, setMode] = useState<'edit' | 'preview'>('preview')
+  const [editorFocused, setEditorFocused] = useState(false)
   const [speechError, setSpeechError] = useState<string | null>(null)
+  const [imageImportError, setImageImportError] = useState<string | null>(null)
 
   const loadedContentRef = useRef('')
   const saveTimerRef = useRef<number | null>(null)
   const statusTimerRef = useRef<number | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const focusEditor = useCallback(() => {
     window.setTimeout(() => textareaRef.current?.focus(), 0)
@@ -1552,15 +1875,17 @@ function QuestionNotes({
     setLoading(true)
     setSaveStatus('idle')
     setSpeechError(null)
+    setImageImportError(null)
 
-    getQuestionNote(questionId)
-      .then((note: QuestionNote | undefined) => {
+    Promise.all([getQuestionNote(questionId), getQuestionNoteImages(questionId)])
+      .then(([note, images]: [QuestionNote | undefined, QuestionNoteImage[]]) => {
         if (cancelled) return
         const nextContent = note?.content ?? ''
         loadedContentRef.current = nextContent
         setContent(nextContent)
         setCreatedAt(note?.createdAt ?? null)
         setUpdatedAt(note?.updatedAt ?? null)
+        setNoteImages(Object.fromEntries(images.map((image) => [image.id, image])))
         onContentStateChange?.(nextContent.trim().length > 0)
         setLoading(false)
       })
@@ -1570,6 +1895,7 @@ function QuestionNotes({
         setContent('')
         setCreatedAt(null)
         setUpdatedAt(null)
+        setNoteImages({})
         onContentStateChange?.(false)
         setSaveStatus('error')
         setLoading(false)
@@ -1611,14 +1937,20 @@ function QuestionNotes({
           createdAt: createdAt ?? now,
           updatedAt: now,
         })
+        const keepImageIds = extractNoteImageIds(nextContent)
+        await deleteUnusedQuestionNoteImages(questionId, keepImageIds)
 
         loadedContentRef.current = nextContent
         if (nextContent.trim()) {
           setCreatedAt((prev) => prev ?? now)
           setUpdatedAt(now)
+          setNoteImages((prev) =>
+            Object.fromEntries(keepImageIds.flatMap((id) => (prev[id] ? [[id, prev[id]]] : []))),
+          )
         } else {
           setCreatedAt(null)
           setUpdatedAt(null)
+          setNoteImages({})
         }
         onContentStateChange?.(nextContent.trim().length > 0)
         setSaveStatus('saved')
@@ -1641,12 +1973,12 @@ function QuestionNotes({
     [focusEditor],
   )
 
-  const handleInsertTemplate = useCallback(
-    (insertText: string) => {
+  const handleApplyFormat = useCallback(
+    (actionId: NoteFormatActionId) => {
       const editor = textareaRef.current
       const start = editor?.selectionStart ?? content.length
       const end = editor?.selectionEnd ?? content.length
-      const { nextContent, nextCursor } = buildNoteInsertion(content, insertText, start, end)
+      const { nextContent, nextCursor } = applyNoteFormat(content, actionId, start, end)
 
       setMode('edit')
       setContent(nextContent)
@@ -1656,6 +1988,81 @@ function QuestionNotes({
       }, 0)
     },
     [content],
+  )
+
+  const handlePickImage = useCallback(() => {
+    setMode('edit')
+    setImageImportError(null)
+    imageInputRef.current?.click()
+  }, [])
+
+  const handleImageFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      event.target.value = ''
+      if (!file) return
+
+      if (!file.type.startsWith('image/')) {
+        setImageImportError('请选择图片文件')
+        return
+      }
+      if (file.size > MAX_NOTE_IMAGE_SIZE_BYTES) {
+        setImageImportError('图片不能超过 5MB')
+        return
+      }
+
+      try {
+        setImageImportError(null)
+        const dataUrl = await readFileAsDataUrl(file)
+        const now = Date.now()
+        const image: QuestionNoteImage = {
+          id: createLocalNoteImageId(),
+          questionId,
+          name: file.name || 'local-image',
+          mimeType: file.type || 'image/*',
+          size: file.size,
+          dataUrl,
+          createdAt: now,
+          updatedAt: now,
+        }
+        const saved = await putQuestionNoteImage(image)
+        const editor = textareaRef.current
+        const start = editor?.selectionStart ?? content.length
+        const end = editor?.selectionEnd ?? content.length
+        const markdown = `![${sanitizeImageAlt(file.name)}](${NOTE_IMAGE_SRC_PREFIX}${saved.id})`
+        const { nextContent, nextCursor } = buildNoteInsertion(content, markdown, start, end)
+
+        setNoteImages((prev) => ({ ...prev, [saved.id]: saved }))
+        setMode('edit')
+        setContent(nextContent)
+        window.setTimeout(() => {
+          textareaRef.current?.focus()
+          textareaRef.current?.setSelectionRange(nextCursor, nextCursor)
+        }, 0)
+      } catch {
+        setImageImportError('图片导入失败')
+      }
+    },
+    [content, questionId],
+  )
+
+  const handleNoteKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+        event.preventDefault()
+        handleApplyFormat('bold')
+      }
+    },
+    [handleApplyFormat],
+  )
+
+  const resolveNoteImageSrc = useCallback(
+    (src: string) => {
+      if (!src.startsWith(NOTE_IMAGE_SRC_PREFIX)) return undefined
+      const id = src.slice(NOTE_IMAGE_SRC_PREFIX.length)
+      return noteImages[id]?.dataUrl
+    },
+    [noteImages],
   )
 
   const noteLength = content.trim().length
@@ -1679,7 +2086,10 @@ function QuestionNotes({
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
+        height: embedded ? '100%' : undefined,
         minHeight: embedded ? '100%' : undefined,
+        minWidth: 0,
+        overflow: embedded ? (mode === 'preview' ? 'hidden' : 'auto') : undefined,
       }}
     >
       <div
@@ -1728,177 +2138,198 @@ function QuestionNotes({
           </div>
         </div>
 
-        <div
+        <button
+          type="button"
+          onClick={() => handleModeChange(mode === 'edit' ? 'preview' : 'edit')}
+          disabled={loading}
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
-            gap: 2,
-            padding: 2,
+            gap: 5,
+            padding: '5px 10px',
             borderRadius: 8,
-            background: 'var(--surface-2)',
             border: '1px solid var(--border-subtle)',
+            background: mode === 'edit' ? 'var(--primary)' : 'var(--surface-2)',
+            color: mode === 'edit' ? 'white' : 'var(--text-2)',
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: loading ? 'default' : 'pointer',
+            opacity: loading ? 0.55 : 1,
             flexShrink: 0,
           }}
+          title={mode === 'edit' ? '完成编辑' : '编辑题目笔记'}
         >
-          {(['edit', 'preview'] as const).map((item) => {
-            const active = mode === item
-            return (
-              <button
-                key={item}
-                type="button"
-                onClick={() => handleModeChange(item)}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: active ? 'var(--surface)' : 'transparent',
-                  color: active ? 'var(--text)' : 'var(--text-3)',
-                  fontSize: 11,
-                  fontWeight: active ? 500 : 400,
-                  cursor: 'pointer',
-                  boxShadow: active ? 'var(--shadow-xs)' : 'none',
-                }}
-              >
-                {item === 'edit' ? '编辑' : '预览'}
-              </button>
-            )
-          })}
-        </div>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.3"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            {mode === 'edit' ? (
+              <polyline points="20 6 9 17 4 12" />
+            ) : (
+              <>
+                <path d="M12 20h9" />
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+              </>
+            )}
+          </svg>
+          {mode === 'edit' ? '完成' : '编辑'}
+        </button>
       </div>
 
-      {mode === 'edit' && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-            flexWrap: 'wrap',
-            padding: '7px 8px',
-            borderRadius: 10,
-            border: '1px solid var(--border-subtle)',
-            background: 'var(--surface-2)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            {NOTE_TEMPLATES.map((template) => (
-              <button
-                key={template.id}
-                type="button"
-                onClick={() => handleInsertTemplate(template.text)}
-                disabled={loading}
-                title={`插入${template.label}段落`}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: 7,
-                  border: '1px solid var(--border-subtle)',
-                  background: 'var(--surface)',
-                  color: 'var(--text-2)',
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: loading ? 'default' : 'pointer',
-                  opacity: loading ? 0.5 : 1,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  if (loading) return
-                  ;(e.currentTarget as HTMLElement).style.borderColor =
-                    'rgba(var(--primary-rgb),0.24)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text-2)'
-                }}
-              >
-                {template.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-            {(speech.interimTranscript || speechError) && (
-              <span
-                title={speech.interimTranscript || speechError || undefined}
-                style={{
-                  maxWidth: 180,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  fontSize: 11,
-                  color: speechError ? 'var(--danger)' : 'var(--primary)',
-                }}
-              >
-                {speech.interimTranscript ? `正在识别：${speech.interimTranscript}` : speechError}
-              </span>
-            )}
-            <SpeechInputButton
-              supported={speech.supported}
-              listening={speech.listening}
+      {mode === 'edit' ? (
+        <>
+          <div
+            onFocusCapture={() => setEditorFocused(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                setEditorFocused(false)
+              }
+            }}
+            style={{
+              width: '100%',
+              overflow: 'hidden',
+              borderRadius: 10,
+              border: `1px solid ${editorFocused ? 'var(--primary)' : 'var(--border-subtle)'}`,
+              background: 'var(--surface-2)',
+              boxShadow: editorFocused ? '0 0 0 3px var(--primary-light)' : 'none',
+              transition: 'border-color 0.15s, box-shadow 0.15s',
+            }}
+          >
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleImageFileChange}
+              style={{ display: 'none' }}
+            />
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                flexWrap: 'wrap',
+                padding: '7px 8px',
+                borderBottom: '1px solid var(--border-subtle)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                {NOTE_FORMAT_ACTIONS.map((action) => (
+                  <NoteToolbarButton
+                    key={action.id}
+                    label={action.label}
+                    title={action.title}
+                    disabled={loading}
+                    onClick={() => handleApplyFormat(action.id)}
+                  />
+                ))}
+                <NoteToolbarButton
+                  label="img"
+                  title="导入本地图片"
+                  disabled={loading}
+                  onClick={handlePickImage}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                {(speech.interimTranscript || speechError || imageImportError) && (
+                  <span
+                    title={speech.interimTranscript || speechError || imageImportError || undefined}
+                    style={{
+                      maxWidth: 180,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontSize: 11,
+                      color: speechError || imageImportError ? 'var(--danger)' : 'var(--primary)',
+                    }}
+                  >
+                    {speech.interimTranscript
+                      ? `正在识别：${speech.interimTranscript}`
+                      : speechError || imageImportError}
+                  </span>
+                )}
+                <SpeechInputButton
+                  supported={speech.supported}
+                  listening={speech.listening}
+                  disabled={loading}
+                  onToggle={speech.toggle}
+                />
+              </div>
+            </div>
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onKeyDown={handleNoteKeyDown}
               disabled={loading}
-              onToggle={speech.toggle}
+              placeholder="记录自己的理解、易错点、面试表达、下次要追问的问题…"
+              rows={6}
+              style={{
+                width: '100%',
+                minHeight: embedded ? 'min(34dvh, 340px)' : 160,
+                resize: 'vertical',
+                padding: '12px 13px',
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text)',
+                outline: 'none',
+                fontSize: 13,
+                lineHeight: 1.65,
+                fontFamily: 'var(--font-sans)',
+                flex: embedded ? '0 0 auto' : undefined,
+                display: 'block',
+              }}
             />
           </div>
-        </div>
-      )}
-
-      {mode === 'edit' ? (
-        <textarea
-          ref={textareaRef}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          disabled={loading}
-          placeholder="记录自己的理解、易错点、面试表达、下次要追问的问题…"
-          rows={6}
-          style={{
-            width: '100%',
-            minHeight: embedded ? 'min(52dvh, 520px)' : 160,
-            resize: 'vertical',
-            padding: '12px 13px',
-            borderRadius: 10,
-            border: '1px solid var(--border)',
-            background: 'var(--surface-2)',
-            color: 'var(--text)',
-            outline: 'none',
-            fontSize: 13,
-            lineHeight: 1.65,
-            fontFamily: 'var(--font-sans)',
-            flex: embedded ? 1 : undefined,
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = 'var(--primary)'
-            e.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-light)'
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border)'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        />
+          {content.trim() && (
+            <div
+              className="prose"
+              style={{
+                maxHeight: embedded ? 'min(24dvh, 260px)' : 220,
+                overflowY: 'auto',
+                padding: '8px 1px 2px',
+                fontSize: 13,
+                minWidth: 0,
+              }}
+            >
+              <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
+            </div>
+          )}
+        </>
       ) : content.trim() ? (
         <div
           className="prose"
           style={{
-            minHeight: embedded ? 'min(52dvh, 520px)' : 160,
-            padding: '12px 13px',
-            borderRadius: 10,
-            border: '1px solid var(--border-subtle)',
-            background: 'var(--surface-2)',
+            flex: embedded ? '1 1 auto' : undefined,
+            minHeight: embedded ? 0 : 160,
+            overflowY: embedded ? 'auto' : undefined,
+            padding: embedded ? '6px 8px 0 1px' : '6px 1px 0',
             fontSize: 13,
+            minWidth: 0,
           }}
         >
-          <MarkdownRenderer content={content} />
+          <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
         </div>
       ) : (
         <div
           style={{
-            minHeight: embedded ? 'min(52dvh, 520px)' : 160,
-            padding: '12px 13px',
-            borderRadius: 10,
-            border: '1px dashed var(--border)',
-            background: 'var(--surface-2)',
+            flex: embedded ? '1 1 auto' : undefined,
+            minHeight: embedded ? 0 : 160,
+            padding: '6px 1px 0',
+            border: 'none',
+            background: 'transparent',
             color: 'var(--text-3)',
             fontSize: 13,
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-start',
+            lineHeight: 1.65,
           }}
         >
           暂无笔记
@@ -1914,6 +2345,7 @@ function QuestionNotes({
             gap: 10,
             fontSize: 11,
             color: 'var(--text-3)',
+            flexShrink: 0,
           }}
         >
           <span>{saveStatus === 'saving' ? '正在自动保存' : 'Markdown'}</span>
@@ -2008,6 +2440,7 @@ function NoteDrawer({
           display: 'flex',
           flexDirection: 'column',
           animation: 'drawer-slide-in 0.2s var(--ease-out) both',
+          outline: 'none',
         }}
       >
         <div
@@ -2087,7 +2520,7 @@ function NoteDrawer({
           style={{
             flex: 1,
             minHeight: 0,
-            overflowY: 'auto',
+            overflowY: 'hidden',
             padding: 16,
             display: 'flex',
             flexDirection: 'column',
@@ -2103,6 +2536,212 @@ function NoteDrawer({
         </div>
       </aside>
     </>
+  )
+}
+
+type AnswerOverrideSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
+
+interface AnswerOverrideEditorProps {
+  draft: string
+  saveStatus: AnswerOverrideSaveStatus
+  canSave: boolean
+  onDraftChange: (value: string) => void
+  onSave: () => void
+  onCancel: () => void
+  onRestoreDefault: () => void
+}
+
+function AnswerOverrideEditor({
+  draft,
+  saveStatus,
+  canSave,
+  onDraftChange,
+  onSave,
+  onCancel,
+  onRestoreDefault,
+}: AnswerOverrideEditorProps) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        minWidth: 0,
+      }}
+    >
+      <textarea
+        value={draft}
+        onChange={(event) => onDraftChange(event.target.value)}
+        rows={10}
+        style={{
+          width: '100%',
+          minHeight: 'min(52dvh, 520px)',
+          resize: 'vertical',
+          padding: '14px 16px',
+          borderRadius: 10,
+          border: '1px solid var(--border-subtle)',
+          background: 'var(--surface-2)',
+          color: 'var(--text)',
+          outline: 'none',
+          fontSize: 13,
+          lineHeight: 1.65,
+          fontFamily: 'var(--font-sans)',
+        }}
+        onFocus={(event) => {
+          event.currentTarget.style.borderColor = 'var(--primary)'
+          event.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-light)'
+        }}
+        onBlur={(event) => {
+          event.currentTarget.style.borderColor = 'var(--border-subtle)'
+          event.currentTarget.style.boxShadow = 'none'
+        }}
+      />
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 8,
+          flexWrap: 'wrap',
+          paddingTop: 2,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 11,
+            color:
+              saveStatus === 'error'
+                ? 'var(--danger)'
+                : saveStatus === 'saved'
+                  ? 'var(--success)'
+                  : 'var(--text-3)',
+          }}
+        >
+          {saveStatus === 'saving'
+            ? '保存中…'
+            : saveStatus === 'saved'
+              ? '已保存'
+              : saveStatus === 'error'
+                ? '保存失败'
+                : 'Markdown'}
+        </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={onRestoreDefault}
+            style={{
+              fontSize: 12,
+              color: 'var(--text-3)',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '5px 8px',
+              borderRadius: 7,
+            }}
+            onMouseEnter={(event) => {
+              event.currentTarget.style.background = 'var(--surface)'
+              event.currentTarget.style.color = 'var(--text)'
+            }}
+            onMouseLeave={(event) => {
+              event.currentTarget.style.background = 'transparent'
+              event.currentTarget.style.color = 'var(--text-3)'
+            }}
+          >
+            恢复默认
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              fontSize: 12,
+              color: 'var(--text-2)',
+              background: 'var(--surface)',
+              border: '1px solid var(--border-subtle)',
+              cursor: 'pointer',
+              padding: '5px 10px',
+              borderRadius: 7,
+            }}
+          >
+            取消
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={!canSave || saveStatus === 'saving'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              fontSize: 12,
+              fontWeight: 600,
+              color: canSave ? 'white' : 'var(--text-3)',
+              background: canSave ? 'var(--primary)' : 'var(--surface-3)',
+              border: 'none',
+              cursor: canSave ? 'pointer' : 'default',
+              padding: '6px 12px',
+              borderRadius: 8,
+              opacity: saveStatus === 'saving' ? 0.75 : 1,
+            }}
+          >
+            {saveStatus === 'saving' && <Spinner size="sm" />}
+            保存答案
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface AnswerOverrideHeaderMetaProps {
+  updatedAt: number | null
+  showingOriginal: boolean
+  onToggleOriginal: () => void
+}
+
+function AnswerOverrideHeaderMeta({
+  updatedAt,
+  showingOriginal,
+  onToggleOriginal,
+}: AnswerOverrideHeaderMetaProps) {
+  return (
+    <div
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
+        minWidth: 0,
+      }}
+    >
+      <span
+        style={{
+          fontSize: 11,
+          lineHeight: 1.35,
+          color: 'var(--text-3)',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {updatedAt ? formatReviewNoteTime(updatedAt) : '已自定义'}
+      </span>
+      <button
+        type="button"
+        onClick={onToggleOriginal}
+        style={{
+          fontSize: 11,
+          color: 'var(--text-2)',
+          background: 'transparent',
+          border: '1px solid var(--border-subtle)',
+          cursor: 'pointer',
+          padding: '2px 7px',
+          borderRadius: 999,
+          lineHeight: 1.45,
+        }}
+      >
+        {showingOriginal ? '看自定义' : '看参考答案'}
+      </button>
+    </div>
   )
 }
 
@@ -2415,6 +3054,12 @@ export default function QuestionDetail() {
   } | null>(null)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
+  const [answerOverride, setAnswerOverride] = useState<QuestionAnswerOverride | null>(null)
+  const [answerOverrideLoading, setAnswerOverrideLoading] = useState(false)
+  const [answerEditMode, setAnswerEditMode] = useState(false)
+  const [answerDraft, setAnswerDraft] = useState('')
+  const [answerSaveStatus, setAnswerSaveStatus] = useState<AnswerOverrideSaveStatus>('idle')
+  const [showOriginalAnswer, setShowOriginalAnswer] = useState(false)
   const [starred, setStarred] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [celebrationStreak, setCelebrationStreak] = useState(0)
@@ -2614,6 +3259,43 @@ export default function QuestionDetail() {
   useEffect(() => {
     let cancelled = false
     if (!id) {
+      setAnswerOverride(null)
+      setAnswerOverrideLoading(false)
+      setAnswerEditMode(false)
+      setAnswerDraft('')
+      setAnswerSaveStatus('idle')
+      setShowOriginalAnswer(false)
+      return
+    }
+
+    setAnswerOverrideLoading(true)
+    setAnswerEditMode(false)
+    setAnswerSaveStatus('idle')
+    setShowOriginalAnswer(false)
+
+    getQuestionAnswerOverride(id)
+      .then((override) => {
+        if (cancelled) return
+        setAnswerOverride(override?.content.trim() ? override : null)
+        setAnswerDraft(override?.content ?? question?.answer ?? '')
+      })
+      .catch(() => {
+        if (cancelled) return
+        setAnswerOverride(null)
+        setAnswerDraft(question?.answer ?? '')
+      })
+      .finally(() => {
+        if (!cancelled) setAnswerOverrideLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id, question?.answer])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!id) {
       setStarred(false)
       return
     }
@@ -2793,6 +3475,72 @@ export default function QuestionDetail() {
     settingsOpen,
   ])
 
+  const handleStartAnswerEdit = useCallback(() => {
+    if (!question) return
+    setAnswerDraft(answerOverride?.content ?? question.answer)
+    setAnswerEditMode(true)
+    setAnswerSaveStatus('idle')
+    setShowOriginalAnswer(false)
+  }, [answerOverride, question])
+
+  const handleCancelAnswerEdit = useCallback(() => {
+    setAnswerDraft(answerOverride?.content ?? question?.answer ?? '')
+    setAnswerEditMode(false)
+    setAnswerSaveStatus('idle')
+  }, [answerOverride, question?.answer])
+
+  const handleRestoreDefaultAnswer = useCallback(async () => {
+    if (!question || answerSaveStatus === 'saving') return
+    if (answerOverride?.content.trim()) {
+      const confirmed = window.confirm('确定恢复默认参考答案吗？当前自定义答案会被删除。')
+      if (!confirmed) return
+    }
+
+    setAnswerSaveStatus('saving')
+    try {
+      await deleteQuestionAnswerOverride(question.id)
+      setAnswerOverride(null)
+      setAnswerDraft(question.answer)
+      setShowOriginalAnswer(false)
+      setAnswerEditMode(false)
+      setAnswerSaveStatus('saved')
+      window.setTimeout(() => setAnswerSaveStatus('idle'), 1400)
+    } catch {
+      setAnswerSaveStatus('error')
+    }
+  }, [answerOverride?.content, answerSaveStatus, question])
+
+  const handleSaveAnswerOverride = useCallback(async () => {
+    if (!question || answerSaveStatus === 'saving') return
+    const nextContent = answerDraft.trim()
+    if (!nextContent) return
+
+    setAnswerSaveStatus('saving')
+    try {
+      if (nextContent === question.answer.trim()) {
+        await deleteQuestionAnswerOverride(question.id)
+        setAnswerOverride(null)
+        setAnswerDraft(question.answer)
+      } else {
+        const now = Date.now()
+        const saved = await putQuestionAnswerOverride({
+          questionId: question.id,
+          content: answerDraft,
+          createdAt: answerOverride?.createdAt ?? now,
+          updatedAt: now,
+        })
+        setAnswerOverride(saved)
+        setAnswerDraft(saved?.content ?? answerDraft)
+      }
+      setShowOriginalAnswer(false)
+      setAnswerEditMode(false)
+      setAnswerSaveStatus('saved')
+      window.setTimeout(() => setAnswerSaveStatus('idle'), 1400)
+    } catch {
+      setAnswerSaveStatus('error')
+    }
+  }, [answerDraft, answerOverride?.createdAt, answerSaveStatus, question])
+
   // ── Loading ──────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -2836,6 +3584,22 @@ export default function QuestionDetail() {
 
   const diffStyle = DIFFICULTY_STYLES[question.difficulty]
   const isAiEnabled = aiConfig.enabled && aiConfig.apiKey.trim().length > 0
+  const hasCustomAnswer = Boolean(answerOverride?.content.trim())
+  const effectiveAnswerText = answerOverride?.content.trim()
+    ? answerOverride.content
+    : question.answer
+  const displayedAnswerText =
+    hasCustomAnswer && showOriginalAnswer ? question.answer : effectiveAnswerText
+  const answerHeading = hasCustomAnswer
+    ? showOriginalAnswer
+      ? '参考答案'
+      : '自定义答案'
+    : '参考答案'
+  const answerContextQuestion = {
+    ...question,
+    answer: displayedAnswerText,
+  }
+  const canSaveAnswerOverride = answerDraft.trim().length > 0 && answerSaveStatus !== 'saving'
 
   // Derived from studyMode
   const showAnswerInputAbove = studyMode === 'answer-first'
@@ -3253,7 +4017,7 @@ export default function QuestionDetail() {
               key={`answer-above-${id ?? ''}`}
               questionId={id ?? ''}
               questionText={question.question}
-              answerText={question.answer}
+              answerText={effectiveAnswerText}
               onOpenAIPanel={() => setAiDrawerOpen(true)}
               onOpenNote={() => setNoteDrawerOpen(true)}
               isAiEnabled={isAiEnabled}
@@ -3275,11 +4039,22 @@ export default function QuestionDetail() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
+                gap: 12,
+                flexWrap: 'wrap',
                 paddingBottom: 14,
                 borderBottom: '1px solid var(--border-subtle)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  flexWrap: 'wrap',
+                  minWidth: 0,
+                  flex: '1 1 auto',
+                }}
+              >
                 <div
                   style={{
                     width: 3,
@@ -3289,10 +4064,38 @@ export default function QuestionDetail() {
                     flexShrink: 0,
                   }}
                 />
-                <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>参考答案</h2>
+                <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                  {answerHeading}
+                </h2>
+                {hasCustomAnswer && !answerEditMode && (
+                  <AnswerOverrideHeaderMeta
+                    updatedAt={answerOverride?.updatedAt ?? null}
+                    showingOriginal={showOriginalAnswer}
+                    onToggleOriginal={() => setShowOriginalAnswer((value) => !value)}
+                  />
+                )}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <AnswerAIButton
+                  title={hasCustomAnswer ? '编辑自定义答案' : '编辑参考答案'}
+                  active={answerEditMode}
+                  onClick={handleStartAnswerEdit}
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                  </svg>
+                </AnswerAIButton>
                 <AnswerAIButton
                   title={isAiEnabled ? '打开 AI 助手（A）' : 'AI 助手（请先配置，快捷键 A）'}
                   active={aiDrawerOpen}
@@ -3355,9 +4158,23 @@ export default function QuestionDetail() {
             </div>
 
             {/* Markdown answer */}
-            <div className="prose" style={{ minWidth: 0 }}>
-              <MarkdownRenderer content={question.answer} />
-            </div>
+            {answerEditMode ? (
+              <AnswerOverrideEditor
+                draft={answerDraft}
+                saveStatus={answerSaveStatus}
+                canSave={canSaveAnswerOverride}
+                onDraftChange={setAnswerDraft}
+                onSave={handleSaveAnswerOverride}
+                onCancel={handleCancelAnswerEdit}
+                onRestoreDefault={handleRestoreDefaultAnswer}
+              />
+            ) : answerOverrideLoading ? (
+              <Skeleton width="100%" height={96} />
+            ) : (
+              <div className="prose" style={{ minWidth: 0 }}>
+                <MarkdownRenderer content={displayedAnswerText} />
+              </div>
+            )}
 
             {/* Status actions */}
             <div
@@ -3428,7 +4245,7 @@ export default function QuestionDetail() {
                 key={`answer-inside-${id ?? ''}`}
                 questionId={id ?? ''}
                 questionText={question.question}
-                answerText={question.answer}
+                answerText={effectiveAnswerText}
                 onOpenAIPanel={() => setAiDrawerOpen(true)}
                 onOpenNote={() => setNoteDrawerOpen(true)}
                 isAiEnabled={isAiEnabled}
@@ -3621,7 +4438,7 @@ export default function QuestionDetail() {
       <AIDrawer
         open={aiDrawerOpen}
         onClose={() => setAiDrawerOpen(false)}
-        question={question}
+        question={answerContextQuestion}
         answerVisible={answerVisible}
         initialPrompt={aiInitialPrompt}
         onInitialPromptConsumed={handleAIInitialPromptConsumed}

@@ -2,406 +2,109 @@
   {
     "id": "java-concurrency-001",
     "module": "Java并发",
-    "difficulty": 1,
-    "question": "Java中创建线程有哪几种方式？",
-    "answer": "## 线程创建方式\n\nJava中创建线程主要有以下几种方式：\n\n### 1. 继承Thread类\n\n```java\nclass MyThread extends Thread {\n    @Override\n    public void run() {\n        System.out.println(\"Thread running: \" + getName());\n    }\n}\n\nMyThread thread = new MyThread();\nthread.start();\n```\n\n### 2. 实现Runnable接口\n\n```java\nRunnable task = () -> System.out.println(\"Runnable running\");\nThread thread = new Thread(task);\nthread.start();\n```\n\n### 3. 实现Callable接口\n\n```java\nCallable<Integer> callable = () -> {\n    Thread.sleep(1000);\n    return 42;\n};\n\nFutureTask<Integer> futureTask = new FutureTask<>(callable);\nThread thread = new Thread(futureTask);\nthread.start();\nInteger result = futureTask.get();\n```\n\n### 4. 线程池创建\n\n```java\nExecutorService executor = Executors.newFixedThreadPool(5);\nexecutor.submit(() -> System.out.println(\"Pool task\"));\nexecutor.shutdown();\n```\n\n## 关键要点\n\n- 继承Thread会占用唯一的继承名额\n- 实现Runnable更灵活，支持多继承，便于资源共享\n- Callable有返回值且可抛出异常\n- 推荐使用线程池方式，避免频繁创建销毁线程\n\n## 注意事项\n\n- 一个Thread对象只能start()一次\n- start()启动新线程，run()在当前线程执行\n- 生产环境应使用线程池管理线程",
-    "tags": ["线程创建", "基础"],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "Java 创建和编排异步任务有哪些方式？",
+    "answer": "### 先区分“创建线程”和“编排任务”\n\n最原始的方式是 new Thread，但项目里很少直接这样用，因为线程数量、命名、异常、生命周期都不好管理。更常见的是把任务提交给 ExecutorService，由线程池负责复用线程和控制资源。\n\n| 方式 | 适合场景 | 注意点 |\n| --- | --- | --- |\n| Runnable / Thread | 简单演示、极少量后台任务 | 不便统一管理 |\n| Callable / Future | 需要返回值或取消 | Future.get 会阻塞 |\n| ExecutorService | 常规异步任务池 | 要显式关闭和监控 |\n| CompletableFuture | 多任务组合、回调、降级 | 要指定线程池和异常处理 |\n| 虚拟线程 | 大量阻塞 IO 任务 | 不适合 CPU 密集并行加速 |\n\n### 线程池是默认答案\n\n生产里应优先使用 ThreadPoolExecutor 或框架托管线程池，显式配置线程名、核心线程数、最大线程数、队列、拒绝策略和异常处理。任务抛异常不能悄悄丢掉，至少要有日志、指标和告警。\n\n### CompletableFuture 的价值\n\n它适合表达“查用户、查订单、查优惠并行执行，最后合并结果”这类依赖关系。使用时要避免默认 commonPool 被阻塞任务占满，推荐传入业务自己的 Executor。\n\n### Java 21 之后\n\n虚拟线程让“一个请求一个线程”的阻塞式写法重新可行，适合大量等待数据库、HTTP、文件 IO 的任务。但它不是替代线程池治理的银弹：仍要控制下游并发、超时、取消、限流和可观测性。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-002",
     "module": "Java并发",
-    "difficulty": 1,
-    "question": "Thread类的start()和run()方法有什么区别？",
-    "answer": "## 核心概念\n\nstart()和run()是Thread类的两个关键方法，作用完全不同。\n\n### start()方法\n\n- 启动一个新线程\n- 由JVM调用该线程的run()方法\n- 不能重复调用，否则抛出IllegalThreadStateException\n\n### run()方法\n\n- 线程的执行体，包含业务逻辑\n- 直接调用只是普通方法调用，不会创建新线程\n\n```java\nThread thread = new Thread(() -> {\n    System.out.println(\"Running in: \" + Thread.currentThread().getName());\n});\n\nthread.start(); // 输出: Running in: Thread-0\nthread.run();   // 输出: Running in: main\n```\n\n## 关键要点\n\n- start()是真正启动线程的方式\n- run()只是线程的任务方法\n- 直接调用run()相当于同步调用\n\n## 注意事项\n\n- 重复调用start()会抛出异常\n- 线程启动后由操作系统调度执行",
-    "tags": ["线程创建", "基础"],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "synchronized 的 Monitor、锁升级和可见性语义是怎样的？",
+    "answer": "### synchronized 做了什么\n\nsynchronized 进入代码块时要获取对象 Monitor，退出时释放 Monitor。它同时提供互斥和可见性：释放锁前对共享变量的修改，对之后获取同一把锁的线程可见。\n\n~~~java\nclass Counter {\n  private int value;\n\n  synchronized void inc() {\n    value++;\n  }\n}\n~~~\n\nvalue++ 本身不是原子操作，但放在同一把锁保护下就变成互斥执行。\n\n### Monitor 和等待\n\n每个对象都可以作为锁对象。wait、notify、notifyAll 必须在持有同一对象锁时调用。wait 会释放锁并进入等待，notify 只是唤醒等待线程，被唤醒线程还要重新竞争锁。\n\n### 锁升级怎么讲\n\n老版本 HotSpot 常讲偏向锁、轻量级锁、重量级锁：无竞争时尽量低成本，有竞争时逐步膨胀到更重的 Monitor。现代 JDK 对偏向锁已经弱化或移除，所以面试里不要把“偏向锁一定存在”当成跨版本事实。更稳的说法是：JVM 会根据竞争情况优化锁实现，竞争越激烈，阻塞和上下文切换成本越明显。\n\n### 常见问题\n\n- 锁对象必须稳定，不能锁会变化的对象。\n- 锁粒度太大会降低并发，太小又容易破坏一致性。\n- synchronized 是可重入锁，同一线程可以重复进入同一把锁。\n- 自旋、锁消除、锁粗化等优化由 JVM 根据运行情况决定，不应依赖具体细节写业务代码。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-003",
     "module": "Java并发",
     "difficulty": 2,
-    "question": "Thread和Runnable的区别是什么？为什么推荐使用Runnable？",
-    "answer": "## 核心概念\n\n### Thread类\n\n- 继承Thread，重写run()方法\n- Java单继承限制，无法继承其他类\n\n### Runnable接口\n\n- 实现Runnable接口，实现run()方法\n- 不影响继承其他类，更符合面向对象设计\n\n```java\n// Thread方式\nclass MyThread extends Thread {\n    @Override\n    public void run() {\n        System.out.println(\"Thread task\");\n    }\n}\n\n// Runnable方式\nclass MyTask implements Runnable {\n    @Override\n    public void run() {\n        System.out.println(\"Runnable task\");\n    }\n}\n\n// Runnable可以继承其他类\nclass MyService extends Service implements Runnable {\n    @Override\n    public void run() {\n        // 可以使用Service的方法\n    }\n}\n```\n\n## 关键要点\n\n- Runnable更灵活，避免单继承限制\n- Runnable便于资源共享\n- 多个Thread可以共享同一个Runnable\n- Callable是Runnable的增强版，支持返回值\n\n## 注意事项\n\n- Runnable任务可以提交给线程池\n- 优先使用Runnable或Callable接口",
-    "tags": ["线程创建", "设计模式"],
-    "source": "高频"
+    "question": "volatile 能保证什么，为什么不能保证复合操作原子性？",
+    "answer": "### volatile 能保证什么\n\nvolatile 保证可见性和一定的有序性。一个线程写 volatile 变量后，其他线程读这个变量能看到最新值；volatile 写之前的普通写，对之后读到该 volatile 值的线程也可见。\n\n典型场景是状态标记：\n\n~~~java\nclass Worker {\n  private volatile boolean running = true;\n\n  void stop() {\n    running = false;\n  }\n\n  void loop() {\n    while (running) {\n      doWork();\n    }\n  }\n}\n~~~\n\n### 为什么不能保证复合操作原子性\n\ncount++ 包含读、加一、写回三个步骤。volatile 只能保证每次读写对其他线程可见，不能阻止两个线程同时读到同一个旧值再分别写回。\n\n~~~java\nvolatile int count;\ncount++; // 不是原子操作\n~~~\n\n需要原子计数时，用 AtomicInteger、LongAdder 或锁。\n\n### 有序性\n\nvolatile 通过内存屏障限制指令重排序。常见例子是双重检查锁里的单例引用必须 volatile，否则可能出现引用已经赋值但对象还未完全初始化的可见性问题。\n\n### 使用边界\n\nvolatile 适合“一写多读的状态发布”或“轻量开关”。只要涉及多个变量保持一致、读改写、检查后执行，就应该考虑锁、CAS 或更高层并发工具。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-004",
     "module": "Java并发",
     "difficulty": 2,
-    "question": "synchronized关键字的作用和用法有哪些？",
-    "answer": "## 核心概念\n\nsynchronized是Java内置的互斥同步锁，保证同一时刻只有一个线程执行临界区代码。\n\n### 三种用法\n\n#### 1. 修饰实例方法\n```java\npublic synchronized void increment() {\n    count++;\n}\n// 锁对象是this\n```\n\n#### 2. 修饰静态方法\n```java\npublic static synchronized void staticMethod() {\n    // 锁对象是Class对象\n}\n```\n\n#### 3. 修饰代码块\n```java\npublic void method() {\n    synchronized(this) {\n        // 锁this\n    }\n    synchronized(MyClass.class) {\n        // 锁Class对象\n    }\n}\n```\n\n## 关键要点\n\n- synchronized是可重入的互斥锁\n- 保证原子性、可见性、有序性\n- 底层基于Monitor对象\n- JDK6后经过大量优化\n\n## 注意事项\n\n- 锁的粒度要尽量小\n- 避免锁嵌套导致死锁\n- synchronized无法中断等待，无法设置超时时间",
-    "tags": ["synchronized", "锁"],
-    "source": "高频"
+    "question": "CAS、ABA 问题和原子类的实现原理是什么？",
+    "answer": "### CAS 的基本思想\n\nCAS 是 Compare-And-Swap：先比较内存中的旧值是否等于期望值，如果相等就更新为新值，否则失败。AtomicInteger、AtomicReference 等原子类大量使用 CAS。\n\n~~~java\nAtomicInteger count = new AtomicInteger();\ncount.incrementAndGet();\n~~~\n\n它避免了传统阻塞锁，竞争不激烈时效率很高；竞争激烈时会反复自旋失败，CPU 消耗可能上升。\n\n### ABA 问题\n\nCAS 只比较“当前值是否等于期望值”。如果一个值从 A 变成 B 又变回 A，CAS 会认为它没变过，但中间状态可能已经影响业务。\n\n典型例子是无锁栈：栈顶节点看起来还是 A，但 A 可能已经被弹出又压回，next 指针关系变了。\n\n### 怎么解决\n\n- 给值加版本号，比较值和版本，例如 AtomicStampedReference。\n- 使用 AtomicMarkableReference 标记逻辑删除。\n- 业务上通过唯一流水号、状态机、幂等键避免“只看值”。\n\n### 原子类怎么选\n\n低竞争计数用 AtomicInteger/AtomicLong；高并发热点计数用 LongAdder，因为它把竞争分散到多个 Cell，最后求和。LongAdder 不适合要求每次读取都强一致的场景，它更适合统计指标。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-005",
     "module": "Java并发",
-    "difficulty": 3,
-    "question": "synchronized的底层原理是什么？什么是Monitor？",
-    "answer": "## 核心概念\n\nsynchronized基于Monitor（监视器锁）实现，是JVM层面的锁。\n\n### Monitor结构\n\n```\n+------------------+\n|    Monitor       |\n+------------------+\n| _owner (持有者)  |\n| _EntryList (等待队列) |\n| _WaitSet (等待集) |\n| _count (重入计数) |\n+------------------+\n```\n\n### 执行流程\n\n```java\nObject lock = new Object();\nsynchronized(lock) {\n    // 1. 线程尝试获取Monitor\n    // 2. 成功则设置owner为当前线程\n    // 3. 失败则进入EntryList阻塞\n    // 4. 退出时释放Monitor\n}\n```\n\n### 字节码层面\n\n```java\n// 同步代码块\nmonitorenter  // 获取锁\n// ... 业务代码\nmonitorexit   // 释放锁\n\n// 同步方法：方法访问标志ACC_SYNCHRONIZED\n```\n\n## 关键要点\n\n- Monitor是互斥的同步机制\n- 每个对象关联一个Monitor\n- wait/notify依赖Monitor实现\n- 锁信息存储在对象头Mark Word中\n\n## 注意事项\n\n- synchronized是可重入的\n- 异常时自动释放锁\n- 不要锁字符串常量或基本类型",
-    "tags": ["synchronized", "底层原理"],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "AQS 的 state、等待队列和 park/unpark 如何支撑同步器？",
+    "answer": "### AQS 是同步器骨架\n\nAQS 把很多同步器共有的逻辑抽出来：一个 volatile int state 表示同步状态，一个 FIFO 等待队列保存获取失败的线程，再通过 park/unpark 挂起和唤醒线程。ReentrantLock、Semaphore、CountDownLatch、ReentrantReadWriteLock 都基于 AQS 思路实现。\n\n### state 的语义由子类定义\n\n| 同步器 | state 含义 |\n| --- | --- |\n| ReentrantLock | 0 表示未持有，大于 0 表示重入次数 |\n| Semaphore | 剩余许可数 |\n| CountDownLatch | 还需要 countDown 的次数 |\n| ReentrantReadWriteLock | 同时编码读锁和写锁状态 |\n\n所以 AQS 本身不规定“锁”的业务含义，它只提供排队、阻塞、唤醒和状态 CAS 修改的基础设施。\n\n### 等待队列和 park/unpark\n\n线程获取同步状态失败后，会被包装成节点进入 CLH 变体队列。前驱节点释放时，后继节点被 unpark 醒来再尝试获取。这样可以避免所有线程无脑自旋抢锁。\n\n### 独占和共享\n\n独占模式一次只允许一个线程成功，例如 ReentrantLock；共享模式允许多个线程同时成功，例如 Semaphore 或读锁。回答这题时最好能说出：不同同步器的差异不在 AQS 队列本身，而在 tryAcquire/tryRelease 或共享版本方法如何解释 state。",
+    "tags": ["Java 核心", "Java并发", "AQS"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-006",
     "module": "Java并发",
-    "difficulty": 3,
-    "question": "synchronized的锁升级过程是怎样的？",
-    "answer": "## 核心概念\n\nJDK6引入锁升级机制，根据竞争程度自动升级锁状态。\n\n### 升级路径\n\n```\n无锁 -> 偏向锁 -> 轻量级锁 -> 重量级锁\n```\n\n### 1. 偏向锁\n\n- 只有一个线程访问\n- 在对象头记录线程ID\n- 后续该线程进入无需CAS操作\n\n### 2. 轻量级锁\n\n- 多个线程交替访问（无竞争）\n- 通过CAS自旋获取锁\n- 避免线程阻塞\n\n### 3. 重量级锁\n\n- 多个线程同时竞争\n- 未获取锁的线程阻塞\n- 涉及用户态/内核态切换\n\n## 关键要点\n\n- 偏向锁：单线程场景，几乎无开销\n- 轻量级锁：交替执行，自旋消耗CPU\n- 重量级锁：真正竞争，线程阻塞\n- 锁只能升级不能降级（特殊情况除外）\n\n## 注意事项\n\n- 偏向锁在JDK15默认关闭\n- 高竞争场景自旋浪费CPU\n- 可通过JVM参数控制锁行为",
-    "tags": ["synchronized", "锁升级"],
-    "source": "高频"
+    "difficulty": 2,
+    "question": "ReentrantLock 的公平锁、Condition 和可中断锁有什么应用场景？",
+    "answer": "### ReentrantLock 比 synchronized 多什么\n\nReentrantLock 也是可重入锁，但它提供了更显式的控制能力：公平锁、可中断等待、限时获取锁、多个 Condition 队列。\n\n~~~java\nLock lock = new ReentrantLock();\nlock.lock();\ntry {\n  doWork();\n} finally {\n  lock.unlock();\n}\n~~~\n\n必须在 finally 中 unlock，否则异常会导致锁无法释放。\n\n### 公平锁\n\n公平锁尽量按等待顺序获取锁，减少饥饿；非公平锁允许插队，吞吐通常更高。生产中默认非公平锁更多，只有确实需要等待公平性时才用公平锁。\n\n### Condition\n\nCondition 可以给同一把锁创建多个等待队列，比 Object.wait/notify 更精细。例如阻塞队列可以用 notEmpty 和 notFull 两个条件队列，避免无关线程被唤醒。\n\n### 可中断和限时\n\nlockInterruptibly 允许等待锁的线程响应中断；tryLock(timeout) 可以避免无限等待。这在需要超时、取消、降级的业务里很重要。\n\n### 怎么选\n\n简单互斥优先 synchronized，语义清晰且 JVM 优化充分。需要公平性、多个条件队列、可中断等待、限时尝试时，再选 ReentrantLock。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-007",
     "module": "Java并发",
     "difficulty": 3,
-    "question": "synchronized和ReentrantLock有什么区别？",
-    "answer": "## 核心概念\n\n两者都是可重入的互斥锁，但实现层面不同。\n\n### 对比分析\n\n| 特性 | synchronized | ReentrantLock |\n|------|-------------|---------------|\n| 实现 | JVM层面 | API层面 |\n| 释放锁 | 自动释放 | 手动unlock |\n| 可中断 | 不支持 | 支持 |\n| 超时 | 不支持 | 支持tryLock |\n| 公平锁 | 非公平 | 可选公平/非公平 |\n| 条件变量 | 单一wait/notify | 多个Condition |\n\n### 代码示例\n\n```java\n// synchronized\nsynchronized(lock) {\n    // 自动释放锁\n}\n\n// ReentrantLock\nReentrantLock lock = new ReentrantLock();\nlock.lock();\ntry {\n    // 业务代码\n} finally {\n    lock.unlock();\n}\n\n// 可中断锁\nlock.lockInterruptibly();\n\n// 尝试获取锁\nif (lock.tryLock(1, TimeUnit.SECONDS)) {\n    try {\n        // 获取成功\n    } finally {\n        lock.unlock();\n    }\n}\n```\n\n## 关键要点\n\n- synchronized使用简单，不易出错\n- ReentrantLock功能更强大\n- 优先使用synchronized，需要高级特性时用ReentrantLock\n\n## 注意事项\n\n- ReentrantLock必须在finally中释放锁\n- 公平锁性能较低\n- Condition可以实现精确唤醒",
-    "tags": ["synchronized", "ReentrantLock"],
-    "source": "高频"
+    "question": "线程池核心参数、任务队列和拒绝策略如何配置？",
+    "answer": "### ThreadPoolExecutor 参数\n\n线程池不是只配 corePoolSize 和 maximumPoolSize。完整看这几个点：\n\n| 参数 | 作用 |\n| --- | --- |\n| corePoolSize | 常驻核心线程数 |\n| maximumPoolSize | 队列满后最多扩到多少线程 |\n| keepAliveTime | 非核心线程空闲多久回收 |\n| workQueue | 任务排队策略 |\n| threadFactory | 线程命名、优先级、异常处理 |\n| rejectedHandler | 线程和队列都满时怎么处理 |\n\n### 队列会改变线程增长行为\n\n使用无界队列时，maximumPoolSize 基本不会发挥作用，任务会一直堆在队列里，可能造成延迟暴涨和内存压力。使用 SynchronousQueue 时，任务不排队，通常会更快触发扩容或拒绝。\n\n### 怎么估算\n\nCPU 密集型任务接近 CPU 核数；IO 密集型任务可以更多，但要看阻塞比例和下游承载能力。更重要的是通过压测观察活跃线程、队列长度、任务耗时、拒绝次数、下游错误率，而不是套一个公式。\n\n### 拒绝策略\n\nAbortPolicy 直接抛异常；CallerRunsPolicy 让提交线程自己执行，能形成反压；DiscardPolicy/DiscardOldestPolicy 会丢任务，只有允许丢弃时才用。业务任务通常要自定义拒绝处理，记录日志和指标。\n\n### 生产建议\n\n线程池要按业务隔离。不要让发送短信、导出报表、核心下单共用一个池，否则低优先级慢任务可能拖垮核心链路。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-008",
     "module": "Java并发",
-    "difficulty": 2,
-    "question": "volatile关键字的作用和原理是什么？",
-    "answer": "## 核心概念\n\nvolatile是轻量级的同步机制，保证可见性和有序性，不保证原子性。\n\n### 两大特性\n\n#### 1. 可见性\n```java\nvolatile boolean flag = false;\n\n// 线程A\nflag = true; // 写入后立即刷新到主内存\n\n// 线程B\nwhile(!flag) { // 每次读取从主内存获取\n    // 能立即看到flag的变化\n}\n```\n\n#### 2. 有序性（禁止指令重排）\n```java\nvolatile int a = 0;\nboolean ready = false;\n\n// 写操作\na = 1;           // 普通写\nready = true;    // volatile写，禁止上面的写重排到此处之后\n\n// 读操作\nif (ready) {     // volatile读\n    int x = a;   // 保证能读到a=1\n}\n```\n\n### 底层实现\n\n```asm\n; volatile写前插入StoreStore屏障\n; volatile写后插入StoreLoad屏障\n; volatile读前插入LoadLoad屏障\n; volatile读后插入LoadStore屏障\n```\n\n## 关键要点\n\n- volatile保证可见性和有序性\n- 不保证原子性，如i++不是原子操作\n- 适用于状态标志、双重检查锁定等场景\n- 比synchronized更轻量\n\n## 注意事项\n\n- volatile不适用于复合操作\n- 不能替代锁\n- 适合一写多读场景",
-    "tags": ["volatile", "内存模型"],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "为什么不建议直接使用 Executors 创建线程池？",
+    "answer": "### Executors 的问题\n\nExecutors 提供的工厂方法很方便，但默认边界经常不适合生产。\n\n| 方法 | 隐患 |\n| --- | --- |\n| newFixedThreadPool | 使用无界 LinkedBlockingQueue，任务堆积可能 OOM |\n| newSingleThreadExecutor | 也是无界队列，单线程阻塞会拖住所有任务 |\n| newCachedThreadPool | 最大线程数接近无限，下游慢时可能创建大量线程 |\n| newScheduledThreadPool | 延迟任务堆积时也可能造成内存压力 |\n\n问题的本质是：线程数、队列长度或任务堆积没有明确上限，故障时系统不会及时拒绝，而是把问题拖成内存、延迟或下游雪崩。\n\n### 推荐做法\n\n直接使用 ThreadPoolExecutor，明确线程数、队列容量、线程名、拒绝策略和监控。\n\n~~~java\nnew ThreadPoolExecutor(\n  8,\n  16,\n  60, TimeUnit.SECONDS,\n  new ArrayBlockingQueue<>(1000),\n  namedThreadFactory(\"order-worker\"),\n  new ThreadPoolExecutor.CallerRunsPolicy()\n);\n~~~\n\n### 还要看运行期\n\n只创建有界线程池还不够。需要暴露 activeCount、poolSize、queueSize、completedTaskCount、rejectCount、taskCost 等指标，并给关键池配置告警。线程池治理的目标是让系统在过载时可观测、可拒绝、可降级。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-009",
     "module": "Java并发",
     "difficulty": 3,
-    "question": "volatile为什么不能保证原子性？如何解决？",
-    "answer": "## 核心概念\n\nvolatile只能保证单次读写的原子性，不能保证复合操作的原子性。\n\n### 问题演示\n\n```java\nvolatile int count = 0;\n\npublic void increment() {\n    count++; // 实际是三步：读取-修改-写入\n}\n\n// 线程A和B同时执行：\n// 1. A读取count=0\n// 2. B读取count=0\n// 3. A写入count=1\n// 4. B写入count=1\n// 结果：count=1，丢失一次更新\n```\n\n### 解决方案\n\n#### 方案1：synchronized\n```java\npublic synchronized void increment() {\n    count++;\n}\n```\n\n#### 方案2：ReentrantLock\n```java\nReentrantLock lock = new ReentrantLock();\npublic void increment() {\n    lock.lock();\n    try {\n        count++;\n    } finally {\n        lock.unlock();\n    }\n}\n```\n\n#### 方案3：原子类\n```java\nAtomicInteger atomicCount = new AtomicInteger(0);\npublic void increment() {\n    atomicCount.incrementAndGet();\n}\n```\n\n## 关键要点\n\n- i++包含读取、修改、写入三步操作\n- volatile只能保证可见性，不能保证原子性\n- 使用AtomicInteger等原子类是最佳方案\n\n## 注意事项\n\n- 原子类基于CAS实现，无锁性能更高\n- 高竞争场景CAS可能自旋",
-    "tags": ["volatile", "原子性"],
-    "source": "高频"
+    "question": "ThreadLocal 的实现原理、使用场景和内存泄漏风险是什么？",
+    "answer": "### ThreadLocal 怎么存\n\nThreadLocal 的数据实际存在线程对象里的 ThreadLocalMap 中。key 是 ThreadLocal 的弱引用，value 是业务对象。每个线程都有自己的 map，所以同一个 ThreadLocal 在不同线程里取到的是不同值。\n\n常见用途是请求上下文、traceId、当前用户、事务上下文、日期格式化器等。\n\n### 为什么会内存泄漏\n\n线程池里的线程会长期复用。如果 ThreadLocal 用完不 remove，value 会一直挂在线程上。即使 ThreadLocal 对象本身被回收，ThreadLocalMap 里的 key 变成 null，value 仍可能残留，直到后续触发清理。\n\n~~~java\ntry {\n  currentUser.set(user);\n  doBusiness();\n} finally {\n  currentUser.remove();\n}\n~~~\n\n### 使用边界\n\nThreadLocal 适合保存“当前线程执行链路内”的上下文，不适合保存跨请求状态，也不适合在线程之间传递数据。异步任务、线程池切换、CompletableFuture 默认不会自动带上 ThreadLocal，需要显式传递或使用框架支持。\n\n### 常见坑\n\n- 在线程池中不 remove。\n- 把大对象放入 ThreadLocal。\n- 以为 InheritableThreadLocal 能解决线程池上下文传递；线程池线程早已创建，继承关系往往不符合预期。\n- 在 Web 容器热部署场景中，ThreadLocal 持有应用类对象可能导致类加载器泄漏。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-010",
     "module": "Java并发",
     "difficulty": 3,
-    "question": "volatile的典型应用场景有哪些？",
-    "answer": "## 核心概念\n\nvolatile适用于状态标志、双重检查锁定、读多写少等场景。\n\n### 1. 状态标志\n\n```java\nvolatile boolean shutdownRequested = false;\n\npublic void shutdown() {\n    shutdownRequested = true;\n}\n\npublic void run() {\n    while (!shutdownRequested) {\n        // 执行任务\n    }\n}\n```\n\n### 2. 双重检查锁定（DCL）\n\n```java\nclass Singleton {\n    private static volatile Singleton instance;\n\n    public static Singleton getInstance() {\n        if (instance == null) {\n            synchronized (Singleton.class) {\n                if (instance == null) {\n                    instance = new Singleton();\n                }\n            }\n        }\n        return instance;\n    }\n}\n```\n\n### 3. 独立观察\n\n```java\nvolatile long lastUpdate = System.currentTimeMillis();\n\npublic void update() {\n    lastUpdate = System.currentTimeMillis();\n}\n```\n\n## 关键要点\n\n- DCL必须用volatile防止指令重排\n- 状态标志是volatile最简单的应用\n- 适合一写多读的场景\n\n## 注意事项\n\n- 不要在volatile变量上做复合操作\n- 读写频率都很高时考虑锁",
-    "tags": ["volatile", "设计模式"],
-    "source": "高频"
+    "question": "happens-before 规则如何解释可见性、重排序和锁语义？",
+    "answer": "### happens-before 是可见性规则\n\nhappens-before 描述的是：如果操作 A happens-before 操作 B，那么 A 的结果对 B 可见，并且 A 的执行顺序在内存语义上先于 B。它不是简单的时间先后，而是 Java 内存模型定义的可见性保证。\n\n### 常见规则\n\n| 规则 | 含义 |\n| --- | --- |\n| 程序顺序规则 | 单线程内前面的操作 happens-before 后面的操作 |\n| 监视器锁规则 | unlock happens-before 后续对同一锁的 lock |\n| volatile 规则 | volatile 写 happens-before 后续读到该变量 |\n| 线程启动规则 | Thread.start 前的操作对子线程可见 |\n| 线程终止规则 | 线程结束 happens-before 其他线程 join 成功 |\n| 传递性 | A 在 B 前，B 在 C 前，则 A 在 C 前 |\n\n### 怎么解释锁语义\n\n线程在 synchronized 块里修改共享变量，退出时释放锁；另一个线程进入同一把锁后，可以看到之前的修改。这就是锁规则提供的可见性，而不仅是互斥。\n\n### 和重排序的关系\n\n编译器和 CPU 可以重排序，但不能破坏 happens-before 关系下的可见性结果。没有 happens-before 关系时，一个线程写入的值，另一个线程不一定及时看到。\n\n回答这题可以落到实践：共享可变状态必须通过锁、volatile、并发容器、线程启动/结束等机制建立 happens-before，而不是靠“代码看起来先执行”。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-011",
     "module": "Java并发",
-    "difficulty": 2,
-    "question": "ReentrantLock的常用API有哪些？",
-    "answer": "## 核心概念\n\nReentrantLock实现了Lock接口，提供比synchronized更灵活的锁操作。\n\n### 常用API\n\n```java\nReentrantLock lock = new ReentrantLock(true); // true=公平锁\n\n// 1. 获取锁\nlock.lock();\n\n// 2. 可中断获取锁\nlock.lockInterruptibly();\n\n// 3. 尝试获取锁（非阻塞）\nif (lock.tryLock()) {\n    // 获取成功\n}\n\n// 4. 超时获取锁\nif (lock.tryLock(1, TimeUnit.SECONDS)) {\n    // 获取成功\n}\n\n// 5. 释放锁\nlock.unlock();\n\n// 6. 查询锁状态\nlock.isLocked();\nlock.isHeldByCurrentThread();\nlock.getHoldCount();\nlock.getQueueLength();\n```\n\n### Condition条件变量\n\n```java\nReentrantLock lock = new ReentrantLock();\nCondition condition = lock.newCondition();\n\nlock.lock();\ntry {\n    condition.await();\n    condition.signal();\n} finally {\n    lock.unlock();\n}\n```\n\n## 关键要点\n\n- tryLock避免死锁的有效手段\n- lockInterruptibly支持中断等待\n- Condition实现精确唤醒\n- 公平锁保证FIFO但性能较低\n\n## 注意事项\n\n- 必须在finally中释放锁\n- Condition必须在lock和unlock之间使用",
-    "tags": ["ReentrantLock", "锁"],
-    "source": "高频"
+    "difficulty": 3,
+    "question": "CompletableFuture 如何做任务编排、异常处理和超时控制？",
+    "answer": "### CompletableFuture 适合什么\n\nCompletableFuture 适合表达异步任务之间的依赖：并行查询、结果合并、失败降级、超时控制。它比 Future 更强，因为 Future 主要只能 get、cancel，而 CompletableFuture 可以 thenApply、thenCompose、thenCombine、exceptionally 编排链路。\n\n~~~java\nCompletableFuture<User> userFuture =\n  CompletableFuture.supplyAsync(() -> userClient.get(id), executor);\n\nCompletableFuture<List<Order>> orderFuture =\n  CompletableFuture.supplyAsync(() -> orderClient.list(id), executor);\n\nreturn userFuture.thenCombine(orderFuture, UserProfile::new)\n  .orTimeout(300, TimeUnit.MILLISECONDS)\n  .exceptionally(ex -> fallbackProfile(id));\n~~~\n\n### thenApply 和 thenCompose\n\nthenApply 用于同步转换，把 T 变成 U；thenCompose 用于扁平化异步任务，把 T 变成 CompletableFuture<U>。如果返回值本身就是一个异步任务，通常用 thenCompose 避免嵌套 Future。\n\n### 异常和超时\n\n异常不会自动消失，要用 exceptionally、handle、whenComplete 处理。超时可以用 orTimeout 或 completeOnTimeout。只处理最终 join 的异常不够，链路中间的失败和降级也要设计清楚。\n\n### 生产注意\n\n不要让阻塞 IO 跑在默认 commonPool；给不同业务传入明确 executor。还要考虑取消是否能传递到下游、部分成功如何合并、日志里如何保留 traceId。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   },
   {
     "id": "java-concurrency-012",
     "module": "Java并发",
     "difficulty": 3,
-    "question": "ReentrantLock的公平锁和非公平锁有什么区别？",
-    "answer": "## 核心概念\n\nReentrantLock可以选择公平锁或非公平锁策略。\n\n### 公平锁\n\n```java\nReentrantLock fairLock = new ReentrantLock(true);\n// 按照请求顺序获取锁（FIFO）\n```\n\n### 非公平锁\n\n```java\nReentrantLock unfairLock = new ReentrantLock(false); // 默认\n// 允许插队，新请求可能立即获取锁\n```\n\n### 性能对比\n\n```\n公平锁：FIFO队列\nThread1 -> Thread2 -> Thread3\n\n非公平锁：可能插队\nThread1 (持有锁)\nThread2 (等待)\nThread3 (新来，可能直接获取锁)\n```\n\n## 关键要点\n\n- 公平锁：按顺序执行，开销较大\n- 非公平锁：可能插队，吞吐量更高\n- 默认使用非公平锁\n- 公平锁需要维护队列，性能降低\n\n## 注意事项\n\n- 大多数场景使用非公平锁\n- 公平锁可能导致线程饥饿\n- synchronized是非公平锁",
-    "tags": ["ReentrantLock", "锁策略"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-013",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ReentrantLock的Condition如何实现精确唤醒？",
-    "answer": "## 核心概念\n\nCondition可以实现多条件等待和精确唤醒，比wait/notify更灵活。\n\n### 代码示例\n\n```java\nReentrantLock lock = new ReentrantLock();\nCondition conditionA = lock.newCondition();\nCondition conditionB = lock.newCondition();\n\npublic void awaitA() {\n    lock.lock();\n    try {\n        conditionA.await();\n        System.out.println(\"A被唤醒\");\n    } finally {\n        lock.unlock();\n    }\n}\n\npublic void signalA() {\n    lock.lock();\n    try {\n        conditionA.signal(); // 只唤醒A\n    } finally {\n        lock.unlock();\n    }\n}\n```\n\n### 生产者消费者模式\n\n```java\nCondition notFull = lock.newCondition();\nCondition notEmpty = lock.newCondition();\n\npublic void put(T item) {\n    lock.lock();\n    try {\n        while (queue.isFull()) {\n            notFull.await();\n        }\n        queue.add(item);\n        notEmpty.signal();\n    } finally {\n        lock.unlock();\n    }\n}\n```\n\n## 关键要点\n\n- 一个Lock可以创建多个Condition\n- Condition实现精确唤醒指定线程\n- await/signal必须在lock/unlock之间\n\n## 注意事项\n\n- signalAll唤醒所有等待线程\n- 使用while循环防止虚假唤醒\n- Condition是Lock的配套机制",
-    "tags": ["ReentrantLock", "Condition"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-014",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "什么是CAS？AtomicInteger是如何实现线程安全的？",
-    "answer": "## 核心概念\n\nCAS（Compare And Swap）是一种无锁的原子操作，通过比较并交换实现线程安全。\n\n### CAS原理\n\n```java\n// CAS操作包含三个参数：\n// 内存值V、预期值A、新值B\n// 当V == A时，将V更新为B，返回true\n// 否则不更新，返回false\n\npublic final int incrementAndGet() {\n    for (;;) {\n        int current = get();\n        int next = current + 1;\n        if (compareAndSet(current, next)) {\n            return next;\n        }\n    }\n}\n```\n\n### 代码示例\n\n```java\nAtomicInteger count = new AtomicInteger(0);\n\ncount.incrementAndGet();   // i++\ncount.decrementAndGet();   // i--\ncount.addAndGet(5);        // i += 5\ncount.compareAndSet(0, 1); // CAS操作\n\nint value = count.get();\n```\n\n## 关键要点\n\n- CAS是CPU级别的原子指令\n- Atomic类基于CAS实现无锁并发\n- CAS存在ABA问题\n- 自旋CAS在高竞争时消耗CPU\n\n## 注意事项\n\n- AtomicStampedReference解决ABA问题\n- 高竞争场景考虑使用锁\n- CAS适合简单操作，复杂逻辑用锁",
-    "tags": ["CAS", "原子类"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-015",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "CAS的ABA问题是什么？如何解决？",
-    "answer": "## 核心概念\n\nABA问题是指值从A变为B再变回A，CAS无法感知中间变化。\n\n### 问题演示\n\n```java\nAtomicInteger value = new AtomicInteger(100);\n\nint expected = value.get(); // 100\n// 此时线程2将100改为50，再改回100\nvalue.compareAndSet(expected, 200); // 成功，但不知道中间变化\n```\n\n### 解决方案\n\n#### 1. AtomicStampedReference（版本号）\n```java\nAtomicStampedReference<Integer> ref =\n    new AtomicStampedReference<>(100, 0);\n\nint stamp = ref.getStamp();\nref.compareAndSet(100, 200, stamp, stamp + 1);\n// 每次修改版本号都变化，避免ABA\n```\n\n#### 2. AtomicMarkableReference（布尔标记）\n```java\nAtomicMarkableReference<Integer> ref =\n    new AtomicMarkableReference<>(100, false);\n\nboolean[] mark = new boolean[1];\nint value = ref.get(mark);\nref.compareAndSet(100, 200, false, true);\n```\n\n## 关键要点\n\n- ABA问题是CAS的主要缺陷\n- AtomicStampedReference通过版本号解决\n- AtomicMarkableReference通过布尔标记解决\n- 大多数业务场景ABA问题不严重\n\n## 注意事项\n\n- 引用类型需要特别注意ABA问题\n- 版本号方案有溢出风险",
-    "tags": ["CAS", "ABA问题"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-016",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "Java中有哪些常用的原子类？",
-    "answer": "## 核心概念\n\njava.util.concurrent.atomic包提供了多种原子类，基于CAS实现无锁并发。\n\n### 基本类型原子类\n\n```java\nAtomicInteger atomicInt = new AtomicInteger(0);\nAtomicLong atomicLong = new AtomicLong(0L);\nAtomicBoolean atomicBool = new AtomicBoolean(false);\n\natomicInt.incrementAndGet();\natomicInt.decrementAndGet();\natomicInt.addAndGet(10);\natomicInt.compareAndSet(0, 1);\natomicInt.getAndUpdate(x -> x * 2);\natomicInt.updateAndGet(x -> x + 1);\n```\n\n### 数组原子类\n\n```java\nAtomicIntegerArray array = new AtomicIntegerArray(10);\narray.set(0, 100);\narray.incrementAndGet(0);\narray.addAndGet(1, 50);\n```\n\n### 引用类型原子类\n\n```java\nAtomicReference<User> userRef = new AtomicReference<>(new User(\"Tom\"));\nuserRef.compareAndSet(oldUser, newUser);\n\nAtomicStampedReference<String> ref = new AtomicStampedReference<>(\"A\", 0);\nref.compareAndSet(\"A\", \"B\", 0, 1);\n```\n\n### 字段更新器\n\n```java\nAtomicIntegerFieldUpdater<User> updater =\n    AtomicIntegerFieldUpdater.newUpdater(User.class, \"age\");\n\nUser user = new User();\nupdater.set(user, 25);\nupdater.incrementAndGet(user);\n```\n\n## 关键要点\n\n- 原子类基于CAS实现\n- 适合计数器、累加器等场景\n- 无锁并发，性能优于synchronized\n\n## 注意事项\n\n- 字段必须是volatile修饰\n- 更新器字段不能是static",
-    "tags": ["原子类", "CAS"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-017",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "什么是AQS（AbstractQueuedSynchronizer）？",
-    "answer": "## 核心概念\n\nAQS是Java并发包的基础框架，许多同步器都基于AQS实现。\n\n### 核心结构\n\n```java\npublic abstract class AbstractQueuedSynchronizer {\n    private volatile int state;  // 同步状态\n    // Node head;  等待队列头\n    // Node tail;  等待队列尾\n\n    protected boolean tryAcquire(int arg) {\n        throw new UnsupportedOperationException();\n    }\n\n    protected boolean tryRelease(int arg) {\n        throw new UnsupportedOperationException();\n    }\n}\n```\n\n### 工作原理\n\n```\n+------------------+\n|     state        |  <- 同步状态（0=无锁，>0=锁定）\n+------------------+\n|   head -> tail   |  <- CLH队列\n+------------------+\n|     Node         |\n|   Thread + waitStatus |\n+------------------+\n```\n\n### 基于AQS的同步器\n\n```java\nclass Sync extends AbstractQueuedSynchronizer {\n    @Override\n    protected boolean tryAcquire(int acquires) {\n        // 实现锁获取逻辑\n    }\n\n    @Override\n    protected boolean tryRelease(int releases) {\n        // 实现锁释放逻辑\n    }\n}\n```\n\n## 关键要点\n\n- AQS是并发包的基石\n- state表示同步状态\n- CLH队列管理等待线程\n- 独占模式和共享模式\n\n## 注意事项\n\n- 自定义同步器需要继承AQS\n- ReentrantLock、Semaphore等都基于AQS",
-    "tags": ["AQS", "底层原理"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-018",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "AQS的独占模式和共享模式有什么区别？",
-    "answer": "## 核心概念\n\nAQS支持独占和共享两种模式，适用于不同的同步场景。\n\n### 独占模式\n\n```java\n// 同一时刻只有一个线程能获取锁\n// 例如：ReentrantLock\nclass ExclusiveLock extends AbstractQueuedSynchronizer {\n    @Override\n    protected boolean tryAcquire(int arg) {\n        if (compareAndSetState(0, 1)) {\n            setExclusiveOwnerThread(Thread.currentThread());\n            return true;\n        }\n        return false;\n    }\n\n    @Override\n    protected boolean tryRelease(int arg) {\n        setState(0);\n        setExclusiveOwnerThread(null);\n        return true;\n    }\n}\n```\n\n### 共享模式\n\n```java\n// 多个线程可以同时获取\n// 例如：Semaphore, CountDownLatch\nclass SharedLock extends AbstractQueuedSynchronizer {\n    @Override\n    protected int tryAcquireShared(int arg) {\n        for (;;) {\n            int available = getState();\n            int remaining = available - arg;\n            if (remaining < 0 || compareAndSetState(available, remaining)) {\n                return remaining;\n            }\n        }\n    }\n\n    @Override\n    protected boolean tryReleaseShared(int arg) {\n        for (;;) {\n            int current = getState();\n            if (compareAndSetState(current, current + arg)) {\n                return true;\n            }\n        }\n    }\n}\n```\n\n## 关键要点\n\n- 独占模式：tryAcquire/tryRelease\n- 共享模式：tryAcquireShared/tryReleaseShared\n- 独占返回boolean，共享返回int\n- ReentrantLock是独占，Semaphore是共享\n\n## 注意事项\n\n- 共享模式需要考虑传播性\n- 可以同时实现两种模式",
-    "tags": ["AQS", "设计模式"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-019",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "ThreadPoolExecutor的核心参数有哪些？",
-    "answer": "## 核心概念\n\nThreadPoolExecutor是Java线程池的核心实现，有7个核心参数。\n\n### 构造方法\n\n```java\npublic ThreadPoolExecutor(\n    int corePoolSize,      // 核心线程数\n    int maximumPoolSize,   // 最大线程数\n    long keepAliveTime,    // 空闲线程存活时间\n    TimeUnit unit,         // 时间单位\n    BlockingQueue<Runnable> workQueue, // 任务队列\n    ThreadFactory threadFactory,       // 线程工厂\n    RejectedExecutionHandler handler   // 拒绝策略\n)\n```\n\n### 参数详解\n\n```java\nint corePoolSize = 10;    // 核心线程数：即使空闲也不会回收\nint maximumPoolSize = 20; // 最大线程数：线程池最大容量\nlong keepAliveTime = 60L; // 存活时间：非核心线程空闲存活时间\n\nBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(1000);\nRejectedExecutionHandler handler = new ThreadPoolExecutor.AbortPolicy();\n```\n\n## 关键要点\n\n- corePoolSize：核心线程数\n- maximumPoolSize：最大线程数\n- workQueue：存放待执行任务\n- handler：队列满且线程数达到最大时触发\n\n## 注意事项\n\n- 核心线程默认不会回收\n- 设置allowCoreThreadTimeOut(true)可回收核心线程\n- 合理设置参数避免资源耗尽",
-    "tags": ["线程池", "ThreadPoolExecutor"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-020",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ThreadPoolExecutor的执行流程是怎样的？",
-    "answer": "## 核心概念\n\n线程池的任务提交流程遵循以下策略。\n\n### 执行流程\n\n```\n提交任务\n   |\n核心线程未满？\n   +-- 是 -> 创建核心线程执行\n   +-- 否 |\n任务队列未满？\n   +-- 是 -> 任务入队\n   +-- 否 |\n最大线程未满？\n   +-- 是 -> 创建非核心线程执行\n   +-- 否 |\n执行拒绝策略\n```\n\n### 代码示例\n\n```java\nThreadPoolExecutor executor = new ThreadPoolExecutor(\n    5,                      // 核心线程5\n    10,                     // 最大线程10\n    60L, TimeUnit.SECONDS,\n    new LinkedBlockingQueue<>(100),\n    new ThreadPoolExecutor.CallerRunsPolicy()\n);\n\nexecutor.execute(() -> {\n    // 任务执行\n});\n\nFuture<String> future = executor.submit(() -> {\n    return \"result\";\n});\nString result = future.get();\n```\n\n## 关键要点\n\n- 先核心线程，再队列，最后非核心线程\n- 队列满且线程数最大时触发拒绝策略\n- 核心线程不会回收（除非设置allowCoreThreadTimeOut）\n\n## 注意事项\n\n- 理解执行流程对调优很重要\n- 不同队列影响线程创建时机",
-    "tags": ["线程池", "ThreadPoolExecutor"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-021",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ThreadPoolExecutor有哪些拒绝策略？如何自定义？",
-    "answer": "## 核心概念\n\n当线程池无法处理新任务时，会执行拒绝策略。\n\n### 内置拒绝策略\n\n```java\n// 1. AbortPolicy（默认）：抛出异常\nnew ThreadPoolExecutor.AbortPolicy();\n\n// 2. CallerRunsPolicy：由调用线程执行\nnew ThreadPoolExecutor.CallerRunsPolicy();\n\n// 3. DiscardPolicy：静默丢弃\nnew ThreadPoolExecutor.DiscardPolicy();\n\n// 4. DiscardOldestPolicy：丢弃最老的任务\nnew ThreadPoolExecutor.DiscardOldestPolicy();\n```\n\n### 自定义拒绝策略\n\n```java\npublic class CustomRejectedHandler implements RejectedExecutionHandler {\n    @Override\n    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {\n        log.warn(\"Task rejected: {}\", r.toString());\n        saveToDatabase(r);\n        sendAlert();\n    }\n}\n\nThreadPoolExecutor executor = new ThreadPoolExecutor(\n    5, 10, 60L, TimeUnit.SECONDS,\n    new LinkedBlockingQueue<>(100),\n    new CustomRejectedHandler()\n);\n```\n\n## 关键要点\n\n- AbortPolicy抛异常，适合不能丢失任务的场景\n- CallerRunsPolicy不会丢任务，但会阻塞调用线程\n- DiscardPolicy静默丢弃，适合不重要的任务\n- 自定义策略可以实现降级处理\n\n## 注意事项\n\n- 生产环境不建议使用默认的AbortPolicy\n- CallerRunsPolicy可能影响调用方性能\n- 自定义策略要记录日志便于排查",
-    "tags": ["线程池", "拒绝策略"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-022",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "如何合理配置线程池参数？",
-    "answer": "## 核心概念\n\n线程池参数配置需要根据任务类型和系统资源来确定。\n\n### CPU密集型任务\n\n```java\n// CPU密集型：计算、加密、压缩等\n// 线程数 = CPU核心数 + 1\nint cpuCores = Runtime.getRuntime().availableProcessors();\nThreadPoolExecutor cpuPool = new ThreadPoolExecutor(\n    cpuCores + 1,\n    cpuCores + 1,\n    60L, TimeUnit.SECONDS,\n    new LinkedBlockingQueue<>(1000)\n);\n```\n\n### IO密集型任务\n\n```java\n// IO密集型：网络请求、文件读写、数据库操作\n// 线程数 = CPU核心数 * 2\nThreadPoolExecutor ioPool = new ThreadPoolExecutor(\n    cpuCores * 2,\n    cpuCores * 2,\n    60L, TimeUnit.SECONDS,\n    new LinkedBlockingQueue<>(1000)\n);\n\n// 或使用公式：线程数 = CPU核心数 / (1 - 阻塞系数)\n```\n\n### 混合型任务\n\n```java\n// 建议拆分为两个线程池\nThreadPoolExecutor cpuPool = new ThreadPoolExecutor(...);\nThreadPoolExecutor ioPool = new ThreadPoolExecutor(...);\n```\n\n## 关键要点\n\n- CPU密集型：线程数约等于CPU核心数\n- IO密集型：线程数约等于CPU核心数乘2\n- 实际需要压测调优\n- 考虑内存、数据库连接等资源限制\n\n## 注意事项\n\n- 不要使用Executors创建线程池\n- 线程数不是越大越好\n- 监控线程池运行状态\n- 使用有界队列防止OOM",
-    "tags": ["线程池", "调优"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-023",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "为什么阿里巴巴规范不允许使用Executors创建线程池？",
-    "answer": "## 核心概念\n\nExecutors工具类创建的线程池存在潜在风险，阿里巴巴规范明确禁止使用。\n\n### 问题分析\n\n```java\n// 1. FixedThreadPool 和 SingleThreadExecutor\n// 问题：使用无界队列 LinkedBlockingQueue\nExecutorService pool = Executors.newFixedThreadPool(10);\n// 任务堆积导致OOM\n\n// 2. CachedThreadPool\n// 问题：最大线程数为Integer.MAX_VALUE\nExecutorService pool = Executors.newCachedThreadPool();\n// 大量任务导致创建大量线程，OOM\n\n// 3. ScheduledThreadPool\nScheduledExecutorService pool = Executors.newScheduledThreadPool(10);\n```\n\n### 正确做法\n\n```java\n// 使用ThreadPoolExecutor显式创建\nThreadPoolExecutor pool = new ThreadPoolExecutor(\n    10,\n    20,\n    60L, TimeUnit.SECONDS,\n    new LinkedBlockingQueue<>(1000), // 有界队列\n    new ThreadPoolExecutor.CallerRunsPolicy()\n);\n```\n\n## 关键要点\n\n- FixedThreadPool：无界队列导致OOM\n- CachedThreadPool：无限线程导致OOM\n- 显式创建线程池，明确参数边界\n- 使用有界队列和合适的拒绝策略\n\n## 注意事项\n\n- 生产环境必须使用有界队列\n- 合理设置最大线程数\n- 监控线程池队列大小",
-    "tags": ["线程池", "最佳实践"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-024",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "如何监控线程池的运行状态？",
-    "answer": "## 核心概念\n\nThreadPoolExecutor提供了丰富的监控方法，帮助了解线程池运行状态。\n\n### 常用监控方法\n\n```java\nThreadPoolExecutor pool = new ThreadPoolExecutor(...);\n\n// 获取线程池状态\npool.getPoolSize();      // 当前线程数\npool.getActiveCount();   // 活跃线程数\npool.getCorePoolSize();  // 核心线程数\npool.getMaximumPoolSize(); // 最大线程数\n\n// 获取任务信息\npool.getTaskCount();      // 已提交任务总数\npool.getCompletedTaskCount(); // 已完成任务数\npool.getQueue().size();   // 队列中等待的任务数\npool.getQueue().remainingCapacity(); // 队列剩余容量\n\n// 判断状态\npool.isShutdown();    // 是否已关闭\npool.isTerminated();  // 是否已终止\n```\n\n### 自定义监控\n\n```java\npublic class MonitoredThreadPool extends ThreadPoolExecutor {\n    private final AtomicLong totalTasks = new AtomicLong(0);\n    private final AtomicLong completedTasks = new AtomicLong(0);\n\n    @Override\n    public void execute(Runnable command) {\n        totalTasks.incrementAndGet();\n        super.execute(command);\n    }\n\n    @Override\n    protected void afterExecute(Runnable r, Throwable t) {\n        completedTasks.incrementAndGet();\n        if (t != null) {\n            log.error(\"Task failed\", t);\n        }\n    }\n}\n```\n\n## 关键要点\n\n- getPoolSize()：当前线程数\n- getQueue().size()：排队任务数\n- getActiveCount()：正在执行的线程数\n- 定期监控预防线程池问题\n\n## 注意事项\n\n- 监控数据可用于动态调优\n- 队列积压需要告警\n- 结合Prometheus等监控系统",
-    "tags": ["线程池", "监控"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-025",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "CompletableFuture的常用方法有哪些？",
-    "answer": "## 核心概念\n\nCompletableFuture是Java8引入的异步编程工具，支持链式调用和组合操作。\n\n### 创建异步任务\n\n```java\n// 无返回值\nCompletableFuture.runAsync(() -> {\n    // 异步任务\n});\n\n// 有返回值\nCompletableFuture<String> future = CompletableFuture.supplyAsync(() -> {\n    return \"result\";\n});\n\n// 指定线程池\nExecutorService executor = Executors.newFixedThreadPool(10);\nCompletableFuture.supplyAsync(() -> \"result\", executor);\n```\n\n### 链式处理\n\n```java\nCompletableFuture.supplyAsync(() -> \"hello\")\n    .thenApply(s -> s + \" world\")\n    .thenApply(String::toUpperCase)\n    .thenAccept(System.out::println);\n\n// thenApply: 有返回值\n// thenAccept: 无返回值，消费结果\n// thenRun: 无返回值，不关心结果\n```\n\n### 组合操作\n\n```java\nCompletableFuture<String> f1 = CompletableFuture.supplyAsync(() -> \"hello\");\nCompletableFuture<String> f2 = CompletableFuture.supplyAsync(() -> \"world\");\n\n// 两个都完成\nf1.thenCombine(f2, (a, b) -> a + \" \" + b)\n  .thenAccept(System.out::println);\n\n// 任意一个完成\nf1.applyToEither(f2, s -> s);\n\n// 全部完成\nCompletableFuture.allOf(f1, f2).join();\n```\n\n## 关键要点\n\n- supplyAsync有返回值，runAsync无返回值\n- thenApply转换结果，thenAccept消费结果\n- thenCombine合并两个Future\n- allOf等待所有完成，anyOf任意一个完成\n\n## 注意事项\n\n- 异常处理使用exceptionally或handle\n- 指定自定义线程池\n- get()方法会阻塞",
-    "tags": ["CompletableFuture", "异步编程"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-026",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "CompletableFuture如何处理异常？",
-    "answer": "## 核心概念\n\nCompletableFuture提供了多种异常处理方式，避免异常丢失。\n\n### exceptionally\n\n```java\nCompletableFuture.supplyAsync(() -> {\n    if (true) throw new RuntimeException(\"error\");\n    return \"result\";\n}).exceptionally(ex -> {\n    log.error(\"Exception: {}\", ex.getMessage());\n    return \"default\";\n}).thenAccept(System.out::println);\n```\n\n### handle\n\n```java\nCompletableFuture.supplyAsync(() -> {\n    if (true) throw new RuntimeException(\"error\");\n    return \"result\";\n}).handle((result, ex) -> {\n    if (ex != null) {\n        log.error(\"Exception: {}\", ex.getMessage());\n        return \"default\";\n    }\n    return result;\n}).thenAccept(System.out::println);\n```\n\n### whenComplete\n\n```java\nCompletableFuture.supplyAsync(() -> {\n    if (true) throw new RuntimeException(\"error\");\n    return \"result\";\n}).whenComplete((result, ex) -> {\n    if (ex != null) {\n        log.error(\"Exception: {}\", ex.getMessage());\n    } else {\n        log.info(\"Result: {}\", result);\n    }\n}).exceptionally(ex -> \"default\");\n```\n\n## 关键要点\n\n- exceptionally：异常时返回默认值\n- handle：无论成功失败都处理\n- whenComplete：类似handle但不转换结果\n- 异常会沿链传播，直到被处理\n\n## 注意事项\n\n- 未处理的异常在get()时抛出\n- 优先使用handle，处理更全面\n- 生产代码必须处理异常",
-    "tags": ["CompletableFuture", "异常处理"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-027",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "如何用CompletableFuture实现多个异步任务的编排？",
-    "answer": "## 核心概念\n\nCompletableFuture可以实现复杂的异步任务编排，支持串行、并行、条件分支等模式。\n\n### 串行执行\n\n```java\nCompletableFuture.supplyAsync(() -> {\n    return queryUser(userId);\n}).thenCompose(user -> {\n    return queryOrders(user.getId());\n}).thenCompose(orders -> {\n    return calculateTotal(orders);\n}).thenAccept(total -> {\n    log.info(\"Total: {}\", total);\n});\n```\n\n### 并行执行\n\n```java\nCompletableFuture<User> userFuture =\n    CompletableFuture.supplyAsync(() -> queryUser(userId));\nCompletableFuture<List<Order>> orderFuture =\n    CompletableFuture.supplyAsync(() -> queryOrders(userId));\nCompletableFuture<Wallet> walletFuture =\n    CompletableFuture.supplyAsync(() -> queryWallet(userId));\n\nCompletableFuture.allOf(userFuture, orderFuture, walletFuture)\n    .thenApply(v -> {\n        User user = userFuture.join();\n        List<Order> orders = orderFuture.join();\n        Wallet wallet = walletFuture.join();\n        return new UserInfo(user, orders, wallet);\n    });\n```\n\n### 超时控制\n\n```java\nCompletableFuture.supplyAsync(() -> slowQuery())\n    .orTimeout(3, TimeUnit.SECONDS)\n    .exceptionally(ex -> \"timeout\");\n\nCompletableFuture.supplyAsync(() -> slowQuery())\n    .completeOnTimeout(\"default\", 3, TimeUnit.SECONDS);\n```\n\n## 关键要点\n\n- thenCompose：串行连接，返回CompletableFuture\n- thenCombine：并行合并两个结果\n- allOf：等待所有完成\n- anyOf：任意一个完成\n\n## 注意事项\n\n- 使用自定义线程池避免ForkJoinPool问题\n- 超时控制很重要\n- 异常处理要完善",
-    "tags": ["CompletableFuture", "异步编排"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-028",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ConcurrentHashMap的实现原理是什么？",
-    "answer": "## 核心概念\n\nConcurrentHashMap是线程安全的HashMap，JDK7和JDK8实现不同。\n\n### JDK7实现（分段锁）\n\n```\nConcurrentHashMap\n   +-------+-------+-------+\n   |Seg 0  |Seg 1  |Seg 2  |  <- Segment数组\n   |       |       |       |\n   | HashEntry[]             |  <- 每个Segment是一个小HashMap\n   +-------+-------+-------+\n\n并发度 = Segment数量（默认16）\n```\n\n### JDK8实现（CAS + synchronized）\n\n```\nConcurrentHashMap\n   +-----------------------------------+\n   | Node[] table                      |  <- 数组+链表+红黑树\n   |  +---+ +---+ +---+ +---+         |\n   |  | 0 | | 1 | | 2 | | 3 | ...     |\n   |  +-+-+ +---+ +-+-+ +---+         |\n   |    |          |                   |\n   |  Node -> Node  TreeNode           |\n   +-----------------------------------+\n```\n\n### 关键代码\n\n```java\nfinal V putVal(K key, V value, boolean onlyIfAbsent) {\n    int hash = spread(key.hashCode());\n    for (Node<K,V>[] tab = table;;) {\n        Node<K,V> f; int n, i, fh;\n        if (tab == null || (n = tab.length) == 0)\n            tab = initTable();\n        else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {\n            if (casTabAt(tab, i, null, new Node<>(hash, key, value)))\n                break;\n        } else {\n            synchronized (f) {\n                // 链表或红黑树操作\n            }\n        }\n    }\n}\n```\n\n## 关键要点\n\n- JDK7：Segment分段锁，16个段\n- JDK8：CAS + synchronized，锁粒度更细\n- JDK8并发度更高，实现更复杂\n- 不允许null键和null值\n\n## 注意事项\n\n- JDK8的size()是近似值\n- 复合操作需要额外同步\n- 迭代器是弱一致性的",
-    "tags": ["ConcurrentHashMap", "并发容器"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-029",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ConcurrentHashMap的size()方法是如何实现的？",
-    "answer": "## 核心概念\n\nConcurrentHashMap的size()在并发环境下需要特殊处理。\n\n### JDK7实现\n\n```java\n// 先尝试无锁计算\nlong sum = 0L;\nfor (int i = 0; i < segments.length; i++) {\n    sum += segments[i].count;\n}\n// 检查是否修改过，否则加锁重新计算\n```\n\n### JDK8实现\n\n```java\n// 使用baseCount + CounterCell[]\npublic int size() {\n    long n = sumCount();\n    return ((n < 0L) ? 0 :\n            (n > (long)Integer.MAX_VALUE) ? Integer.MAX_VALUE :\n            (int)n);\n}\n\nfinal long sumCount() {\n    CounterCell[] as = counterCells; CounterCell a;\n    long sum = baseCount;\n    if (as != null) {\n        for (int i = 0; i < as.length; ++i) {\n            if ((a = as[i]) != null)\n                sum += a.value;\n        }\n    }\n    return sum;\n}\n```\n\n### 类似LongAdder的思路\n\n```\nbaseCount: 100\nCounterCell[]:\n+--------+--------+--------+\n|Cell 0  |Cell 1  |Cell 2  |\n|  10    |  20    |  30    |\n+--------+--------+--------+\nsize = 100 + 10 + 20 + 30 = 160\n```\n\n## 关键要点\n\n- JDK8使用分段计数思想\n- baseCount记录基础计数\n- CounterCell[]分散热点\n- size()返回的是近似值\n\n## 注意事项\n\n- size()可能不精确\n- 高并发下性能优于全局计数",
-    "tags": ["ConcurrentHashMap", "size方法"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-030",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "ConcurrentHashMap和HashMap、HashTable有什么区别？",
-    "answer": "## 核心概念\n\n三者都是Map实现，但线程安全性和性能不同。\n\n### 对比分析\n\n| 特性 | HashMap | HashTable | ConcurrentHashMap |\n|------|---------|-----------|-------------------|\n| 线程安全 | 否 | 是 | 是 |\n| null键值 | 允许 | 不允许 | 不允许 |\n| 性能 | 最快 | 最慢 | 较快 |\n| 锁机制 | 无 | 全局锁 | 分段锁/CAS |\n| 迭代器 | 快速失败 | 快速失败 | 弱一致性 |\n\n### 代码示例\n\n```java\nMap<String, String> hashMap = new HashMap<>();\nMap<String, String> hashTable = new HashTable<>();\nMap<String, String> concurrentMap = new ConcurrentHashMap<>();\n```\n\n### 并发写入对比\n\n```java\n// HashTable：同一时刻只有一个线程能写\nsynchronized (table) {\n    table.put(key, value);\n}\n\n// ConcurrentHashMap：不同桶可以并发写\nsynchronized (node) {\n    node.put(key, value);\n}\n```\n\n## 关键要点\n\n- HashMap非线程安全，适合单线程\n- HashTable全局锁，不推荐使用\n- ConcurrentHashMap高并发首选\n- ConcurrentHashMap不允许null\n\n## 注意事项\n\n- 不要在多线程环境使用HashMap\n- HashTable已过时，不推荐\n- ConcurrentHashMap的迭代器不抛异常",
-    "tags": ["ConcurrentHashMap", "对比"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-031",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "ThreadLocal的作用和原理是什么？",
-    "answer": "## 核心概念\n\nThreadLocal为每个线程提供独立的变量副本，实现线程隔离。\n\n### 基本使用\n\n```java\nThreadLocal<User> userContext = new ThreadLocal<>();\n\nuserContext.set(currentUser);\nUser user = userContext.get();\nuserContext.remove();\n```\n\n### 实现原理\n\n```\n每个Thread对象持有一个ThreadLocalMap\n\nThread-0:\n  ThreadLocalMap:\n    +-----------------------------------+\n    | Entry[]                           |\n    |  +----------+----------+          |\n    |  | Key      | Value    |          |\n    |  | (TL1)    | \"value1\" |          |\n    |  | (TL2)    | \"value2\" |          |\n    |  +----------+----------+          |\n    +-----------------------------------+\n```\n\n### 典型应用\n\n```java\npublic class UserContext {\n    private static final ThreadLocal<User> CURRENT_USER = new ThreadLocal<>();\n\n    public static void setUser(User user) {\n        CURRENT_USER.set(user);\n    }\n\n    public static User getUser() {\n        return CURRENT_USER.get();\n    }\n\n    public static void clear() {\n        CURRENT_USER.remove();\n    }\n}\n```\n\n## 关键要点\n\n- ThreadLocal实现线程隔离\n- 每个线程有独立的变量副本\n- 底层是Thread的ThreadLocalMap\n- Key是弱引用\n\n## 注意事项\n\n- 使用后必须调用remove()防止内存泄漏\n- 线程池中使用要特别小心\n- 不要存放大对象",
-    "tags": ["ThreadLocal", "线程隔离"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-032",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ThreadLocal的内存泄漏问题是如何产生的？如何避免？",
-    "answer": "## 核心概念\n\nThreadLocal的内存泄漏与弱引用和线程生命周期有关。\n\n### 内存结构\n\n```\nThread -> ThreadLocalMap -> Entry[] -> Entry\n                                    +-- Key: WeakReference<ThreadLocal>\n                                    +-- Value: Object\n```\n\n### 泄漏过程\n\n```java\n// 1. 创建ThreadLocal\nThreadLocal<byte[]> tl = new ThreadLocal<>();\ntl.set(new byte[1024 * 1024]);\n\n// 2. ThreadLocal引用被回收\ntl = null;\n\n// 3. Entry的Key被回收（弱引用）\n// Entry: {Key=null, Value=1MB数据}\n\n// 4. Value无法被访问，但无法被GC\n// 因为Entry被ThreadLocalMap强引用\n// ThreadLocalMap被Thread强引用\n```\n\n### 避免泄漏\n\n```java\npublic void process() {\n    ThreadLocal<User> tl = new ThreadLocal<>();\n    try {\n        tl.set(new User());\n        doSomething();\n    } finally {\n        tl.remove();\n    }\n}\n\n// 线程池中必须清理\nexecutor.submit(() -> {\n    try {\n        userContext.set(currentUser);\n    } finally {\n        userContext.remove();\n    }\n});\n```\n\n## 关键要点\n\n- Key是弱引用，Value是强引用\n- Key被回收后Value无法访问\n- 线程池中线程长期存活，泄漏更严重\n- 必须在finally中调用remove()\n\n## 注意事项\n\n- 线程池场景尤其要注意\n- remove()是最有效的避免方式\n- 定期检查是否有未清理的ThreadLocal",
-    "tags": ["ThreadLocal", "内存泄漏"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-033",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ThreadLocal在Spring中有哪些应用场景？",
-    "answer": "## 核心概念\n\nSpring框架广泛使用ThreadLocal实现请求上下文和事务管理。\n\n### 1. RequestContextHolder\n\n```java\npublic class RequestContextHolder {\n    private static final ThreadLocal<RequestAttributes>\n        requestAttributesHolder = new NamedThreadLocal<>(\"Request attributes\");\n\n    public static RequestAttributes getRequestAttributes() {\n        return requestAttributesHolder.get();\n    }\n}\n\n// 使用\nServletRequestAttributes attrs =\n    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();\nHttpServletRequest request = attrs.getRequest();\n```\n\n### 2. 事务管理\n\n```java\npublic abstract class TransactionSynchronizationManager {\n    private static final ThreadLocal<Map<Object, Object>> resources =\n        new NamedThreadLocal<>(\"Transactional resources\");\n\n    private static final ThreadLocal<Set<TransactionSynchronization>> synchronizations =\n        new NamedThreadLocal<>(\"Transaction synchronizations\");\n}\n```\n\n### 3. SecurityContext\n\n```java\npublic class SecurityContextHolder {\n    private static final ThreadLocal<SecurityContext> contextHolder =\n        new ThreadLocal<>();\n\n    public static SecurityContext getContext() {\n        return contextHolder.get();\n    }\n}\n```\n\n### 4. 自定义应用\n\n```java\n@Component\npublic class UserContext {\n    private static final ThreadLocal<UserDTO> USER_HOLDER = new ThreadLocal<>();\n\n    public static void setUser(UserDTO user) {\n        USER_HOLDER.set(user);\n    }\n\n    public static UserDTO getUser() {\n        return USER_HOLDER.get();\n    }\n\n    public static void clear() {\n        USER_HOLDER.remove();\n    }\n}\n```\n\n## 关键要点\n\n- RequestContextHolder存储请求信息\n- TransactionSynchronizationManager管理事务资源\n- SecurityContextHolder存储认证信息\n- 适合跨方法传递上下文\n\n## 注意事项\n\n- 异步线程无法获取ThreadLocal值\n- 使用InheritableThreadLocal或TransmittableThreadLocal\n- 及时清理避免内存泄漏",
-    "tags": ["ThreadLocal", "Spring"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-034",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "CountDownLatch和CyclicBarrier有什么区别？",
-    "answer": "## 核心概念\n\n两者都是并发同步工具，但用途和特性不同。\n\n### CountDownLatch\n\n```java\n// 一个线程等待其他线程完成\nCountDownLatch latch = new CountDownLatch(3);\n\nnew Thread(() -> {\n    try {\n        latch.await();\n        System.out.println(\"所有任务完成\");\n    } catch (InterruptedException e) {\n        e.printStackTrace();\n    }\n}).start();\n\nfor (int i = 0; i < 3; i++) {\n    new Thread(() -> {\n        try {\n            System.out.println(\"任务完成\");\n        } finally {\n            latch.countDown();\n        }\n    }).start();\n}\n```\n\n### CyclicBarrier\n\n```java\n// 多个线程互相等待\nCyclicBarrier barrier = new CyclicBarrier(3, () -> {\n    System.out.println(\"所有线程到达屏障\");\n});\n\nfor (int i = 0; i < 3; i++) {\n    new Thread(() -> {\n        try {\n            System.out.println(\"到达屏障\");\n            barrier.await();\n            System.out.println(\"继续执行\");\n        } catch (Exception e) {\n            e.printStackTrace();\n        }\n    }).start();\n}\n```\n\n## 关键要点\n\n- CountDownLatch：一次性，计数到0结束\n- CyclicBarrier：可重复使用，循环屏障\n- CountDownLatch：一个等多\n- CyclicBarrier：互相等待\n\n## 注意事项\n\n- CountDownLatch不能重置\n- CyclicBarrier可以reset()\n- 选择取决于业务场景",
-    "tags": ["CountDownLatch", "CyclicBarrier"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-035",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "Semaphore的作用和使用场景是什么？",
-    "answer": "## 核心概念\n\nSemaphore（信号量）控制同时访问资源的线程数量。\n\n### 基本使用\n\n```java\nSemaphore semaphore = new Semaphore(3);\n\nsemaphore.acquire();\n// 或\nsemaphore.tryAcquire();\n// 或\nsemaphore.tryAcquire(1, TimeUnit.SECONDS);\n\ntry {\n    // 访问共享资源\n} finally {\n    semaphore.release();\n}\n```\n\n### 典型场景：资源池限流\n\n```java\npublic class ConnectionPool {\n    private final Semaphore semaphore;\n    private final List<Connection> pool;\n\n    public ConnectionPool(int maxSize) {\n        this.semaphore = new Semaphore(maxSize);\n        this.pool = new ArrayList<>(maxSize);\n    }\n\n    public Connection getConnection() throws InterruptedException {\n        semaphore.acquire();\n        return pool.remove(0);\n    }\n\n    public void releaseConnection(Connection conn) {\n        pool.add(conn);\n        semaphore.release();\n    }\n}\n```\n\n### 停车场示例\n\n```java\nSemaphore parkingLot = new Semaphore(100);\n\npublic void enter() throws InterruptedException {\n    parkingLot.acquire();\n}\n\npublic void leave() {\n    parkingLot.release();\n}\n```\n\n## 关键要点\n\n- Semaphore控制并发数量\n- acquire()获取许可，release()释放许可\n- 适用于资源池、限流等场景\n- 公平/非公平可选\n\n## 注意事项\n\n- release()要在finally中调用\n- 注意许可数量设置\n- 可以动态增减许可",
-    "tags": ["Semaphore", "限流"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-036",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "什么是死锁？如何检测和预防？",
-    "answer": "## 核心概念\n\n死锁是指两个或多个线程互相持有对方需要的锁，导致都无法继续执行。\n\n### 死锁条件\n\n```\n1. 互斥：资源一次只能被一个线程持有\n2. 持有并等待：线程持有资源并等待其他资源\n3. 不可剥夺：已获取的资源不能被强制释放\n4. 循环等待：线程形成环形等待链\n```\n\n### 死锁示例\n\n```java\nObject lockA = new Object();\nObject lockB = new Object();\n\n// 线程1：先锁A，再锁B\nnew Thread(() -> {\n    synchronized (lockA) {\n        synchronized (lockB) {\n            // 操作\n        }\n    }\n}).start();\n\n// 线程2：先锁B，再锁A\nnew Thread(() -> {\n    synchronized (lockB) {\n        synchronized (lockA) {\n            // 操作\n        }\n    }\n}).start();\n```\n\n### 检测死锁\n\n```bash\n# jstack命令\njstack <pid>\n\n# 输出包含：\n# Found one Java-level deadlock\n```\n\n### 预防死锁\n\n```java\n// 1. 固定加锁顺序\npublic void transfer(Account from, Account to) {\n    Account first = from.getId() < to.getId() ? from : to;\n    Account second = from.getId() < to.getId() ? to : from;\n\n    synchronized (first) {\n        synchronized (second) {\n            // 转账操作\n        }\n    }\n}\n\n// 2. 使用tryLock\nif (lock.tryLock(1, TimeUnit.SECONDS)) {\n    try {\n        // 获取成功\n    } finally {\n        lock.unlock();\n    }\n}\n```\n\n## 关键要点\n\n- 死锁需要同时满足四个条件\n- 固定加锁顺序是最常用的预防方法\n- tryLock设置超时避免永久等待\n\n## 注意事项\n\n- 生产环境要监控死锁\n- 避免嵌套锁\n- 缩小锁的范围",
-    "tags": ["死锁", "并发问题"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-037",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "如何使用jstack分析死锁？",
-    "answer": "## 核心概念\n\njstack是JDK自带的线程分析工具，可以检测死锁。\n\n### 使用步骤\n\n```bash\n# 1. 找到Java进程PID\njps\n# 或\nps -ef | grep java\n\n# 2. 生成线程快照\njstack <pid> > thread_dump.txt\n\n# 3. 分析死锁\njstack -l <pid>\n```\n\n### 死锁信息示例\n\n```\nFound one Java-level deadlock:\n=============================\n\"Thread-1\":\n  waiting to lock monitor (object 0x00000007aab3a0d0),\n  which is held by \"Thread-0\"\n\"Thread-0\":\n  waiting to lock monitor (object 0x00000007aab3a0e0),\n  which is held by \"Thread-1\"\n\nJava stack information:\n\"Thread-1\":\n    - waiting to lock <0x00000007aab3a0d0>\n    - locked <0x00000007aab3a0e0>\n\"Thread-0\":\n    - waiting to lock <0x00000007aab3a0e0>\n    - locked <0x00000007aab3a0d0>\n```\n\n### 代码中检测死锁\n\n```java\nThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();\nlong[] threadIds = threadMXBean.findDeadlockedThreads();\n\nif (threadIds != null) {\n    ThreadInfo[] threadInfos = threadMXBean.getThreadInfo(threadIds);\n    for (ThreadInfo info : threadInfos) {\n        System.out.println(\"Deadlock: \" + info.getThreadName());\n        System.out.println(\"Lock: \" + info.getLockName());\n    }\n}\n```\n\n## 关键要点\n\n- jstack生成线程快照\n- Found one Java-level deadlock表示死锁\n- 查看waiting to lock和locked信息\n- 可以在代码中程序化检测\n\n## 注意事项\n\n- 生产环境定期检测\n- 线程快照可能影响性能\n- 结合日志分析根本原因",
-    "tags": ["死锁", "诊断工具"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-038",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "如何避免死锁？有哪些最佳实践？",
-    "answer": "## 核心概念\n\n避免死锁的核心是破坏死锁的四个必要条件之一。\n\n### 1. 固定加锁顺序\n\n```java\npublic void transfer(Account a, Account b) {\n    Account first = a.getId() < b.getId() ? a : b;\n    Account second = a.getId() < b.getId() ? b : a;\n\n    synchronized (first) {\n        synchronized (second) {\n            // 转账\n        }\n    }\n}\n```\n\n### 2. 使用tryLock\n\n```java\npublic boolean transfer(Account from, Account to, long amount) {\n    try {\n        if (from.getLock().tryLock(1, TimeUnit.SECONDS)) {\n            try {\n                if (to.getLock().tryLock(1, TimeUnit.SECONDS)) {\n                    try {\n                        return true;\n                    } finally {\n                        to.getLock().unlock();\n                    }\n                }\n            } finally {\n                from.getLock().unlock();\n            }\n        }\n    } catch (InterruptedException e) {\n        Thread.currentThread().interrupt();\n    }\n    return false;\n}\n```\n\n### 3. 减少锁的嵌套\n\n```java\npublic void processA() {\n    synchronized (lockA) {\n        // 操作A\n    }\n}\n\npublic void processB() {\n    synchronized (lockB) {\n        // 操作B\n    }\n}\n```\n\n## 关键要点\n\n- 固定加锁顺序是最简单的方法\n- tryLock设置超时避免永久等待\n- 减少锁的嵌套和范围\n- 使用并发容器替代手动加锁\n\n## 注意事项\n\n- 编码规范很重要\n- 代码审查检查锁顺序\n- 监控线程状态",
-    "tags": ["死锁", "最佳实践"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-039",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "ForkJoinPool的原理和使用场景是什么？",
-    "answer": "## 核心概念\n\nForkJoinPool采用工作窃取算法，适合分治任务。\n\n### 核心原理\n\n```\n工作窃取算法：\n+------------------+    +------------------+\n|    Worker 1      |    |    Worker 2      |\n|  +-----------+   |    |  +-----------+   |\n|  | Task A    |   |    |  | Task C    |   |\n|  | Task B    |   |    |  | Task D    |   |\n|  +-----------+   |    |  +-----------+   |\n|  双端队列        |    |  双端队列        |\n+------------------+    +------------------+\n\n当Worker2空闲时，从Worker1的队尾偷取任务\n```\n\n### 使用示例\n\n```java\nclass FibonacciTask extends RecursiveTask<Integer> {\n    private final int n;\n\n    FibonacciTask(int n) {\n        this.n = n;\n    }\n\n    @Override\n    protected Integer compute() {\n        if (n <= 1) return n;\n\n        FibonacciTask f1 = new FibonacciTask(n - 1);\n        f1.fork();\n\n        FibonacciTask f2 = new FibonacciTask(n - 2);\n        int result = f2.compute();\n\n        return result + f1.join();\n    }\n}\n\nForkJoinPool pool = new ForkJoinPool();\nint result = pool.invoke(new FibonacciTask(10));\n```\n\n### 并行流使用\n\n```java\nList<Integer> results = list.parallelStream()\n    .map(this::process)\n    .collect(Collectors.toList());\n\nForkJoinPool customPool = new ForkJoinPool(10);\ncustomPool.submit(() -> {\n    list.parallelStream()\n        .map(this::process)\n        .collect(Collectors.toList());\n}).get();\n```\n\n## 关键要点\n\n- 工作窃取提高CPU利用率\n- 适合可分解的递归任务\n- RecursiveTask有返回值，RecursiveAction无返回值\n- parallelStream默认使用commonPool\n\n## 注意事项\n\n- 避免在ForkJoinPool中进行IO操作\n- commonPool线程数 = CPU核心数 - 1",
-    "tags": ["ForkJoinPool", "工作窃取"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-040",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "ForkJoinPool和普通线程池有什么区别？",
-    "answer": "## 核心概念\n\nForkJoinPool和传统线程池设计理念不同，适用于不同的任务类型。\n\n### 对比分析\n\n| 特性 | ForkJoinPool | ThreadPoolExecutor |\n|------|-------------|-------------------|\n| 算法 | 工作窃取 | FIFO队列 |\n| 任务类型 | 分治任务 | 独立任务 |\n| 队列 | 每个线程独立队列 | 共享队列 |\n| 线程数 | 默认CPU核心数 | 需要手动配置 |\n| 适用场景 | 递归、并行流 | 通用 |\n\n### 工作窃取 vs FIFO\n\n```\nForkJoinPool：\nWorker1: [Task1, Task2, Task3]\nWorker2: [Task4, Task5]\nWorker2空闲时从Worker1偷取任务\n\nThreadPoolExecutor：\n[Task1, Task2, Task3, Task4, Task5] <- 共享队列\n线程从队列头部获取任务\n```\n\n### 使用场景\n\n```java\n// ForkJoinPool适合：递归分治任务\n// 1. 大数组排序\n// 2. 大文件处理\n// 3. 并行计算\n\n// ThreadPoolExecutor适合：独立任务\n// 1. HTTP请求处理\n// 2. 消息消费\n// 3. 定时任务\n```\n\n## 关键要点\n\n- ForkJoinPool适合可分解任务\n- ThreadPoolExecutor适合独立任务\n- 工作窃取减少线程竞争\n- parallelStream使用ForkJoinPool\n\n## 注意事项\n\n- 选择合适的线程池类型\n- ForkJoinPool不适合IO密集任务\n- 避免任务依赖导致饥饿",
-    "tags": ["ForkJoinPool", "对比"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-041",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "什么是虚拟线程（Virtual Thread）？有什么优势？",
-    "answer": "## 核心概念\n\n虚拟线程是JDK21正式引入的轻量级线程，由JVM管理而非操作系统。\n\n### 基本使用\n\n```java\nThread.startVirtualThread(() -> {\n    System.out.println(\"Running in virtual thread\");\n});\n\nThread vt = Thread.ofVirtual()\n    .name(\"virtual-thread-1\")\n    .start(() -> {\n        System.out.println(\"Virtual thread\");\n    });\n\ntry (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n    executor.submit(() -> {\n        // 虚拟线程任务\n    });\n}\n```\n\n### 与平台线程对比\n\n```\n平台线程（Platform Thread）：\n1个平台线程 = 1个OS线程\n开销大，数量受限（约数千个）\n\n虚拟线程（Virtual Thread）：\nN个虚拟线程 = M个平台线程（M << N）\n开销小，可创建数百万个\n```\n\n### 优势\n\n```java\ntry (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n    for (int i = 0; i < 100_000; i++) {\n        executor.submit(() -> {\n            String result = httpClient.send(request);\n            return result;\n        });\n    }\n}\n```\n\n## 关键要点\n\n- 虚拟线程由JVM管理，轻量级\n- 适合IO密集型任务\n- 可创建大量虚拟线程\n- JDK21正式发布\n\n## 注意事项\n\n- 不适合CPU密集型任务\n- 不要池化虚拟线程\n- synchronized会 pin 虚拟线程\n- 使用ReentrantLock替代synchronized",
-    "tags": ["虚拟线程", "JDK21"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-042",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "虚拟线程的工作原理是什么？什么是载体线程？",
-    "answer": "## 核心概念\n\n虚拟线程基于Continuation实现，由载体线程（Carrier Thread）执行。\n\n### 架构设计\n\n```\n虚拟线程（Virtual Threads）\n   +---+ +---+ +---+ +---+ +---+\n   |VT1| |VT2| |VT3| |VT4| |VT5|\n   +-+-+ +-+-+ +-+-+ +-+-+ +-+-+\n     |     |     |     |     |\n     +-----+-----+-----+-----+\n              | 挂载/卸载\n   +------------------------------+\n   |      载体线程（Carrier）      |\n   |  +----+ +----+ +----+       |\n   |  | PT1| | PT2| | PT3| ...   |\n   |  +----+ +----+ +----+       |\n   +------------------------------+\n```\n\n### Continuation机制\n\n```java\npublic String readData() {\n    // 1. 虚拟线程执行\n    String data = socket.read();\n\n    // 2. 阻塞时，JVM保存栈帧状态（Continuation）\n    // 3. 虚拟线程从载体线程卸载\n    // 4. 载体线程去执行其他虚拟线程\n\n    // 5. 数据就绪后，虚拟线程重新挂载到载体线程\n    // 6. 恢复栈帧，继续执行\n    return data;\n}\n```\n\n### 代码示例\n\n```java\nThread.startVirtualThread(() -> {\n    System.out.println(\"Virtual: \" + Thread.currentThread());\n    try {\n        Thread.sleep(1000);\n    } catch (InterruptedException e) {\n        e.printStackTrace();\n    }\n});\n```\n\n## 关键要点\n\n- 虚拟线程不直接对应OS线程\n- 载体线程执行虚拟线程\n- Continuation保存/恢复执行状态\n- 阻塞时自动切换\n\n## 注意事项\n\n- 载体线程默认是ForkJoinPool\n- synchronized会阻止卸载\n- 使用ReentrantLock获得最佳性能",
-    "tags": ["虚拟线程", "Continuation"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-043",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "什么是happens-before原则？",
-    "answer": "## 核心概念\n\nhappens-before是Java内存模型的核心原则，定义了操作之间的可见性保证。\n\n### 八大规则\n\n```java\n// 1. 程序顺序规则\nint a = 1;      // A\nint b = a;      // B happens-before A\n\n// 2. 监视器锁规则\nsynchronized(lock) {\n    // 解锁 happens-before 加锁\n}\n\n// 3. volatile规则\nvolatile int x;\nx = 1;    // 写 happens-before 读\nint y = x;\n\n// 4. 线程启动规则\nt.start(); // start() happens-before 线程内操作\n\n// 5. 线程终止规则\nthread.join(); // 线程内操作 happens-before join()\n\n// 6. 中断规则\nthread.interrupt(); // interrupt() happens-before 检测到中断\n\n// 7. 终结器规则\n// 构造函数 happens-before finalize()\n\n// 8. 传递性规则\n// A hb B, B hb C -> A hb C\n```\n\n### 代码示例\n\n```java\nclass HappensBeforeExample {\n    private int x = 0;\n    private volatile boolean ready = false;\n\n    public void writer() {\n        x = 42;\n        ready = true;\n    }\n\n    public void reader() {\n        if (ready) {\n            int y = x; // 保证读到42\n        }\n    }\n}\n```\n\n## 关键要点\n\n- happens-before保证可见性\n- 不是执行顺序，是内存可见性\n- 违反happens-before可能有数据竞争\n- volatile和锁都建立happens-before关系\n\n## 注意事项\n\n- 没有happens-before关系的操作可能重排\n- 原子类也遵循happens-before",
-    "tags": ["happens-before", "内存模型"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-044",
-    "module": "Java并发",
-    "difficulty": 3,
-    "question": "happens-before和指令重排有什么关系？",
-    "answer": "## 核心概念\n\nhappens-before约束指令重排，保证内存可见性。\n\n### 指令重排\n\n```java\nint a = 1;      // 指令1\nint b = 2;      // 指令2\nint c = a + b;  // 指令3\n\n// 可能重排为：\nint b = 2;      // 指令2\nint a = 1;      // 指令1\nint c = a + b;  // 指令3\n\n// 单线程下结果相同，但多线程可能有问题\n```\n\n### happens-before约束重排\n\n```java\nclass ReorderExample {\n    int x = 0;\n    boolean ready = false;\n\n    public void writer() {\n        x = 42;           // A\n        ready = true;     // B\n        // A happens-before B\n        // 保证A不会重排到B之后\n    }\n\n    public void reader() {\n        if (ready) {      // C\n            int y = x;    // D\n        }\n    }\n}\n```\n\n### volatile禁止重排\n\n```java\n// volatile写屏障\nint a = 1;\nvolatile int b = 2; // StoreStore屏障\nint c = 3;\n\n// volatile读屏障\nint d = b;   // LoadLoad屏障\nint e = a;\n```\n\n## 关键要点\n\n- happens-before约束指令重排顺序\n- 保证内存操作的可见性\n- volatile通过内存屏障禁止重排\n- 单线程下重排不影响结果\n\n## 注意事项\n\n- 多线程必须考虑重排问题\n- 正确使用同步机制",
-    "tags": ["happens-before", "指令重排"],
-    "source": "高频"
-  },
-  {
-    "id": "java-concurrency-045",
-    "module": "Java并发",
-    "difficulty": 2,
-    "question": "有哪些常见的线程安全设计模式？",
-    "answer": "## 核心概念\n\n线程安全设计模式帮助编写正确的并发代码。\n\n### 1. 不可变模式\n\n```java\npublic final class User {\n    private final String name;\n    private final int age;\n\n    public User(String name, int age) {\n        this.name = name;\n        this.age = age;\n    }\n\n    public String getName() { return name; }\n    public int getAge() { return age; }\n}\n```\n\n### 2. 线程封闭\n\n```java\nprivate static final ThreadLocal<User> userContext = new ThreadLocal<>();\n\npublic void process() {\n    List<String> localList = new ArrayList<>();\n}\n```\n\n### 3. 同步容器\n\n```java\nConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();\nCopyOnWriteArrayList<String> list = new CopyOnWriteArrayList<>();\n```\n\n### 4. 监视器模式\n\n```java\npublic class Counter {\n    private int count = 0;\n\n    public synchronized void increment() {\n        count++;\n    }\n\n    public synchronized int getCount() {\n        return count;\n    }\n}\n```\n\n### 5. 双重检查锁定\n\n```java\npublic class Singleton {\n    private static volatile Singleton instance;\n\n    public static Singleton getInstance() {\n        if (instance == null) {\n            synchronized (Singleton.class) {\n                if (instance == null) {\n                    instance = new Singleton();\n                }\n            }\n        }\n        return instance;\n    }\n}\n```\n\n## 关键要点\n\n- 不可变对象天然线程安全\n- 线程封闭避免共享\n- 并发容器简化同步\n- 监视器模式封装同步逻辑\n\n## 注意事项\n\n- 优先使用不可变对象\n- 避免过度同步\n- 使用成熟的并发工具",
-    "tags": ["设计模式", "线程安全"],
-    "source": "高频"
+    "question": "Java 21 虚拟线程适合什么场景，哪些阻塞和 pinning 风险需要注意？",
+    "answer": "### 虚拟线程解决什么\n\nJava 21 的虚拟线程是由 JDK 调度的轻量线程，适合大量阻塞式 IO 任务。它让代码可以保持同步写法，同时避免为每个请求长期占用昂贵的 OS 线程。\n\n~~~java\ntry (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n  Future<String> result = executor.submit(() -> httpClient.get(url));\n  return result.get();\n}\n~~~\n\n### 适合场景\n\n- Web 请求处理中大量等待数据库、HTTP、Redis、文件 IO。\n- 想保留同步代码结构，减少回调和复杂异步链。\n- 任务数量很多，但大部分时间在等待外部资源。\n\n### 不适合场景\n\n虚拟线程不会让 CPU 密集计算自动更快。CPU 密集任务仍受核心数限制，创建再多虚拟线程也只是排队。它也不能替代连接池、限流、超时和下游保护。\n\n### pinning 风险\n\n虚拟线程运行在平台线程之上。某些情况下虚拟线程阻塞时无法从载体线程卸载，称为 pinning。常见风险包括在 synchronized 块中执行长时间阻塞操作，或某些 native/外部调用。Java 21 之后很多阻塞库已经适配，但仍要通过压测和 JFR 观察。\n\n### 回答时的重点\n\n虚拟线程降低的是线程成本，不是下游资源成本。数据库连接数、HTTP 连接池、限流阈值、事务时间仍然要控制，否则只是把瓶颈更快推到下游。",
+    "tags": ["Java 核心", "Java并发"],
+    "source": "精选"
   }
 ]
