@@ -236,6 +236,21 @@ function createSmokeBackup(now: number): SyncData {
         updatedAt: now,
       },
     ],
+    questionAnswerAnnotations: [
+      {
+        id: 'external-smoke-annotation',
+        questionId: 'external-smoke-question',
+        answerHash: 'external-smoke-answer',
+        kind: 'highlight',
+        color: 'yellow',
+        start: 0,
+        end: 14,
+        selectedText: 'External smoke',
+        note: '',
+        createdAt: now - 1_000,
+        updatedAt: now,
+      },
+    ],
     questionAnswerOverrides: [
       {
         questionId: 'external-smoke-question',
@@ -327,7 +342,7 @@ async function runGistExternalSmoke(): Promise<void> {
     const loaded = await githubFetch<GistResponse>(token, `/gists/${gistId}`)
     const loadedContent = await readGistFile(token, loaded, filename)
     const parsed = parseGistBackupPayload(loadedContent)
-    assert('Gist read payload', parsed.version === 7, '真实 Gist 读取到的备份版本不是 v7')
+    assert('Gist read payload', parsed.version === 8, '真实 Gist 读取到的备份版本不是 v8')
     assert(
       'Gist read data',
       parsed.questionNotes.some((note) => note.questionId === 'external-smoke-question'),
@@ -336,6 +351,7 @@ async function runGistExternalSmoke(): Promise<void> {
     addEvidence('gist.read', {
       backupVersion: parsed.version,
       noteCount: parsed.questionNotes.length,
+      answerAnnotationCount: parsed.questionAnswerAnnotations.length,
       answerOverrideCount: parsed.questionAnswerOverrides.length,
       starredCount: parsed.questionFlags.filter((flag) => flag.starred).length,
       aiSessionCount: parsed.aiSessions.length,

@@ -3,6 +3,7 @@ import { invalidateQuestionsCache } from '@/hooks/useQuestions'
 import {
   bulkPutJdMatchReports,
   bulkPutMockInterviews,
+  bulkPutQuestionAnswerAnnotations,
   bulkPutQuestionAnswerOverrides,
   bulkPutQuestionFlags,
   bulkPutQuestionNotes,
@@ -13,6 +14,7 @@ import {
   exportAllData,
   getAllJdMatchReports,
   getAllMockInterviews,
+  getAllQuestionAnswerAnnotations,
   getAllQuestionAnswerOverrides,
   getAllQuestionFlags,
   getAllQuestionNotes,
@@ -466,16 +468,25 @@ async function withImportImpact(
   preview: ImportPreview,
   existingAISessions: Record<string, AISession>,
 ): Promise<ImportPreview> {
-  const [questions, records, notes, answerOverrides, flags, mockInterviews, jdMatchReports] =
-    await Promise.all([
-      getAllQuestions(),
-      getAllStudyRecords(),
-      getAllQuestionNotes(),
-      getAllQuestionAnswerOverrides(),
-      getAllQuestionFlags(),
-      getAllMockInterviews(),
-      getAllJdMatchReports(),
-    ])
+  const [
+    questions,
+    records,
+    notes,
+    answerAnnotations,
+    answerOverrides,
+    flags,
+    mockInterviews,
+    jdMatchReports,
+  ] = await Promise.all([
+    getAllQuestions(),
+    getAllStudyRecords(),
+    getAllQuestionNotes(),
+    getAllQuestionAnswerAnnotations(),
+    getAllQuestionAnswerOverrides(),
+    getAllQuestionFlags(),
+    getAllMockInterviews(),
+    getAllJdMatchReports(),
+  ])
 
   return {
     ...preview,
@@ -494,6 +505,11 @@ async function withImportImpact(
         preview.questionNotes,
         new Set(notes.map((note) => note.questionId)),
         (note) => note.questionId,
+      ),
+      questionAnswerAnnotations: countImportImpact(
+        preview.questionAnswerAnnotations,
+        new Set(answerAnnotations.map((annotation) => annotation.id)),
+        (annotation) => annotation.id,
       ),
       questionAnswerOverrides: countImportImpact(
         preview.questionAnswerOverrides,
@@ -544,6 +560,9 @@ function formatRemoteMergeSummary(result: SyncResult): string {
       ? `${result.mergedRemoteRecordCount.toLocaleString()} 条学习记录`
       : null,
     result.mergedRemoteNoteCount ? `${result.mergedRemoteNoteCount.toLocaleString()} 条笔记` : null,
+    result.mergedRemoteAnswerAnnotationCount
+      ? `${result.mergedRemoteAnswerAnnotationCount.toLocaleString()} 个答案标注`
+      : null,
     result.mergedRemoteQuestionFlagCount
       ? `${result.mergedRemoteQuestionFlagCount.toLocaleString()} 个重点标记`
       : null,
@@ -595,6 +614,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     questions: number
     records: number
     notes: number
+    answerAnnotations: number
     answerOverrides: number
     starred: number
     aiSessions: number
@@ -644,16 +664,27 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         getAllQuestions(),
         getAllStudyRecords(),
         getAllQuestionNotes(),
+        getAllQuestionAnswerAnnotations(),
         getAllQuestionAnswerOverrides(),
         getAllQuestionFlags(),
         getAllMockInterviews(),
         getAllJdMatchReports(),
       ]).then(
-        ([questions, records, notes, answerOverrides, flags, mockInterviews, jdMatchReports]) => {
+        ([
+          questions,
+          records,
+          notes,
+          answerAnnotations,
+          answerOverrides,
+          flags,
+          mockInterviews,
+          jdMatchReports,
+        ]) => {
           setDataStats({
             questions: questions.length,
             records: records.length,
             notes: notes.length,
+            answerAnnotations: answerAnnotations.length,
             answerOverrides: answerOverrides.length,
             starred: flags.filter((flag) => flag.starred).length,
             aiSessions: Object.keys(sessions).length,
@@ -683,7 +714,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
           }
           setLastSyncResult({
             ok: true,
-            message: `已自动同步 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`,
+            message: `已自动同步 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.answerAnnotationCount ?? 0} 个答案标注、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`,
             at: result.exportedAt,
           })
         } else {
@@ -877,7 +908,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
       showToast(
-        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记、${data.questionAnswerOverrides.length} 个自定义答案、${data.questionFlags.filter((flag) => flag.starred).length} 个重点题、${aiSessions.length} 个 AI 会话、${data.mockInterviews.length} 场模拟面试、${data.jdMatchReports.length} 份 JD 诊断`,
+        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记、${data.questionAnswerAnnotations.length} 个答案标注、${data.questionAnswerOverrides.length} 个自定义答案、${data.questionFlags.filter((flag) => flag.starred).length} 个重点题、${aiSessions.length} 个 AI 会话、${data.mockInterviews.length} 场模拟面试、${data.jdMatchReports.length} 份 JD 诊断`,
       )
     } catch {
       showToast('导出失败，请重试', 'error')
@@ -914,6 +945,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       const qCount = importPreview.questions.length
       const rCount = importPreview.studyRecords.length
       const nCount = importPreview.questionNotes.length
+      const answerAnnotationCount = importPreview.questionAnswerAnnotations.length
       const answerOverrideCount = importPreview.questionAnswerOverrides.length
       const flagCount = importPreview.questionFlags.length
       const starredCount = importPreview.questionFlags.filter((flag) => flag.starred).length
@@ -948,6 +980,10 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
         await bulkPutQuestionNotes(importPreview.questionNotes)
       }
 
+      if (answerAnnotationCount > 0) {
+        await bulkPutQuestionAnswerAnnotations(importPreview.questionAnswerAnnotations)
+      }
+
       if (answerOverrideCount > 0) {
         await bulkPutQuestionAnswerOverrides(importPreview.questionAnswerOverrides)
       }
@@ -969,24 +1005,34 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
       }
 
       showToast(
-        `导入成功：${qCount} 题、${rCount} 条记录、${nCount} 条笔记、${answerOverrideCount} 个自定义答案、${starredCount} 个重点题、${aiCount} 个 AI 会话、${mockInterviewCount} 场模拟面试、${jdMatchReportCount} 份 JD 诊断、${sourceCount} 个来源、${categoryCount} 个分类`,
+        `导入成功：${qCount} 题、${rCount} 条记录、${nCount} 条笔记、${answerAnnotationCount} 个答案标注、${answerOverrideCount} 个自定义答案、${starredCount} 个重点题、${aiCount} 个 AI 会话、${mockInterviewCount} 场模拟面试、${jdMatchReportCount} 份 JD 诊断、${sourceCount} 个来源、${categoryCount} 个分类`,
       )
       setImportPreview(null)
 
-      const [questions, records, notes, answerOverrides, flags, mockInterviews, jdMatchReports] =
-        await Promise.all([
-          getAllQuestions(),
-          getAllStudyRecords(),
-          getAllQuestionNotes(),
-          getAllQuestionAnswerOverrides(),
-          getAllQuestionFlags(),
-          getAllMockInterviews(),
-          getAllJdMatchReports(),
-        ])
+      const [
+        questions,
+        records,
+        notes,
+        answerAnnotations,
+        answerOverrides,
+        flags,
+        mockInterviews,
+        jdMatchReports,
+      ] = await Promise.all([
+        getAllQuestions(),
+        getAllStudyRecords(),
+        getAllQuestionNotes(),
+        getAllQuestionAnswerAnnotations(),
+        getAllQuestionAnswerOverrides(),
+        getAllQuestionFlags(),
+        getAllMockInterviews(),
+        getAllJdMatchReports(),
+      ])
       setDataStats({
         questions: questions.length,
         records: records.length,
         notes: notes.length,
+        answerAnnotations: answerAnnotations.length,
         answerOverrides: answerOverrides.length,
         starred: flags.filter((flag) => flag.starred).length,
         aiSessions: countMergedAISessions(sessions, importPreview.aiSessions),
@@ -1016,6 +1062,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
           questions: 0,
           records: 0,
           notes: 0,
+          answerAnnotations: 0,
           answerOverrides: 0,
           starred: 0,
           aiSessions: 0,
@@ -2405,7 +2452,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                             }
                             setLastSyncResult({
                               ok: true,
-                              message: `已备份 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`,
+                              message: `已备份 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.answerAnnotationCount ?? 0} 个答案标注、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`,
                               at: result.exportedAt,
                             })
                           } else {
@@ -2511,7 +2558,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                             }
                             setLastSyncResult({
                               ok: true,
-                              message: `已同步 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`,
+                              message: `已同步 ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.answerAnnotationCount ?? 0} 个答案标注、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`,
                               at: result.exportedAt,
                             })
                           } else {
@@ -2685,6 +2732,11 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     { label: '学习记录', value: dataStats.records, color: 'var(--success)' },
                     { label: '题目笔记', value: dataStats.notes, color: 'var(--warning)' },
                     {
+                      label: '答案标注',
+                      value: dataStats.answerAnnotations,
+                      color: 'var(--primary)',
+                    },
+                    {
                       label: '自定义答案',
                       value: dataStats.answerOverrides,
                       color: 'var(--primary)',
@@ -2742,8 +2794,9 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     lineHeight: 1.5,
                   }}
                 >
-                  将题目库、学习记录、题目笔记、重点题、AI 对话、模拟面试和 JD 诊断导出为 JSON
-                  文件；不会导出 API Key。模拟面试和 JD 诊断可能包含简历与 JD 文本，请妥善保管。
+                  将题目库、学习记录、题目笔记、答案标注、重点题、AI 对话、模拟面试和 JD 诊断导出为
+                  JSON 文件；不会导出 API Key。模拟面试和 JD 诊断可能包含简历与 JD
+                  文本，请妥善保管。
                 </p>
                 <button
                   type="button"
@@ -2803,8 +2856,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                     lineHeight: 1.5,
                   }}
                 >
-                  从备份文件恢复数据。已存在的题目、记录、笔记、重点标记、AI 会话、模拟面试和 JD
-                  诊断将被覆盖更新。
+                  从备份文件恢复数据。已存在的题目、记录、笔记、答案标注、重点标记、AI
+                  会话、模拟面试和 JD 诊断将被覆盖更新。
                 </p>
                 <input
                   ref={importRef}
@@ -2916,6 +2969,11 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                           label: '笔记',
                           value: importPreview.questionNotes.length,
                           impact: importPreview.impact.questionNotes,
+                        },
+                        {
+                          label: '标注',
+                          value: importPreview.questionAnswerAnnotations.length,
+                          impact: importPreview.impact.questionAnswerAnnotations,
                         },
                         {
                           label: '答案',

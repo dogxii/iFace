@@ -1085,6 +1085,9 @@ export default function Practice() {
 
       <style>{`
 					/* ── Practice page responsive ── */
+					@media (max-width: 1023px) {
+						.practice-start-fab { display: flex !important; }
+					}
 					@media (max-width: 900px) {
 						.practice-grid {
 							grid-template-columns: 1fr !important;
@@ -1117,6 +1120,52 @@ export default function Practice() {
 						}
 					}
 				`}</style>
+      {filteredQuestions.length > 0 && (
+        <button
+          type="button"
+          onClick={handleStart}
+          className="practice-start-fab"
+          aria-label={`开始练习 ${filteredQuestions.length} 道题`}
+          title={`开始练习 ${filteredQuestions.length} 道题`}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 20,
+            zIndex: 140,
+            width: 52,
+            height: 52,
+            borderRadius: '50%',
+            border: 'none',
+            background: 'var(--surface-3)',
+            color: 'var(--text-3)',
+            boxShadow: 'var(--shadow-md)',
+            cursor: 'pointer',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.18s var(--ease-spring), box-shadow 0.18s',
+          }}
+          onMouseEnter={(e) => {
+            ;(e.currentTarget as HTMLElement).style.transform = 'scale(1.08)'
+          }}
+          onMouseLeave={(e) => {
+            ;(e.currentTarget as HTMLElement).style.transform = 'scale(1)'
+          }}
+        >
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polygon points="6 3 20 12 6 21 6 3" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

@@ -727,22 +727,6 @@ const QuestionCard = memo(function QuestionCard({
             </span>
           )}
 
-          {/* Source */}
-          {q.source && (
-            <span
-              style={{
-                fontSize: 11,
-                padding: '1px 7px',
-                borderRadius: 5,
-                background: 'var(--primary-light)',
-                color: 'var(--primary)',
-                border: '1px solid rgba(var(--primary-rgb), 0.2)',
-              }}
-            >
-              {q.source}
-            </span>
-          )}
-
           {/* Starred badge */}
           {starred && (
             <span

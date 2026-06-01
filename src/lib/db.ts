@@ -3,6 +3,7 @@ import type {
   JdMatchReport,
   MockInterviewSession,
   Question,
+  QuestionAnswerAnnotation,
   QuestionAnswerOverride,
   QuestionFlag,
   QuestionNote,
@@ -11,13 +12,14 @@ import type {
 } from '../types'
 
 const DB_NAME = 'iface_db'
-const DB_VERSION = 7
+const DB_VERSION = 8
 
 export const STORES = {
   QUESTIONS: 'questions',
   STUDY_RECORDS: 'study_records',
   QUESTION_NOTES: 'question_notes',
   QUESTION_NOTE_IMAGES: 'question_note_images',
+  QUESTION_ANSWER_ANNOTATIONS: 'question_answer_annotations',
   QUESTION_ANSWER_OVERRIDES: 'question_answer_overrides',
   QUESTION_FLAGS: 'question_flags',
   MOCK_INTERVIEWS: 'mock_interviews',
@@ -88,6 +90,16 @@ function getDB(): Promise<IDBPDatabase> {
           })
           noteImages.createIndex('questionId', 'questionId', { unique: false })
           noteImages.createIndex('updatedAt', 'updatedAt', { unique: false })
+        }
+
+        // Per-question answer highlights and comments.
+        if (!db.objectStoreNames.contains(STORES.QUESTION_ANSWER_ANNOTATIONS)) {
+          const answerAnnotations = db.createObjectStore(STORES.QUESTION_ANSWER_ANNOTATIONS, {
+            keyPath: 'id',
+          })
+          answerAnnotations.createIndex('questionId', 'questionId', { unique: false })
+          answerAnnotations.createIndex('answerHash', 'answerHash', { unique: false })
+          answerAnnotations.createIndex('updatedAt', 'updatedAt', { unique: false })
         }
 
         // Per-question custom reference answers. The original question stays intact.
@@ -185,6 +197,7 @@ export async function deleteQuestionsBySource(source: string): Promise<void> {
       recordTx.done,
       ...deletedIds.map((id) => noteTx.store.delete(id)),
       noteTx.done,
+      ...deletedIds.map((id) => deleteQuestionAnswerAnnotationsByQuestionId(id)),
       ...deletedIds.map((id) => answerOverrideTx.store.delete(id)),
       answerOverrideTx.done,
       ...deletedIds.map((id) => flagTx.store.delete(id)),
@@ -201,6 +214,7 @@ export async function deleteQuestionById(id: string): Promise<void> {
     db.delete(STORES.STUDY_RECORDS, id),
     db.delete(STORES.QUESTION_NOTES, id),
     deleteQuestionNoteImagesByQuestionId(id),
+    deleteQuestionAnswerAnnotationsByQuestionId(id),
     db.delete(STORES.QUESTION_ANSWER_OVERRIDES, id),
     db.delete(STORES.QUESTION_FLAGS, id),
   ])
@@ -350,6 +364,62 @@ export async function deleteUnusedQuestionNoteImages(
   let cursor = await index.openCursor(questionId)
   while (cursor) {
     if (!keep.has(cursor.value.id)) await cursor.delete()
+    cursor = await cursor.continue()
+  }
+  await tx.done
+}
+
+// ─── Question Answer Annotations ────────────────────────────────────────────
+
+export async function getAllQuestionAnswerAnnotations(): Promise<QuestionAnswerAnnotation[]> {
+  const db = await getDB()
+  return db.getAll(STORES.QUESTION_ANSWER_ANNOTATIONS)
+}
+
+export async function getQuestionAnswerAnnotations(
+  questionId: string,
+): Promise<QuestionAnswerAnnotation[]> {
+  const db = await getDB()
+  return db.getAllFromIndex(STORES.QUESTION_ANSWER_ANNOTATIONS, 'questionId', questionId)
+}
+
+export async function putQuestionAnswerAnnotation(
+  annotation: QuestionAnswerAnnotation,
+): Promise<QuestionAnswerAnnotation> {
+  const db = await getDB()
+  const now = Date.now()
+  const existing = await db.get(STORES.QUESTION_ANSWER_ANNOTATIONS, annotation.id)
+  const next: QuestionAnswerAnnotation = {
+    ...annotation,
+    createdAt: existing?.createdAt ?? annotation.createdAt ?? now,
+    updatedAt: now,
+  }
+  await db.put(STORES.QUESTION_ANSWER_ANNOTATIONS, next)
+  return next
+}
+
+export async function bulkPutQuestionAnswerAnnotations(
+  annotations: QuestionAnswerAnnotation[],
+): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(STORES.QUESTION_ANSWER_ANNOTATIONS, 'readwrite')
+  await Promise.all([...annotations.map((annotation) => tx.store.put(annotation)), tx.done])
+}
+
+export async function deleteQuestionAnswerAnnotation(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete(STORES.QUESTION_ANSWER_ANNOTATIONS, id)
+}
+
+export async function deleteQuestionAnswerAnnotationsByQuestionId(
+  questionId: string,
+): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(STORES.QUESTION_ANSWER_ANNOTATIONS, 'readwrite')
+  const index = tx.store.index('questionId')
+  let cursor = await index.openCursor(questionId)
+  while (cursor) {
+    await cursor.delete()
     cursor = await cursor.continue()
   }
   await tx.done
@@ -754,11 +824,12 @@ export async function removeCustomSource(source: string): Promise<void> {
 // ─── Export all data (for backup) ────────────────────────────────────────────
 
 export async function exportAllData(): Promise<{
-  formatVersion: 6
+  formatVersion: 8
   exportedAt: string
   questions: Question[]
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
+  questionAnswerAnnotations: QuestionAnswerAnnotation[]
   questionAnswerOverrides: QuestionAnswerOverride[]
   questionFlags: QuestionFlag[]
   mockInterviews: MockInterviewSession[]
@@ -770,6 +841,7 @@ export async function exportAllData(): Promise<{
     questions,
     studyRecords,
     questionNotes,
+    questionAnswerAnnotations,
     questionAnswerOverrides,
     questionFlags,
     mockInterviews,
@@ -780,6 +852,7 @@ export async function exportAllData(): Promise<{
     getAllQuestions(),
     getAllStudyRecords(),
     getAllQuestionNotes(),
+    getAllQuestionAnswerAnnotations(),
     getAllQuestionAnswerOverrides(),
     getAllQuestionFlags(),
     getAllMockInterviews(),
@@ -793,11 +866,12 @@ export async function exportAllData(): Promise<{
   }
 
   return {
-    formatVersion: 6,
+    formatVersion: 8,
     exportedAt: new Date().toISOString(),
     questions,
     studyRecords,
     questionNotes,
+    questionAnswerAnnotations,
     questionAnswerOverrides,
     questionFlags,
     mockInterviews,
@@ -816,6 +890,7 @@ export async function resetDatabase(): Promise<void> {
     db.clear(STORES.STUDY_RECORDS),
     db.clear(STORES.QUESTION_NOTES),
     db.clear(STORES.QUESTION_NOTE_IMAGES),
+    db.clear(STORES.QUESTION_ANSWER_ANNOTATIONS),
     db.clear(STORES.QUESTION_ANSWER_OVERRIDES),
     db.clear(STORES.QUESTION_FLAGS),
     db.clear(STORES.MOCK_INTERVIEWS),

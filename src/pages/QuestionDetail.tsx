@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Kbd, Skeleton, Spinner } from '@/components/ui'
@@ -9,12 +10,15 @@ import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import {
   appendQuestionNoteContent,
+  deleteQuestionAnswerAnnotation,
   deleteQuestionAnswerOverride,
   deleteUnusedQuestionNoteImages,
+  getQuestionAnswerAnnotations,
   getQuestionAnswerOverride,
   getQuestionFlag,
   getQuestionNote,
   getQuestionNoteImages,
+  putQuestionAnswerAnnotation,
   putQuestionAnswerOverride,
   putQuestionNote,
   putQuestionNoteImage,
@@ -29,9 +33,11 @@ import {
 } from '@/store/useAIStore'
 import { clearSessionReview, useStudyStore } from '@/store/useStudyStore'
 import {
+  type AnswerAnnotationColor,
   DIFFICULTY_LABELS,
   DIFFICULTY_STYLES,
   type Question,
+  type QuestionAnswerAnnotation,
   type QuestionAnswerOverride,
   type QuestionNote,
   type QuestionNoteImage,
@@ -2279,7 +2285,7 @@ function QuestionNotes({
                 background: 'transparent',
                 color: 'var(--text)',
                 outline: 'none',
-                fontSize: 13,
+                fontSize: 16,
                 lineHeight: 1.65,
                 fontFamily: 'var(--font-sans)',
                 flex: embedded ? '0 0 auto' : undefined,
@@ -2796,6 +2802,832 @@ function AnswerAIButton({
   )
 }
 
+// ─── Answer Annotations ──────────────────────────────────────────────────────
+
+type AnswerSelectionDraft = {
+  start: number
+  end: number
+  text: string
+  top: number
+  left: number
+  placement: 'top' | 'bottom'
+  toolbar: 'floating' | 'bottom'
+}
+
+const ANSWER_ANNOTATION_COLORS: AnswerAnnotationColor[] = ['yellow', 'green', 'blue', 'pink']
+
+const ANSWER_ANNOTATION_HIGHLIGHT_NAMES: Record<AnswerAnnotationColor, string> = {
+  yellow: 'iface-answer-annotation-yellow',
+  green: 'iface-answer-annotation-green',
+  blue: 'iface-answer-annotation-blue',
+  pink: 'iface-answer-annotation-pink',
+}
+
+const ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME = 'iface-answer-annotation-comment'
+const ANSWER_COMMENT_DESKTOP_CLOSE_DELAY = 70
+const ANSWER_COMMENT_MOBILE_SCROLL_CLOSE_DISTANCE = 28
+
+function getAnswerAnnotationColor(color: AnswerAnnotationColor): {
+  background: string
+  dot: string
+} {
+  switch (color) {
+    case 'green':
+      return {
+        background: 'rgba(16,185,129,0.14)',
+        dot: '#10b981',
+      }
+    case 'blue':
+      return {
+        background: 'rgba(59,130,246,0.13)',
+        dot: '#3b82f6',
+      }
+    case 'pink':
+      return {
+        background: 'rgba(236,72,153,0.13)',
+        dot: '#ec4899',
+      }
+    default:
+      return {
+        background: 'rgba(245,158,11,0.16)',
+        dot: '#f59e0b',
+      }
+  }
+}
+
+function answerAnnotationRangesOverlap(
+  left: Pick<QuestionAnswerAnnotation, 'start' | 'end'>,
+  right: Pick<QuestionAnswerAnnotation, 'start' | 'end'>,
+): boolean {
+  return left.start < right.end && right.start < left.end
+}
+
+function answerAnnotationRangesEqual(
+  left: Pick<QuestionAnswerAnnotation, 'start' | 'end'>,
+  right: Pick<QuestionAnswerAnnotation, 'start' | 'end'>,
+): boolean {
+  return left.start === right.start && left.end === right.end
+}
+
+function getAnswerAnnotationHighlightColor(
+  annotation: QuestionAnswerAnnotation,
+): AnswerAnnotationColor | null {
+  if ('highlightColor' in annotation) return annotation.highlightColor ?? null
+  return annotation.kind === 'highlight' ? annotation.color : null
+}
+
+function hasAnswerAnnotationNote(annotation: QuestionAnswerAnnotation): boolean {
+  return annotation.note.trim().length > 0
+}
+
+function getNonOverlappingAnswerAnnotations(
+  annotations: QuestionAnswerAnnotation[],
+): QuestionAnswerAnnotation[] {
+  const picked: QuestionAnswerAnnotation[] = []
+  const newestFirst = [...annotations].sort(
+    (left, right) =>
+      right.updatedAt - left.updatedAt ||
+      right.createdAt - left.createdAt ||
+      right.id.localeCompare(left.id),
+  )
+
+  for (const annotation of newestFirst) {
+    if (picked.some((item) => answerAnnotationRangesOverlap(item, annotation))) continue
+    picked.push(annotation)
+  }
+
+  return picked.sort((left, right) => left.start - right.start || left.createdAt - right.createdAt)
+}
+
+function createAnswerAnnotationId(): string {
+  const cryptoId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  return `answer-annotation-${Date.now()}-${cryptoId}`
+}
+
+function hashAnswerText(text: string): string {
+  let hash = 5381
+  for (let index = 0; index < text.length; index++) {
+    hash = (hash * 33) ^ text.charCodeAt(index)
+  }
+  return (hash >>> 0).toString(36)
+}
+
+function getSelectionTextOffset(root: HTMLElement, node: Node, offset: number): number | null {
+  const range = document.createRange()
+  try {
+    range.selectNodeContents(root)
+    range.setEnd(node, offset)
+    return range.toString().length
+  } catch {
+    return null
+  } finally {
+    range.detach()
+  }
+}
+
+function getRangeBoundaryOffset(
+  root: HTMLElement,
+  range: Range,
+  boundary: 'start' | 'end',
+): number | null {
+  return getSelectionTextOffset(
+    root,
+    boundary === 'start' ? range.startContainer : range.endContainer,
+    boundary === 'start' ? range.startOffset : range.endOffset,
+  )
+}
+
+function getRangeInsideRoot(root: HTMLElement, range: Range): Range | null {
+  if (!range.intersectsNode(root)) return null
+
+  const nextRange = range.cloneRange()
+
+  try {
+    if (!root.contains(nextRange.startContainer)) {
+      nextRange.setStart(root, 0)
+    }
+
+    if (!root.contains(nextRange.endContainer)) {
+      nextRange.setEnd(root, root.childNodes.length)
+    }
+
+    return nextRange
+  } catch {
+    nextRange.detach()
+    return null
+  }
+}
+
+function getSelectionToolbarRect(range: Range): DOMRect | null {
+  const rects = Array.from(range.getClientRects()).filter(
+    (rect) => rect.width > 1 && rect.height > 1,
+  )
+  if (rects.length > 0) return rects[0]
+
+  const rect = range.getBoundingClientRect()
+  return rect.width > 1 && rect.height > 1 ? rect : null
+}
+
+function shouldUseBottomAnswerAnnotationToolbar(): boolean {
+  return window.innerWidth <= 640 || window.matchMedia?.('(pointer: coarse)').matches === true
+}
+
+function getAnswerSelectionDraft(root: HTMLElement): AnswerSelectionDraft | null {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return null
+
+  const sourceRange = selection.getRangeAt(0)
+  const range = getRangeInsideRoot(root, sourceRange)
+  if (!range) return null
+
+  const rawStart = getRangeBoundaryOffset(root, range, 'start')
+  const rawEnd = getRangeBoundaryOffset(root, range, 'end')
+  if (rawStart === null || rawEnd === null || rawStart === rawEnd) return null
+
+  const content = root.textContent ?? ''
+  let start = Math.min(rawStart, rawEnd)
+  let end = Math.max(rawStart, rawEnd)
+
+  while (start < end && /\s/.test(content[start] ?? '')) start++
+  while (end > start && /\s/.test(content[end - 1] ?? '')) end--
+
+  const text = content.slice(start, end)
+  if (!text.trim()) return null
+
+  const rect = getSelectionToolbarRect(range)
+  if (!rect) {
+    range.detach()
+    return null
+  }
+
+  const toolbarHalfWidth = Math.min(170, Math.max(96, window.innerWidth / 2 - 16))
+  const left = Math.min(
+    window.innerWidth - toolbarHalfWidth,
+    Math.max(toolbarHalfWidth, rect.left + rect.width / 2),
+  )
+  const placement: AnswerSelectionDraft['placement'] = rect.top >= 64 ? 'top' : 'bottom'
+  const top = placement === 'top' ? rect.top : rect.bottom
+  const toolbar: AnswerSelectionDraft['toolbar'] = shouldUseBottomAnswerAnnotationToolbar()
+    ? 'bottom'
+    : 'floating'
+
+  range.detach()
+  return { start, end, text, top, left, placement, toolbar }
+}
+
+function createTextRange(root: HTMLElement, start: number, end: number): Range | null {
+  const range = document.createRange()
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  let offset = 0
+  let startSet = false
+  let current = walker.nextNode()
+
+  while (current) {
+    const textLength = current.textContent?.length ?? 0
+    const nextOffset = offset + textLength
+
+    if (!startSet && start >= offset && start <= nextOffset) {
+      range.setStart(current, Math.max(0, start - offset))
+      startSet = true
+    }
+
+    if (startSet && end >= offset && end <= nextOffset) {
+      range.setEnd(current, Math.max(0, end - offset))
+      return range
+    }
+
+    offset = nextOffset
+    current = walker.nextNode()
+  }
+
+  range.detach()
+  return null
+}
+
+type AnswerCommentTargetRect = {
+  left: number
+  right: number
+  top: number
+  bottom: number
+}
+
+type AnswerCommentTarget = {
+  annotation: QuestionAnswerAnnotation
+  rects: AnswerCommentTargetRect[]
+  popoverLeft: number
+  popoverTop: number
+  popoverPlacement: 'top' | 'bottom'
+}
+
+function getAnswerCommentTarget(
+  root: HTMLElement,
+  annotation: QuestionAnswerAnnotation,
+): AnswerCommentTarget | null {
+  const range = createTextRange(root, annotation.start, annotation.end)
+  if (!range) return null
+
+  try {
+    const rects = Array.from(range.getClientRects()).filter(
+      (rect) => rect.width > 1 && rect.height > 1,
+    )
+    const rect = rects.at(-1) ?? range.getBoundingClientRect()
+    if (rect.width <= 1 || rect.height <= 1) return null
+    if (
+      rect.bottom < 0 ||
+      rect.top > window.innerHeight ||
+      rect.right < 0 ||
+      rect.left > window.innerWidth
+    ) {
+      return null
+    }
+
+    const popoverHalfWidth = Math.min(132, Math.max(120, window.innerWidth / 2 - 16))
+    const popoverLeft = Math.min(
+      window.innerWidth - popoverHalfWidth - 12,
+      Math.max(popoverHalfWidth + 12, rect.right),
+    )
+    const popoverPlacement: AnswerCommentTarget['popoverPlacement'] =
+      rect.top >= 118 ? 'top' : 'bottom'
+
+    return {
+      annotation,
+      rects: rects.map((item) => ({
+        left: item.left,
+        right: item.right,
+        top: item.top,
+        bottom: item.bottom,
+      })),
+      popoverLeft,
+      popoverTop: popoverPlacement === 'top' ? rect.top : rect.bottom,
+      popoverPlacement,
+    }
+  } finally {
+    range.detach()
+  }
+}
+
+function findAnswerCommentTargetAtPoint(
+  targets: AnswerCommentTarget[],
+  x: number,
+  y: number,
+): AnswerCommentTarget | null {
+  for (const target of targets) {
+    const matched = target.rects.some(
+      (rect) =>
+        x >= rect.left - 2 && x <= rect.right + 2 && y >= rect.top - 4 && y <= rect.bottom + 4,
+    )
+    if (matched) return target
+  }
+  return null
+}
+
+function applyAnswerAnnotationHighlights(
+  root: HTMLElement,
+  annotations: QuestionAnswerAnnotation[],
+): () => void {
+  const cssGlobal =
+    'CSS' in window ? (CSS as unknown as { highlights?: HighlightRegistryLike }) : null
+  const HighlightConstructor = (
+    window as Window & {
+      Highlight?: new (...ranges: Range[]) => unknown
+    }
+  ).Highlight
+
+  if (!cssGlobal?.highlights || !HighlightConstructor) return () => {}
+
+  const registry = cssGlobal.highlights
+  for (const name of Object.values(ANSWER_ANNOTATION_HIGHLIGHT_NAMES)) {
+    registry.delete(name)
+  }
+  registry.delete(ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME)
+
+  const grouped = new Map<AnswerAnnotationColor, Range[]>()
+  const commentRanges: Range[] = []
+  for (const annotation of annotations) {
+    const range = createTextRange(root, annotation.start, annotation.end)
+    if (!range) continue
+
+    const highlightColor = getAnswerAnnotationHighlightColor(annotation)
+    if (highlightColor) {
+      const ranges = grouped.get(highlightColor) ?? []
+      ranges.push(range.cloneRange())
+      grouped.set(highlightColor, ranges)
+    }
+
+    if (hasAnswerAnnotationNote(annotation)) {
+      commentRanges.push(range.cloneRange())
+    }
+
+    range.detach()
+  }
+
+  for (const [color, ranges] of grouped.entries()) {
+    if (ranges.length === 0) continue
+    registry.set(ANSWER_ANNOTATION_HIGHLIGHT_NAMES[color], new HighlightConstructor(...ranges))
+  }
+  if (commentRanges.length > 0) {
+    registry.set(
+      ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME,
+      new HighlightConstructor(...commentRanges),
+    )
+  }
+
+  return () => {
+    for (const name of Object.values(ANSWER_ANNOTATION_HIGHLIGHT_NAMES)) {
+      registry.delete(name)
+    }
+    registry.delete(ANSWER_ANNOTATION_COMMENT_HIGHLIGHT_NAME)
+  }
+}
+
+interface HighlightRegistryLike {
+  set: (name: string, highlight: unknown) => void
+  delete: (name: string) => void
+}
+
+function AnswerAnnotationToolbar({
+  toolbarRef,
+  selection,
+  commentOpen,
+  commentDraft,
+  saving,
+  onHighlight,
+  onOpenComment,
+  onCommentDraftChange,
+  onSaveComment,
+  onCancel,
+}: {
+  toolbarRef: React.RefObject<HTMLDivElement | null>
+  selection: AnswerSelectionDraft
+  commentOpen: boolean
+  commentDraft: string
+  saving: boolean
+  onHighlight: (color: AnswerAnnotationColor) => void
+  onOpenComment: () => void
+  onCommentDraftChange: (value: string) => void
+  onSaveComment: () => void
+  onCancel: () => void
+}) {
+  const commentInputRef = useRef<HTMLInputElement>(null)
+  const isBottomToolbar = selection.toolbar === 'bottom'
+  const toolbarButtonSize = isBottomToolbar ? 30 : 24
+
+  useEffect(() => {
+    if (!commentOpen) return
+    const frame = window.requestAnimationFrame(() => commentInputRef.current?.focus())
+    return () => window.cancelAnimationFrame(frame)
+  }, [commentOpen])
+
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
+    <div
+      ref={toolbarRef}
+      style={{
+        position: 'fixed',
+        top: isBottomToolbar ? 'auto' : selection.top,
+        right: isBottomToolbar ? 12 : 'auto',
+        bottom: isBottomToolbar ? 'max(12px, env(safe-area-inset-bottom))' : 'auto',
+        left: isBottomToolbar ? 12 : selection.left,
+        transform: isBottomToolbar
+          ? 'none'
+          : selection.placement === 'top'
+            ? 'translate(-50%, calc(-100% - 8px))'
+            : 'translate(-50%, 8px)',
+        zIndex: 160,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 4,
+        padding: isBottomToolbar ? 6 : 4,
+        borderRadius: isBottomToolbar ? 14 : 9,
+        border: '1px solid rgba(var(--primary-rgb),0.08)',
+        background: 'var(--surface-glass)',
+        boxShadow: isBottomToolbar
+          ? '0 12px 30px rgba(15,23,42,0.14)'
+          : '0 6px 18px rgba(15,23,42,0.08)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        maxWidth: isBottomToolbar ? 'none' : 'min(360px, calc(100vw - 24px))',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: isBottomToolbar ? 'center' : 'flex-start',
+          gap: isBottomToolbar ? 6 : 2,
+        }}
+      >
+        {ANSWER_ANNOTATION_COLORS.map((color) => {
+          const colorStyle = getAnswerAnnotationColor(color)
+          return (
+            <button
+              type="button"
+              key={color}
+              title="高亮"
+              aria-label="高亮"
+              disabled={saving}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => onHighlight(color)}
+              style={{
+                height: toolbarButtonSize,
+                width: toolbarButtonSize,
+                borderRadius: 7,
+                border: 'none',
+                background: 'transparent',
+                cursor: saving ? 'default' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              <span
+                style={{
+                  width: 11,
+                  height: 11,
+                  borderRadius: 99,
+                  background: colorStyle.dot,
+                  boxShadow: `0 0 0 3px ${colorStyle.background}`,
+                }}
+              />
+            </button>
+          )
+        })}
+        <span
+          style={{ width: 1, height: 16, background: 'var(--border-subtle)', margin: '0 3px' }}
+        />
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onOpenComment}
+          disabled={saving}
+          style={{
+            height: toolbarButtonSize,
+            padding: '0 8px',
+            borderRadius: 7,
+            border: 'none',
+            background: commentOpen ? 'rgba(var(--primary-rgb),0.08)' : 'transparent',
+            color: commentOpen ? 'var(--primary)' : 'var(--text-2)',
+            fontSize: 11,
+            fontWeight: 500,
+            cursor: saving ? 'default' : 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            lineHeight: 1,
+          }}
+        >
+          批注
+        </button>
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onCancel}
+          title="关闭"
+          aria-label="关闭"
+          style={{
+            width: toolbarButtonSize,
+            height: toolbarButtonSize,
+            borderRadius: 7,
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--text-3)',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: isBottomToolbar ? 18 : 16,
+            lineHeight: 1,
+          }}
+        >
+          ×
+        </button>
+      </div>
+
+      {commentOpen && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            minWidth: isBottomToolbar ? 0 : 240,
+          }}
+        >
+          <input
+            ref={commentInputRef}
+            value={commentDraft}
+            onChange={(event) => onCommentDraftChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') onSaveComment()
+              if (event.key === 'Escape') onCancel()
+            }}
+            placeholder="写批注…"
+            style={{
+              flex: 1,
+              minWidth: 0,
+              height: isBottomToolbar ? 34 : 28,
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 7,
+              background: 'transparent',
+              color: 'var(--text)',
+              fontSize: isBottomToolbar ? 16 : 12,
+              outline: 'none',
+              padding: '0 9px',
+            }}
+          />
+          <button
+            type="button"
+            onClick={onSaveComment}
+            disabled={saving || !commentDraft.trim()}
+            style={{
+              height: 28,
+              padding: '0 9px',
+              borderRadius: 7,
+              border: 'none',
+              background: commentDraft.trim() ? 'var(--primary)' : 'var(--surface-3)',
+              color: commentDraft.trim() ? 'white' : 'var(--text-3)',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: commentDraft.trim() && !saving ? 'pointer' : 'default',
+            }}
+          >
+            保存
+          </button>
+        </div>
+      )}
+    </div>,
+    document.body,
+  )
+}
+
+function AnswerCommentMarkers({
+  rootRef,
+  annotations,
+  activeId,
+  onActiveChange,
+  onDelete,
+}: {
+  rootRef: React.RefObject<HTMLDivElement | null>
+  annotations: QuestionAnswerAnnotation[]
+  activeId: string | null
+  onActiveChange: (id: string | null) => void
+  onDelete: (id: string) => void
+}) {
+  const layerRef = useRef<HTMLDivElement>(null)
+  const closeTimerRef = useRef<number | null>(null)
+  const [targets, setTargets] = useState<AnswerCommentTarget[]>([])
+
+  const cancelClose = useCallback(() => {
+    if (closeTimerRef.current === null) return
+    window.clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = null
+  }, [])
+
+  const scheduleClose = useCallback(
+    (delay = ANSWER_COMMENT_DESKTOP_CLOSE_DELAY) => {
+      cancelClose()
+      closeTimerRef.current = window.setTimeout(() => {
+        closeTimerRef.current = null
+        onActiveChange(null)
+      }, delay)
+    },
+    [cancelClose, onActiveChange],
+  )
+
+  const updateMarkers = useCallback(() => {
+    const root = rootRef.current
+    if (!root) {
+      setTargets([])
+      return
+    }
+
+    setTargets(
+      annotations
+        .filter(hasAnswerAnnotationNote)
+        .map((annotation) => getAnswerCommentTarget(root, annotation))
+        .filter((target): target is AnswerCommentTarget => Boolean(target)),
+    )
+  }, [annotations, rootRef])
+
+  useLayoutEffect(() => {
+    updateMarkers()
+
+    let frame: number | null = null
+    const scheduleUpdate = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        updateMarkers()
+      })
+    }
+
+    const root = rootRef.current
+    const observer =
+      root && typeof MutationObserver !== 'undefined' ? new MutationObserver(scheduleUpdate) : null
+    observer?.observe(root as HTMLElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+
+    window.addEventListener('resize', scheduleUpdate)
+    window.addEventListener('scroll', scheduleUpdate, true)
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      observer?.disconnect()
+      window.removeEventListener('resize', scheduleUpdate)
+      window.removeEventListener('scroll', scheduleUpdate, true)
+    }
+  }, [rootRef, updateMarkers])
+
+  useEffect(() => {
+    if (targets.length === 0) return
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const target = event.target
+      if (target instanceof Node && layerRef.current?.contains(target)) {
+        cancelClose()
+        return
+      }
+      if (window.matchMedia?.('(pointer: coarse)').matches === true) return
+
+      const matchedTarget = findAnswerCommentTargetAtPoint(targets, event.clientX, event.clientY)
+      if (matchedTarget) {
+        cancelClose()
+        onActiveChange(matchedTarget.annotation.id)
+      } else if (activeId) {
+        scheduleClose()
+      }
+    }
+
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target
+      if (target instanceof Node && layerRef.current?.contains(target)) return
+
+      const matchedTarget = findAnswerCommentTargetAtPoint(targets, event.clientX, event.clientY)
+      if (matchedTarget) {
+        event.preventDefault()
+        cancelClose()
+        onActiveChange(
+          activeId === matchedTarget.annotation.id ? null : matchedTarget.annotation.id,
+        )
+        return
+      }
+
+      if (activeId) onActiveChange(null)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('click', handleClick)
+    return () => {
+      cancelClose()
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('click', handleClick)
+    }
+  }, [activeId, cancelClose, onActiveChange, scheduleClose, targets])
+
+  useEffect(() => {
+    if (!activeId || !shouldUseBottomAnswerAnnotationToolbar()) return
+
+    const startY = window.scrollY
+    const handleScroll = () => {
+      if (Math.abs(window.scrollY - startY) < ANSWER_COMMENT_MOBILE_SCROLL_CLOSE_DISTANCE) return
+      onActiveChange(null)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [activeId, onActiveChange])
+
+  const activeTarget = targets.find((target) => target.annotation.id === activeId)
+  if (typeof document === 'undefined' || !activeTarget) return null
+
+  return createPortal(
+    <div
+      ref={layerRef}
+      onMouseEnter={cancelClose}
+      onMouseLeave={() => scheduleClose()}
+      style={{
+        position: 'fixed',
+        left: activeTarget.popoverLeft,
+        top: activeTarget.popoverTop,
+        transform:
+          activeTarget.popoverPlacement === 'top'
+            ? 'translate(-50%, calc(-100% - 10px))'
+            : 'translate(-50%, 10px)',
+        zIndex: 155,
+        width: 'min(264px, calc(100vw - 24px))',
+        padding: 10,
+        borderRadius: 10,
+        border: '1px solid var(--border-subtle)',
+        background: 'var(--surface)',
+        boxShadow: '0 10px 28px rgba(15,23,42,0.12)',
+      }}
+      role="dialog"
+      aria-label="答案批注"
+    >
+      <p
+        style={{
+          fontSize: 12,
+          lineHeight: 1.6,
+          color: 'var(--text)',
+          wordBreak: 'break-word',
+        }}
+      >
+        {activeTarget.annotation.note}
+      </p>
+      <div
+        style={{
+          marginTop: 8,
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 6,
+        }}
+      >
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => onDelete(activeTarget.annotation.id)}
+          style={{
+            height: 24,
+            padding: '0 8px',
+            borderRadius: 7,
+            border: 'none',
+            background: 'transparent',
+            color: 'var(--text-3)',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          删除批注
+        </button>
+        <button
+          type="button"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => onActiveChange(null)}
+          style={{
+            height: 24,
+            padding: '0 8px',
+            borderRadius: 7,
+            border: 'none',
+            background: 'var(--surface-2)',
+            color: 'var(--text-2)',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          收起
+        </button>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 // ─── AI Drawer ────────────────────────────────────────────────────────────────
 // Fixed right drawer — never affects main content width
 
@@ -3060,12 +3892,22 @@ export default function QuestionDetail() {
   const [answerDraft, setAnswerDraft] = useState('')
   const [answerSaveStatus, setAnswerSaveStatus] = useState<AnswerOverrideSaveStatus>('idle')
   const [showOriginalAnswer, setShowOriginalAnswer] = useState(false)
+  const [answerAnnotations, setAnswerAnnotations] = useState<QuestionAnswerAnnotation[]>([])
+  const [answerSelection, setAnswerSelection] = useState<AnswerSelectionDraft | null>(null)
+  const [answerCommentOpen, setAnswerCommentOpen] = useState(false)
+  const [answerCommentDraft, setAnswerCommentDraft] = useState('')
+  const [activeAnswerCommentId, setActiveAnswerCommentId] = useState<string | null>(null)
+  const [answerAnnotationSaving, setAnswerAnnotationSaving] = useState(false)
   const [starred, setStarred] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [celebrationStreak, setCelebrationStreak] = useState(0)
   const [sessionFinished, setSessionFinished] = useState(false)
   const [noteRefreshKey, setNoteRefreshKey] = useState(0)
   const answerRef = useRef<HTMLDivElement>(null)
+  const answerContentRef = useRef<HTMLDivElement>(null)
+  const answerAnnotationToolbarRef = useRef<HTMLDivElement>(null)
+  const answerSelectionTimerRef = useRef<number | null>(null)
+  const answerSelectingRef = useRef(false)
   const markingRef = useRef(false)
 
   // Session context (from ?ids=... or a larger ?session=... stored in sessionStorage)
@@ -3206,6 +4048,24 @@ export default function QuestionDetail() {
       .slice(0, 5)
   }, [allQuestions, question, records])
 
+  const hasCustomAnswer = Boolean(question && answerOverride?.content.trim())
+  const effectiveAnswerText = question
+    ? hasCustomAnswer
+      ? (answerOverride?.content ?? '')
+      : question.answer
+    : ''
+  const displayedAnswerText =
+    question && hasCustomAnswer && showOriginalAnswer ? question.answer : effectiveAnswerText
+  const displayedAnswerHash = hashAnswerText(displayedAnswerText)
+  const answerAnnotationsForDisplayedAnswer = useMemo(
+    () => answerAnnotations.filter((annotation) => annotation.answerHash === displayedAnswerHash),
+    [answerAnnotations, displayedAnswerHash],
+  )
+  const visibleAnswerAnnotations = useMemo(
+    () => getNonOverlappingAnswerAnnotations(answerAnnotationsForDisplayedAnswer),
+    [answerAnnotationsForDisplayedAnswer],
+  )
+
   const shouldAutoRevealAnswer = studyMode === 'memory-only'
 
   // Reset when the question or practice session changes. A retry session can
@@ -3296,6 +4156,98 @@ export default function QuestionDetail() {
   useEffect(() => {
     let cancelled = false
     if (!id) {
+      setAnswerAnnotations([])
+      return
+    }
+
+    getQuestionAnswerAnnotations(id)
+      .then((annotations) => {
+        if (!cancelled) setAnswerAnnotations(annotations)
+      })
+      .catch(() => {
+        if (!cancelled) setAnswerAnnotations([])
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset draft UI when answer view or answer identity changes.
+  useEffect(() => {
+    setAnswerSelection(null)
+    setAnswerCommentOpen(false)
+    setAnswerCommentDraft('')
+    setActiveAnswerCommentId(null)
+  }, [answerEditMode, answerVisible, displayedAnswerHash])
+
+  useEffect(() => {
+    if (!activeAnswerCommentId) return
+    const commentStillVisible = visibleAnswerAnnotations.some(
+      (annotation) =>
+        annotation.id === activeAnswerCommentId && hasAnswerAnnotationNote(annotation),
+    )
+    if (!commentStillVisible) setActiveAnswerCommentId(null)
+  }, [activeAnswerCommentId, visibleAnswerAnnotations])
+
+  useEffect(() => {
+    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    const root = answerContentRef.current
+    if (!root) return
+
+    let cleanupHighlights: (() => void) | null = null
+    let frame: number | null = null
+
+    const applyHighlights = () => {
+      cleanupHighlights?.()
+      cleanupHighlights = applyAnswerAnnotationHighlights(root, visibleAnswerAnnotations)
+    }
+
+    const scheduleApply = () => {
+      if (frame !== null) return
+      frame = window.requestAnimationFrame(() => {
+        frame = null
+        applyHighlights()
+      })
+    }
+
+    scheduleApply()
+
+    const observer =
+      typeof MutationObserver !== 'undefined' ? new MutationObserver(scheduleApply) : null
+    observer?.observe(root, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    })
+
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame)
+      observer?.disconnect()
+      cleanupHighlights?.()
+    }
+  }, [answerEditMode, answerOverrideLoading, answerVisible, visibleAnswerAnnotations])
+
+  useEffect(() => {
+    if (!answerSelection) return
+
+    const handler = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Node)) return
+      if (answerAnnotationToolbarRef.current?.contains(target)) return
+      if (answerContentRef.current?.contains(target)) return
+      setAnswerSelection(null)
+      setAnswerCommentOpen(false)
+      setAnswerCommentDraft('')
+    }
+
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [answerSelection])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!id) {
       setStarred(false)
       return
     }
@@ -3315,6 +4267,7 @@ export default function QuestionDetail() {
 
   const currentStatus = id ? getStatus(id) : 'unlearned'
   const record = id ? getRecord(id) : undefined
+  const reviewCount = record?.reviewCount ?? 0
 
   const handleSetStatus = useCallback(
     async (status: StudyStatus, key?: '1' | '2' | '3') => {
@@ -3410,6 +4363,220 @@ export default function QuestionDetail() {
       setStarred(!next)
     }
   }, [id, starred])
+
+  const refreshAnswerSelection = useCallback(() => {
+    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (answerCommentOpen || answerAnnotationSaving) return
+    const root = answerContentRef.current
+    if (!root) return
+
+    const draft = getAnswerSelectionDraft(root)
+    if (!draft) {
+      setAnswerSelection(null)
+      setAnswerCommentOpen(false)
+      setAnswerCommentDraft('')
+      return
+    }
+
+    setAnswerSelection(draft)
+    setActiveAnswerCommentId(null)
+    setAnswerCommentOpen(false)
+    setAnswerCommentDraft('')
+  }, [
+    answerAnnotationSaving,
+    answerCommentOpen,
+    answerEditMode,
+    answerOverrideLoading,
+    answerVisible,
+  ])
+
+  const scheduleAnswerSelectionRefresh = useCallback(
+    (delay = 180) => {
+      if (answerSelectionTimerRef.current !== null) {
+        window.clearTimeout(answerSelectionTimerRef.current)
+      }
+
+      answerSelectionTimerRef.current = window.setTimeout(() => {
+        answerSelectionTimerRef.current = null
+        if (!answerSelectingRef.current) refreshAnswerSelection()
+      }, delay)
+    },
+    [refreshAnswerSelection],
+  )
+
+  const handleCreateAnswerAnnotation = useCallback(
+    async (kind: QuestionAnswerAnnotation['kind'], color: AnswerAnnotationColor, note = '') => {
+      if (!question || !answerSelection || answerAnnotationSaving) return
+
+      setAnswerAnnotationSaving(true)
+      try {
+        const now = Date.now()
+        const overlappingAnnotations = answerAnnotationsForDisplayedAnswer.filter((annotation) =>
+          answerAnnotationRangesOverlap(annotation, answerSelection),
+        )
+        const exactAnnotation = overlappingAnnotations.find((annotation) =>
+          answerAnnotationRangesEqual(annotation, answerSelection),
+        )
+        const replacedAnnotations = overlappingAnnotations.filter(
+          (annotation) => annotation.id !== exactAnnotation?.id,
+        )
+        const replacedIds = new Set(replacedAnnotations.map((annotation) => annotation.id))
+        const nextNote = kind === 'comment' ? note.trim() : (exactAnnotation?.note.trim() ?? '')
+        const nextHighlightColor =
+          kind === 'highlight'
+            ? color
+            : exactAnnotation
+              ? getAnswerAnnotationHighlightColor(exactAnnotation)
+              : null
+        const annotation = await putQuestionAnswerAnnotation({
+          id: exactAnnotation?.id ?? createAnswerAnnotationId(),
+          questionId: question.id,
+          answerHash: displayedAnswerHash,
+          kind: nextNote ? 'comment' : 'highlight',
+          color: nextHighlightColor ?? color,
+          highlightColor: nextHighlightColor,
+          start: answerSelection.start,
+          end: answerSelection.end,
+          selectedText: answerSelection.text,
+          note: nextNote,
+          createdAt: exactAnnotation?.createdAt ?? now,
+          updatedAt: now,
+        })
+        if (replacedAnnotations.length > 0) {
+          await Promise.all(
+            replacedAnnotations.map((item) => deleteQuestionAnswerAnnotation(item.id)),
+          ).catch(() => undefined)
+        }
+        setAnswerAnnotations((current) => [
+          annotation,
+          ...current.filter((item) => item.id !== annotation.id && !replacedIds.has(item.id)),
+        ])
+        window.getSelection()?.removeAllRanges()
+        setActiveAnswerCommentId(nextNote ? annotation.id : null)
+        setAnswerSelection(null)
+        setAnswerCommentOpen(false)
+        setAnswerCommentDraft('')
+      } finally {
+        setAnswerAnnotationSaving(false)
+      }
+    },
+    [
+      answerAnnotationSaving,
+      answerAnnotationsForDisplayedAnswer,
+      answerSelection,
+      displayedAnswerHash,
+      question,
+    ],
+  )
+
+  const handleSaveAnswerComment = useCallback(() => {
+    if (!answerCommentDraft.trim()) return
+    handleCreateAnswerAnnotation('comment', 'blue', answerCommentDraft)
+  }, [answerCommentDraft, handleCreateAnswerAnnotation])
+
+  const handleCancelAnswerAnnotation = useCallback(() => {
+    setAnswerSelection(null)
+    setAnswerCommentOpen(false)
+    setAnswerCommentDraft('')
+    window.getSelection()?.removeAllRanges()
+  }, [])
+
+  const handleDeleteAnswerAnnotation = useCallback(
+    async (annotationId: string) => {
+      setActiveAnswerCommentId((current) => (current === annotationId ? null : current))
+      setAnswerAnnotations((current) => current.filter((item) => item.id !== annotationId))
+      try {
+        await deleteQuestionAnswerAnnotation(annotationId)
+      } catch {
+        getQuestionAnswerAnnotations(id ?? '')
+          .then(setAnswerAnnotations)
+          .catch(() => {})
+      }
+    },
+    [id],
+  )
+
+  const handleDeleteAnswerComment = useCallback(
+    async (annotationId: string) => {
+      const annotation = answerAnnotations.find((item) => item.id === annotationId)
+      if (!annotation) return
+
+      const highlightColor = getAnswerAnnotationHighlightColor(annotation)
+      setActiveAnswerCommentId((current) => (current === annotationId ? null : current))
+
+      if (!highlightColor) {
+        handleDeleteAnswerAnnotation(annotationId)
+        return
+      }
+
+      const nextAnnotation: QuestionAnswerAnnotation = {
+        ...annotation,
+        kind: 'highlight',
+        color: highlightColor,
+        highlightColor,
+        note: '',
+        updatedAt: Date.now(),
+      }
+
+      setAnswerAnnotations((current) =>
+        current.map((item) => (item.id === annotationId ? nextAnnotation : item)),
+      )
+      try {
+        const saved = await putQuestionAnswerAnnotation(nextAnnotation)
+        setAnswerAnnotations((current) =>
+          current.map((item) => (item.id === annotationId ? saved : item)),
+        )
+      } catch {
+        getQuestionAnswerAnnotations(id ?? '')
+          .then(setAnswerAnnotations)
+          .catch(() => {})
+      }
+    },
+    [answerAnnotations, handleDeleteAnswerAnnotation, id],
+  )
+
+  useEffect(() => {
+    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+
+    const clearScheduledRefresh = () => {
+      if (answerSelectionTimerRef.current === null) return
+      window.clearTimeout(answerSelectionTimerRef.current)
+      answerSelectionTimerRef.current = null
+    }
+
+    const handleSelectStart = (event: MouseEvent | TouchEvent) => {
+      const target = event.target
+      if (target instanceof Node && answerAnnotationToolbarRef.current?.contains(target)) return
+      answerSelectingRef.current = true
+      clearScheduledRefresh()
+    }
+
+    const handleSelectEnd = () => {
+      answerSelectingRef.current = false
+      scheduleAnswerSelectionRefresh(140)
+    }
+
+    const handleSelectionChange = () => {
+      scheduleAnswerSelectionRefresh(220)
+    }
+
+    document.addEventListener('mousedown', handleSelectStart)
+    document.addEventListener('touchstart', handleSelectStart)
+    document.addEventListener('selectionchange', handleSelectionChange)
+    document.addEventListener('mouseup', handleSelectEnd)
+    document.addEventListener('touchend', handleSelectEnd)
+    document.addEventListener('keyup', handleSelectEnd)
+    return () => {
+      clearScheduledRefresh()
+      answerSelectingRef.current = false
+      document.removeEventListener('mousedown', handleSelectStart)
+      document.removeEventListener('touchstart', handleSelectStart)
+      document.removeEventListener('selectionchange', handleSelectionChange)
+      document.removeEventListener('mouseup', handleSelectEnd)
+      document.removeEventListener('touchend', handleSelectEnd)
+      document.removeEventListener('keyup', handleSelectEnd)
+    }
+  }, [answerEditMode, answerOverrideLoading, answerVisible, scheduleAnswerSelectionRefresh])
 
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
@@ -3584,12 +4751,6 @@ export default function QuestionDetail() {
 
   const diffStyle = DIFFICULTY_STYLES[question.difficulty]
   const isAiEnabled = aiConfig.enabled && aiConfig.apiKey.trim().length > 0
-  const hasCustomAnswer = Boolean(answerOverride?.content.trim())
-  const effectiveAnswerText = answerOverride?.content.trim()
-    ? answerOverride.content
-    : question.answer
-  const displayedAnswerText =
-    hasCustomAnswer && showOriginalAnswer ? question.answer : effectiveAnswerText
   const answerHeading = hasCustomAnswer
     ? showOriginalAnswer
       ? '参考答案'
@@ -3742,21 +4903,6 @@ export default function QuestionDetail() {
               {DIFFICULTY_LABELS[question.difficulty]}
             </span>
 
-            {question.source && (
-              <span
-                style={{
-                  fontSize: 11,
-                  padding: '2px 8px',
-                  borderRadius: 5,
-                  background: 'var(--primary-light)',
-                  color: 'var(--primary)',
-                  border: '1px solid rgba(var(--primary-rgb),0.2)',
-                }}
-              >
-                {question.source}
-              </span>
-            )}
-
             {currentStatus !== 'unlearned' && (
               <span
                 style={{
@@ -3784,11 +4930,6 @@ export default function QuestionDetail() {
                 justifyContent: 'flex-end',
               }}
             >
-              {record && (
-                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                  已复习 {record.reviewCount} 次
-                </span>
-              )}
               <button
                 type="button"
                 onClick={handleToggleStarred}
@@ -3937,7 +5078,7 @@ export default function QuestionDetail() {
           </h1>
 
           {/* Tags */}
-          {question.tags.length > 0 && (
+          {(question.tags.length > 0 || reviewCount > 0) && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {question.tags.map((tag) => (
                 <span
@@ -3953,6 +5094,20 @@ export default function QuestionDetail() {
                   #{tag}
                 </span>
               ))}
+              {reviewCount > 0 && (
+                <span
+                  title={`已复习 ${reviewCount} 次`}
+                  style={{
+                    fontSize: 11,
+                    padding: '2px 3px',
+                    color: 'var(--text-3)',
+                    opacity: 0.72,
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  复习 {reviewCount} 次
+                </span>
+              )}
             </div>
           )}
 
@@ -4171,9 +5326,39 @@ export default function QuestionDetail() {
             ) : answerOverrideLoading ? (
               <Skeleton width="100%" height={96} />
             ) : (
-              <div className="prose" style={{ minWidth: 0 }}>
+              <section
+                ref={answerContentRef}
+                className="prose answer-annotation-content"
+                aria-label="答案内容"
+                style={{ minWidth: 0 }}
+              >
                 <MarkdownRenderer content={displayedAnswerText} />
-              </div>
+              </section>
+            )}
+
+            {answerSelection && !answerEditMode && !answerOverrideLoading && (
+              <AnswerAnnotationToolbar
+                toolbarRef={answerAnnotationToolbarRef}
+                selection={answerSelection}
+                commentOpen={answerCommentOpen}
+                commentDraft={answerCommentDraft}
+                saving={answerAnnotationSaving}
+                onHighlight={(color) => handleCreateAnswerAnnotation('highlight', color)}
+                onOpenComment={() => setAnswerCommentOpen(true)}
+                onCommentDraftChange={setAnswerCommentDraft}
+                onSaveComment={handleSaveAnswerComment}
+                onCancel={handleCancelAnswerAnnotation}
+              />
+            )}
+
+            {!answerEditMode && !answerOverrideLoading && (
+              <AnswerCommentMarkers
+                rootRef={answerContentRef}
+                annotations={visibleAnswerAnnotations}
+                activeId={activeAnswerCommentId}
+                onActiveChange={setActiveAnswerCommentId}
+                onDelete={handleDeleteAnswerComment}
+              />
             )}
 
             {/* Status actions */}
@@ -4483,6 +5668,25 @@ export default function QuestionDetail() {
 				}
 				@media (min-width: 1024px) {
 					.ai-drawer-backdrop { display: none !important; }
+				}
+				::highlight(iface-answer-annotation-yellow) {
+					background: rgba(245, 158, 11, 0.32);
+				}
+				::highlight(iface-answer-annotation-green) {
+					background: rgba(16, 185, 129, 0.24);
+				}
+				::highlight(iface-answer-annotation-blue) {
+					background: rgba(59, 130, 246, 0.22);
+				}
+				::highlight(iface-answer-annotation-pink) {
+					background: rgba(236, 72, 153, 0.22);
+				}
+				::highlight(iface-answer-annotation-comment) {
+					text-decoration-line: underline;
+					text-decoration-style: dotted;
+					text-decoration-color: rgba(37, 99, 235, 0.78);
+					text-decoration-thickness: 2px;
+					text-underline-offset: 5px;
 				}
 				@media (max-width: 520px) {
 					.note-drawer-panel {

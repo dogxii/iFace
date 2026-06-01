@@ -173,19 +173,20 @@ function inspectRecord({ file, target, checks }: RecordSpec): void {
     const read = evidenceByCheck.get('gist.read')
     const readRecord = read as Record<string, unknown> | undefined
     if (
-      readRecord?.backupVersion !== 6 ||
+      readRecord?.backupVersion !== 8 ||
       !positiveNumber(read, 'noteCount') ||
+      !positiveNumber(read, 'answerAnnotationCount') ||
       !positiveNumber(read, 'starredCount') ||
       !positiveNumber(read, 'aiSessionCount') ||
       !positiveNumber(read, 'customQuestionCount')
     ) {
-      addFailure(file, 'gist.read 证据缺少 v6 备份、笔记、重点题、AI 会话或自定义题')
+      addFailure(file, 'gist.read 证据缺少 v8 备份、笔记、答案标注、重点题、AI 会话或自定义题')
     }
 
     const update = evidenceByCheck.get('gist.update')
     const updateRecord = update as Record<string, unknown> | undefined
-    if (updateRecord?.backupVersion !== 6 || !positiveNumber(update, 'customSourceCount')) {
-      addFailure(file, 'gist.update 证据缺少 v6 备份或自定义来源计数')
+    if (updateRecord?.backupVersion !== 8 || !positiveNumber(update, 'customSourceCount')) {
+      addFailure(file, 'gist.update 证据缺少 v8 备份或自定义来源计数')
     }
 
     const cleanup = evidenceByCheck.get('gist.cleanup') as Record<string, unknown> | undefined

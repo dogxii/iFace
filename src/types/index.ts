@@ -125,6 +125,25 @@ export interface QuestionAnswerOverride {
   updatedAt: number
 }
 
+export type AnswerAnnotationKind = 'highlight' | 'comment'
+
+export type AnswerAnnotationColor = 'yellow' | 'green' | 'blue' | 'pink'
+
+export interface QuestionAnswerAnnotation {
+  id: string
+  questionId: string
+  answerHash: string
+  kind: AnswerAnnotationKind
+  color: AnswerAnnotationColor
+  highlightColor?: AnswerAnnotationColor | null
+  start: number
+  end: number
+  selectedText: string
+  note: string
+  createdAt: number
+  updatedAt: number
+}
+
 export interface QuestionFlag {
   questionId: string
   starred: boolean

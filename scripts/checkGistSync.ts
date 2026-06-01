@@ -12,6 +12,7 @@ import {
 import type { AISession } from '../src/store/useAIStore.ts'
 import type {
   Question,
+  QuestionAnswerAnnotation,
   QuestionAnswerOverride,
   QuestionFlag,
   QuestionNote,
@@ -89,6 +90,27 @@ function answerOverride(
   return { questionId, content, createdAt: updatedAt - 100, updatedAt }
 }
 
+function answerAnnotation(
+  id: string,
+  questionId: string,
+  selectedText: string,
+  updatedAt: number,
+): QuestionAnswerAnnotation {
+  return {
+    id,
+    questionId,
+    answerHash: `hash-${questionId}`,
+    kind: 'comment',
+    color: 'yellow',
+    start: 0,
+    end: selectedText.length,
+    selectedText,
+    note: `note ${selectedText}`,
+    createdAt: updatedAt - 100,
+    updatedAt,
+  }
+}
+
 function flag(questionId: string, starred: boolean, updatedAt: number): QuestionFlag {
   return { questionId, starred, createdAt: updatedAt - 100, updatedAt }
 }
@@ -141,6 +163,7 @@ const v4Note = note('v4-001', 'v4 note', 1700000200000)
 const v5Session = session('v5-001', 'v5 session', 1700000300000)
 const v6Flag = flag('v6-001', true, 1700000400000)
 const v7AnswerOverride = answerOverride('v7-001', 'v7 custom answer', 1700000500000)
+const v8AnswerAnnotation = answerAnnotation('v8-annotation', 'v8-001', 'v8 selected', 1700000600000)
 
 const legacy = parseGistBackupPayload(
   JSON.stringify({
@@ -168,6 +191,11 @@ assert(
   legacy.questionAnswerOverrides.length === 0,
   'v1 不应产生自定义答案',
 )
+assert(
+  'v1 has no answer annotations',
+  legacy.questionAnswerAnnotations.length === 0,
+  'v1 不应产生答案标注',
+)
 assert('v1 has no flags', legacy.questionFlags.length === 0, 'v1 不应产生题目标记')
 assert('v1 has no ai sessions', legacy.aiSessions.length === 0, 'v1 不应产生 AI 会话')
 assert(
@@ -193,6 +221,11 @@ assert(
   'v3 has no answer overrides',
   v3.questionAnswerOverrides.length === 0,
   'v3 不应产生自定义答案',
+)
+assert(
+  'v3 has no answer annotations',
+  v3.questionAnswerAnnotations.length === 0,
+  'v3 不应产生答案标注',
 )
 assert('v3 has no flags', v3.questionFlags.length === 0, 'v3 不应产生题目标记')
 assert('v3 has no ai sessions', v3.aiSessions.length === 0, 'v3 不应产生 AI 会话')
@@ -267,6 +300,28 @@ assert(
   v7.questionAnswerOverrides[0]?.content === 'v7 custom answer',
   'v7 自定义答案未恢复',
 )
+
+const v8 = parseGistBackupPayload(
+  JSON.stringify({
+    version: 8,
+    exportedAt: '2026-01-04T00:00:00.000Z',
+    records: compact([v3Record]),
+    questionNotes: [v4Note],
+    questionAnswerAnnotations: [v8AnswerAnnotation],
+    questionAnswerOverrides: [v7AnswerOverride],
+    questionFlags: [v6Flag],
+    aiSessions: [v5Session],
+    customQuestions: [question('custom_sync_v8')],
+    customCategories: {},
+    customSources: ['v8-source'],
+  }),
+)
+
+assert(
+  'v8 keeps answer annotations',
+  v8.questionAnswerAnnotations[0]?.selectedText === 'v8 selected',
+  'v8 答案标注未恢复',
+)
 assertThrows(
   'future version rejected',
   () => parseGistBackupPayload(JSON.stringify({ version: 999 })),
@@ -277,6 +332,10 @@ assertThrows('invalid json rejected', () => parseGistBackupPayload('{'), 'invali
 const local: SyncData = {
   studyRecords: [record('same-record', 'mastered', 3000), record('local-record', 'review', 4000)],
   questionNotes: [note('same-note', 'local newer', 5000), note('local-note', 'local only', 4500)],
+  questionAnswerAnnotations: [
+    answerAnnotation('same-annotation', 'same-answer', 'local newer', 5550),
+    answerAnnotation('local-annotation', 'local-answer', 'local only', 5650),
+  ],
   questionAnswerOverrides: [
     answerOverride('same-answer', 'local newer', 5500),
     answerOverride('local-answer', 'local only', 5600),
@@ -301,6 +360,10 @@ const remote = {
     note('same-note', 'remote older', 4000),
     note('remote-note', 'remote only', 8000),
   ],
+  questionAnswerAnnotations: [
+    answerAnnotation('same-annotation', 'same-answer', 'remote older', 5050),
+    answerAnnotation('remote-annotation', 'remote-answer', 'remote only', 8150),
+  ],
   questionAnswerOverrides: [
     answerOverride('same-answer', 'remote older', 5000),
     answerOverride('remote-answer', 'remote only', 8100),
@@ -321,6 +384,9 @@ const remote = {
 const merged = mergeGistBackupData(local, remote)
 const mergedRecord = merged.backup.studyRecords.find((item) => item.questionId === 'same-record')
 const mergedNote = merged.backup.questionNotes.find((item) => item.questionId === 'same-note')
+const mergedAnswerAnnotation = merged.backup.questionAnswerAnnotations.find(
+  (item) => item.id === 'same-annotation',
+)
 const mergedAnswerOverride = merged.backup.questionAnswerOverrides.find(
   (item) => item.questionId === 'same-answer',
 )
@@ -346,6 +412,16 @@ assert(
   'merge adds remote note',
   merged.backup.questionNotes.some((item) => item.questionId === 'remote-note'),
   '云端新笔记未合并',
+)
+assert(
+  'merge keeps newer local answer annotation',
+  mergedAnswerAnnotation?.selectedText === 'local newer',
+  '较新的本地答案标注被覆盖',
+)
+assert(
+  'merge adds remote answer annotation',
+  merged.backup.questionAnswerAnnotations.some((item) => item.id === 'remote-annotation'),
+  '云端新答案标注未合并',
 )
 assert(
   'merge keeps newer local answer override',
@@ -400,6 +476,11 @@ const stats: SyncMergeStats = merged.stats
 assert('merge stats records', stats.remoteRecordsApplied === 1, '云端记录合并计数不正确')
 assert('merge stats notes', stats.remoteNotesApplied === 1, '云端笔记合并计数不正确')
 assert(
+  'merge stats answer annotations',
+  stats.remoteAnswerAnnotationsApplied === 1,
+  '云端答案标注合并计数不正确',
+)
+assert(
   'merge stats answer overrides',
   stats.remoteAnswerOverridesApplied === 1,
   '云端自定义答案合并计数不正确',
@@ -412,7 +493,7 @@ assert('merge stats categories', stats.remoteCategoriesAdded === 2, '云端分�
 
 const serialized = serializeGistBackup(local, '2026-01-06T00:00:00.000Z')
 const serializedPayload = JSON.parse(serialized)
-assert('serialized payload version', serializedPayload.version === 7, '写入 payload 版本应为 v7')
+assert('serialized payload version', serializedPayload.version === 8, '写入 payload 版本应为 v8')
 assert(
   'serialized payload compacts records',
   serializedPayload.records?.ids?.includes('same-record') &&
@@ -423,6 +504,13 @@ assert(
   'serialized payload keeps flags',
   serializedPayload.questionFlags?.some((item: QuestionFlag) => item.questionId === 'local-flag'),
   '写入 payload 未包含重点题标记',
+)
+assert(
+  'serialized payload keeps answer annotations',
+  serializedPayload.questionAnswerAnnotations?.some(
+    (item: QuestionAnswerAnnotation) => item.id === 'local-annotation',
+  ),
+  '写入 payload 未包含答案标注',
 )
 assert(
   'serialized payload keeps answer overrides',
@@ -640,7 +728,8 @@ const createdPayload = createdContent ? JSON.parse(createdContent) : null
 assert('gist create uses private gist', createBody?.public === false, '创建 Gist 必须是 private')
 assert(
   'gist create writes backup file',
-  createdPayload?.version === 7 &&
+  createdPayload?.version === 8 &&
+    createdPayload?.questionAnswerAnnotations?.length === 2 &&
     createdPayload?.questionAnswerOverrides?.length === 2 &&
     createdPayload?.questionFlags?.length === 2 &&
     createdPayload?.aiSessions?.length === 2,
@@ -709,5 +798,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  'Gist 同步兼容检查通过：v1-v7 解析、未来版本拒绝、双端合并和 mock GitHub API 读写路径正常',
+  'Gist 同步兼容检查通过：v1-v8 解析、未来版本拒绝、双端合并和 mock GitHub API 读写路径正常',
 )

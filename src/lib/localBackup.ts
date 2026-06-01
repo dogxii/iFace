@@ -3,6 +3,7 @@ import type {
   JdMatchReport,
   MockInterviewSession,
   Question,
+  QuestionAnswerAnnotation,
   QuestionAnswerOverride,
   QuestionFlag,
   QuestionNote,
@@ -18,6 +19,7 @@ export interface ImportPreview {
   questions: Question[]
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
+  questionAnswerAnnotations: QuestionAnswerAnnotation[]
   questionAnswerOverrides: QuestionAnswerOverride[]
   questionFlags: QuestionFlag[]
   aiSessions: AISession[]
@@ -32,6 +34,7 @@ export interface ImportImpact {
   questions: ImportImpactItem
   studyRecords: ImportImpactItem
   questionNotes: ImportImpactItem
+  questionAnswerAnnotations: ImportImpactItem
   questionAnswerOverrides: ImportImpactItem
   questionFlags: ImportImpactItem
   aiSessions: ImportImpactItem
@@ -91,6 +94,32 @@ function isQuestionAnswerOverride(value: unknown): value is QuestionAnswerOverri
     isRecord(value) &&
     typeof value.questionId === 'string' &&
     typeof value.content === 'string' &&
+    typeof value.createdAt === 'number' &&
+    typeof value.updatedAt === 'number'
+  )
+}
+
+function isQuestionAnswerAnnotation(value: unknown): value is QuestionAnswerAnnotation {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.questionId === 'string' &&
+    typeof value.answerHash === 'string' &&
+    (value.kind === 'highlight' || value.kind === 'comment') &&
+    (value.color === 'yellow' ||
+      value.color === 'green' ||
+      value.color === 'blue' ||
+      value.color === 'pink') &&
+    (value.highlightColor === undefined ||
+      value.highlightColor === null ||
+      value.highlightColor === 'yellow' ||
+      value.highlightColor === 'green' ||
+      value.highlightColor === 'blue' ||
+      value.highlightColor === 'pink') &&
+    typeof value.start === 'number' &&
+    typeof value.end === 'number' &&
+    typeof value.selectedText === 'string' &&
+    typeof value.note === 'string' &&
     typeof value.createdAt === 'number' &&
     typeof value.updatedAt === 'number'
   )
@@ -229,6 +258,7 @@ function parseImportArray<T>(
     | 'questions'
     | 'studyRecords'
     | 'questionNotes'
+    | 'questionAnswerAnnotations'
     | 'questionAnswerOverrides'
     | 'questionFlags'
     | 'aiSessions'
@@ -342,6 +372,12 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
   const questions = parseImportArray(parsed, 'questions', isQuestion, '题目')
   const studyRecords = parseImportArray(parsed, 'studyRecords', isStudyRecord, '学习记录')
   const questionNotes = parseImportArray(parsed, 'questionNotes', isQuestionNote, '题目笔记')
+  const questionAnswerAnnotations = parseImportArray(
+    parsed,
+    'questionAnswerAnnotations',
+    isQuestionAnswerAnnotation,
+    '答案标注',
+  )
   const questionAnswerOverrides = parseImportArray(
     parsed,
     'questionAnswerOverrides',
@@ -372,6 +408,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
     questions.length +
       studyRecords.length +
       questionNotes.length +
+      questionAnswerAnnotations.length +
       questionAnswerOverrides.length +
       questionFlags.length +
       aiSessions.length +
@@ -389,6 +426,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
     questions,
     studyRecords,
     questionNotes,
+    questionAnswerAnnotations,
     questionAnswerOverrides,
     questionFlags,
     aiSessions,
@@ -400,6 +438,7 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
       questions: { created: 0, overwritten: 0 },
       studyRecords: { created: 0, overwritten: 0 },
       questionNotes: { created: 0, overwritten: 0 },
+      questionAnswerAnnotations: { created: 0, overwritten: 0 },
       questionAnswerOverrides: { created: 0, overwritten: 0 },
       questionFlags: { created: 0, overwritten: 0 },
       aiSessions: { created: 0, overwritten: 0 },
