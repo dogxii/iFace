@@ -1,0 +1,362 @@
+[
+  {
+    "id": "mysql-tx-001",
+    "module": "MySQL事务",
+    "difficulty": 1,
+    "question": "什么是MySQL事务？ACID特性分别是什么？",
+    "answer": "## 核心概念\n\n事务是数据库操作的逻辑单位，是一组不可分割的操作序列。ACID是事务的四个基本特性，保证了数据库的可靠性。\n\n## ACID特性\n\n| 特性 | 英文 | 含义 | 实现机制 |\n|------|------|------|----------|\n| 原子性 | Atomicity | 事务中的操作要么全部完成，要么全部不做 | undo log |\n| 一致性 | Consistency | 事务前后数据库从一个一致状态到另一个一致状态 | 由AID共同保证 |\n| 隔离性 | Isolation | 并发事务之间互不干扰 | MVCC、锁 |\n| 持久性 | Durability | 事务提交后数据永久保存 | redo log |\n\n## SQL示例\n\n```sql\n-- 事务基本操作\nBEGIN;\n-- 或 START TRANSACTION;\n\nUPDATE account SET balance = balance - 100 WHERE id = 1;\nUPDATE account SET balance = balance + 100 WHERE id = 2;\n\n-- 提交\nCOMMIT;\n\n-- 回滚\nROLLBACK;\n\n-- SAVEPOINT\nBEGIN;\nINSERT INTO orders VALUES (1, '订单1');\nSAVEPOINT sp1;\nINSERT INTO orders VALUES (2, '订单2');\nROLLBACK TO sp1;  -- 只回滚订单2\nCOMMIT;  -- 提交订单1\n```\n\n## 关键要点\n\n1. **原子性**：通过undo log实现回滚\n2. **持久性**：通过redo log实现崩溃恢复\n3. **隔离性**：通过MVCC和锁机制实现\n4. **一致性**：是目的，由其他三个特性共同保证\n\n## 注意事项\n\n- 只有InnoDB支持事务，MyISAM不支持\n- DDL语句会隐式提交当前事务\n- 长事务持有锁时间长，影响并发性能\n- autocommit默认开启，每条SQL自动提交",
+    "tags": ["ACID", "事务基础", "undo log"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-002",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL的四种事务隔离级别是什么？各有什么问题？",
+    "answer": "## 核心概念\n\nSQL标准定义了四种事务隔离级别，从低到高分别是：读未提交（RU）、读已提交（RC）、可重复读（RR）、串行化（Serializable）。隔离级别越高，并发性能越差。\n\n## 隔离级别对比\n\n| 隔离级别 | 脏读 | 不可重复读 | 幻读 |\n|----------|------|-----------|------|\n| READ UNCOMMITTED | 有 | 有 | 有 |\n| READ COMMITTED | 无 | 有 | 有 |\n| REPEATABLE READ | 无 | 无 | 无（InnoDB通过MVCC+间隙锁解决） |\n| SERIALIZABLE | 无 | 无 | 无 |\n\n## SQL示例\n\n```sql\n-- 查看当前隔离级别\nSELECT @@transaction_isolation;\nSHOW VARIABLES LIKE 'transaction_isolation';\n\n-- 设置隔离级别\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\nSET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;\nSET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ;\n\n-- 读未提交（脏读示例）\n-- 会话A\nBEGIN;\nUPDATE account SET balance = 200 WHERE id = 1;\n-- 未提交\n\n-- 会话B（RU级别）\nSELECT balance FROM account WHERE id = 1;\n-- 读到200（脏数据，会话A可能回滚）\n\n-- 读已提交（解决脏读）\n-- 会话B（RC级别）\nSELECT balance FROM account WHERE id = 1;\n-- 读到旧值100\n-- 会话A COMMIT后\nSELECT balance FROM account WHERE id = 1;\n-- 读到新值200（不可重复读）\n\n-- 可重复读（解决不可重复读）\n-- 会话B（RR级别）\nBEGIN;\nSELECT balance FROM account WHERE id = 1;  -- 100\n-- 会话A修改并提交\nSELECT balance FROM account WHERE id = 1;  -- 仍然是100\nCOMMIT;\n```\n\n## 关键要点\n\n1. **MySQL默认RR**：InnoDB默认可重复读\n2. **InnoDB的RR解决幻读**：通过MVCC和间隙锁\n3. **RC适合大多数场景**：互联网公司常用RC\n4. **Serializable性能差**：串行执行，并发最低\n\n## 注意事项\n\n- InnoDB在RR级别下通过Next-Key Lock解决幻读\n- RC级别下每次SELECT生成新的ReadView\n- RR级别下整个事务使用同一个ReadView\n- 不同隔离级别的锁行为不同\n- 生产环境建议使用RC或RR",
+    "tags": ["隔离级别", "脏读", "不可重复读"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-003",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是脏读、不可重复读和幻读？",
+    "answer": "## 核心概念\n\n脏读、不可重复读和幻读是并发事务可能产生的三种数据不一致问题。\n\n## 三种问题详解\n\n### 脏读（Dirty Read）\n读取到其他事务未提交的数据。\n\n```\n会话A: BEGIN; UPDATE t SET val=200 WHERE id=1;（未提交）\n会话B: SELECT val FROM t WHERE id=1; → 读到200\n会话A: ROLLBACK;（回滚）\n会话B读到的200是无效的脏数据\n```\n\n### 不可重复读（Non-Repeatable Read）\n同一事务内两次读取同一行数据结果不同（其他事务修改了数据）。\n\n```\n会话B: BEGIN; SELECT val FROM t WHERE id=1; → 100\n会话A: UPDATE t SET val=200 WHERE id=1; COMMIT;\n会话B: SELECT val FROM t WHERE id=1; → 200（不一致）\n会话B: COMMIT;\n```\n\n### 幻读（Phantom Read）\n同一事务内两次范围查询结果集不同（其他事务插入了新数据）。\n\n```\n会话B: BEGIN; SELECT * FROM t WHERE val > 100; → 5行\n会话A: INSERT INTO t VALUES (10, 150); COMMIT;\n会话B: SELECT * FROM t WHERE val > 100; → 6行（幻行）\n会话B: COMMIT;\n```\n\n## SQL示例\n\n```sql\n-- 脏读演示（READ UNCOMMITTED）\nSET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;\n\n-- 不可重复读演示（READ COMMITTED）\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n\n-- 幻读演示（READ COMMITTED）\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n\n-- InnoDB RR级别下通过间隙锁防止幻读\nSET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;\n-- SELECT ... FOR UPDATE 会加间隙锁\n```\n\n## 关键要点\n\n1. **脏读最严重**：读取未提交数据\n2. **不可重复读**：两次读结果不一致\n3. **幻读**：范围查询结果集变化\n4. **InnoDB RR解决幻读**：MVCC + 间隙锁\n\n## 注意事项\n\n- 不同隔离级别解决不同的问题\n- InnoDB的RR级别通过MVCC避免读操作的幻读\n- 写操作的幻读通过Next-Key Lock解决\n- 幻读和不可重复读的区别：幻读是新增行，不可重复读是修改行",
+    "tags": ["脏读", "不可重复读", "幻读"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-004",
+    "module": "MySQL事务",
+    "difficulty": 3,
+    "question": "MVCC是什么？InnoDB是如何实现MVCC的？",
+    "answer": "## 核心概念\n\nMVCC（Multi-Version Concurrency Control，多版本并发控制）是InnoDB实现读写不阻塞的机制。通过维护数据的多个版本，读操作读取快照数据，不加锁。\n\n## 实现机制\n\n### 核心组件\n1. **隐藏列**：每行有`trx_id`（事务ID）和`roll_pointer`（回滚指针）\n2. **undo log**：存储数据的旧版本，形成版本链\n3. **ReadView**：记录当前活跃事务的快照\n\n### ReadView结构\n```\nReadView {\n    m_ids: 当前活跃的事务ID列表\n    min_trx_id: 活跃事务中最小的ID\n    max_trx_id: 下一个要分配的事务ID\n    creator_trx_id: 创建ReadView的事务ID\n}\n```\n\n### 可见性判断\n```\n对于版本链中的每个版本（trx_id）：\n1. trx_id == creator_trx_id → 可见（自己修改的）\n2. trx_id < min_trx_id → 可见（事务已提交）\n3. trx_id >= max_trx_id → 不可见（事务在ReadView之后开始）\n4. min_trx_id <= trx_id < max_trx_id →\n   a. trx_id在m_ids中 → 不可见（事务未提交）\n   b. trx_id不在m_ids中 → 可见（事务已提交）\n```\n\n## SQL示例\n\n```sql\n-- RC级别：每次SELECT生成新的ReadView\nBEGIN;\nSELECT * FROM users WHERE id = 1;  -- ReadView1\n-- 其他事务修改并提交\nSELECT * FROM users WHERE id = 1;  -- ReadView2（新快照，能看到修改）\nCOMMIT;\n\n-- RR级别：整个事务使用同一个ReadView\nBEGIN;\nSELECT * FROM users WHERE id = 1;  -- ReadView（整个事务使用）\n-- 其他事务修改并提交\nSELECT * FROM users WHERE id = 1;  -- 同一个ReadView，看不到修改\nCOMMIT;\n\n-- 查看事务信息\nSELECT * FROM information_schema.INNODB_TRX;\n\n-- 查看undo log\nSHOW ENGINE INNODB STATUS\\G\n```\n\n## 关键要点\n\n1. **读写不阻塞**：MVCC的核心优势\n2. **RC vs RR**：ReadView生成时机不同\n3. **版本链**：通过undo log串联多个版本\n4. **purge线程**：清理不再需要的旧版本\n\n## 注意事项\n\n- MVCC只在RC和RR级别下工作\n- SELECT ... FOR UPDATE 和 SELECT ... LOCK IN SHARE MODE是当前读，不使用MVCC\n- 长事务导致undo log堆积，影响性能\n- MVCC解决了读操作的幻读，写操作需要间隙锁",
+    "tags": ["MVCC", "ReadView", "版本链"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-005",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是快照读和当前读？有什么区别？",
+    "answer": "## 核心概念\n\n**快照读（Snapshot Read）**：读取数据的某个历史版本，不需要加锁。普通SELECT语句在RC和RR级别下是快照读。\n\n**当前读（Current Read）**：读取数据的最新版本，并加锁。INSERT、UPDATE、DELETE、SELECT ... FOR UPDATE都是当前读。\n\n## SQL示例\n\n```sql\n-- 快照读（不加锁）\nSELECT * FROM users WHERE id = 1;\n-- 读取MVCC版本链中的数据\n\n-- 当前读（加锁）\nSELECT * FROM users WHERE id = 1 FOR UPDATE;        -- 排他锁\nSELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE; -- 共享锁\n\n-- INSERT/UPDATE/DELETE也是当前读\nINSERT INTO users (id, name) VALUES (1, '张三');  -- 读取最新数据检查唯一性\nUPDATE users SET name = '李四' WHERE id = 1;      -- 读取最新数据进行修改\nDELETE FROM users WHERE id = 1;                    -- 读取最新数据进行删除\n\n-- 快照读示例（RR级别）\nBEGIN;\nSELECT * FROM users WHERE id = 1;  -- 快照读，读到版本A\n-- 其他事务修改id=1并提交\nSELECT * FROM users WHERE id = 1;  -- 仍然是版本A（快照读）\n\n-- 当前读示例\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;  -- 当前读，读到最新版本\n-- 看到其他事务的修改\nCOMMIT;\n```\n\n## 核心区别\n\n| 特性 | 快照读 | 当前读 |\n|------|--------|--------|\n| 读取版本 | 历史版本 | 最新版本 |\n| 是否加锁 | 不加锁 | 加锁 |\n| 实现方式 | MVCC | 锁机制 |\n| 典型语句 | 普通SELECT | SELECT FOR UPDATE |\n| 幻读 | MVCC避免 | 间隙锁避免 |\n\n## 关键要点\n\n1. **快照读使用MVCC**：不加锁，并发性好\n2. **当前读使用锁**：保证数据最新\n3. **UPDATE/DELETE是当前读**：需要最新数据进行修改\n4. **RR级别快照读**：整个事务使用同一个ReadView\n\n## 注意事项\n\n- 快照读可能读到过期数据\n- 需要最新数据时使用当前读\n- 当前读会加锁，可能导致锁等待\n- RR级别下快照读不加间隙锁\n- 当前读使用Next-Key Lock防止幻读",
+    "tags": ["快照读", "当前读", "MVCC"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-006",
+    "module": "MySQL事务",
+    "difficulty": 3,
+    "question": "undo log和redo log分别是什么？有什么作用？",
+    "answer": "## 核心概念\n\n**redo log（重做日志）**：记录数据页的物理修改，用于崩溃恢复，保证事务的持久性（D）。\n\n**undo log（回滚日志）**：记录数据修改前的逻辑逆操作，用于事务回滚和MVCC，保证事务的原子性（A）。\n\n## redo log\n\n```\n作用：崩溃恢复\n内容：物理日志（数据页的修改）\n写入：事务执行过程中持续写入\n文件：ib_logfile0, ib_logfile1\n\n写入流程：\n1. 事务修改数据页（Buffer Pool中）\n2. 将修改写入redo log buffer\n3. 事务提交时将redo log刷盘\n4. 崩溃恢复时重放redo log\n```\n\n## undo log\n\n```\n作用：事务回滚、MVCC\n内容：逻辑日志（INSERT/DELETE/UPDATE的逆操作）\n写入：修改数据前写入\n存储：系统表空间或独立undo表空间\n\nundo log类型：\n- INSERT undo log：INSERT操作的回滚（INSERT→DELETE）\n- UPDATE undo log：UPDATE/DELETE操作的回滚\n```\n\n## SQL示例\n\n```sql\n-- 查看redo log配置\nSHOW VARIABLES LIKE 'innodb_log%';\n\n-- redo log文件大小\nSHOW VARIABLES LIKE 'innodb_log_file_size';\n\n-- redo log刷盘策略\nSHOW VARIABLES LIKE 'innodb_flush_log_at_trx_commit';\n-- 0: 每秒刷盘（可能丢1秒数据）\n-- 1: 每次提交刷盘（最安全）\n-- 2: 每次提交写OS缓存（折中）\n\n-- 查看undo log配置\nSHOW VARIABLES LIKE 'innodb_undo%';\n\n-- 查看undo log状态\nSHOW ENGINE INNODB STATUS\\G\n```\n\n## 关键要点\n\n1. **redo log保证持久性**：崩溃后可以恢复已提交事务\n2. **undo log保证原子性**：回滚未提交事务\n3. **redo log是物理日志**：记录数据页修改\n4. **undo log是逻辑日志**：记录逆操作\n\n## 注意事项\n\n- redo log是循环写入，空间有限\n- undo log会定期被purge线程清理\n- `innodb_flush_log_at_trx_commit=1`最安全但最慢\n- redo log写入是顺序IO，性能很高\n- 长事务导致undo log膨胀，影响性能",
+    "tags": ["redo log", "undo log", "崩溃恢复"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-007",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是binlog？和redo log有什么区别？",
+    "answer": "## 核心概念\n\n**binlog（二进制日志）**：Server层的日志，记录所有修改数据的SQL语句或数据变化，用于主从复制和数据恢复。\n\n**redo log**：InnoDB引擎层的日志，记录数据页的物理修改，用于崩溃恢复。\n\n## 核心区别\n\n| 特性 | binlog | redo log |\n|------|--------|----------|\n| 层次 | Server层 | 引擎层 |\n| 内容 | 逻辑日志/行日志 | 物理日志 |\n| 写入 | 事务提交时写入 | 事务执行中持续写入 |\n| 文件 | 大小无限制 | 固定大小循环写 |\n| 用途 | 主从复制、数据恢复 | 崩溃恢复 |\n\n## binlog格式\n\n```sql\n-- 查看binlog格式\nSHOW VARIABLES LIKE 'binlog_format';\n\n-- 三种格式\n-- STATEMENT: 记录SQL语句\n-- ROW: 记录行数据变化（推荐）\n-- MIXED: 混合模式\n\n-- 开启binlog\nSHOW VARIABLES LIKE 'log_bin';\n\n-- 查看binlog列表\nSHOW BINARY LOGS;\nSHOW MASTER STATUS;\n\n-- 查看binlog内容\nSHOW BINLOG EVENTS IN 'mysql-bin.000001';\n\n-- 使用mysqlbinlog工具\n-- mysqlbinlog --base64-output=decode-rows -v mysql-bin.000001\n\n-- 数据恢复\n-- mysqlbinlog --start-datetime='2024-06-15 10:00:00' \\\n--   --stop-datetime='2024-06-15 11:00:00' mysql-bin.000001 | mysql -u root -p\n```\n\n## 关键要点\n\n1. **binlog用于复制**：主库的binlog传到从库执行\n2. **binlog用于恢复**：可以恢复到某个时间点\n3. **ROW格式最安全**：记录行数据变化\n4. **redo log是循环写**：空间有限\n\n## 注意事项\n\n- binlog默认不开启，需要配置`log_bin`\n- ROW格式binlog比STATEMENT大\n- `expire_logs_days`控制binlog保留时间\n- binlog和redo log通过两阶段提交保持一致\n- binlog是Server层所有引擎共用的",
+    "tags": ["binlog", "redo log", "主从复制"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-008",
+    "module": "MySQL事务",
+    "difficulty": 3,
+    "question": "什么是两阶段提交（2PC）？为什么需要它？",
+    "answer": "## 核心概念\n\n两阶段提交（Two-Phase Commit，2PC）是InnoDB保证redo log和binlog一致性的机制。事务提交分为prepare和commit两个阶段。\n\n## 两阶段提交流程\n\n```\n1. InnoDB将redo log写入磁盘，标记为prepare状态\n2. Server层将binlog写入磁盘\n3. InnoDB将redo log标记为commit状态\n\n为什么需要2PC？\n- 如果只写redo log不写binlog：崩溃恢复后主从数据不一致\n- 如果只写binlog不写redo log：崩溃恢复后丢失已提交事务\n```\n\n## 崩溃恢复分析\n\n```\n场景1：redo log prepare + binlog完整\n→ 事务提交成功（binlog完整说明事务已完成）\n\n场景2：redo log prepare + binlog不完整\n→ 事务回滚（binlog不完整说明事务未完成）\n\n场景3：redo log commit\n→ 事务提交成功\n```\n\n## SQL示例\n\n```sql\n-- 查看两阶段提交配置\nSHOW VARIABLES LIKE 'innodb_support_xa';  -- 默认ON\n\n-- 查看事务状态\nSELECT * FROM information_schema.INNODB_TRX;\n\n-- redo log刷盘策略\nSHOW VARIABLES LIKE 'innodb_flush_log_at_trx_commit';\n-- 1: 每次提交刷盘（配合2PC最安全）\n\n-- binlog刷盘策略\nSHOW VARIABLES LIKE 'sync_binlog';\n-- 1: 每次提交刷盘（推荐）\n\n-- 双1配置（最安全）\n-- innodb_flush_log_at_trx_commit = 1\n-- sync_binlog = 1\n```\n\n## 关键要点\n\n1. **prepare阶段**：redo log写盘\n2. **commit阶段**：binlog写盘后redo log标记commit\n3. **崩溃恢复**：根据redo log和binlog状态决定提交或回滚\n4. **双1配置**：redo log和binlog都每次提交刷盘\n\n## 注意事项\n\n- 两阶段提交保证了redo log和binlog的一致性\n- `innodb_flush_log_at_trx_commit=1`和`sync_binlog=1`是双1配置\n- 双1配置最安全但性能最差\n- MySQL 5.7+支持组提交（Group Commit）优化两阶段提交\n- XA事务是分布式两阶段提交的实现",
+    "tags": ["两阶段提交", "2PC", "redo log binlog"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-009",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "InnoDB有哪些锁类型？",
+    "answer": "## 核心概念\n\nInnoDB实现了多种锁机制来保证并发事务的正确性。按粒度分为表锁和行锁，按模式分为共享锁和排他锁，还有间隙锁、临键锁等特殊锁。\n\n## 锁类型分类\n\n| 分类 | 锁类型 | 说明 |\n|------|--------|------|\n| 粒度 | 表锁 | 锁定整张表 |\n| | 行锁 | 锁定单行 |\n| 模式 | 共享锁（S锁） | 读锁，多个事务可同时持有 |\n| | 排他锁（X锁） | 写锁，与任何锁互斥 |\n| 行锁 | Record Lock | 锁定单行记录 |\n| | Gap Lock | 锁定索引记录之间的间隙 |\n| | Next-Key Lock | Record Lock + Gap Lock |\n| 意向锁 | IS锁 | 表级意向共享锁 |\n| | IX锁 | 表级意向排他锁 |\n\n## SQL示例\n\n```sql\n-- 共享锁（S锁）\nSELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;\n\n-- 排他锁（X锁）\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n\n-- 记录锁（Record Lock）\n-- 锁定id=1的行\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n\n-- 间隙锁（Gap Lock）\n-- 锁定(5, 10)之间的间隙\n-- 在RR级别下，范围查询会加间隙锁\nSELECT * FROM users WHERE id > 5 AND id < 10 FOR UPDATE;\n\n-- 临键锁（Next-Key Lock）\n-- Record Lock + Gap Lock\n-- 锁定记录本身和前面的间隙\nSELECT * FROM users WHERE id >= 5 FOR UPDATE;\n\n-- 查看当前锁\nSELECT * FROM performance_schema.data_locks;\nSELECT * FROM performance_schema.data_lock_waits;\n\n-- 查看InnoDB锁状态\nSHOW ENGINE INNODB STATUS\\G\n```\n\n## 关键要点\n\n1. **行锁基于索引**：没有索引会退化为表锁\n2. **间隙锁防止幻读**：RR级别下使用\n3. **Next-Key Lock默认使用**：RR级别下范围查询\n4. **意向锁是表级锁**：表示事务想要获取行锁\n\n## 注意事项\n\n- 行锁是InnoDB的特色，MyISAM只有表锁\n- 行锁基于索引实现，无索引会锁全表\n- 间隙锁只在RR级别下使用\n- 锁升级（行锁升级为表锁）在InnoDB中不会发生\n- 死锁检测会消耗CPU资源",
+    "tags": ["InnoDB锁", "行锁", "间隙锁"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-010",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是行锁、表锁和间隙锁？各自的使用场景是什么？",
+    "answer": "## 核心概念\n\n**表锁**：锁定整张表，粒度最大，并发性最差。MyISAM只有表锁。\n\n**行锁**：锁定单行记录，粒度最小，并发性最好。InnoDB支持行锁。\n\n**间隙锁（Gap Lock）**：锁定索引记录之间的间隙，防止其他事务在间隙中插入数据（防止幻读）。\n\n## 锁对比\n\n| 锁类型 | 粒度 | 并发性 | 适用引擎 | 冲突范围 |\n|--------|------|--------|----------|----------|\n| 表锁 | 大 | 差 | MyISAM/InnoDB | 整张表 |\n| 行锁 | 小 | 好 | InnoDB | 单行 |\n| 间隙锁 | 中 | 中 | InnoDB | 间隙范围 |\n| 临键锁 | 中 | 中 | InnoDB | 记录+间隙 |\n\n## SQL示例\n\n```sql\n-- 表锁\nLOCK TABLES users READ;   -- 读锁\nLOCK TABLES users WRITE;  -- 写锁\nUNLOCK TABLES;\n\n-- 行锁\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;  -- 锁定id=1的行\n-- 其他事务不能修改id=1的行\nCOMMIT;\n\n-- 间隙锁示例（RR级别）\n-- 表中id有：1, 5, 10\nBEGIN;\nSELECT * FROM users WHERE id > 5 AND id < 10 FOR UPDATE;\n-- 加间隙锁(5, 10)，防止插入id=6,7,8,9\n\n-- 其他事务插入被阻塞\nINSERT INTO users (id, name) VALUES (7, '新用户');  -- 被阻塞\n\n-- 临键锁（Next-Key Lock）\nBEGIN;\nSELECT * FROM users WHERE id >= 5 FOR UPDATE;\n-- 锁定：(1,5] + (5,10] + ... （临键锁范围）\n\n-- 查看锁信息\nSELECT * FROM performance_schema.data_locks\\G\nSELECT * FROM performance_schema.data_lock_waits\\G\n```\n\n## 关键要点\n\n1. **行锁基于索引**：无索引时退化为表锁\n2. **间隙锁防止幻读**：RR级别下的范围查询\n3. **临键锁=记录锁+间隙锁**：InnoDB默认使用的行锁算法\n4. **意向锁**：表级锁，表示事务想获取行锁\n\n## 注意事项\n\n- 行锁的范围取决于查询使用的索引\n- 间隙锁可能导致死锁\n- RC级别下没有间隙锁\n- `SELECT ... FOR UPDATE`加排他锁\n- `SELECT ... LOCK IN SHARE MODE`加共享锁",
+    "tags": ["行锁", "表锁", "间隙锁"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-011",
+    "module": "MySQL事务",
+    "difficulty": 3,
+    "question": "什么是死锁？如何检测和解决死锁？",
+    "answer": "## 核心概念\n\n死锁（Deadlock）是指两个或多个事务互相持有对方需要的锁，导致所有事务都无法继续执行。InnoDB自动检测死锁并回滚代价最小的事务。\n\n## 死锁示例\n\n```\n事务A: BEGIN;\n事务A: UPDATE users SET name='A' WHERE id=1;  -- 锁定id=1\n事务B: BEGIN;\n事务B: UPDATE users SET name='B' WHERE id=2;  -- 锁定id=2\n事务A: UPDATE users SET name='A' WHERE id=2;  -- 等待id=2（被B持有）\n事务B: UPDATE users SET name='B' WHERE id=1;  -- 等待id=1（被A持有）\n→ 死锁！\n```\n\n## SQL示例\n\n```sql\n-- 查看死锁日志\nSHOW ENGINE INNODB STATUS\\G\n-- 在LATEST DETECTED DEADLOCK部分\n\n-- 死锁检测配置\nSHOW VARIABLES LIKE 'innodb_deadlock_detect';  -- 默认ON\nSHOW VARIABLES LIKE 'innodb_lock_wait_timeout';  -- 默认50秒\n\n-- 手动设置锁等待超时\nSET innodb_lock_wait_timeout = 10;\n\n-- 查看当前锁等待\nSELECT * FROM performance_schema.data_lock_waits;\n\n-- 查看当前运行的事务\nSELECT * FROM information_schema.INNODB_TRX;\n\n-- 杀掉死锁事务\nKILL <thread_id>;\n```\n\n## 常见死锁场景\n\n1. **交叉加锁**：两个事务以不同顺序锁定相同的行\n2. **间隙锁冲突**：两个事务在同一个间隙插入数据\n3. **索引导致锁升级**：无索引导致表锁\n\n## 避免死锁的方法\n\n```\n1. 按固定顺序访问表和行\n2. 保持事务短小\n3. 使用合适的索引避免锁升级\n4. 降低隔离级别（RR→RC，消除间隙锁）\n5. 合理设计索引减少锁范围\n```\n\n## 关键要点\n\n1. **自动检测**：InnoDB自动检测死锁\n2. **回滚代价小的事务**：undo log量少的事务被回滚\n3. **innodb_deadlock_detect**：控制是否启用死锁检测\n4. **SHOW ENGINE INNODB STATUS**：查看死锁日志\n\n## 注意事项\n\n- 死锁检测有CPU开销，高并发时可能成为瓶颈\n- `innodb_deadlock_detect=OFF`时依赖`innodb_lock_wait_timeout`\n- 大事务增加死锁概率\n- 使用RC级别可以避免间隙锁导致的死锁\n- 代码中需要捕获死锁异常并重试",
+    "tags": ["死锁", "死锁检测", "锁冲突"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-012",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "乐观锁和悲观锁有什么区别？如何实现？",
+    "answer": "## 核心概念\n\n**悲观锁（Pessimistic Lock）**：假设会发生冲突，在操作数据前先加锁。数据库层面的锁机制就是悲观锁。\n\n**乐观锁（Optimistic Lock）**：假设不会发生冲突，在提交时检查数据是否被修改过。通过版本号或CAS实现。\n\n## 实现方式对比\n\n| 特性 | 悲观锁 | 乐观锁 |\n|------|--------|--------|\n| 实现 | SELECT ... FOR UPDATE | 版本号/CAS |\n| 冲突处理 | 加锁等待 | 提交时检查 |\n| 适用场景 | 写多读少 | 读多写少 |\n| 并发性 | 较低 | 较高 |\n| 实现复杂度 | 简单 | 需要重试逻辑 |\n\n## SQL示例\n\n```sql\n-- 悲观锁实现\nBEGIN;\nSELECT * FROM products WHERE id = 1 FOR UPDATE;  -- 加排他锁\n-- 业务处理\nUPDATE products SET stock = stock - 1 WHERE id = 1;\nCOMMIT;\n\n-- 乐观锁实现（版本号方式）\n-- 表结构\nCREATE TABLE products (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    stock INT,\n    version INT DEFAULT 0  -- 版本号\n);\n\n-- 更新时检查版本号\nUPDATE products\nSET stock = stock - 1, version = version + 1\nWHERE id = 1 AND version = 5;  -- 当前版本号=5\n-- 返回affected_rows=0表示更新失败（版本已变），需要重试\n\n-- 乐观锁实现（CAS方式）\nUPDATE products\nSET stock = stock - 1\nWHERE id = 1 AND stock > 0;  -- 检查库存是否充足\n-- 返回affected_rows=0表示更新失败，需要重试\n\n-- 应用层重试逻辑\n-- while (true) {\n--     int affected = update();\n--     if (affected > 0) break;  // 成功\n--     // 重试或返回失败\n-- }\n```\n\n## 关键要点\n\n1. **悲观锁适合写多场景**：冲突频繁时效率高\n2. **乐观锁适合读多场景**：冲突少时效率高\n3. **乐观锁需要重试**：更新失败时重试\n4. **版本号方式更可靠**：避免ABA问题\n\n## 注意事项\n\n- 乐观锁更新失败需要应用层处理\n- 悲观锁会导致锁等待和死锁\n- 高并发下单纯乐观锁可能导致大量重试\n- 可以结合两种方式：乐观锁+悲观锁降级\n- 分布式环境下乐观锁更容易实现",
+    "tags": ["乐观锁", "悲观锁", "版本号"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-013",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是自增锁（AUTO-INC Lock）？对并发插入有什么影响？",
+    "answer": "## 核心概念\n\n自增锁（AUTO-INC Lock）是InnoDB用于保证AUTO_INCREMENT列值唯一性的表级锁。不同模式的自增锁对并发插入的影响不同。\n\n## 自增锁模式\n\n| 模式 | 说明 | 并发性 |\n|------|------|--------|\n| 传统（traditional） | INSERT语句级别持有 | 差 |\n| 连续（consecutive） | 批量插入时持有，简单插入立即释放 | 好 |\n| 交错（interleaved） | 多个插入可交错执行 | 最好 |\n\n## SQL示例\n\n```sql\n-- 查看自增锁模式\nSHOW VARIABLES LIKE 'innodb_autoinc_lock_mode';\n-- 0: 传统模式\n-- 1: 连续模式（默认）\n-- 2: 交错模式\n\n-- 简单插入 vs 批量插入\n-- 简单插入：INSERT INTO t VALUES (NULL, 'a');\n-- 批量插入：INSERT INTO t SELECT * FROM t2;\n\n-- 连续模式下的行为：\n-- 简单插入：分配自增值后立即释放锁\n-- 批量插入：持有锁直到语句执行完成\n\n-- 交错模式：\n-- 所有插入都立即释放锁\n-- 多个INSERT可以交错获取自增值\n-- 结果：自增值可能不是连续的\n\n-- 主从复制注意事项\n-- innodb_autoinc_lock_mode=2时，批量插入的自增值可能不一致\n-- MySQL 8.0使用新的复制协议解决此问题\n```\n\n## 关键要点\n\n1. **表级锁**：自增锁是表级锁，不是行级锁\n2. **连续模式**：大多数场景推荐使用\n3. **交错模式**：高并发插入推荐，但自增值不连续\n4. **主从复制**：交错模式需要特殊配置\n\n## 注意事项\n\n- 自增锁只在需要自增值时持有\n- 简单INSERT在连续模式下不会阻塞其他插入\n- 批量INSERT会持有锁直到语句完成\n- `innodb_autoinc_lock_mode=2`适合高并发场景\n- MySQL 8.0自增值持久化到redo log",
+    "tags": ["自增锁", "AUTO_INCREMENT", "并发插入"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-014",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是元数据锁（MDL）？有什么作用？",
+    "answer": "## 核心概念\n\n元数据锁（Metadata Lock，MDL）是MySQL 5.5引入的锁机制，用于解决DDL和DML的并发冲突。访问表时自动加MDL，不需要显式声明。\n\n## MDL类型\n\n| 锁类型 | 兼容性 | 触发条件 |\n|--------|--------|----------|\n| MDL_SHARED（S） | 互相兼容 | 普通SELECT |\n| MDL_SHARED_READ（SR） | 互相兼容 | SELECT ... LOCK IN SHARE MODE |\n| MDL_SHARED_WRITE（SW） | SR兼容，与DDL冲突 | INSERT/UPDATE/DELETE |\n| MDL_EXCLUSIVE（X） | 与所有锁冲突 | DDL（ALTER TABLE等） |\n\n## SQL示例\n\n```sql\n-- MDL冲突场景\n-- 会话A：长查询\nBEGIN;\nSELECT * FROM users;  -- 加MDL_SHARED_READ\n-- 长时间未提交\n\n-- 会话B：DDL操作\nALTER TABLE users ADD COLUMN age INT;  -- 需要MDL_EXCLUSIVE\n-- 被会话A阻塞\n\n-- 会话C：普通查询\nSELECT * FROM users;  -- 需要MDL_SHARED_READ\n-- 也被会话B阻塞（因为B在等待X锁）\n\n-- 结论：DDL操作被阻塞后，后续所有查询都会被阻塞！\n\n-- 查看MDL锁\nSELECT * FROM performance_schema.metadata_locks;\n\n-- 查看MDL锁等待\nSELECT * FROM sys.innodb_lock_waits;\n\n-- 避免MDL阻塞\n-- 1. 避免长事务\n-- 2. DDL前检查是否有长查询\n-- 3. 使用pt-online-schema-change\n```\n\n## 关键要点\n\n1. **自动加锁**：访问表时自动加MDL\n2. **DDL需要X锁**：ALTER TABLE需要排他MDL\n3. **级联阻塞**：DDL被阻塞后，后续查询也被阻塞\n4. **长事务是元凶**：长事务持有MDL导致DDL阻塞\n\n## 注意事项\n\n- MDL在事务提交后才释放\n- 长事务会导致DDL操作超时\n- 生产环境DDL操作前检查长事务\n- 使用`pt-online-schema-change`避免MDL阻塞\n- `lock_wait_timeout`控制MDL等待超时",
+    "tags": ["MDL", "元数据锁", "DDL阻塞"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-015",
+    "module": "MySQL事务",
+    "difficulty": 1,
+    "question": "MySQL中如何查看当前事务和锁信息？",
+    "answer": "## 核心概念\n\nMySQL提供了多个视图和命令来查看当前事务、锁等待等信息，是排查并发问题的重要工具。\n\n## SQL示例\n\n```sql\n-- 查看当前运行的事务\nSELECT * FROM information_schema.INNODB_TRX;\n\n-- 查看当前锁\nSELECT * FROM performance_schema.data_locks;\n\n-- 查看锁等待\nSELECT * FROM performance_schema.data_lock_waits;\n\n-- 查看当前连接\nSHOW PROCESSLIST;\nSELECT * FROM information_schema.PROCESSLIST;\n\n-- 查看InnoDB状态\nSHOW ENGINE INNODB STATUS\\G\n\n-- 查看元数据锁\nSELECT * FROM performance_schema.metadata_locks;\n\n-- 查看详细的锁等待关系\nSELECT\n    r.trx_id AS waiting_trx_id,\n    r.trx_mysql_thread_id AS waiting_thread,\n    r.trx_query AS waiting_query,\n    b.trx_id AS blocking_trx_id,\n    b.trx_mysql_thread_id AS blocking_thread,\n    b.trx_query AS blocking_query\nFROM information_schema.INNODB_LOCK_WAITS w\nJOIN information_schema.INNODB_TRX b ON w.blocking_trx_id = b.trx_id\nJOIN information_schema.INNODB_TRX r ON w.requesting_trx_id = r.trx_id;\n\n-- sys视图（更易用）\nSELECT * FROM sys.innodb_lock_waits;\nSELECT * FROM sys.schema_table_lock_waits;\n\n-- 杀掉阻塞的事务\nKILL <blocking_thread_id>;\n```\n\n## 常用视图\n\n| 视图 | 内容 |\n|------|------|\n| INNODB_TRX | 当前运行的事务 |\n| data_locks | 当前持有的锁 |\n| data_lock_waits | 锁等待关系 |\n| metadata_locks | 元数据锁 |\n| PROCESSLIST | 当前连接 |\n\n## 关键要点\n\n1. **INNODB_TRX**：查看事务状态、开始时间、查询语句\n2. **data_locks**：查看锁类型、锁定的表和行\n3. **data_lock_waits**：查看谁阻塞了谁\n4. **sys.innodb_lock_waits**：sys视图更易用\n\n## 注意事项\n\n- `SHOW ENGINE INNODB STATUS`信息量大但难以解析\n- sys数据库提供了更友好的视图\n- 长事务是并发问题的常见原因\n- 定期监控INNODB_TRX发现长事务\n- `performance_schema`需要开启才能使用",
+    "tags": ["锁信息", "事务监控", "INNODB_TRX"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-016",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "InnoDB的行锁是如何实现的？为什么无索引会退化为表锁？",
+    "answer": "## 核心概念\n\nInnoDB的行锁是通过给索引上的索引项加锁来实现的。如果没有可用的索引，InnoDB会使用聚簇索引对所有行加锁，效果等同于表锁。\n\n## 行锁实现原理\n\n```\n行锁的三种形式：\n1. Record Lock：锁定索引记录\n2. Gap Lock：锁定索引记录之间的间隙\n3. Next-Key Lock：Record Lock + Gap Lock\n\n加锁过程：\n1. 根据WHERE条件在索引中查找\n2. 对满足条件的索引项加锁\n3. 没有索引 → 扫描聚簇索引 → 锁定所有行\n```\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(50),\n    age INT\n);\n\n-- 有索引的情况\n-- id是主键，有索引\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n-- 只锁定id=1的行\n\n-- 无索引的情况\n-- age没有索引\nBEGIN;\nSELECT * FROM users WHERE age = 25 FOR UPDATE;\n-- 扫描全表找到age=25的行\n-- 锁定所有扫描过的行（甚至不满足条件的行）\n-- 效果等同于表锁\n\n-- 其他事务被阻塞\nINSERT INTO users (id, name, age) VALUES (100, '新用户', 30);\n-- 被阻塞（因为会话A锁定了所有行）\n\n-- 解决方案：添加索引\nCREATE INDEX idx_age ON users(age);\n\n-- 现在只锁定age=25的行\nBEGIN;\nSELECT * FROM users WHERE age = 25 FOR UPDATE;\nINSERT INTO users (id, name, age) VALUES (100, '新用户', 30);  -- 不被阻塞\n```\n\n## 关键要点\n\n1. **行锁基于索引**：给索引项加锁\n2. **无索引全表扫描**：锁定所有行\n3. **索引选择性影响锁范围**：索引选择性差会锁定更多行\n4. **主键查询锁定单行**：最高效的行锁\n\n## 注意事项\n\n- 确保WHERE条件使用索引\n- 隐式类型转换导致索引失效\n- 锁的范围取决于索引的匹配范围\n- `EXPLAIN`可以检查是否使用了索引\n- 合理设计索引减少锁冲突",
+    "tags": ["行锁实现", "索引与锁", "表锁"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-017",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是Next-Key Lock？如何防止幻读？",
+    "answer": "## 核心概念\n\nNext-Key Lock是InnoDB在RR级别下默认使用的行锁算法，它是Record Lock和Gap Lock的组合。它不仅锁定索引记录，还锁定记录前面的间隙，防止其他事务在间隙中插入数据。\n\n## 锁定范围\n\n```\n假设有id索引，值为：1, 5, 10, 15\n\nNext-Key Lock锁定范围：\n(-∞, 1], (1, 5], (5, 10], (10, 15], (15, +∞)\n\n示例：\nSELECT * FROM t WHERE id = 5 FOR UPDATE;\n锁定：(1, 5] —— 既锁定id=5，又锁定(1,5)的间隙\n```\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id INT PRIMARY KEY,\n    user_id INT,\n    amount DECIMAL(10,2),\n    INDEX idx_user_id (user_id)\n);\n-- 表中有user_id: 1, 5, 10\n\n-- Next-Key Lock示例\nBEGIN;\nSELECT * FROM orders WHERE user_id = 5 FOR UPDATE;\n-- 锁定：(1, 5] —— user_id=5的记录 + (1,5)的间隙\n\n-- 其他事务在间隙中插入被阻塞\nINSERT INTO orders VALUES (100, 3, 100);  -- 被阻塞\nINSERT INTO orders VALUES (100, 4, 100);  -- 被阻塞\nINSERT INTO orders VALUES (100, 6, 100);  -- 不被阻塞（不在间隙内）\n\n-- 范围查询的Next-Key Lock\nBEGIN;\nSELECT * FROM orders WHERE user_id >= 5 AND user_id < 10 FOR UPDATE;\n-- 锁定：(1, 5] + (5, 10]\n\n-- 唯一索引等值查询降级为Record Lock\nBEGIN;\nSELECT * FROM orders WHERE id = 5 FOR UPDATE;\n-- 只锁定id=5（Record Lock），因为唯一索引不可能插入重复值\n\n-- 查看锁信息\nSELECT * FROM performance_schema.data_locks\\G\n```\n\n## Next-Key Lock规则\n\n| 查询条件 | 锁类型 |\n|----------|--------|\n| 唯一索引等值查询（记录存在） | Record Lock |\n| 唯一索引等值查询（记录不存在） | Gap Lock |\n| 非唯一索引等值查询 | Next-Key Lock |\n| 非唯一索引范围查询 | Next-Key Lock |\n\n## 关键要点\n\n1. **RR级别默认使用**：防止幻读\n2. **Record Lock + Gap Lock**：锁定记录和间隙\n3. **唯一索引降级**：等值查询降级为Record Lock\n4. **防止插入幻行**：其他事务不能在间隙中插入\n\n## 注意事项\n\n- Next-Key Lock增加锁冲突概率\n- RC级别下没有Gap Lock和Next-Key Lock\n- 等值查询使用唯一索引可以减少锁范围\n- 范围查询的锁定范围可能比预期大\n- 合理设计索引减少锁冲突",
+    "tags": ["Next-Key Lock", "幻读", "间隙锁"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-018",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL的事务隔离级别如何影响锁的行为？",
+    "answer": "## 核心概念\n\n不同隔离级别下，InnoDB使用不同的锁策略。RR级别使用Next-Key Lock防止幻读，RC级别不使用间隙锁。\n\n## 隔离级别与锁\n\n| 隔离级别 | 行锁类型 | 间隙锁 | 说明 |\n|----------|----------|--------|------|\n| READ UNCOMMITTED | Record Lock | 无 | 不推荐 |\n| READ COMMITTED | Record Lock | 无 | 互联网常用 |\n| REPEATABLE READ | Next-Key Lock | 有 | MySQL默认 |\n| SERIALIZABLE | 所有SELECT加锁 | 有 | 性能最差 |\n\n## SQL示例\n\n```sql\n-- RC级别（无间隙锁）\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n\nBEGIN;\nSELECT * FROM orders WHERE user_id > 5 AND user_id < 10 FOR UPDATE;\n-- 只锁定user_id=6,7,8,9的记录（如果存在）\n-- 不锁定间隙\n\n-- 其他事务可以在间隙中插入\nINSERT INTO orders VALUES (100, 7, 100);  -- 成功（RC级别）\n\n-- RR级别（有间隙锁）\nSET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;\n\nBEGIN;\nSELECT * FROM orders WHERE user_id > 5 AND user_id < 10 FOR UPDATE;\n-- 锁定记录 + 间隙\n\n-- 其他事务在间隙中插入被阻塞\nINSERT INTO orders VALUES (100, 7, 100);  -- 被阻塞\n\n-- SERIALIZABLE级别\nSET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;\n\nSELECT * FROM orders WHERE user_id = 5;\n-- 自动加共享锁（LOCK IN SHARE MODE）\n```\n\n## 关键要点\n\n1. **RC级别更宽松**：不使用间隙锁，并发性更好\n2. **RR级别更严格**：使用Next-Key Lock防止幻读\n3. **SERIALIZABLE最严格**：所有SELECT自动加锁\n4. **互联网常用RC**：减少锁冲突\n\n## 注意事项\n\n- RC级别下可能出现幻读\n- RR级别下Next-Key Lock增加死锁概率\n- 降低隔离级别可以减少锁冲突\n- 不同隔离级别的MVCC行为不同\n- 选择隔离级别需要权衡一致性和性能",
+    "tags": ["隔离级别", "锁行为", "RC vs RR"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-019",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "如何避免长事务？长事务有什么危害？",
+    "answer": "## 核心概念\n\n长事务是指运行时间很长的事务。长事务会持有锁长时间不释放，导致其他事务阻塞，还会导致undo log膨胀。\n\n## 长事务的危害\n\n1. **锁持有时间长**：阻塞其他事务\n2. **undo log膨胀**：MVCC需要保留旧版本\n3. **MDL阻塞**：DDL操作被阻塞\n4. **连接占用**：连接池资源耗尽\n5. **恢复时间长**：崩溃恢复需要更多时间\n\n## SQL示例\n\n```sql\n-- 查看长事务\nSELECT\n    trx_id,\n    trx_state,\n    trx_started,\n    TIMESTAMPDIFF(SECOND, trx_started, NOW()) AS duration,\n    trx_query,\n    trx_rows_locked,\n    trx_rows_modified\nFROM information_schema.INNODB_TRX\nORDER BY trx_started;\n\n-- 设置事务超时\nSET GLOBAL innodb_lock_wait_timeout = 10;  -- 锁等待超时10秒\nSET SESSION wait_timeout = 600;  -- 连接超时10分钟\n\n-- 开启长事务告警（MySQL 8.0+）\nSET GLOBAL innodb_rollback_on_timeout = ON;\n\n-- 避免长事务的方法\n-- 1. 开启autocommit\nSET autocommit = 1;\n\n-- 2. 事务中避免耗时操作\n-- 不要在事务中做网络请求、文件IO等\n\n-- 3. 拆分大事务\n-- 将大批量操作拆分为多个小事务\n\n-- 批量删除示例\n-- 差：DELETE FROM logs WHERE created_at < '2024-01-01';\n-- 好：分批删除\nDELETE FROM logs WHERE created_at < '2024-01-01' LIMIT 1000;\n-- 循环执行直到影响行数为0\n```\n\n## 关键要点\n\n1. **autocommit**：避免忘记提交的长事务\n2. **事务超时**：设置合理的超时时间\n3. **监控告警**：定期检查长事务\n4. **拆分大事务**：减少锁持有时间\n\n## 注意事项\n\n- 长事务是数据库性能问题的常见原因\n- 避免在事务中进行网络请求\n- 使用`MAX_EXECUTION_TIME`限制查询时间\n- 定期监控`INNODB_TRX`发现长事务\n- 应用层需要正确的事务管理",
+    "tags": ["长事务", "事务管理", "性能优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-020",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是组提交（Group Commit）？有什么优化效果？",
+    "answer": "## 核心概念\n\n组提交（Group Commit）是MySQL 5.7引入的优化，将多个事务的redo log和binlog合并为一次刷盘操作，减少IO次数，提升并发事务的提交性能。\n\n## 工作原理\n\n```\n无Group Commit：\n事务A提交 → 刷盘 → 事务B提交 → 刷盘 → 事务C提交 → 刷盘\n共3次刷盘\n\n有Group Commit：\n事务A/B/C提交 → 合并刷盘\n共1次刷盘\n```\n\n## SQL示例\n\n```sql\n-- 查看Group Commit状态\nSHOW STATUS LIKE 'Binlog_commits';\nSHOW STATUS LIKE 'Binlog_group_commits';\n\n-- Binlog_group_commits / Binlog_commits 越小说明合并效果越好\n\n-- Group Commit相关变量\nSHOW VARIABLES LIKE 'binlog_group_commit_sync_no_delay_count';\nSHOW VARIABLES LIKE 'binlog_group_commit_sync_no_delay_usec';\n\n-- flush阶段：将redo log写入OS缓存\n-- sync阶段：将binlog刷盘\n-- commit阶段：标记redo log为commit\n\n-- MySQL 8.0优化\n-- REDO LOG的写入也使用了Group Commit\n```\n\n## Group Commit流程\n\n```\n1. 事务准备提交\n2. 进入flush队列\n3. 队列第一个事务作为leader\n4. leader将所有事务的redo log写入OS缓存\n5. leader将所有事务的binlog刷盘\n6. leader标记所有事务的redo log为commit\n7. 所有事务返回成功\n```\n\n## 关键要点\n\n1. **减少IO次数**：合并多个事务的刷盘操作\n2. **leader线程**：一个leader负责所有组员的刷盘\n3. **双1配置下的优化**：即使双1也能有较好性能\n4. **MySQL 5.7+**：默认启用\n\n## 注意事项\n\n- Group Commit自动生效，无需特殊配置\n- 高并发下Group Commit效果更明显\n- `binlog_group_commit_sync_no_delay_count`控制组大小\n- MySQL 8.0对Group Commit进一步优化\n- Group Commit减少了fsync的调用次数",
+    "tags": ["Group Commit", "组提交", "提交优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-021",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是XA事务？什么场景下使用？",
+    "answer": "## 核心概念\n\nXA事务是分布式事务的两阶段提交协议实现。MySQL支持XA事务，可以在多个MySQL实例或其他支持XA的资源管理器之间保证数据一致性。\n\n## SQL示例\n\n```sql\n-- XA事务语法\n-- 阶段1：准备\nXA START 'xid_1';\nUPDATE account SET balance = balance - 100 WHERE id = 1;\nXA END 'xid_1';\nXA PREPARE 'xid_1';\n\n-- 阶段2：提交或回滚\nXA COMMIT 'xid_1';\n-- 或\nXA ROLLBACK 'xid_1';\n\n-- 查看XA事务\nXA RECOVER;\n\n-- 分布式事务示例\n-- MySQL实例A\nXA START 'order_xa';\nINSERT INTO orders VALUES (1, '订单1', 100);\nXA END 'order_xa';\nXA PREPARE 'order_xa';\n\n-- MySQL实例B\nXA START 'payment_xa';\nINSERT INTO payments VALUES (1, 1, 100);\nXA END 'payment_xa';\nXA PREPARE 'payment_xa';\n\n-- 两个实例都准备成功后提交\n-- MySQL实例A\nXA COMMIT 'order_xa';\n\n-- MySQL实例B\nXA COMMIT 'payment_xa';\n\n-- 如果任一实例准备失败，则回滚所有实例\n```\n\n## XA事务状态\n\n```\nACTIVE → ENDED → PREPARED → COMMITTED/ROLLED BACK\n```\n\n## 关键要点\n\n1. **两阶段提交**：PREPARE + COMMIT\n2. **分布式一致性**：跨多个MySQL实例\n3. **XA RECOVER**：查看处于PREPARED状态的事务\n4. **性能开销**：比本地事务慢得多\n\n## 注意事项\n\n- XA事务有额外的性能开销\n- PREPARED状态的XA事务需要手动处理（崩溃恢复）\n- 应用层需要处理XA事务的异常\n- 分布式事务建议使用Seata等中间件\n- MySQL XA事务只在InnoDB中支持",
+    "tags": ["XA事务", "分布式事务", "两阶段提交"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-022",
+    "module": "MySQL事务",
+    "difficulty": 1,
+    "question": "MySQL中如何使用SAVEPOINT？",
+    "answer": "## 核心概念\n\nSAVEPOINT（保存点）允许在事务中设置回滚点，可以选择性地回滚到某个保存点，而不影响其他操作。\n\n## SQL示例\n\n```sql\n-- 基本用法\nBEGIN;\n\nINSERT INTO orders VALUES (1, '订单1');\nSAVEPOINT sp1;  -- 设置保存点1\n\nINSERT INTO orders VALUES (2, '订单2');\nSAVEPOINT sp2;  -- 设置保存点2\n\nINSERT INTO orders VALUES (3, '订单3');\n\n-- 回滚到保存点sp2\nROLLBACK TO SAVEPOINT sp2;\n-- 订单3被撤销，订单1和订单2保留\n\n-- 回滚到保存点sp1\nROLLBACK TO SAVEPOINT sp1;\n-- 订单2也被撤销，只有订单1保留\n\n-- 释放保存点\nRELEASE SAVEPOINT sp1;\n\n-- 提交事务\nCOMMIT;  -- 只提交订单1\n\n-- 实际应用场景：条件性插入\nBEGIN;\nINSERT INTO users VALUES (1, '张三');\nSAVEPOINT sp;\n\n-- 尝试插入可能冲突的数据\nINSERT INTO users VALUES (2, '李四');\n-- 如果出错，回滚到保存点\n-- ROLLBACK TO SAVEPOINT sp;\n\n-- 继续其他操作\nINSERT INTO orders VALUES (1, 1, 100);\nCOMMIT;\n```\n\n## 关键要点\n\n1. **选择性回滚**：只回滚保存点之后的操作\n2. **多个保存点**：可以在事务中设置多个\n3. **RELEASE SAVEPOINT**：删除保存点\n4. **嵌套保存点**：支持多层保存点\n\n## 注意事项\n\n- 回滚到保存点不会结束事务\n- 保存点名称在事务中必须唯一\n- ROLLBACK TO SAVEPOINT不会释放保存点\n- COMMIT或ROLLBACK会释放所有保存点\n- 存储过程中常用SAVEPOINT处理异常",
+    "tags": ["SAVEPOINT", "保存点", "事务控制"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-023",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是隐式提交？哪些操作会导致隐式提交？",
+    "answer": "## 核心概念\n\n隐式提交（Implicit Commit）是指某些SQL语句执行前会自动提交当前事务，即使没有显式COMMIT。\n\n## 导致隐式提交的操作\n\n### DDL语句\n```sql\n-- 所有DDL语句\nCREATE TABLE ...\nALTER TABLE ...\nDROP TABLE ...\nCREATE INDEX ...\nDROP INDEX ...\nTRUNCATE TABLE ...\nRENAME TABLE ...\n```\n\n### 管理语句\n```sql\n-- 权限操作\nGRANT ...\nREVOKE ...\n\n-- 用户管理\nCREATE USER ...\nDROP USER ...\nALTER USER ...\n\n-- 其他\nLOCK TABLES ...\nUNLOCK TABLES ...\nSET GLOBAL ...\nANALYZE TABLE ...\nOPTIMIZE TABLE ...\n```\n\n## SQL示例\n\n```sql\n-- 隐式提交示例\nBEGIN;\nINSERT INTO orders VALUES (1, '订单1');\n\n-- DDL语句导致隐式提交\nCREATE TABLE temp (id INT);  -- INSERT被隐式提交\n\nROLLBACK;  -- 无法回滚INSERT\n\n-- 正确做法\nBEGIN;\nINSERT INTO orders VALUES (1, '订单1');\nCOMMIT;  -- 先提交\n\nCREATE TABLE temp (id INT);  -- 单独执行DDL\n\n-- LOCK TABLES也会隐式提交\nBEGIN;\nINSERT INTO orders VALUES (2, '订单2');\nLOCK TABLES users READ;  -- INSERT被隐式提交\n```\n\n## 隐式提交的完整列表\n\n| 类别 | 语句 |\n|------|------|\n| DDL | CREATE/ALTER/DROP TABLE/INDEX/VIEW/PROCEDURE/TRIGGER/EVENT |\n| 权限 | GRANT/REVOKE |\n| 用户 | CREATE/ALTER/DROP USER |\n| 管理 | LOCK TABLES/UNLOCK TABLES/SET GLOBAL |\n| 数据 | TRUNCATE TABLE/LOAD DATA/ALTER TABLE |\n| 分析 | ANALYZE TABLE/OPTIMIZE TABLE/REPAIR TABLE |\n\n## 关键要点\n\n1. **DDL自动提交**：所有DDL语句都会隐式提交\n2. **事务中避免DDL**：否则之前的DML无法回滚\n3. **LOCK TABLES也会提交**：需要注意\n4. **LOAD DATA也会提交**：批量导入前确认事务已提交\n\n## 注意事项\n\n- DDL语句在事务中执行时会自动提交之前的DML\n- 需要回滚的操作不要和DDL放在同一个事务中\n- 某些管理语句（GRANT等）也会隐式提交\n- `autocommit=1`时每条语句都是独立的\n- 隐式提交无法通过设置关闭",
+    "tags": ["隐式提交", "DDL", "事务管理"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-024",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是MySQL的锁等待超时？如何配置？",
+    "answer": "## 核心概念\n\n锁等待超时是指事务等待获取锁的时间超过阈值后自动报错回滚。InnoDB通过`innodb_lock_wait_timeout`控制行锁等待超时，通过`lock_wait_timeout`控制元数据锁等待超时。\n\n## SQL示例\n\n```sql\n-- 查看锁等待超时配置\nSHOW VARIABLES LIKE 'innodb_lock_wait_timeout';  -- 默认50秒\nSHOW VARIABLES LIKE 'lock_wait_timeout';  -- MDL等待超时，默认31536000秒\n\n-- 设置锁等待超时\nSET GLOBAL innodb_lock_wait_timeout = 10;  -- 10秒\nSET SESSION innodb_lock_wait_timeout = 10;\n\n-- 锁等待超时报错\n-- ERROR 1205 (HY000): Lock wait timeout exceeded; try restarting transaction\n\n-- 查看当前锁等待\nSELECT * FROM performance_schema.data_lock_waits;\n\n-- 查看详细的锁等待关系\nSELECT\n    r.trx_id AS waiting_trx_id,\n    r.trx_query AS waiting_query,\n    b.trx_id AS blocking_trx_id,\n    b.trx_query AS blocking_query,\n    w.waiting_time\nFROM performance_schema.data_lock_waits w\nJOIN information_schema.INNODB_TRX r ON w.REQUESTING_ENGINE_TRANSACTION_ID = r.trx_id\nJOIN information_schema.INNODB_TRX b ON w.BLOCKING_ENGINE_TRANSACTION_ID = b.trx_id;\n\n-- 手动杀掉阻塞的事务\nKILL <blocking_thread_id>;\n\n-- sys视图\nSELECT * FROM sys.innodb_lock_waits;\n```\n\n## 超时参数对比\n\n| 参数 | 作用 | 默认值 |\n|------|------|--------|\n| innodb_lock_wait_timeout | InnoDB行锁等待超时 | 50秒 |\n| lock_wait_timeout | MDL锁等待超时 | 31536000秒 |\n| wait_timeout | 空闲连接超时 | 28800秒 |\n| interactive_timeout | 交互式连接超时 | 28800秒 |\n\n## 关键要点\n\n1. **innodb_lock_wait_timeout**：控制行锁等待\n2. **lock_wait_timeout**：控制MDL等待\n3. **超时报错回滚**：等待超时后事务自动回滚\n4. **应用层重试**：捕获超时异常并重试\n\n## 注意事项\n\n- 生产环境建议将`innodb_lock_wait_timeout`设为5-10秒\n- 超时时间太长会导致连接堆积\n- 应用层需要捕获锁超时异常并重试\n- `innodb_rollback_on_timeout=ON`时超时会回滚整个事务\n- 频繁超时表示存在锁冲突，需要优化",
+    "tags": ["锁等待超时", "锁配置", "超时报错"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-025",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "如何优化InnoDB的事务性能？",
+    "answer": "## 核心概念\n\n事务性能优化需要从减少锁冲突、缩短事务时间、合理配置参数等方面入手。\n\n## SQL示例\n\n```sql\n-- 1. 使用合适的隔离级别\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;  -- 减少锁冲突\n\n-- 2. 保持事务短小\n-- 不要在事务中做网络请求\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\nUPDATE users SET balance = balance - 100 WHERE id = 1;\nCOMMIT;  -- 快速提交\n\n-- 3. 使用autocommit\nSET autocommit = 1;\n\n-- 4. 批量操作分批提交\n-- 大批量更新分批执行\nDELETE FROM logs WHERE created_at < '2024-01-01' LIMIT 1000;\n-- 循环执行\n\n-- 5. 优化redo log配置\nSET GLOBAL innodb_flush_log_at_trx_commit = 1;  -- 最安全\nSET GLOBAL sync_binlog = 1;  -- 最安全\n-- 或者使用折中方案：\nSET GLOBAL innodb_flush_log_at_trx_commit = 2;\nSET GLOBAL sync_binlog = 100;\n\n-- 6. 优化Buffer Pool\nSET GLOBAL innodb_buffer_pool_size = 4 * 1024 * 1024 * 1024;  -- 4GB\n\n-- 7. 使用合理的索引减少锁范围\nCREATE INDEX idx_status ON orders(status);\n\n-- 8. 监控长事务\nSELECT * FROM information_schema.INNODB_TRX\nWHERE TIMESTAMPDIFF(SECOND, trx_started, NOW()) > 60;\n\n-- 9. 设置事务超时\nSET GLOBAL innodb_lock_wait_timeout = 10;\n```\n\n## 优化方向\n\n| 方向 | 措施 |\n|------|------|\n| 减少锁冲突 | 使用RC级别、合理索引、避免间隙锁 |\n| 缩短事务时间 | 减少事务中的操作、避免网络请求 |\n| 减少IO | 调整flush策略、增大Buffer Pool |\n| 监控告警 | 长事务监控、锁等待监控 |\n\n## 关键要点\n\n1. **事务尽可能短**：减少锁持有时间\n2. **合适的隔离级别**：RC级别锁冲突少\n3. **合理配置参数**：redo log、binlog刷盘策略\n4. **监控长事务**：及时发现和处理\n\n## 注意事项\n\n- 双1配置最安全但性能最差\n- RC级别下可能出现幻读\n- 长事务是性能问题的常见原因\n- 批量操作一定要分批提交\n- 使用连接池管理数据库连接",
+    "tags": ["事务优化", "性能调优", "配置参数"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-026",
+    "module": "MySQL事务",
+    "difficulty": 1,
+    "question": "MySQL中autocommit的作用是什么？",
+    "answer": "## 核心概念\n\nautocommit控制MySQL是否自动提交每个SQL语句。默认开启（ON），每条SQL语句执行后自动提交。关闭后需要显式COMMIT。\n\n## SQL示例\n\n```sql\n-- 查看autocommit\nSHOW VARIABLES LIKE 'autocommit';  -- 默认ON\n\n-- 关闭autocommit\nSET autocommit = 0;\n\n-- 开启autocommit\nSET autocommit = 1;\n\n-- autocommit=ON时\nINSERT INTO orders VALUES (1, '订单1');  -- 自动提交\n-- 等价于\nBEGIN;\nINSERT INTO orders VALUES (1, '订单1');\nCOMMIT;\n\n-- autocommit=OFF时\nINSERT INTO orders VALUES (2, '订单2');  -- 未提交\nINSERT INTO orders VALUES (3, '订单3');  -- 未提交\nCOMMIT;  -- 手动提交\n\n-- BEGIN/START TRANSACTION会临时关闭autocommit\nSET autocommit = 1;\nBEGIN;  -- autocommit临时关闭\nINSERT INTO orders VALUES (4, '订单4');\nCOMMIT;  -- 提交后autocommit恢复为1\n\n-- 不显式提交的风险\nSET autocommit = 0;\nINSERT INTO orders VALUES (5, '订单5');\n-- 忘记COMMIT\n-- 事务一直持有锁\n```\n\n## 关键要点\n\n1. **默认ON**：每条SQL自动提交\n2. **显式事务**：BEGIN/COMMIT控制\n3. **忘记提交风险**：autocommit=OFF时可能忘记COMMIT\n4. **长事务风险**：autocommit=OFF时容易产生长事务\n\n## 注意事项\n\n- 建议保持autocommit=ON\n- 需要事务时使用BEGIN/COMMIT显式控制\n- autocommit=OFF时必须记得COMMIT或ROLLBACK\n- 连接池中注意autocommit的设置\n- DDL语句不受autocommit影响（总是隐式提交）",
+    "tags": ["autocommit", "自动提交", "事务管理"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-027",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是InnoDB的purge机制？有什么作用？",
+    "answer": "## 核心概念\n\npurge是InnoDB的清理机制，负责删除不再需要的undo log和标记删除的记录。purge操作由后台线程异步执行。\n\n## 工作原理\n\n```\n1. DELETE操作不会立即删除记录\n2. 记录被标记为删除（delete mark）\n3. 当没有事务需要访问该记录的旧版本时\n4. purge线程真正删除记录和undo log\n```\n\n## SQL示例\n\n```sql\n-- 查看purge配置\nSHOW VARIABLES LIKE 'innodb_purge_threads';  -- purge线程数\nSHOW VARIABLES LIKE 'innodb_max_purge_lag';  -- purge延迟阈值\nSHOW VARIABLES LIKE 'innodb_max_purge_lag_delay';  -- 最大延迟\n\n-- 查看purge状态\nSHOW ENGINE INNODB STATUS\\G\n-- 在TRANSACTIONS部分\n-- History list length: 表示需要purge的undo log数量\n\n-- purge延迟的影响\n-- 长事务导致undo log无法清理\n-- History list length增大\n-- 影响性能\n\n-- 手动触发purge（不能直接触发，只能优化配置）\n-- 增加purge线程数\nSET GLOBAL innodb_purge_threads = 8;\n\n-- 调整purge延迟阈值\nSET GLOBAL innodb_max_purge_lag = 100000;\nSET GLOBAL innodb_max_purge_lag_delay = 500;  -- 毫秒\n```\n\n## 关键要点\n\n1. **异步清理**：purge由后台线程执行\n2. **History list length**：反映purge积压程度\n3. **长事务阻塞purge**：导致undo log膨胀\n4. **purge线程数**：可配置，高并发场景增加\n\n## 注意事项\n\n- History list length持续增大说明有长事务\n- 长事务会导致undo log表空间膨胀\n- `innodb_purge_threads`建议设置为4-8\n- purge延迟时DML操作可能变慢\n- 大量DELETE后purge需要时间清理",
+    "tags": ["purge", "undo log清理", "InnoDB后台"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-028",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何使用SELECT ... FOR UPDATE？有哪些注意事项？",
+    "answer": "## 核心概念\n\n`SELECT ... FOR UPDATE`对查询结果集加排他锁（X锁），其他事务不能修改这些记录，直到当前事务提交或回滚。\n\n## SQL示例\n\n```sql\n-- 基本用法\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n-- 锁定id=1的行\nUPDATE users SET balance = balance - 100 WHERE id = 1;\nCOMMIT;  -- 释放锁\n\n-- 范围查询\nBEGIN;\nSELECT * FROM orders WHERE user_id = 100 AND status = 1 FOR UPDATE;\n-- 锁定所有满足条件的行\n\n-- NOWAIT选项（MySQL 8.0+）\nSELECT * FROM users WHERE id = 1 FOR UPDATE NOWAIT;\n-- 如果锁被占用，立即报错而不是等待\n\n-- SKIP LOCKED选项（MySQL 8.0+）\nSELECT * FROM orders WHERE status = 1 FOR UPDATE SKIP LOCKED;\n-- 跳过已被锁定的行\n\n-- 排队场景\nSELECT * FROM tickets WHERE status = 'available'\nORDER BY id LIMIT 1\nFOR UPDATE SKIP LOCKED;\n-- 每个事务获取不同的票\n\n-- 共享锁\nSELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;\n-- 加共享锁，其他事务可以读但不能写\n\n-- 锁超时处理\nSET innodb_lock_wait_timeout = 5;\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n-- 超过5秒未获取锁则报错\n```\n\n## FOR UPDATE vs LOCK IN SHARE MODE\n\n| 特性 | FOR UPDATE | LOCK IN SHARE MODE |\n|------|------------|-------------------|\n| 锁类型 | 排他锁（X锁） | 共享锁（S锁） |\n| 其他读 | 可以读（快照读） | 可以读 |\n| 其他写 | 阻塞 | 阻塞 |\n| 其他S锁 | 阻塞 | 兼容 |\n| 其他X锁 | 阻塞 | 阻塞 |\n\n## 关键要点\n\n1. **排他锁**：阻塞其他事务的写操作和加锁读\n2. **NOWAIT**：锁被占用时立即报错\n3. **SKIP LOCKED**：跳过已锁定的行\n4. **事务结束释放**：COMMIT或ROLLBACK释放锁\n\n## 注意事项\n\n- FOR UPDATE必须在事务中使用\n- 不使用索引会导致锁表（退化为表锁）\n- 范围查询可能锁定比预期更多的行\n- NOWAIT和SKIP LOCKED适合高并发场景\n- 快照读（普通SELECT）不使用FOR UPDATE的锁",
+    "tags": ["FOR UPDATE", "排他锁", "锁查询"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-029",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何实现分布式锁？",
+    "answer": "## 核心概念\n\n分布式锁用于在分布式系统中控制多个进程对共享资源的访问。MySQL可以通过唯一索引、乐观锁或悲观锁实现简单的分布式锁。\n\n## SQL示例\n\n```sql\n-- 方法1：唯一索引实现分布式锁\nCREATE TABLE distributed_lock (\n    lock_name VARCHAR(100) PRIMARY KEY,\n    lock_id VARCHAR(100) NOT NULL UNIQUE,\n    expire_at DATETIME NOT NULL\n);\n\n-- 获取锁\nINSERT INTO distributed_lock (lock_name, lock_id, expire_at)\nVALUES ('order_lock', UUID(), DATE_ADD(NOW(), INTERVAL 30 SECOND));\n-- 成功则获取锁，失败（唯一键冲突）则获取失败\n\n-- 释放锁\nDELETE FROM distributed_lock\nWHERE lock_name = 'order_lock' AND lock_id = 'xxx';\n\n-- 方法2：SELECT FOR UPDATE\nBEGIN;\nSELECT * FROM orders WHERE id = 1 FOR UPDATE;\n-- 获取行锁，其他事务阻塞\n-- 业务处理\nCOMMIT;  -- 释放锁\n\n-- 方法3：GET_LOCK函数\nSELECT GET_LOCK('my_lock', 10);  -- 获取锁，超时10秒\n-- 返回1表示成功，0表示超时，NULL表示错误\n\n-- 业务处理\n\nSELECT RELEASE_LOCK('my_lock');  -- 释放锁\n\n-- 方法4：乐观锁（版本号）\nUPDATE resources\nSET status = 'locked', version = version + 1\nWHERE id = 1 AND version = 5 AND status = 'unlocked';\n-- affected_rows=1表示获取锁成功\n```\n\n## 方案对比\n\n| 方案 | 优点 | 缺点 |\n|------|------|------|\n| 唯一索引 | 实现简单 | 需要清理过期锁 |\n| FOR UPDATE | 自动释放 | 依赖数据库连接 |\n| GET_LOCK | MySQL原生 | 8.0之前不支持重入 |\n| 乐观锁 | 高性能 | 需要重试 |\n\n## 关键要点\n\n1. **唯一索引**：利用唯一约束保证互斥\n2. **GET_LOCK**：MySQL原生分布式锁函数\n3. **超时机制**：避免死锁\n4. **释放锁**：及时释放，避免资源浪费\n\n## 注意事项\n\n- MySQL分布式锁性能不如Redis\n- 需要考虑锁超时和异常释放\n- 大规模分布式系统建议使用Redis或ZooKeeper\n- MySQL 8.0的GET_LOCK支持命名空间\n- 分布式锁需要考虑网络分区问题",
+    "tags": ["分布式锁", "GET_LOCK", "并发控制"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-030",
+    "module": "MySQL事务",
+    "difficulty": 1,
+    "question": "MySQL中如何查看和处理锁等待？",
+    "answer": "## 核心概念\n\n锁等待是指事务因无法获取锁而阻塞。通过查看锁等待信息可以定位阻塞原因并解决问题。\n\n## SQL示例\n\n```sql\n-- 查看当前锁等待\nSELECT * FROM performance_schema.data_lock_waits;\n\n-- 查看详细的锁等待关系\nSELECT\n    r.trx_id AS waiting_trx_id,\n    r.trx_mysql_thread_id AS waiting_thread,\n    r.trx_query AS waiting_query,\n    r.trx_wait_started AS wait_start,\n    TIMESTAMPDIFF(SECOND, r.trx_wait_started, NOW()) AS wait_seconds,\n    b.trx_id AS blocking_trx_id,\n    b.trx_mysql_thread_id AS blocking_thread,\n    b.trx_query AS blocking_query\nFROM performance_schema.data_lock_waits w\nJOIN information_schema.INNODB_TRX r\n    ON w.REQUESTING_ENGINE_TRANSACTION_ID = r.trx_id\nJOIN information_schema.INNODB_TRX b\n    ON w.BLOCKING_ENGINE_TRANSACTION_ID = b.trx_id;\n\n-- sys视图（更简洁）\nSELECT * FROM sys.innodb_lock_waits\\G\n\n-- 杀掉阻塞的事务\nKILL <blocking_thread_id>;\n\n-- 查看所有持锁情况\nSELECT\n    lock_id,\n    lock_type,\n    lock_mode,\n    lock_status,\n    lock_data\nFROM performance_schema.data_locks;\n\n-- 设置锁等待超时\nSET GLOBAL innodb_lock_wait_timeout = 10;\n\n-- 查看InnoDB锁状态\nSHOW ENGINE INNODB STATUS\\G\n```\n\n## 处理步骤\n\n```\n1. 发现锁等待（超时或监控告警）\n2. 查询data_lock_waits找到阻塞关系\n3. 确定阻塞事务的SQL和开始时间\n4. 评估是否可以杀掉阻塞事务\n5. KILL阻塞事务或等待超时\n6. 优化SQL避免再次发生\n```\n\n## 关键要点\n\n1. **data_lock_waits**：查看锁等待关系\n2. **sys.innodb_lock_waits**：更简洁的视图\n3. **KILL thread_id**：杀掉阻塞线程\n4. **innodb_lock_wait_timeout**：自动超时\n\n## 注意事项\n\n- 杀掉事务前确认影响范围\n- 长事务是锁等待的常见原因\n- 频繁锁等待需要优化SQL和索引\n- `SHOW ENGINE INNODB STATUS`信息最全\n- 使用监控工具定期检查锁等待",
+    "tags": ["锁等待", "锁排查", "KILL"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-031",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是MySQL的LRU机制？与Buffer Pool有什么关系？",
+    "answer": "## 核心概念\n\nMySQL的Buffer Pool使用改进的LRU（Least Recently Used）算法管理内存中的数据页。将LRU列表分为young区域和old区域，避免全表扫描等操作污染缓存。\n\n## 改进的LRU算法\n\n```\n传统LRU问题：\n全表扫描会将大量冷数据加载到Buffer Pool\n导致热点数据被挤出\n\n改进LRU：\nBuffer Pool分为young区域（热数据）和old区域（冷数据）\n新加载的页放在old区域头部\n只有在old区域停留超过innodb_old_blocks_time（默认1秒）后\n被再次访问时才移到young区域\n```\n\n## SQL示例\n\n```sql\n-- 查看Buffer Pool的LRU配置\nSHOW VARIABLES LIKE 'innodb_old_blocks_pct';  -- old区域比例，默认37\nSHOW VARIABLES LIKE 'innodb_old_blocks_time';  -- 页在old区域停留时间，默认1000ms\n\n-- 查看LRU状态\nSHOW ENGINE INNODB STATUS\\G\n-- BUFFER POOL AND MEMORY部分\n\n-- 调整old区域比例\nSET GLOBAL innodb_old_blocks_pct = 37;  -- 37%\n\n-- 调整old区域停留时间\nSET GLOBAL innodb_old_blocks_time = 1000;  -- 1秒\n\n-- 查看Buffer Pool命中率\nSHOW STATUS LIKE 'Innodb_buffer_pool_read%';\n-- 命中率 = 1 - (Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests)\n```\n\n## LRU区域图示\n\n```\nLRU List:\n[young区域（63%）] ←→ [old区域（37%）]\n\n新页 → old头部 → 等待1秒 → 再次访问 → young区域\n```\n\n## 关键要点\n\n1. **避免缓存污染**：全表扫描不会挤出热点数据\n2. **old区域**：新页先放在old区域\n3. **innodb_old_blocks_time**：控制页晋升到young区域的时间\n4. **命中率监控**：Buffer Pool命中率应超过99%\n\n## 注意事项\n\n- Buffer Pool命中率是重要的性能指标\n- 全表扫描时适当增大`innodb_old_blocks_time`\n- 小表扫描可以设置`innodb_old_blocks_pct`调整区域比例\n- Buffer Pool太小会导致频繁磁盘读取\n- 定期监控Buffer Pool命中率",
+    "tags": ["LRU", "Buffer Pool", "缓存管理"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-032",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何处理死锁重试？",
+    "answer": "## 核心概念\n\n死锁发生时InnoDB会自动回滚一个事务，应用层需要捕获死锁异常并重试。合理的重试策略是保证业务正常运行的关键。\n\n## SQL示例\n\n```sql\n-- 死锁错误码\n-- ERROR 1213 (40001): Deadlock found when trying to get lock\n\n-- Java伪代码\n-- int maxRetries = 3;\n-- for (int i = 0; i < maxRetries; i++) {\n--     try {\n--         // 执行事务\n--         transfer(fromId, toId, amount);\n--         break;  // 成功\n--     } catch (MySQLTransactionRollbackException e) {\n--         if (e.getErrorCode() == 1213 && i < maxRetries - 1) {\n--             // 死锁，重试\n--             Thread.sleep(100 * (i + 1));  // 退避\n--             continue;\n--         }\n--         throw e;  // 其他错误或超过重试次数\n--     }\n-- }\n\n-- Python伪代码\n-- for retry in range(3):\n--     try:\n--         transfer(from_id, to_id, amount)\n--         break\n--     except MySQLdb.OperationalError as e:\n--         if e.args[0] == 1213 and retry < 2:\n--             time.sleep(0.1 * (retry + 1))\n--             continue\n--         raise\n\n-- 减少死锁的方法\n-- 1. 按固定顺序访问行\n-- 2. 保持事务短小\n-- 3. 使用合适的索引\n-- 4. 降低隔离级别（RC）\n```\n\n## 重试策略\n\n```python\ndef execute_with_retry(func, max_retries=3):\n    for i in range(max_retries):\n        try:\n            return func()\n        except DeadlockError:\n            if i == max_retries - 1:\n                raise\n            time.sleep(0.1 * (2 ** i))  # 指数退避\n```\n\n## 关键要点\n\n1. **错误码1213**：死锁专用错误码\n2. **指数退避**：每次重试等待时间加倍\n3. **最大重试次数**：避免无限重试\n4. **日志记录**：记录死锁日志便于分析\n\n## 注意事项\n\n- 重试次数一般设置为3-5次\n- 退避时间避免太短（100ms-500ms）\n- 记录死锁日志用于后续优化\n- 频繁死锁需要优化SQL和索引\n- 分布式事务的死锁处理更复杂",
+    "tags": ["死锁重试", "异常处理", "重试策略"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-033",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是MySQL的间隙锁（Gap Lock）？如何避免？",
+    "answer": "## 核心概念\n\n间隙锁（Gap Lock）锁定索引记录之间的间隙，防止其他事务在间隙中插入数据。间隙锁只在RR隔离级别下使用。\n\n## SQL示例\n\n```sql\n-- 间隙锁示例\nCREATE TABLE orders (\n    id INT PRIMARY KEY,\n    user_id INT,\n    INDEX idx_user_id (user_id)\n);\n-- 表中user_id有：1, 5, 10\n\n-- RR级别下\nBEGIN;\nSELECT * FROM orders WHERE user_id = 5 FOR UPDATE;\n-- 锁定：(1, 5] —— 记录锁+间隙锁\n\n-- 其他事务在间隙中插入被阻塞\nINSERT INTO orders VALUES (100, 3, 100);  -- 被阻塞（3在(1,5)间隙中）\n\n-- 避免间隙锁的方法\n\n-- 方法1：使用RC隔离级别\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n-- RC级别下没有间隙锁\n\n-- 方法2：使用唯一索引等值查询\n-- 唯一索引等值查询（记录存在）只加记录锁\nSELECT * FROM orders WHERE id = 5 FOR UPDATE;  -- 只加记录锁\n\n-- 方法3：使用覆盖索引\nSELECT user_id FROM orders WHERE user_id = 5 FOR UPDATE;\n-- 覆盖索引可能减少间隙锁范围\n\n-- 方法4：INSERT ON DUPLICATE KEY UPDATE\nINSERT INTO orders (id, user_id) VALUES (100, 3)\nON DUPLICATE KEY UPDATE user_id = 3;\n-- 使用INSERT替代SELECT FOR UPDATE + INSERT\n\n-- 查看间隙锁\nSELECT * FROM performance_schema.data_locks\nWHERE LOCK_TYPE = 'RECORD'\nAND LOCK_MODE LIKE '%GAP%';\n```\n\n## 关键要点\n\n1. **RR级别使用**：RC级别下没有间隙锁\n2. **防止幻读**：间隙锁的目的\n3. **唯一索引降级**：等值查询降级为记录锁\n4. **增加死锁概率**：间隙锁容易导致死锁\n\n## 注意事项\n\n- 间隙锁是InnoDB RR级别的重要机制\n- 间隙锁不阻塞快照读\n- 合理设计索引可以减少间隙锁范围\n- 使用RC级别可以完全避免间隙锁\n- 间隙锁可能导致意外的锁等待",
+    "tags": ["间隙锁", "Gap Lock", "避免方法"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-034",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何优化事务中的锁竞争？",
+    "answer": "## 核心概念\n\n锁竞争是并发事务之间的锁冲突导致的等待。优化锁竞争需要减少锁持有时间、降低锁粒度、合理设计索引。\n\n## SQL示例\n\n```sql\n-- 1. 保持事务短小\n-- 差：事务中包含网络请求\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n-- 调用外部API（耗时）\nUPDATE users SET balance = balance - 100 WHERE id = 1;\nCOMMIT;\n\n-- 好：先获取数据，再开事务\nSELECT * FROM users WHERE id = 1;  -- 快照读\n-- 调用外部API\nBEGIN;\nUPDATE users SET balance = balance - 100 WHERE id = 1 AND balance >= 100;\nCOMMIT;\n\n-- 2. 使用RC隔离级别\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n-- 没有间隙锁，减少锁范围\n\n-- 3. 合理设计索引\nCREATE INDEX idx_user_status ON orders(user_id, status);\n-- 减少锁定行数\n\n-- 4. 分批操作\n-- 大批量更新分批执行\nUPDATE orders SET status = 2 WHERE status = 1 LIMIT 1000;\n-- 循环执行\n\n-- 5. 使用乐观锁替代悲观锁\nUPDATE products\nSET stock = stock - 1, version = version + 1\nWHERE id = 1 AND version = 5 AND stock > 0;\n\n-- 6. 减小锁粒度\n-- 按行锁定而不是表锁定\nSELECT * FROM orders WHERE id = 1 FOR UPDATE;  -- 行锁\n```\n\n## 优化策略\n\n| 策略 | 说明 |\n|------|------|\n| 短事务 | 减少锁持有时间 |\n| RC级别 | 消除间隙锁 |\n| 合理索引 | 减少锁定行数 |\n| 乐观锁 | 避免数据库锁 |\n| 分批操作 | 减少单次锁定量 |\n\n## 关键要点\n\n1. **事务越短越好**：减少锁持有时间\n2. **RC级别锁更少**：没有间隙锁\n3. **索引减少锁范围**：只锁定需要的行\n4. **乐观锁适合读多写少**：避免数据库锁\n\n## 注意事项\n\n- 长事务是锁竞争的主要原因\n- 避免在事务中做IO操作\n- 批量操作一定要分批\n- 使用监控工具发现锁竞争热点\n- 合理设计业务逻辑减少锁冲突",
+    "tags": ["锁竞争", "锁优化", "并发优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-035",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何使用LOCK TABLES？和行锁有什么区别？",
+    "answer": "## 核心概念\n\n`LOCK TABLES`是MySQL的表级锁，可以对表加读锁或写锁。与InnoDB的行锁相比，表锁粒度更大，并发性更差。\n\n## SQL示例\n\n```sql\n-- 读锁（共享锁）\nLOCK TABLES users READ;\nSELECT * FROM users;  -- 可以读\nUPDATE users SET name = '张三' WHERE id = 1;  -- 报错\nINSERT INTO users VALUES (100, '新用户');  -- 报错\nUNLOCK TABLES;\n\n-- 写锁（排他锁）\nLOCK TABLES users WRITE;\nSELECT * FROM users;  -- 可以读\nUPDATE users SET name = '张三' WHERE id = 1;  -- 可以写\n-- 其他会话读写都被阻塞\nUNLOCK TABLES;\n\n-- 锁定多个表\nLOCK TABLES users READ, orders WRITE;\n\n-- 别名锁定\nLOCK TABLES users AS u READ;\nSELECT * FROM users WHERE id = 1;  -- 报错（必须用别名）\nSELECT * FROM u WHERE id = 1;  -- 正确\nUNLOCK TABLES;\n\n-- 表锁 vs 行锁\n-- InnoDB行锁\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;  -- 只锁id=1\nCOMMIT;\n\n-- LOCK TABLES表锁\nLOCK TABLES users WRITE;  -- 锁定整张表\n```\n\n## 表锁 vs 行锁对比\n\n| 特性 | 表锁（LOCK TABLES） | 行锁（InnoDB） |\n|------|---------------------|----------------|\n| 粒度 | 整张表 | 单行 |\n| 并发性 | 差 | 好 |\n| 死锁 | 不会 | 可能 |\n| 锁开销 | 小 | 大 |\n| 适用引擎 | MyISAM/InnoDB | InnoDB |\n\n## 关键要点\n\n1. **表锁粒度大**：锁定整张表\n2. **UNLOCK TABLES释放**：显式释放\n3. **隐式提交**：LOCK TABLES会隐式提交事务\n4. **InnoDB不推荐**：使用行锁更好\n\n## 注意事项\n\n- LOCK TABLES会隐式提交当前事务\n- InnoDB推荐使用行锁而非表锁\n- 表锁适合需要锁定大量行的场景\n- MyISAM只支持表锁\n- 锁定后其他会话的所有操作都被阻塞",
+    "tags": ["LOCK TABLES", "表锁", "并发控制"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-036",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "什么是MySQL的一致性非锁定读？",
+    "answer": "## 核心概念\n\n一致性非锁定读（Consistent Nonlocking Read）是InnoDB通过MVCC实现的读取方式。读操作不需要等待行锁释放，而是读取数据的快照版本。\n\n## 工作原理\n\n```\n一致性非锁定读：\n1. 读操作发起\n2. 如果行被其他事务锁定\n3. 不等待锁释放\n4. 从undo log中读取数据的旧版本（快照）\n5. 返回结果\n\n一致性锁定读：\n1. SELECT ... FOR UPDATE / LOCK IN SHARE MODE\n2. 需要获取锁\n3. 等待锁释放\n4. 读取最新数据\n```\n\n## SQL示例\n\n```sql\n-- 一致性非锁定读（快照读）\nSELECT * FROM users WHERE id = 1;\n-- 不加锁，读取MVCC版本\n\n-- 一致性锁定读（当前读）\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\n-- 加排他锁，读取最新数据\n\nSELECT * FROM users WHERE id = 1 LOCK IN SHARE MODE;\n-- 加共享锁，读取最新数据\n\n-- 隔离级别对快照读的影响\n-- RC级别：每次SELECT生成新的ReadView\nBEGIN;\nSELECT * FROM users WHERE id = 1;  -- 快照A\n-- 其他事务修改并提交\nSELECT * FROM users WHERE id = 1;  -- 快照B（可以看到修改）\nCOMMIT;\n\n-- RR级别：整个事务使用同一个ReadView\nBEGIN;\nSELECT * FROM users WHERE id = 1;  -- 快照A\n-- 其他事务修改并提交\nSELECT * FROM users WHERE id = 1;  -- 快照A（看不到修改）\nCOMMIT;\n```\n\n## 关键要点\n\n1. **不加锁**：一致性非锁定读不需要等待锁\n2. **MVCC实现**：读取undo log中的旧版本\n3. **RC vs RR**：ReadView生成时机不同\n4. **提高并发性**：读写互不阻塞\n\n## 注意事项\n\n- 普通SELECT是快照读，不使用锁\n- SELECT FOR UPDATE是当前读，需要锁\n- UPDATE/DELETE是当前读，需要锁\n- RR级别下快照读可能读到过期数据\n- 需要最新数据时使用当前读",
+    "tags": ["非锁定读", "MVCC", "快照读"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-037",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何使用乐观锁解决超卖问题？",
+    "answer": "## 核心概念\n\n超卖是并发场景下库存被多次扣减导致库存为负的问题。乐观锁通过版本号或CAS条件检查避免超卖。\n\n## SQL示例\n\n```sql\n-- 表结构\nCREATE TABLE products (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    stock INT,\n    version INT DEFAULT 0\n);\n\n-- 方法1：版本号方式\n-- 读取当前版本\nSELECT stock, version FROM products WHERE id = 1;\n-- stock=10, version=5\n\n-- 更新时检查版本号\nUPDATE products\nSET stock = stock - 1, version = version + 1\nWHERE id = 1 AND version = 5;\n-- affected_rows=1表示成功，0表示版本已变（需要重试）\n\n-- 方法2：CAS方式（推荐）\nUPDATE products\nSET stock = stock - 1\nWHERE id = 1 AND stock > 0;\n-- affected_rows=1表示成功，0表示库存不足\n\n-- 方法3：库存扣减+记录\nBEGIN;\nUPDATE products SET stock = stock - 1 WHERE id = 1 AND stock > 0;\nIF ROW_COUNT() = 0 THEN\n    ROLLBACK;\n    -- 库存不足\nELSE\n    INSERT INTO orders (product_id, user_id) VALUES (1, 100);\n    COMMIT;\nEND IF;\n\n-- 方法4：Redis预扣库存+MySQL异步扣减\n-- 1. Redis原子扣减\n-- 2. 消息队列异步写入MySQL\n-- 3. MySQL最终扣减\n```\n\n## 方案对比\n\n| 方案 | 优点 | 缺点 |\n|------|------|------|\n| 版本号 | 通用 | 需要额外字段 |\n| CAS | 简单 | 高并发重试多 |\n| Redis预扣 | 高性能 | 架构复杂 |\n\n## 关键要点\n\n1. **CAS最简单**：`WHERE stock > 0`\n2. **版本号更精确**：防止ABA问题\n3. **应用层重试**：更新失败时重试\n4. **Redis适合高并发**：预扣库存\n\n## 注意事项\n\n- 乐观锁在高并发时可能大量重试\n- 重试次数需要限制\n- Redis预扣+MySQL异步是高并发方案\n- 使用消息队列保证最终一致性\n- 库存为0时需要快速失败",
+    "tags": ["乐观锁", "超卖", "库存扣减"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-038",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何实现乐观锁的重试机制？",
+    "answer": "## 核心概念\n\n乐观锁更新失败时需要重试。合理的重试策略需要考虑重试次数、退避时间和最终失败处理。\n\n## SQL示例\n\n```sql\n-- 乐观锁更新\nUPDATE products\nSET stock = stock - 1, version = version + 1\nWHERE id = 1 AND version = 5;\n-- 返回affected_rows\n\n-- 应用层重试（Java伪代码）\n-- public boolean deductStock(int productId, int quantity) {\n--     int maxRetries = 3;\n--     for (int i = 0; i < maxRetries; i++) {\n--         // 读取当前数据\n--         Product p = productDao.selectById(productId);\n--         if (p.getStock() < quantity) return false;\n--         \n--         // 尝试更新\n--         int affected = productDao.updateWithVersion(\n--             productId, quantity, p.getVersion()\n--         );\n--         if (affected > 0) return true;  // 成功\n--         \n--         // 版本冲突，重试\n--         Thread.sleep(50 * (i + 1));  // 退避\n--     }\n--     return false;  // 超过重试次数\n-- }\n\n-- 批量更新重试\n-- public void batchUpdate(List<Order> orders) {\n--     List<Order> failed = new ArrayList<>();\n--     for (Order order : orders) {\n--         if (!updateWithRetry(order, 3)) {\n--             failed.add(order);\n--         }\n--     }\n--     // 处理失败的订单\n--     handleFailedOrders(failed);\n-- }\n\n-- SQL层面减少重试\n-- 使用条件更新避免读-改-写\nUPDATE products\nSET stock = stock - 1\nWHERE id = 1 AND stock >= 1;\n-- 直接在SQL中检查条件\n```\n\n## 重试策略\n\n| 策略 | 说明 |\n|------|------|\n| 固定退避 | 每次等待相同时间 |\n| 指数退避 | 每次等待时间翻倍 |\n| 随机退避 | 等待随机时间 |\n| 最大重试 | 限制重试次数 |\n\n## 关键要点\n\n1. **限制重试次数**：避免无限重试\n2. **退避策略**：减少冲突概率\n3. **快速失败**：超过重试次数返回失败\n4. **批量处理**：记录失败项后续处理\n\n## 注意事项\n\n- 重试次数一般3-5次\n- 退避时间50ms-500ms\n- 记录重试日志便于分析\n- 高并发场景考虑Redis方案\n- 条件更新（WHERE stock >= N）减少重试",
+    "tags": ["乐观锁重试", "重试机制", "退避策略"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-039",
+    "module": "MySQL事务",
+    "difficulty": 3,
+    "question": "MySQL中MVCC的ReadView是如何工作的？",
+    "answer": "## 核心概念\n\nReadView是InnoDB实现MVCC的核心数据结构，记录了创建ReadView时的活跃事务信息，用于判断数据版本的可见性。\n\n## ReadView结构\n\n```\nReadView {\n    m_ids: [100, 200]    // 创建ReadView时活跃的事务ID列表\n    min_trx_id: 100      // 活跃事务中最小的ID\n    max_trx_id: 300      // 下一个要分配的事务ID\n    creator_trx_id: 250  // 创建ReadView的事务ID\n}\n```\n\n## 可见性判断算法\n\n```\n对于数据版本的trx_id：\n1. trx_id == creator_trx_id\n   → 可见（自己修改的数据）\n\n2. trx_id < min_trx_id\n   → 可见（版本在ReadView创建前已提交）\n\n3. trx_id >= max_trx_id\n   → 不可见（版本在ReadView创建后才产生）\n\n4. min_trx_id <= trx_id < max_trx_id\n   a. trx_id in m_ids → 不可见（事务未提交）\n   b. trx_id not in m_ids → 可见（事务已提交）\n```\n\n## SQL示例\n\n```sql\n-- RC级别：每次SELECT创建新的ReadView\nBEGIN;\n-- SELECT 1: 创建ReadView1, m_ids=[100,200]\nSELECT * FROM users WHERE id = 1;  -- 读到版本A\n\n-- 此时事务100提交\n\n-- SELECT 2: 创建ReadView2, m_ids=[200]（100不再活跃）\nSELECT * FROM users WHERE id = 1;  -- 可以读到事务100的修改\nCOMMIT;\n\n-- RR级别：第一次SELECT创建ReadView，后续复用\nBEGIN;\n-- SELECT 1: 创建ReadView, m_ids=[100,200]\nSELECT * FROM users WHERE id = 1;  -- 读到版本A\n\n-- 此时事务100提交\n\n-- SELECT 2: 复用同一个ReadView, m_ids=[100,200]（不变）\nSELECT * FROM users WHERE id = 1;  -- 仍然读到版本A（事务100在m_ids中）\nCOMMIT;\n\n-- 版本链遍历\n-- 当前版本(trx_id=200) → 不可见\n-- → 沿roll_pointer找到上一个版本(trx_id=100) → 不可见（在m_ids中）\n-- → 沿roll_pointer找到更早版本(trx_id=50) → 可见（< min_trx_id）\n```\n\n## 版本链遍历图示\n\n```\n聚簇索引记录\n    ↓\n[trx_id=200, data=新值] → roll_pointer\n    ↓\n[trx_id=100, data=旧值] → roll_pointer\n    ↓\n[trx_id=50, data=更旧值] → NULL\n\nReadView遍历：从当前版本开始，找到第一个可见的版本\n```\n\n## 关键要点\n\n1. **RC vs RR**：ReadView创建时机不同\n2. **可见性判断**：4个条件依次判断\n3. **版本链遍历**：从新到旧找到可见版本\n4. **活跃事务列表**：m_ids是核心判断依据\n\n## 注意事项\n\n- ReadView在内存中创建，不持久化\n- 长事务导致m_ids膨胀，影响性能\n- 长事务还会导致undo log堆积\n- ReadView只用于快照读，当前读不使用\n- 每个ReadView占用少量内存",
+    "tags": ["ReadView", "MVCC", "版本链遍历"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-tx-040",
+    "module": "MySQL事务",
+    "difficulty": 2,
+    "question": "MySQL中如何监控和优化undo log？",
+    "answer": "## 核心概念\n\nundo log用于事务回滚和MVCC。长事务和大量DML操作会导致undo log膨胀，影响性能。\n\n## SQL示例\n\n```sql\n-- 查看undo log配置\nSHOW VARIABLES LIKE 'innodb_undo%';\n\n-- 查看undo表空间\nSELECT * FROM information_schema.INNODB_TABLESPACES\nWHERE SPACE_TYPE = 'Undo';\n\n-- 查看undo log状态\nSHOW ENGINE INNODB STATUS\\G\n-- TRANSACTIONS部分\n-- History list length: 需要purge的undo log数量\n\n-- 查看历史列表长度\nSELECT COUNT FROM information_schema.INNODB_METRICS\nWHERE NAME = 'trx_rseg_history_len';\n\n-- 优化undo log\n-- 1. 避免长事务\nSELECT * FROM information_schema.INNODB_TRX\nWHERE TIMESTAMPDIFF(SECOND, trx_started, NOW()) > 60;\n\n-- 2. 调整purge配置\nSET GLOBAL innodb_purge_threads = 8;\nSET GLOBAL innodb_max_purge_lag = 100000;\n\n-- 3. 使用独立undo表空间（MySQL 5.7+）\nSHOW VARIABLES LIKE 'innodb_undo_tablespaces';\n\n-- 4. 收缩undo表空间（MySQL 8.0+）\nALTER UNDO TABLESPACE ts_undo SET INACTIVE;\n-- 等待purge完成后自动收缩\n\n-- 5. 监控告警\n-- History list length超过100000需要关注\n```\n\n## undo log问题诊断\n\n| 指标 | 正常范围 | 说明 |\n|------|----------|------|\n| History list length | < 100000 | 需要purge的数量 |\n| trx_rseg_history_len | < 100000 | 同上 |\n| undo表空间大小 | 稳定 | 持续增长说明有长事务 |\n\n## 关键要点\n\n1. **长事务是元凶**：导致undo log无法purge\n2. **History list length**：关键监控指标\n3. **独立undo表空间**：便于管理\n4. **MySQL 8.0支持收缩**：undo表空间可以收缩\n\n## 注意事项\n\n- undo log膨胀会导致磁盘空间不足\n- 长事务会阻塞purge操作\n- 定期监控History list length\n- MySQL 8.0的undo管理更灵活\n- 大批量操作后需要等待purge完成",
+    "tags": ["undo log", "purge", "History list"],
+    "source": "高频"
+  }
+]

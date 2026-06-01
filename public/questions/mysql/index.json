@@ -1,0 +1,407 @@
+[
+  {
+    "id": "mysql-index-001",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是MySQL索引？索引的作用是什么？",
+    "answer": "## 核心概念\n\n索引是帮助MySQL高效获取数据的**排好序的快速查找数据结构**。可以类比为书的目录，通过目录可以快速定位到具体内容，而不必翻遍全书。\n\n## 索引的数据结构\n\nMySQL的InnoDB引擎默认使用**B+树**作为索引结构。B+树的特点：\n- 所有数据存储在叶子节点\n- 叶子节点通过双向链表连接\n- 非叶子节点只存储索引键值\n- 树的高度一般为3-4层\n\n## SQL示例\n\n```sql\n-- 创建索引\nCREATE INDEX idx_name ON users(name);\n\n-- 创建唯一索引\nCREATE UNIQUE INDEX idx_email ON users(email);\n\n-- 创建联合索引\nCREATE INDEX idx_name_age ON users(name, age);\n\n-- 修改表添加索引\nALTER TABLE users ADD INDEX idx_phone (phone);\n\n-- 删除索引\nDROP INDEX idx_name ON users;\n\n-- 查看表的索引\nSHOW INDEX FROM users;\n\n-- 使用EXPLAIN查看索引使用情况\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n```\n\n## 关键要点\n\n1. **加速查询**：索引将O(n)的全表扫描优化为O(log n)\n2. **排序优化**：索引本身有序，可以避免额外排序\n3. **空间换时间**：索引占用额外存储空间\n4. **维护成本**：DML操作需要维护索引\n\n## 注意事项\n\n- 索引不是越多越好，会增加写入开销\n- 小表（几千行）不需要索引\n- 高选择性的列适合建索引（如手机号、身份证号）\n- 频繁更新的列不适合建过多索引\n- 索引列应尽量避免NULL",
+    "tags": ["索引基础", "B+树", "索引作用"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-002",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "为什么MySQL索引使用B+树而不是B树、红黑树或哈希？",
+    "answer": "## 核心概念\n\nB+树是MySQL InnoDB引擎的默认索引结构，相比其他数据结构有显著优势。\n\n## 数据结构对比\n\n| 数据结构 | 缺点 |\n|----------|------|\n| B树 | 非叶子节点也存数据，每页能存的键更少，树更高；范围查询需要中序遍历 |\n| 红黑树 | 二叉树，每个节点最多两个子节点，数据量大时树非常高（百万数据约20层） |\n| 哈希表 | 只支持等值查询，不支持范围查询、排序、最左前缀匹配 |\n| 跳表 | 性能不如B+树稳定，实现复杂度高 |\n\n## B+树的优势\n\n1. **非叶子节点不存数据**：每个节点能容纳更多键，树更矮\n2. **叶子节点双向链表**：天然支持范围查询\n3. **查询性能稳定**：每次查询都需要走到叶子节点\n4. **磁盘IO友好**：树矮意味着IO次数少\n\n## 图示理解\n\n```\n         [10 | 20 | 30]           ← 非叶子节点（只存键）\n        /    |     |    \\\n   [1-9] [10-19] [20-29] [30-39]  ← 叶子节点（存数据+链表指针）\n     ←→    ←→     ←→     ←→\n```\n\n## 关键要点\n\n1. **3层B+树**：可以存储约2000万条记录（假设每页16KB，每个键值+指针约14字节）\n2. **磁盘IO**：每次从磁盘读取一个页（16KB），3层只需要3次IO\n3. **范围查询**：叶子节点链表直接顺序扫描\n4. **排序**：B+树本身有序，ORDER BY可直接利用\n\n```sql\n-- B+树范围查询示例\nSELECT * FROM orders WHERE amount BETWEEN 100 AND 500;\n-- 叶子节点链表直接顺序扫描\n\n-- 等值查询\nSELECT * FROM users WHERE id = 100;\n-- 从根节点逐层二分查找\n```\n\n## 注意事项\n\n- B+树的高度决定了查询的IO次数\n- InnoDB的页大小默认16KB，可通过`innodb_page_size`调整\n- 聚簇索引和非聚簇索引都使用B+树\n- 哈希索引在Memory引擎中使用，不支持范围查询",
+    "tags": ["B+树", "索引原理", "数据结构"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-003",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是聚簇索引和非聚簇索引？有什么区别？",
+    "answer": "## 核心概念\n\n**聚簇索引（Clustered Index）**：叶子节点存储完整行数据，数据与索引在一起。InnoDB中主键索引就是聚簇索引。\n\n**非聚簇索引（Secondary Index）**：叶子节点存储主键值，不存储完整行数据。查询时需要通过主键值回表查询完整数据。\n\n## 结构对比\n\n| 特性 | 聚簇索引 | 非聚簇索引 |\n|------|----------|------------|\n| 叶子节点内容 | 完整行数据 | 主键值 |\n| 数量 | 每表只能有一个 | 可以有多个 |\n| 查询效率 | 直接获取数据 | 可能需要回表 |\n| 选择依据 | 主键 > 唯一非空索引 > 隐式ROW_ID | 用户创建的索引 |\n\n## SQL示例\n\n```sql\n-- 聚簇索引（主键）\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,  -- 聚簇索引\n    name VARCHAR(50),\n    email VARCHAR(100)\n);\n\n-- 非聚簇索引（二级索引）\nCREATE INDEX idx_name ON users(name);\nCREATE INDEX idx_email ON users(email);\n\n-- 查询流程分析\n-- 使用聚簇索引（主键查询）\nEXPLAIN SELECT * FROM users WHERE id = 100;\n-- 直接在聚簇索引中找到完整数据\n\n-- 使用非聚簇索引 + 回表\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n-- 1. 在idx_name中找到name='张三'对应的主键id\n-- 2. 通过id在聚簇索引中找到完整数据（回表）\n\n-- 覆盖索引（无需回表）\nEXPLAIN SELECT id, name FROM users WHERE name = '张三';\n-- idx_name索引中已包含id和name，不需要回表\n```\n\n## 关键要点\n\n1. **聚簇索引的选择**：主键 > 第一个唯一非空索引 > InnoDB自动生成ROW_ID\n2. **主键不宜过长**：聚簇索引的主键会作为所有二级索引的查找键\n3. **顺序插入**：聚簇索引按主键顺序存储，顺序插入效率高\n4. **页分裂**：乱序插入可能导致页分裂\n\n## 注意事项\n\n- 不建议使用UUID作为主键（无序导致页分裂）\n- 聚簇索引的叶子节点包含完整数据行\n- 二级索引的叶子节点包含主键值，主键越长二级索引越大\n- InnoDB表必须有聚簇索引\n- 聚簇索引的顺序插入比随机插入快得多",
+    "tags": ["聚簇索引", "非聚簇索引", "回表"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-004",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是覆盖索引？如何利用覆盖索引优化查询？",
+    "answer": "## 核心概念\n\n覆盖索引（Covering Index）是指查询所需的字段都包含在索引中，无需回表查询聚簇索引。EXPLAIN的Extra列显示`Using index`表示使用了覆盖索引。\n\n## SQL示例\n\n```sql\n-- 表结构\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    amount DECIMAL(10,2),\n    status TINYINT,\n    created_at DATETIME,\n    INDEX idx_user_status (user_id, status)\n);\n\n-- 非覆盖索引（需要回表）\nEXPLAIN SELECT * FROM orders WHERE user_id = 100;\n-- Extra: NULL（需要回表获取amount、created_at等字段）\n\n-- 覆盖索引（无需回表）\nEXPLAIN SELECT user_id, status FROM orders WHERE user_id = 100;\n-- Extra: Using index（索引中已有所有需要的字段）\n\n-- 利用联合索引实现覆盖索引\nCREATE INDEX idx_user_amount_status ON orders(user_id, amount, status);\n\nEXPLAIN SELECT user_id, amount, status FROM orders WHERE user_id = 100;\n-- Extra: Using index\n\n-- 主键查询天然覆盖（聚簇索引包含完整数据）\nEXPLAIN SELECT * FROM orders WHERE id = 100;\n-- 聚簇索引叶子节点包含完整数据\n\n-- COUNT优化（覆盖索引）\nEXPLAIN SELECT COUNT(*) FROM orders WHERE user_id = 100;\n-- 使用idx_user_amount_status索引，无需回表\n```\n\n## 覆盖索引的原理\n\n```\n非覆盖索引查询流程：\n1. 二级索引 → 找到主键值\n2. 回表 → 聚簇索引 → 获取完整数据\n\n覆盖索引查询流程：\n1. 二级索引 → 直接返回需要的数据（无需回表）\n```\n\n## 关键要点\n\n1. **减少IO**：避免回表，减少磁盘读取次数\n2. **Using index**：EXPLAIN中Extra列标识\n3. **联合索引设计**：将查询字段包含在索引中\n4. **SELECT字段优化**：避免`SELECT *`，只查需要的字段\n\n## 注意事项\n\n- 覆盖索引会增大索引的存储空间\n- 不是所有查询都能用覆盖索引，需要合理设计\n- `SELECT *`无法利用覆盖索引\n- 联合索引的列顺序影响覆盖索引的效果\n- 覆盖索引对COUNT查询有显著优化",
+    "tags": ["覆盖索引", "Using index", "回表优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-005",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是回表查询？如何减少回表？",
+    "answer": "## 核心概念\n\n回表是指通过二级索引找到主键值后，再通过主键值到聚簇索引中查找完整数据的过程。回表会增加额外的IO操作。\n\n## 回表流程\n\n```\n查询：SELECT * FROM users WHERE name = '张三'\n\n步骤1：在idx_name索引中找到name='张三'，获取主键id=100\n步骤2：用id=100到聚簇索引（主键索引）中查找完整数据行\n步骤3：返回完整数据\n```\n\n## SQL示例\n\n```sql\n-- 表结构\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    email VARCHAR(100),\n    age INT,\n    INDEX idx_name (name),\n    INDEX idx_name_email (name, email)\n);\n\n-- 需要回表的查询\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n-- Extra: NULL（需要回表）\n\n-- 使用覆盖索引避免回表\nEXPLAIN SELECT id, name FROM users WHERE name = '张三';\n-- Extra: Using index\n\n-- 使用联合索引避免回表\nEXPLAIN SELECT name, email FROM users WHERE name = '张三';\n-- idx_name_email索引包含name和email，无需回表\n\n-- MRR优化（Multi-Range Read）\n-- MySQL优化器会将回表操作排序后批量执行，减少随机IO\nEXPLAIN SELECT * FROM users WHERE name IN ('张三', '李四', '王五');\n-- Extra: Using MRR\n\n-- 延迟关联（减少回表行数）\nSELECT u.* FROM users u\nINNER JOIN (\n    SELECT id FROM users WHERE name LIKE '张%' LIMIT 1000, 10\n) t ON u.id = t.id;\n-- 先在索引中筛选出id，再回表取完整数据\n```\n\n## 关键要点\n\n1. **回表开销**：每行都需要一次额外的聚簇索引查找\n2. **覆盖索引**：查询字段都在索引中可避免回表\n3. **MRR优化**：MySQL 5.6+自动将随机IO转为顺序IO\n4. **延迟关联**：先在索引中筛选，再回表取数据\n\n## 注意事项\n\n- 回表次数过多会影响查询性能\n- `SELECT *`会增加回表的概率\n- LIMIT限制回表行数是有效的优化手段\n- 覆盖索引是减少回表的最有效方式\n- 回表是使用二级索引查询的必要步骤",
+    "tags": ["回表", "二级索引", "MRR优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-006",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是索引下推（ICP）？有什么优化效果？",
+    "answer": "## 核心概念\n\n索引下推（Index Condition Pushdown，ICP）是MySQL 5.6引入的优化，将部分WHERE条件下推到存储引擎层在索引遍历时进行过滤，减少回表次数。\n\n## 传统流程 vs ICP流程\n\n```\n传统流程（无ICP）：\n1. 存储引擎根据索引找到记录\n2. 回表获取完整数据\n3. Server层过滤不满足条件的记录\n\nICP流程：\n1. 存储引擎根据索引找到记录\n2. 在索引层面先过滤部分条件\n3. 只对满足条件的记录回表\n4. Server层过滤剩余条件\n```\n\n## SQL示例\n\n```sql\n-- 表结构\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    age INT,\n    INDEX idx_name_age (name, age)\n);\n\n-- 使用ICP的查询\nEXPLAIN SELECT * FROM users WHERE name LIKE '张%' AND age > 25;\n-- Extra: Using index condition（表示使用了ICP）\n\n-- ICP优化过程：\n-- 1. 使用idx_name_age索引前缀 name LIKE '张%' 定位记录\n-- 2. 在索引层面继续检查 age > 25 条件\n-- 3. 只有同时满足两个条件的记录才回表\n-- 4. 减少了回表次数\n\n-- 无ICP时（MySQL 5.6之前）：\n-- 1. 使用 name LIKE '张%' 在索引中找到所有记录\n-- 2. 所有匹配记录都回表\n-- 3. Server层过滤 age > 25\n\n-- 联合索引顺序影响ICP效果\nCREATE INDEX idx_age_name ON users(age, name);\nEXPLAIN SELECT * FROM users WHERE age > 25 AND name LIKE '张%';\n-- 如果先匹配age，再在索引中过滤name，ICP效果更好\n```\n\n## ICP使用条件\n\n| 条件 | 说明 |\n|------|------|\n| 联合索引 | ICP主要用于联合索引 |\n| 范围条件 | 对索引的非前缀列进行范围过滤 |\n| LIKE条件 | LIKE后缀条件可以在索引中过滤 |\n| EXPLAIN标识 | Extra列显示`Using index condition` |\n\n## 关键要点\n\n1. **减少回表**：在索引层过滤不满足条件的记录\n2. **MySQL 5.6+**：自动启用ICP优化\n3. **适用于联合索引**：对索引的后续列进行过滤\n4. **EXPLAIN标识**：`Using index condition`\n\n## 注意事项\n\n- ICP只适用于InnoDB和MyISAM引擎\n- ICP不影响索引的选择，只影响过滤的位置\n- 联合索引的列顺序影响ICP效果\n- ICP与覆盖索引可以同时使用\n- 主键索引查询不适用ICP（无需回表）",
+    "tags": ["索引下推", "ICP", "Using index condition"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-007",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是联合索引？最左前缀原则是什么？",
+    "answer": "## 核心概念\n\n联合索引（Composite Index）是对多个列建立的索引。最左前缀原则是指查询条件必须从索引的最左列开始，才能使用该索引。\n\n## 最左前缀原则\n\n```sql\n-- 创建联合索引\nCREATE INDEX idx_a_b_c ON table1(a, b, c);\n\n-- 能使用索引的情况\nWHERE a = 1                    -- 使用a\nWHERE a = 1 AND b = 2         -- 使用a,b\nWHERE a = 1 AND b = 2 AND c = 3  -- 使用a,b,c\nWHERE a = 1 AND c = 3         -- 只使用a（跳过b）\nWHERE a = 1 AND b > 2         -- 使用a,b（b是范围）\n\n-- 不能使用索引的情况\nWHERE b = 2                    -- 不满足最左前缀\nWHERE c = 3                    -- 不满足最左前缀\nWHERE b = 2 AND c = 3         -- 不满足最左前缀\n```\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    status TINYINT,\n    amount DECIMAL(10,2),\n    created_at DATETIME,\n    INDEX idx_user_status_amount (user_id, status, amount)\n);\n\n-- 使用索引的查询\nEXPLAIN SELECT * FROM orders WHERE user_id = 100;\n-- key_len = 4（只用了user_id）\n\nEXPLAIN SELECT * FROM orders WHERE user_id = 100 AND status = 1;\n-- key_len = 5（用了user_id + status）\n\nEXPLAIN SELECT * FROM orders WHERE user_id = 100 AND status = 1 AND amount > 100;\n-- key_len = 14（用了user_id + status + amount部分）\n\n-- 范围查询后的列不使用索引\nEXPLAIN SELECT * FROM orders WHERE user_id = 100 AND amount > 100 AND status = 1;\n-- 只使用user_id，amount范围查询导致status无法使用索引\n-- 除非MySQL优化器调整顺序\n```\n\n## 联合索引的使用规则\n\n| 查询条件 | 使用的索引列 |\n|----------|-------------|\n| a=1 | a |\n| a=1 AND b=2 | a, b |\n| a=1 AND b=2 AND c=3 | a, b, c |\n| a=1 AND c=3 | a（跳过b，c不走索引） |\n| a=1 AND b>2 AND c=3 | a, b（c不走索引） |\n| b=2 | 不使用索引 |\n\n## 关键要点\n\n1. **最左前缀**：从索引最左列开始连续匹配\n2. **范围查询截断**：范围条件后的列不走索引\n3. **MySQL优化器**：会自动调整WHERE条件顺序\n4. **key_len**：显示索引使用的字节数，可判断使用了几个列\n\n## 注意事项\n\n- 联合索引的列顺序很重要\n- 高选择性（区分度高）的列放前面\n- 等值查询的列放前面，范围查询的列放后面\n- 联合索引可以替代单列索引\n- `(a, b)`联合索引可以加速`WHERE a = 1`的查询",
+    "tags": ["联合索引", "最左前缀", "索引设计"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-008",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "哪些情况会导致索引失效？",
+    "answer": "## 核心概念\n\n索引失效是指MySQL优化器选择不使用索引而进行全表扫描。常见原因包括函数操作、类型转换、LIKE前缀通配符等。\n\n## 索引失效场景\n\n### 1. 对索引列使用函数或运算\n```sql\n-- 失效\nSELECT * FROM users WHERE YEAR(created_at) = 2024;\nSELECT * FROM users WHERE salary + 100 > 5000;\n\n-- 优化\nSELECT * FROM users WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';\nSELECT * FROM users WHERE salary > 4900;\n```\n\n### 2. 隐式类型转换\n```sql\n-- phone是VARCHAR类型\n-- 失效（字符串转数字）\nSELECT * FROM users WHERE phone = 13800138000;\n\n-- 正确\nSELECT * FROM users WHERE phone = '13800138000';\n```\n\n### 3. LIKE前缀通配符\n```sql\n-- 失效\nSELECT * FROM users WHERE name LIKE '%三';\nSELECT * FROM users WHERE name LIKE '%三%';\n\n-- 有效\nSELECT * FROM users WHERE name LIKE '张%';\n```\n\n### 4. OR条件中有非索引列\n```sql\n-- 如果age没有索引，整个查询不走索引\nSELECT * FROM users WHERE name = '张三' OR age = 25;\n\n-- 优化：确保OR两边都有索引\nSELECT * FROM users WHERE name = '张三' OR email = 'test@test.com';\n```\n\n### 5. NOT IN、NOT EXISTS、!=\n```sql\n-- 可能不走索引（取决于数据分布）\nSELECT * FROM users WHERE status != 1;\nSELECT * FROM users WHERE id NOT IN (1, 2, 3);\n```\n\n### 6. IS NULL / IS NOT NULL\n```sql\n-- 可能不走索引（取决于NULL值比例）\nSELECT * FROM users WHERE email IS NULL;\nSELECT * FROM users WHERE email IS NOT NULL;\n```\n\n### 7. 联合索引不满足最左前缀\n```sql\n-- idx_name_age(name, age)\nSELECT * FROM users WHERE age = 25;  -- 失效\n```\n\n## 关键要点\n\n1. **避免在索引列上使用函数**：改为范围条件\n2. **类型一致**：避免隐式类型转换\n3. **LIKE前缀**：只使用`LIKE 'abc%'`形式\n4. **OR两边都要有索引**：否则整个查询不走索引\n\n## 注意事项\n\n- 使用`EXPLAIN`确认索引是否生效\n- 优化器会根据数据分布决定是否使用索引\n- 返回数据量超过30%可能放弃索引\n- `FORCE INDEX`可以强制使用指定索引\n- 索引失效不一定导致性能问题，需要实际测试",
+    "tags": ["索引失效", "全表扫描", "查询优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-009",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "EXPLAIN执行计划中type列各值的含义是什么？",
+    "answer": "## 核心概念\n\nEXPLAIN的type列表示访问类型，反映了MySQL查找数据的方式。性能从好到差依次为：system > const > eq_ref > ref > range > index > ALL。\n\n## type值详解\n\n| type | 含义 | 示例 |\n|------|------|------|\n| system | 表只有一行（系统表） | 系统表查询 |\n| const | 主键或唯一索引等值查询 | `WHERE id = 1` |\n| eq_ref | 多表JOIN时使用主键/唯一索引 | `JOIN ... ON a.id = b.id` |\n| ref | 非唯一索引等值查询 | `WHERE name = '张三'` |\n| range | 索引范围扫描 | `WHERE id > 10` |\n| index | 全索引扫描 | `SELECT count(*) FROM t` |\n| ALL | 全表扫描 | `SELECT * FROM t` |\n\n## SQL示例\n\n```sql\n-- const: 主键等值查询\nEXPLAIN SELECT * FROM users WHERE id = 100;\n-- type: const\n\n-- eq_ref: JOIN时主键关联\nEXPLAIN SELECT * FROM orders o\nJOIN users u ON o.user_id = u.id;\n-- orders表ALL，users表eq_ref\n\n-- ref: 非唯一索引等值查询\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n-- type: ref（如果有idx_name索引）\n\n-- range: 索引范围查询\nEXPLAIN SELECT * FROM users WHERE id > 100;\nEXPLAIN SELECT * FROM users WHERE id BETWEEN 100 AND 200;\nEXPLAIN SELECT * FROM users WHERE name LIKE '张%';\n-- type: range\n\n-- index: 全索引扫描\nEXPLAIN SELECT name FROM users;\n-- type: index（覆盖索引扫描）\n\n-- ALL: 全表扫描\nEXPLAIN SELECT * FROM users WHERE age > 25;\n-- type: ALL（如果age没有索引）\n```\n\n## 关键要点\n\n1. **const最快**：主键或唯一索引等值查询\n2. **eq_ref次之**：JOIN时主键关联\n3. **ref和range常用**：普通索引查询\n4. **ALL需要优化**：全表扫描，检查是否需要加索引\n\n## 注意事项\n\n- type不是唯一判断性能的指标，还需看rows和Extra\n- range类型可以使用索引进行范围扫描\n- index类型扫描整个索引树，比ALL好但仍然要扫描所有记录\n- 主键查询是const，唯一索引查询也是const\n- 查询优化器可能选择ALL而非ref（数据分布决定）",
+    "tags": ["EXPLAIN", "type", "执行计划"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-010",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "EXPLAIN执行计划中key列和Extra列如何解读？",
+    "answer": "## 核心概念\n\nEXPLAIN中key列表示实际使用的索引，Extra列包含执行计划的额外信息，是判断查询优化程度的重要依据。\n\n## key列\n\n| key值 | 含义 |\n|-------|------|\n| NULL | 未使用索引 |\n| PRIMARY | 使用主键索引 |\n| idx_name | 使用指定的二级索引 |\n| idx_a_b | 使用联合索引 |\n\n## Extra列常见值\n\n| Extra | 含义 | 好坏 |\n|-------|------|------|\n| Using index | 覆盖索引，无需回表 | 好 |\n| Using where | Server层过滤 | 一般 |\n| Using index condition | 索引下推（ICP） | 好 |\n| Using temporary | 使用临时表 | 差 |\n| Using filesort | 文件排序 | 差 |\n| Using MRR | 多范围读优化 | 好 |\n| Using join buffer | 使用连接缓冲 | 一般 |\n| Select tables optimized away | 优化器优化了查询 | 好 |\n\n## SQL示例\n\n```sql\n-- Using index（覆盖索引）\nEXPLAIN SELECT name, age FROM users WHERE name = '张三';\n-- 如果有idx_name_age(name, age)索引\n-- Extra: Using index\n\n-- Using where\nEXPLAIN SELECT * FROM users WHERE age > 25;\n-- Extra: Using where（age无索引，Server层过滤）\n\n-- Using index condition（索引下推）\nEXPLAIN SELECT * FROM users\nWHERE name LIKE '张%' AND age > 25;\n-- Extra: Using index condition\n\n-- Using temporary + Using filesort\nEXPLAIN SELECT DISTINCT city FROM users ORDER BY name;\n-- Extra: Using temporary; Using filesort（需要优化）\n\n-- Using filesort\nEXPLAIN SELECT * FROM users ORDER BY name;\n-- 如果name没有索引\n-- Extra: Using filesort\n\n-- Using MRR\nEXPLAIN SELECT * FROM users WHERE name IN ('张三', '李四');\n-- Extra: Using MRR\n```\n\n## 关键要点\n\n1. **Using index最佳**：覆盖索引，零回表\n2. **Using index condition次之**：索引下推减少回表\n3. **Using temporary和filesort需要优化**：表示查询效率不高\n4. **key_len**：显示使用的索引字节数，判断索引使用程度\n\n## 注意事项\n\n- Extra中多个值用分号分隔\n- `Using index`和`Using index condition`可以同时出现\n- `Using filesort`不代表一定慢，小数据量影响不大\n- `Using temporary`表示需要临时表存储中间结果\n- key_len可以判断联合索引使用了几个列",
+    "tags": ["EXPLAIN", "key列", "Extra列"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-011",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是前缀索引？如何使用？",
+    "answer": "## 核心概念\n\n前缀索引是对字符串列的前N个字符建立索引，可以减小索引大小，但不能用于ORDER BY和GROUP BY。\n\n## SQL示例\n\n```sql\n-- 创建前缀索引\nCREATE INDEX idx_email_prefix ON users(email(10));\n-- 只索引email的前10个字符\n\n-- 查看前缀选择性\nSELECT\n    COUNT(DISTINCT LEFT(email, 5)) / COUNT(*) AS sel5,\n    COUNT(DISTINCT LEFT(email, 10)) / COUNT(*) AS sel10,\n    COUNT(DISTINCT LEFT(email, 15)) / COUNT(*) AS sel15,\n    COUNT(DISTINCT email) / COUNT(*) AS sel_full\nFROM users;\n-- 选择性接近1的前缀长度最佳\n\n-- 使用前缀索引\nEXPLAIN SELECT * FROM users WHERE email LIKE 'zhangsan%';\n-- 可以使用idx_email_prefix索引\n\n-- 不能用于排序\nEXPLAIN SELECT * FROM users ORDER BY email;\n-- 即使有前缀索引也无法使用（前缀不包含完整值）\n```\n\n## 关键要点\n\n1. **减小索引大小**：长字符串只取前N个字符\n2. **不能排序**：前缀索引不能用于ORDER BY和GROUP BY\n3. **不能覆盖索引**：需要回表验证完整值\n4. **选择性**：前缀长度要保证足够的区分度\n\n## 注意事项\n\n- 前缀索引的选择性应接近完整列的选择性\n- `COUNT(DISTINCT LEFT(col, N))`帮助确定合适的前缀长度\n- 前缀索引主要用于VARCHAR、TEXT等长字符串列\n- 不支持`ORDER BY`和`GROUP BY`\n- 对于区分度很高的列（如手机号），前缀索引效果好",
+    "tags": ["前缀索引", "字符串索引", "索引优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-012",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "唯一索引和普通索引有什么区别？如何选择？",
+    "answer": "## 核心概念\n\n唯一索引（UNIQUE INDEX）保证索引列的值不重复，普通索引允许重复值。两者在查询性能上几乎相同，但在写入时有差异。\n\n## 核心区别\n\n| 特性 | 唯一索引 | 普通索引 |\n|------|----------|----------|\n| 值约束 | 不允许重复 | 允许重复 |\n| NULL | 允许多个NULL | 允许多个NULL |\n| 查询性能 | 几乎相同 | 几乎相同 |\n| 写入性能 | 需要检查唯一性 | 无需检查 |\n| change buffer | 不能使用 | 可以使用 |\n\n## SQL示例\n\n```sql\n-- 创建唯一索引\nCREATE UNIQUE INDEX idx_email ON users(email);\n\n-- 创建普通索引\nCREATE INDEX idx_name ON users(name);\n\n-- 唯一索引插入重复值\nINSERT INTO users (email) VALUES ('test@test.com');\nINSERT INTO users (email) VALUES ('test@test.com');\n-- 第二次插入报错：Duplicate entry 'test@test.com'\n\n-- 普通索引使用change buffer\n-- 当数据页不在内存中时，先写change buffer，等数据页被读取时再合并\n-- 唯一索引不能使用change buffer（需要立即检查唯一性）\n```\n\n## 关键要点\n\n1. **查询性能**：两者查询性能几乎无差异\n2. **change buffer**：普通索引可以利用，提升写入性能\n3. **唯一性约束**：唯一索引保证数据唯一性\n4. **选择依据**：需要唯一约束用唯一索引，否则用普通索引\n\n## 注意事项\n\n- change buffer对写多读少的场景优化效果明显\n- 唯一索引插入时必须读取数据页检查唯一性\n- 如果业务上需要保证唯一性，必须使用唯一索引\n- 普通索引可以使用change buffer延迟写入\n- 读多写少的场景两者差异不大",
+    "tags": ["唯一索引", "普通索引", "change buffer"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-013",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是索引合并（Index Merge）？有哪些情况？",
+    "answer": "## 核心概念\n\n索引合并（Index Merge）是MySQL优化器在某些情况下同时使用多个索引，将结果合并后返回。EXPLAIN的type列显示`index_merge`。\n\n## 索引合并类型\n\n| 类型 | 条件 | 算法 |\n|------|------|------|\n| Intersection | AND条件 | 取交集 |\n| Union | OR条件 | 取并集 |\n| Sort-Union | OR + 范围 | 排序后取并集 |\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    email VARCHAR(100),\n    age INT,\n    INDEX idx_name (name),\n    INDEX idx_email (email),\n    INDEX idx_age (age)\n);\n\n-- Intersection（交集）\nEXPLAIN SELECT * FROM users WHERE name = '张三' AND email = 'test@test.com';\n-- type: index_merge\n-- Extra: Using intersect(idx_name, idx_email)\n\n-- Union（并集）\nEXPLAIN SELECT * FROM users WHERE name = '张三' OR email = 'test@test.com';\n-- type: index_merge\n-- Extra: Using union(idx_name, idx_email)\n\n-- Sort-Union\nEXPLAIN SELECT * FROM users WHERE name > '张' OR email > 'test';\n-- type: index_merge\n-- Extra: Using sort_union(idx_name, idx_email)\n\n-- 查看优化器选择\nEXPLAIN FORMAT=JSON SELECT * FROM users WHERE name = '张三' AND age = 25;\n```\n\n## 关键要点\n\n1. **Intersection合并**：AND条件，多个索引结果取交集\n2. **Union合并**：OR条件，多个索引结果取并集\n3. **Sort-Union合并**：范围查询的OR条件\n4. **不是总有效**：优化器可能选择全表扫描而非索引合并\n\n## 注意事项\n\n- 索引合并不一定比联合索引高效\n- 如果频繁使用`WHERE a=1 AND b=2`，创建联合索引`(a,b)`更好\n- 索引合并需要多次查找索引，再合并结果\n- `optimizer_switch`中`index_merge`可以控制是否启用\n- 大量数据时索引合并可能不如全表扫描",
+    "tags": ["索引合并", "index_merge", "OR条件优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-014",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是FORCE INDEX？什么场景下使用？",
+    "answer": "## 核心概念\n\nFORCE INDEX强制MySQL优化器使用指定的索引，忽略优化器的自动选择。通常在优化器选择了错误索引时使用。\n\n## SQL示例\n\n```sql\n-- 语法\nSELECT * FROM users FORCE INDEX (idx_name)\nWHERE name = '张三' AND age > 25;\n\n-- USE INDEX：建议使用某个索引（优化器可能不听）\nSELECT * FROM users USE INDEX (idx_name)\nWHERE name = '张三' AND age > 25;\n\n-- IGNORE INDEX：忽略某个索引\nSELECT * FROM users IGNORE INDEX (idx_age)\nWHERE name = '张三' AND age > 25;\n\n-- 实际场景：优化器选错索引\n-- 假设表有两个索引：idx_name(name), idx_status(status)\n-- status只有0和1两个值，区分度很低\nEXPLAIN SELECT * FROM users WHERE name = '张三' AND status = 1;\n-- 优化器可能选择idx_status（因为status=1的数据很少）\n-- 但实际上idx_name更高效\n\n-- 强制使用正确的索引\nSELECT * FROM users FORCE INDEX (idx_name)\nWHERE name = '张三' AND status = 1;\n```\n\n## 常见使用场景\n\n1. **优化器选错索引**：统计信息不准确\n2. **测试不同索引的性能**\n3. **临时修复慢查询**：等后续优化后再移除\n4. **数据分布特殊**：优化器基于统计信息的判断不准确\n\n## 关键要点\n\n1. **FORCE INDEX**：强制使用指定索引\n2. **USE INDEX**：建议使用，优化器可能忽略\n3. **IGNORE INDEX**：忽略指定索引\n4. **谨慎使用**：FORCE INDEX可能导致未来优化失效\n\n## 注意事项\n\n- 使用FORCE INDEX前先用EXPLAIN验证性能\n- FORCE INDEX是临时方案，不是最终解决方案\n- 如果数据分布变化，FORCE INDEX可能变得不适用\n- `ANALYZE TABLE`可以更新统计信息，可能让优化器选对索引\n- 不要过度依赖FORCE INDEX",
+    "tags": ["FORCE INDEX", "USE INDEX", "索引选择"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-015",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何通过慢查询日志定位和优化慢SQL？",
+    "answer": "## 核心概念\n\n慢查询日志记录执行时间超过阈值的SQL语句，是定位慢SQL的主要工具。配合`pt-query-digest`工具可以分析慢查询日志。\n\n## SQL示例\n\n```sql\n-- 查看慢查询日志配置\nSHOW VARIABLES LIKE 'slow_query%';\nSHOW VARIABLES LIKE 'long_query_time';\n\n-- 开启慢查询日志\nSET GLOBAL slow_query_log = ON;\nSET GLOBAL long_query_time = 1;  -- 超过1秒记录\nSET GLOBAL log_queries_not_using_indexes = ON;  -- 记录未使用索引的查询\n\n-- 查看慢查询日志位置\nSHOW VARIABLES LIKE 'slow_query_log_file';\n\n-- 分析慢SQL的步骤\nEXPLAIN SELECT * FROM orders WHERE user_id = 100 ORDER BY created_at;\n-- 检查type、key、rows、Extra\n\n-- 查看执行时间\nSELECT * FROM orders WHERE user_id = 100 ORDER BY created_at;\nSHOW STATUS LIKE 'Last_query_cost';\n```\n\n```bash\n# pt-query-digest分析慢查询日志\npt-query-digest /var/log/mysql/slow.log\n\n# 输出示例：\n# Rank  Query ID    Response time  Calls  R/Call  V/M\n# ==== ==========  =============  =====  ======  ====\n#    1  0xABC123    150.0000  50.0%   200   0.7500  0.01\n\n# mysqldumpslow分析\nmysqldumpslow -s t -t 10 /var/log/mysql/slow.log\n# -s t: 按总时间排序\n# -t 10: 取前10条\n```\n\n## 优化步骤\n\n```\n1. 开启慢查询日志\n2. 使用pt-query-digest分析TOP SQL\n3. 对每条慢SQL使用EXPLAIN分析\n4. 根据type、key、Extra判断优化方向\n5. 添加索引或重写SQL\n6. 验证优化效果\n```\n\n## 关键要点\n\n1. **long_query_time**：设置合理的阈值（通常1秒）\n2. **pt-query-digest**：专业的慢查询分析工具\n3. **EXPLAIN**：分析单条SQL的执行计划\n4. **索引优化**：最常见的优化方向\n\n## 注意事项\n\n- 生产环境建议开启慢查询日志\n- `log_queries_not_using_indexes`可能产生大量日志\n- 慢查询日志会增加IO开销\n- 定期分析慢查询日志，持续优化\n- `SHOW PROFILES`可以查看最近SQL的执行时间",
+    "tags": ["慢查询日志", "pt-query-digest", "SQL优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-016",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "索引设计有哪些原则？",
+    "answer": "## 核心概念\n\n索引设计是数据库性能优化的核心。好的索引设计需要考虑查询模式、数据分布、写入频率等因素。\n\n## 索引设计原则\n\n### 1. 选择高区分度的列\n```sql\n-- 查看列的区分度\nSELECT\n    COUNT(DISTINCT user_id) / COUNT(*) AS user_id_sel,\n    COUNT(DISTINCT status) / COUNT(*) AS status_sel,\n    COUNT(DISTINCT email) / COUNT(*) AS email_sel\nFROM orders;\n-- 区分度越接近1，越适合建索引\n```\n\n### 2. 联合索引列顺序\n- 等值查询的列放在前面\n- 范围查询的列放在后面\n- 高区分度的列放在前面\n\n### 3. 覆盖索引\n```sql\n-- 查询字段都在索引中\nCREATE INDEX idx_user_amount ON orders(user_id, amount);\nSELECT user_id, amount FROM orders WHERE user_id = 100;  -- 覆盖索引\n```\n\n### 4. 避免冗余索引\n```sql\n-- (a, b) 已经覆盖了 (a) 的功能\n-- 不需要再单独创建 idx_a\nCREATE INDEX idx_a_b ON t(a, b);  -- 已经包含了a的索引\n```\n\n### 5. 避免过多索引\n- 每个索引都会增加写入开销\n- 建议单表索引不超过5个\n\n## SQL示例\n\n```sql\n-- 索引设计示例\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    status TINYINT,\n    amount DECIMAL(10,2),\n    created_at DATETIME,\n    INDEX idx_user_created (user_id, created_at),  -- 按用户查订单\n    INDEX idx_status_created (status, created_at),  -- 按状态查订单\n    INDEX idx_created (created_at)                  -- 按时间查订单\n);\n\n-- 检查冗余索引\nSELECT * FROM sys.schema_redundant_indexes\nWHERE table_name = 'orders';\n\n-- 检查未使用的索引\nSELECT * FROM sys.schema_unused_indexes\nWHERE object_name = 'orders';\n```\n\n## 关键要点\n\n1. **高区分度优先**：选择性高的列更适合建索引\n2. **联合索引优化**：等值在前，范围在后\n3. **覆盖索引**：减少回表，提升性能\n4. **定期清理**：删除未使用和冗余的索引\n\n## 注意事项\n\n- 小表（<1000行）不需要索引\n- 频繁更新的列不适合建过多索引\n- 避免在大文本列上建索引（使用前缀索引）\n- 使用`sys`数据库查看索引使用情况\n- `ANALYZE TABLE`更新统计信息",
+    "tags": ["索引设计", "索引优化", "最佳实践"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-017",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "如何使用EXPLAIN分析SQL执行计划？",
+    "answer": "## 核心概念\n\nEXPLAIN用于查看MySQL如何执行一条SQL语句，包括使用了哪些索引、扫描了多少行、是否有排序等信息。\n\n## EXPLAIN输出字段\n\n| 字段 | 含义 |\n|------|------|\n| id | 查询序号 |\n| select_type | 查询类型（SIMPLE/PRIMARY/SUBQUERY等） |\n| table | 访问的表 |\n| type | 访问类型 |\n| possible_keys | 可能使用的索引 |\n| key | 实际使用的索引 |\n| key_len | 使用的索引长度 |\n| rows | 预估扫描行数 |\n| filtered | 过滤比例 |\n| Extra | 额外信息 |\n\n## SQL示例\n\n```sql\n-- 基本用法\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n\n-- 垂直显示\nEXPLAIN SELECT * FROM users WHERE name = '张三'\\G\n\n-- JSON格式（更详细）\nEXPLAIN FORMAT=JSON SELECT * FROM users WHERE name = '张三';\n\n-- TREE格式（MySQL 8.0.16+）\nEXPLAIN FORMAT=TREE SELECT * FROM users WHERE name = '张三';\n\n-- 分析示例\nEXPLAIN SELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三'\nORDER BY o.created_at;\n\n-- 解读：\n-- 1. users表：type=ref, key=idx_name, rows=1\n-- 2. orders表：type=ref, key=idx_user_id, rows=10\n-- 3. Extra: Using where; Using filesort（需要排序）\n```\n\n## 关键判断标准\n\n```\n好：type为const/eq_ref/ref，key不为NULL，rows少，Extra有Using index\n一般：type为range，有Using where\n差：type为ALL，rows多，Extra有Using temporary; Using filesort\n```\n\n## 关键要点\n\n1. **type列最重要**：决定访问效率\n2. **key列看实际索引**：是否使用了预期的索引\n3. **rows列估算扫描量**：越少越好\n4. **Extra列看优化信息**：filesort和temporary需要关注\n\n## 注意事项\n\n- EXPLAIN只是估算，实际执行可能不同\n- 使用`EXPLAIN ANALYZE`（MySQL 8.0.18+）查看实际执行统计\n- `possible_keys`显示可能的索引，`key`显示实际选择的索引\n- `key_len`越短说明索引使用越少\n- 多表JOIN时每张表一行EXPLAIN输出",
+    "tags": ["EXPLAIN", "执行计划", "SQL分析"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-018",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是change buffer？对索引写入有什么影响？",
+    "answer": "## 核心概念\n\nchange buffer是InnoDB用于优化二级索引写入的机制。当修改的数据页不在Buffer Pool中时，InnoDB先将修改记录到change buffer，等数据页被读取时再合并（merge）。\n\n## 工作流程\n\n```\n1. INSERT/UPDATE/DELETE操作影响二级索引页\n2. 如果索引页不在Buffer Pool中：\n   a. 将变更记录写入change buffer（内存操作，快）\n   b. 后台定期将change buffer写入系统表空间\n3. 当查询需要读取该索引页时：\n   a. 将索引页读入Buffer Pool\n   b. 将change buffer中的变更合并到索引页\n```\n\n## SQL示例\n\n```sql\n-- 查看change buffer配置\nSHOW VARIABLES LIKE 'innodb_change_buffer%';\n\n-- change_buffer的几种模式\n-- all:     缓冲INSERT/UPDATE/DELETE操作（默认）\n-- none:    不缓冲\n-- inserts: 只缓冲INSERT\n-- deletes: 只缓冲DELETE\n-- changes: 缓冲INSERT和DELETE\n-- merges:  缓冲所有merge操作\n\nSET GLOBAL innodb_change_buffering = 'all';\n\n-- change buffer最大大小\nSHOW VARIABLES LIKE 'innodb_change_buffer_max_size';\n-- 默认25%，表示Buffer Pool的25%用于change buffer\n\n-- 查看change buffer状态\nSHOW ENGINE INNODB STATUS\\G\n-- 在INSERT BUFFER AND ADAPTIVE HASH INDEX部分\n```\n\n## 关键要点\n\n1. **只用于二级索引**：聚簇索引不使用change buffer\n2. **减少随机IO**：避免每次写入都读取磁盘页\n3. **写多读少效果明显**：读取时才合并，延迟写入\n4. **唯一索引不能使用**：需要立即检查唯一性\n\n## 注意事项\n\n- change buffer写满时会导致频繁的merge操作\n- 写密集且读少的场景效果最好\n- 频繁读取的索引页总是在Buffer Pool中，change buffer作用有限\n- MySQL 5.5之前叫insert buffer，只对INSERT操作\n- `innodb_change_buffer_max_size`建议保持默认25%",
+    "tags": ["change buffer", "InnoDB", "写入优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-019",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是自适应哈希索引（AHI）？有什么作用？",
+    "answer": "## 核心概念\n\n自适应哈希索引（Adaptive Hash Index，AHI）是InnoDB自动监控索引访问模式，在检测到某些索引页被频繁访问时，自动为这些页建立哈希索引，加速等值查询。\n\n## 工作原理\n\n```\n1. InnoDB监控B+树索引的访问模式\n2. 如果某些索引页被频繁等值访问（热点页）\n3. 自动在内存中为这些页建立哈希索引\n4. 后续等值查询可以直接通过哈希O(1)定位\n```\n\n## SQL示例\n\n```sql\n-- 查看AHI状态\nSHOW ENGINE INNODB STATUS\\G\n-- 在INSERT BUFFER AND ADAPTIVE HASH INDEX部分\n\n-- 查看AHI配置\nSHOW VARIABLES LIKE 'innodb_adaptive_hash_index%';\n\n-- 开关AHI\nSET GLOBAL innodb_adaptive_hash_index = ON;  -- 默认开启\nSET GLOBAL innodb_adaptive_hash_index = OFF; -- 关闭\n\n-- AHI分区（MySQL 5.7+）\nSHOW VARIABLES LIKE 'innodb_adaptive_hash_index_parts';\n-- 默认8个分区，减少锁竞争\n```\n\n## AHI的优缺点\n\n| 优点 | 缺点 |\n|------|------|\n| 加速等值查询（O(1)） | 哈希计算和维护有开销 |\n| 自动建立，无需人工管理 | 只能用于等值查询 |\n| 减少B+树查找次数 | 不能用于范围查询 |\n| 适合热点数据访问 | 多线程有锁竞争 |\n\n## 关键要点\n\n1. **自动建立**：InnoDB自动监控并建立哈希索引\n2. **只对等值查询有效**：范围查询、LIKE等无法使用\n3. **内存中**：哈希索引存在于内存中\n4. **热点数据**：针对频繁访问的索引页\n\n## 注意事项\n\n- AHI在高并发场景下可能有锁争用问题\n- MySQL 5.7引入分区减少锁竞争\n- 某些场景关闭AHI反而提升性能\n- AHI不是用户可控的索引，不能显式创建\n- 通过`SHOW ENGINE INNODB STATUS`监控AHI命中率",
+    "tags": ["AHI", "自适应哈希", "InnoDB优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-020",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是页分裂？对索引有什么影响？",
+    "answer": "## 核心概念\n\n页分裂（Page Split）是B+树中当一个数据页满了之后，需要将页中的部分数据移动到新页的过程。页分裂会导致性能下降和空间浪费。\n\n## 页分裂过程\n\n```\n1. 向已满的数据页插入新记录\n2. InnoDB申请新的数据页\n3. 将原页约50%的数据移动到新页\n4. 更新父节点的指针\n5. 插入新记录\n\n结果：\n- 两个页都只有约50%的填充率\n- 索引树的结构发生变化\n- 产生随机IO\n```\n\n## SQL示例\n\n```sql\n-- 主键顺序插入（避免页分裂）\nINSERT INTO orders VALUES (1, ...);\nINSERT INTO orders VALUES (2, ...);\nINSERT INTO orders VALUES (3, ...);\n-- 按主键顺序插入，新记录总是追加到最后\n\n-- 主键乱序插入（导致页分裂）\nINSERT INTO orders VALUES (100, ...);\nINSERT INTO orders VALUES (50, ...);   -- 可能导致页分裂\nINSERT INTO orders VALUES (200, ...);\n\n-- UUID作为主键的问题\nCREATE TABLE users (\n    id CHAR(36) PRIMARY KEY,  -- UUID\n    name VARCHAR(50)\n);\n-- UUID是随机的，插入时频繁导致页分裂\n-- 建议使用有序的ID（自增、雪花算法）\n\n-- 查看索引统计信息\nSELECT * FROM information_schema.INNODB_INDEXES;\nSELECT * FROM information_schema.INNODB_INDEX_STATS\nWHERE table_name = 'orders';\n```\n\n## 关键要点\n\n1. **顺序插入避免页分裂**：使用自增主键\n2. **UUID不适合做主键**：随机值导致频繁页分裂\n3. **页分裂开销**：数据移动、IO操作、锁\n4. **空间浪费**：页分裂后每页只有约50%利用率\n\n## 注意事项\n\n- 页分裂会导致页的填充率下降\n- `OPTIMIZE TABLE`可以重组数据，提高填充率\n- 顺序插入（自增ID）是避免页分裂的最佳方案\n- 页分裂会产生额外的redo log\n- 随机主键（UUID）不仅导致页分裂，还会增加聚簇索引的碎片",
+    "tags": ["页分裂", "B+树", "主键设计"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-021",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何分析和优化慢查询？",
+    "answer": "## 核心概念\n\n慢查询优化是数据库性能调优的核心工作。需要通过EXPLAIN分析执行计划，从索引、SQL写法、表结构等多角度优化。\n\n## 优化步骤\n\n```\n1. 开启慢查询日志，定位慢SQL\n2. 使用EXPLAIN分析执行计划\n3. 根据type、key、Extra判断问题\n4. 针对性优化\n5. 验证优化效果\n```\n\n## SQL示例\n\n```sql\n-- 开启慢查询日志\nSET GLOBAL slow_query_log = ON;\nSET GLOBAL long_query_time = 1;\n\n-- 使用EXPLAIN分析\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY created_at DESC\nLIMIT 10;\n\n-- 问题1：type=ALL，全表扫描\n-- 解决：添加索引\nCREATE INDEX idx_user_created ON orders(user_id, created_at);\n\n-- 问题2：Extra=Using filesort，文件排序\n-- 解决：利用索引的有序性\n-- idx_user_created已经按(user_id, created_at)排序\n\n-- 问题3：Extra=Using temporary，使用临时表\n-- 解决：优化GROUP BY或DISTINCT\n\n-- 问题4：SELECT * 导致回表\n-- 解决：只查询需要的字段（覆盖索引）\nSELECT user_id, amount, created_at\nFROM orders\nWHERE user_id = 100\nORDER BY created_at DESC\nLIMIT 10;\n\n-- 问题5：深分页\n-- 差：LIMIT 1000000, 10\n-- 好：WHERE id > 1000000 LIMIT 10\n\n-- 问题6：子查询性能差\n-- 差：WHERE id IN (SELECT ...)\n-- 好：使用JOIN替代\n```\n\n## 常见优化手段\n\n| 问题 | 优化方案 |\n|------|----------|\n| type=ALL | 添加合适的索引 |\n| Using filesort | 利用索引排序 |\n| Using temporary | 优化GROUP BY |\n| 回表过多 | 使用覆盖索引 |\n| 深分页 | 游标分页 |\n| 子查询 | 改用JOIN |\n| LIKE '%abc' | 全文索引或搜索引擎 |\n\n## 关键要点\n\n1. **EXPLAIN是基础**：每个慢SQL都要EXPLAIN\n2. **索引优先**：大多数优化都是加索引\n3. **覆盖索引**：减少回表是关键\n4. **避免SELECT ***：只查需要的字段\n\n## 注意事项\n\n- 不要盲目加索引，索引有写入开销\n- 使用`pt-query-digest`分析大量慢查询\n- `ANALYZE TABLE`更新统计信息\n- 定期清理无用索引\n- 优化是持续过程，不是一次性工作",
+    "tags": ["慢查询优化", "EXPLAIN分析", "SQL优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-022",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "MySQL中如何查看和管理索引？",
+    "answer": "## 核心概念\n\nMySQL提供了多种方式查看和管理索引，包括SHOW命令、information_schema和sys数据库。\n\n## SQL示例\n\n```sql\n-- 查看表的索引\nSHOW INDEX FROM users;\nSHOW INDEX FROM users\\G  -- 垂直显示\n\n-- 查看建表语句（包含索引定义）\nSHOW CREATE TABLE users;\n\n-- 创建索引\nCREATE INDEX idx_name ON users(name);\nCREATE UNIQUE INDEX idx_email ON users(email);\nCREATE INDEX idx_name_age ON users(name, age);\n\n-- ALTER TABLE创建索引\nALTER TABLE users ADD INDEX idx_phone (phone);\nALTER TABLE users ADD UNIQUE INDEX idx_idcard (id_card);\nALTER TABLE users ADD INDEX idx_composite (a, b, c);\n\n-- 删除索引\nDROP INDEX idx_name ON users;\nALTER TABLE users DROP INDEX idx_name;\n\n-- 删除主键索引\nALTER TABLE users DROP PRIMARY KEY;\n\n-- 重建索引（MySQL没有直接的REBUILD INDEX）\nALTER TABLE users DROP INDEX idx_name, ADD INDEX idx_name (name);\n-- 或者\nOPTIMIZE TABLE users;\n\n-- 查看索引使用情况（sys数据库）\nSELECT * FROM sys.schema_indexes WHERE table_name = 'users';\n\n-- 查看未使用的索引\nSELECT * FROM sys.schema_unused_indexes WHERE object_name = 'users';\n\n-- 查看冗余索引\nSELECT * FROM sys.schema_redundant_indexes WHERE table_name = 'users';\n\n-- 查看索引统计信息\nANALYZE TABLE users;  -- 更新统计信息\nSHOW INDEX FROM users;  -- Cardinality列显示基数\n```\n\n## 关键要点\n\n1. **SHOW INDEX**：查看索引基本信息\n2. **Cardinality**：索引基数，值越大区分度越高\n3. **sys库**：提供索引使用情况统计\n4. **ANALYZE TABLE**：更新索引统计信息\n\n## 注意事项\n\n- `Cardinality`是估算值，不是精确值\n- 大表上CREATE INDEX可能锁表（MySQL 5.6+支持Online DDL）\n- 删除索引前确认没有查询依赖该索引\n- `OPTIMIZE TABLE`会重建表数据和索引\n- 使用`pt-online-schema-change`进行在线索引变更",
+    "tags": ["索引管理", "SHOW INDEX", "sys数据库"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-023",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "MySQL中如何使用覆盖索引优化COUNT查询？",
+    "answer": "## 核心概念\n\nCOUNT查询可以利用覆盖索引避免回表。InnoDB会自动选择最小的索引树来遍历统计行数。\n\n## SQL示例\n\n```sql\n-- COUNT(*) 会自动选择最小的索引\nEXPLAIN SELECT COUNT(*) FROM orders;\n-- 可能使用最小的二级索引而非主键\n\n-- COUNT(col) 只统计非NULL值\nEXPLAIN SELECT COUNT(email) FROM users;\n-- 如果email有索引，可以使用覆盖索引\n\n-- 添加索引优化COUNT\nCREATE INDEX idx_user_status ON orders(user_id, status);\n\n-- 按条件COUNT\nEXPLAIN SELECT COUNT(*) FROM orders WHERE user_id = 100;\n-- 使用idx_user_status索引\n\n-- 使用覆盖索引优化\nEXPLAIN SELECT COUNT(*) FROM orders\nWHERE user_id = 100 AND status = 1;\n-- Extra: Using index\n\n-- COUNT(DISTINCT col)\nEXPLAIN SELECT COUNT(DISTINCT user_id) FROM orders;\n-- 使用idx_user_status索引\n\n-- 统计表的大致行数\nSELECT TABLE_ROWS FROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'orders';\n-- 估算值，不精确但很快\n\n-- 精确统计（大表慎用）\nSELECT COUNT(*) FROM orders;\n```\n\n## 关键要点\n\n1. **InnoDB COUNT(*)优化**：自动选择最小索引\n2. **覆盖索引**：COUNT查询的索引包含所有需要的数据\n3. **COUNT(*) vs COUNT(col)**：前者统计所有行，后者忽略NULL\n4. **估算值**：`information_schema.TABLES`提供快速估算\n\n## 注意事项\n\n- InnoDB的COUNT(*)需要遍历索引，大表较慢\n- MyISAM的COUNT(*)非常快（存储了行数）\n- 大表精确COUNT建议使用缓存或近似值\n- `SQL_CALC_FOUND_ROWS`已被MySQL 8.0弃用\n- 频繁COUNT的场景考虑维护计数器",
+    "tags": ["COUNT优化", "覆盖索引", "行数统计"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-024",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是索引的基数（Cardinality）？如何影响索引选择？",
+    "answer": "## 核心概念\n\n基数（Cardinality）是指索引列中不重复值的数量。基数越高（越接近总行数），索引的区分度越好，优化器越倾向于使用该索引。\n\n## SQL示例\n\n```sql\n-- 查看索引基数\nSHOW INDEX FROM orders;\n-- Cardinality列显示估算的基数\n\n-- 更新统计信息\nANALYZE TABLE orders;\n\n-- 查看列的基数\nSELECT\n    COUNT(*) AS total,\n    COUNT(DISTINCT user_id) AS user_id_card,\n    COUNT(DISTINCT status) AS status_card,\n    COUNT(DISTINCT amount) AS amount_card\nFROM orders;\n\n-- 选择性计算\nSELECT\n    COUNT(DISTINCT user_id) / COUNT(*) AS user_id_sel,\n    COUNT(DISTINCT status) / COUNT(*) AS status_sel\nFROM orders;\n-- 选择性越接近1，越适合建索引\n\n-- 选择性过低的例子\n-- status只有0和1两个值\n-- 选择性 = 2 / 1000000 ≈ 0.000002\n-- 优化器可能不使用该索引（全表扫描更快）\n```\n\n## 基数与索引选择\n\n| 选择性 | 说明 |\n|--------|------|\n| 接近1 | 区分度高，适合索引（如手机号、身份证） |\n| 0.1~0.9 | 中等区分度 |\n| 接近0 | 区分度低，不适合单独建索引（如性别、状态） |\n\n## 关键要点\n\n1. **Cardinality是估算值**：通过采样计算\n2. **ANALYZE TABLE**：更新统计信息\n3. **选择性公式**：`COUNT(DISTINCT col) / COUNT(*)`\n4. **低基数列**：不适合单独建索引，可以放在联合索引后面\n\n## 注意事项\n\n- 统计信息不准确会导致优化器选错索引\n- 大表的ANALYZE TABLE可能耗时较长\n- `innodb_stats_persistent`控制统计信息是否持久化\n- 可以使用FORCE INDEX强制使用索引\n- 联合索引中低基数列放在后面",
+    "tags": ["Cardinality", "基数", "索引选择"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-025",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是MySQL的MRR优化？",
+    "answer": "## 核心概念\n\nMRR（Multi-Range Read）是MySQL 5.6引入的优化，将二级索引的随机回表操作转换为对主键的排序后顺序回表，减少随机IO。\n\n## 传统回表 vs MRR\n\n```\n传统回表：\n1. 二级索引找到id=5\n2. 回表：随机IO读取id=5的数据\n3. 二级索引找到id=2\n4. 回表：随机IO读取id=2的数据\n5. 二级索引找到id=8\n6. 回表：随机IO读取id=8的数据\n\nMRR优化：\n1. 二级索引找到id=5, 2, 8\n2. 排序：id=2, 5, 8\n3. 顺序IO读取id=2, 5, 8的数据\n```\n\n## SQL示例\n\n```sql\n-- MRR自动启用条件\n-- 1. 查询使用二级索引\n-- 2. 需要回表\n-- 3. 范围查询\n\nEXPLAIN SELECT * FROM orders\nWHERE user_id IN (100, 200, 300, 400, 500);\n-- Extra: Using MRR\n\n-- 查看MRR配置\nSHOW VARIABLES LIKE 'mrr%';\n\n-- 开关MRR\nSET optimizer_switch = 'mrr=on';\nSET optimizer_switch = 'mrr_cost_based=on';  -- 基于成本决定是否使用\n\n-- range查询使用MRR\nEXPLAIN SELECT * FROM orders\nWHERE user_id BETWEEN 100 AND 200;\n-- Extra: Using MRR\n```\n\n## 关键要点\n\n1. **减少随机IO**：将随机回表转为顺序回表\n2. **自动启用**：优化器根据成本决定是否使用\n3. **适用于范围查询**：IN、BETWEEN等\n4. **Buffer大小**：`read_rnd_buffer_size`控制排序缓冲\n\n## 注意事项\n\n- MRR在机械硬盘上效果显著，SSD上效果不明显\n- 小数据量时MRR可能增加开销\n- `mrr_cost_based`控制是否基于成本选择\n- MySQL 8.0中MRR优化更成熟\n- MRR与BKA（Batched Key Access）配合使用",
+    "tags": ["MRR", "随机IO优化", "回表优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-026",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是BKA（Batched Key Access）优化？",
+    "answer": "## 核心概念\n\nBKA（Batched Key Access）是MySQL 5.6引入的JOIN优化，将JOIN操作中对内表的多次单行查找转为批量查找，配合MRR减少随机IO。\n\n## 工作原理\n\n```\n传统NLJ（Nested Loop Join）：\n1. 外表取出一行\n2. 在内表中查找匹配行（单次查找）\n3. 重复\n\nBKA优化：\n1. 外表取出一批行\n2. 将这批行的JOIN键收集到join buffer\n3. 将JOIN键排序\n4. 批量在内表中查找匹配行（配合MRR）\n5. 重复\n```\n\n## SQL示例\n\n```sql\n-- BKA需要MRR支持\nSET optimizer_switch = 'mrr=on,mrr_cost_based=off';\nSET optimizer_switch = 'batched_key_access=on';\n\n-- JOIN查询使用BKA\nEXPLAIN SELECT /*+ BKA(o) */ *\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三';\n-- Extra: Using join buffer (Batched Key Access)\n\n-- 查看join_buffer_size\nSHOW VARIABLES LIKE 'join_buffer_size';\n\n-- 优化器提示\nSELECT /*+ BKA(orders) */ * FROM users u\nJOIN orders o ON u.id = o.user_id;\n\nSELECT /*+ NO_BKA(orders) */ * FROM users u\nJOIN orders o ON u.id = o.user_id;\n```\n\n## 关键要点\n\n1. **批量查找**：减少内表查找次数\n2. **配合MRR**：批量回表转为顺序IO\n3. **join_buffer_size**：缓冲区越大，批量越大\n4. **适用于NLJ**：嵌套循环JOIN的优化\n\n## 注意事项\n\n- BKA需要MRR支持\n- `join_buffer_size`影响BKA的效果\n- 优化器可能不总是选择BKA\n- 使用`BKA`优化器提示强制使用\n- MySQL 8.0中BKA优化更智能",
+    "tags": ["BKA", "JOIN优化", "批量查找"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-027",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "MySQL中如何使用索引提示（Hint）？",
+    "answer": "## 核心概念\n\n索引提示（Hint）用于告诉优化器使用或忽略特定索引。当优化器选择了错误索引时，Hint可以临时修复性能问题。\n\n## SQL示例\n\n```sql\n-- FORCE INDEX：强制使用指定索引\nSELECT * FROM users FORCE INDEX (idx_name)\nWHERE name = '张三' AND age > 25;\n\n-- USE INDEX：建议使用索引\nSELECT * FROM users USE INDEX (idx_name)\nWHERE name = '张三' AND age > 25;\n\n-- IGNORE INDEX：忽略指定索引\nSELECT * FROM users IGNORE INDEX (idx_age)\nWHERE name = '张三' AND age > 25;\n\n-- 多个索引提示\nSELECT * FROM users\nFORCE INDEX (idx_name, idx_email)\nWHERE name = '张三' OR email = 'test@test.com';\n\n-- JOIN中的索引提示\nSELECT * FROM users u\nFORCE INDEX (idx_name)\nJOIN orders o FORCE INDEX (idx_user_id)\nON u.id = o.user_id\nWHERE u.name = '张三';\n\n-- ORDER BY的索引提示\nSELECT * FROM users FORCE INDEX (idx_name)\nORDER BY name;\n\n-- MySQL 8.0优化器提示\nSELECT /*+ INDEX(users idx_name) */ * FROM users WHERE name = '张三';\nSELECT /*+ NO_INDEX(users idx_name) */ * FROM users WHERE name = '张三';\n```\n\n## Hint类型对比\n\n| Hint | 作用 | 优先级 |\n|------|------|--------|\n| FORCE INDEX | 强制使用索引 | 最高 |\n| USE INDEX | 建议使用索引 | 中 |\n| IGNORE INDEX | 忽略索引 | 高 |\n| /*+ INDEX */ | 优化器提示 | 最高 |\n\n## 关键要点\n\n1. **FORCE INDEX最强制**：优化器必须使用\n2. **USE INDEX只是建议**：优化器可能忽略\n3. **IGNORE INDEX**：排除特定索引\n4. **优化器提示**：MySQL 8.0推荐的写法\n\n## 注意事项\n\n- Hint是临时方案，不是根本解决方案\n- 使用前先用EXPLAIN确认效果\n- 数据分布变化后Hint可能失效\n- 建议使用`ANALYZE TABLE`更新统计信息\n- 优先考虑添加合适的索引而非使用Hint",
+    "tags": ["索引提示", "FORCE INDEX", "USE INDEX"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-028",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是InnoDB的Buffer Pool？对索引有什么影响？",
+    "answer": "## 核心概念\n\nBuffer Pool是InnoDB在内存中缓存数据页和索引页的区域。命中Buffer Pool时不需要访问磁盘，极大提升查询性能。\n\n## SQL示例\n\n```sql\n-- 查看Buffer Pool配置\nSHOW VARIABLES LIKE 'innodb_buffer_pool_size';\nSHOW VARIABLES LIKE 'innodb_buffer_pool_instances';\n\n-- 查看Buffer Pool状态\nSHOW ENGINE INNODB STATUS\\G\n-- 在BUFFER POOL AND MEMORY部分\n\n-- 查看命中率\nSHOW STATUS LIKE 'Innodb_buffer_pool_read%';\n-- Innodb_buffer_pool_read_requests: 逻辑读（从Buffer Pool读）\n-- Innodb_buffer_pool_reads: 物理读（从磁盘读）\n-- 命中率 = 1 - (reads / read_requests)\n\n-- 设置Buffer Pool大小（通常为物理内存的70-80%）\nSET GLOBAL innodb_buffer_pool_size = 4 * 1024 * 1024 * 1024;  -- 4GB\n\n-- MySQL 8.0在线调整\nSET GLOBAL innodb_buffer_pool_size = 8 * 1024 * 1024 * 1024;  -- 在线调整\n```\n\n## Buffer Pool结构\n\n```\nBuffer Pool\n├── 数据页（聚簇索引叶子节点）\n├── 索引页（非叶子节点和二级索引）\n├── Change Buffer\n├── 自适应哈希索引\n└── 锁信息\n\nLRU List: 管理页的淘汰\nFree List: 空闲页列表\nFlush List: 脏页列表\n```\n\n## 关键要点\n\n1. **命中率**：理想情况下应超过99%\n2. **大小设置**：通常为物理内存的70-80%\n3. **LRU算法**：使用改进的LRU（young/old区域）\n4. **预热**：重启后需要预热才能达到最佳性能\n\n## 注意事项\n\n- Buffer Pool太小会导致频繁磁盘读取\n- 多实例（`innodb_buffer_pool_instances`）减少锁竞争\n- MySQL 8.0支持在线调整Buffer Pool大小\n- 脏页需要定期刷新到磁盘\n- `innodb_old_blocks_pct`控制old区域比例",
+    "tags": ["Buffer Pool", "InnoDB缓存", "命中率"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-029",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何分析联合索引的列顺序？",
+    "answer": "## 核心概念\n\n联合索引的列顺序直接影响索引的使用效果。需要考虑等值查询、范围查询、选择性和覆盖索引等因素。\n\n## 设计原则\n\n```\n1. 等值查询的列放在前面\n2. 范围查询的列放在后面\n3. 选择性高的列放在前面\n4. 需要排序的列考虑索引顺序\n5. 覆盖索引需求影响列顺序\n```\n\n## SQL示例\n\n```sql\n-- 场景分析\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    status TINYINT,\n    amount DECIMAL(10,2),\n    created_at DATETIME\n);\n\n-- 查询模式分析\n-- Q1: WHERE user_id = ? AND status = ?\n-- Q2: WHERE user_id = ? AND created_at > ?\n-- Q3: WHERE user_id = ? ORDER BY created_at\n\n-- 选择性分析\nSELECT\n    COUNT(DISTINCT user_id) / COUNT(*) AS user_id_sel,\n    COUNT(DISTINCT status) / COUNT(*) AS status_sel,\n    COUNT(DISTINCT DATE(created_at)) / COUNT(*) AS created_sel\nFROM orders;\n\n-- 推荐索引\nCREATE INDEX idx_user_status_created ON orders(user_id, status, created_at);\n-- user_id等值查询在前\n-- status等值查询在中间\n-- created_at范围查询在后\n\n-- 查看key_len判断使用了多少列\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100 AND status = 1 AND created_at > '2024-01-01';\n-- key_len可以判断使用了几个列\n\n-- 利用索引排序\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY created_at;\n-- 如果索引是(user_id, created_at)，可以避免filesort\n```\n\n## 关键要点\n\n1. **等值优先**：等值查询列放在范围查询列前面\n2. **范围截断**：范围查询后的列不走索引\n3. **选择性参考**：高选择性列优先（但不是唯一标准）\n4. **排序利用**：ORDER BY列考虑放在索引中\n\n## 注意事项\n\n- 没有万能的索引顺序，需要根据实际查询模式设计\n- `key_len`是判断索引使用程度的重要指标\n- 使用`EXPLAIN`验证每个关键查询的索引使用情况\n- 联合索引中列的顺序比列的选择性更重要\n- 避免创建冗余的联合索引",
+    "tags": ["联合索引", "列顺序", "索引设计"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-030",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是索引条件下推（ICP）和传统索引扫描的区别？",
+    "answer": "## 核心概念\n\n传统索引扫描中，存储引擎根据索引找到记录后回表，然后由Server层过滤WHERE条件。ICP将部分过滤条件下推到存储引擎层，在索引层面就进行过滤。\n\n## 对比图示\n\n```\n传统索引扫描（无ICP）：\nServer层:  接收数据 → 过滤 WHERE age > 25\n存储引擎:  索引查找 → 回表 → 返回所有匹配记录\n\n索引条件下推（ICP）：\nServer层:  接收数据 → 过滤剩余条件\n存储引擎:  索引查找 → 在索引中过滤 age > 25 → 只回表满足条件的记录\n```\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    age INT,\n    city VARCHAR(50),\n    INDEX idx_name_age_city (name, age, city)\n);\n\n-- 无ICP的情况\n-- name是等值查询，age是范围查询，city无法使用索引\nEXPLAIN SELECT * FROM users\nWHERE name LIKE '张%' AND age > 25 AND city = '北京';\n-- Extra: Using index condition（ICP）\n-- 在索引层面过滤 name LIKE '张%' AND age > 25\n-- 只有满足条件的记录才回表，然后Server层过滤 city = '北京'\n\n-- 对比无ICP（MySQL 5.6之前）：\n-- 索引中只过滤 name LIKE '张%'\n-- 所有匹配记录回表\n-- Server层过滤 age > 25 AND city = '北京'\n\n-- 查看ICP是否启用\nEXPLAIN FORMAT=JSON SELECT * FROM users\nWHERE name LIKE '张%' AND age > 25;\n```\n\n## 关键要点\n\n1. **减少回表**：在索引层过滤部分条件\n2. **MySQL 5.6+**：自动启用ICP\n3. **Extra标识**：`Using index condition`\n4. **适用条件**：联合索引的非前缀列有范围条件\n\n## 注意事项\n\n- ICP只减少回表次数，不改变索引选择\n- ICP和覆盖索引可以同时生效\n- ICP对InnoDB和MyISAM都有效\n- 主键查询不适用ICP（无需回表）",
+    "tags": ["ICP", "索引下推", "存储引擎优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-031",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "MySQL中如何使用函数索引（MySQL 8.0+）？",
+    "answer": "## 核心概念\n\n函数索引（Functional Index）是MySQL 8.0.13引入的功能，允许在表达式或函数上创建索引，解决了对列使用函数时索引失效的问题。\n\n## SQL示例\n\n```sql\n-- 创建函数索引\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    email VARCHAR(100),\n    created_at DATETIME\n);\n\n-- 在LOWER函数上创建索引\nCREATE INDEX idx_lower_email ON users((LOWER(email)));\n\n-- 使用函数索引\nEXPLAIN SELECT * FROM users WHERE LOWER(email) = 'test@test.com';\n-- 可以使用idx_lower_email索引\n\n-- 在表达式上创建索引\nCREATE INDEX idx_year ON users((YEAR(created_at)));\n\nEXPLAIN SELECT * FROM users WHERE YEAR(created_at) = 2024;\n-- 可以使用idx_year索引\n\n-- JSON函数索引\nCREATE TABLE products (\n    id INT PRIMARY KEY,\n    attrs JSON,\n    INDEX idx_brand ((attrs->>'$.brand'))\n);\n\nEXPLAIN SELECT * FROM products WHERE attrs->>'$.brand' = 'Apple';\n\n-- 虚拟列 + 索引（MySQL 5.7兼容方式）\nALTER TABLE users\nADD COLUMN lower_email VARCHAR(100)\nGENERATED ALWAYS AS (LOWER(email)) VIRTUAL,\nADD INDEX idx_lower_email_v (lower_email);\n```\n\n## 函数索引 vs 虚拟列索引\n\n| 特性 | 函数索引（8.0） | 虚拟列索引（5.7+） |\n|------|----------------|-------------------|\n| 语法 | 直接在索引中使用表达式 | 需要先创建虚拟列 |\n| 存储 | 不占用额外列空间 | 虚拟列不占空间，但索引占用 |\n| 兼容性 | MySQL 8.0.13+ | MySQL 5.7+ |\n\n## 关键要点\n\n1. **解决函数索引失效**：WHERE YEAR(col) = 2024可以走索引\n2. **表达式索引**：支持任意表达式\n3. **JSON索引**：在JSON字段的特定路径上建索引\n4. **虚拟列替代**：低版本可以用虚拟列+索引\n\n## 注意事项\n\n- 函数索引的表达式必须与查询中的表达式完全匹配\n- 函数索引会增加写入开销\n- 虚拟列+索引是MySQL 5.7的替代方案\n- 使用`SHOW CREATE TABLE`查看函数索引定义\n- 索引维护由InnoDB自动完成",
+    "tags": ["函数索引", "MySQL 8.0", "JSON索引"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-032",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何优化ORDER BY查询？索引如何帮助排序？",
+    "answer": "## 核心概念\n\nORDER BY查询可以利用索引的有序性避免额外的排序操作（filesort）。索引列的顺序和查询条件决定了是否可以利用索引排序。\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    status TINYINT,\n    amount DECIMAL(10,2),\n    created_at DATETIME,\n    INDEX idx_user_created (user_id, created_at)\n);\n\n-- 利用索引排序\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY created_at;\n-- 使用idx_user_created，无需filesort\n\n-- 不能利用索引排序（filesort）\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY amount;\n-- idx_user_created不包含amount，需要filesort\n\n-- 多列排序的索引利用\nCREATE INDEX idx_user_status_amount ON orders(user_id, status, amount);\n\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100 AND status = 1\nORDER BY amount;\n-- 使用idx_user_status_amount，无需filesort\n\n-- 排序方向必须一致\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY created_at ASC, amount DESC;\n-- 如果索引是(user_id, created_at, amount)，排序方向不一致可能无法利用索引\n-- MySQL 8.0支持降序索引：CREATE INDEX idx ON t(a ASC, b DESC)\n\n-- MySQL 8.0降序索引\nCREATE INDEX idx_user_created_amount ON orders(user_id, created_at ASC, amount DESC);\n\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY created_at ASC, amount DESC;\n-- 可以利用索引排序\n```\n\n## 索引排序规则\n\n| ORDER BY | 索引 | 能否利用 |\n|----------|------|----------|\n| ORDER BY b | (a, b) WHERE a=1 | 可以 |\n| ORDER BY c | (a, b, c) WHERE a=1 AND b=2 | 可以 |\n| ORDER BY b | (a, b) WHERE a>1 | 不可以（范围查询后） |\n| ORDER BY b DESC | (a, b ASC) | 不可以（方向不一致，MySQL 8.0降序索引除外） |\n\n## 关键要点\n\n1. **索引有序性**：B+树叶子节点天然有序\n2. **filesort**：无法利用索引时的排序算法\n3. **方向一致**：ORDER BY方向需与索引方向一致\n4. **MySQL 8.0降序索引**：支持混合排序方向\n\n## 注意事项\n\n- filesort不一定是性能瓶颈，小数据量影响不大\n- `max_length_for_sort_data`影响filesort算法选择\n- ORDER BY + LIMIT利用索引非常高效\n- 联合索引中ORDER BY列要放在等值条件列之后\n- `Using filesort`在EXPLAIN Extra中标识",
+    "tags": ["ORDER BY优化", "filesort", "索引排序"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-033",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何优化GROUP BY查询？索引如何帮助分组？",
+    "answer": "## 核心概念\n\nGROUP BY查询可以利用索引的有序性避免使用临时表和文件排序。如果GROUP BY列与索引列一致，可以实现松散索引扫描（Loose Index Scan）或紧凑索引扫描（Tight Index Scan）。\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    status TINYINT,\n    amount DECIMAL(10,2),\n    created_at DATETIME,\n    INDEX idx_user_status (user_id, status)\n);\n\n-- 松散索引扫描（最高效）\nEXPLAIN SELECT user_id, COUNT(*)\nFROM orders\nGROUP BY user_id;\n-- Extra: Using index for group-by\n\n-- 紧凑索引扫描\nEXPLAIN SELECT user_id, status, COUNT(*)\nFROM orders\nWHERE user_id = 100\nGROUP BY user_id, status;\n-- 使用idx_user_status索引\n\n-- 不能利用索引（Using temporary）\nEXPLAIN SELECT status, COUNT(*)\nFROM orders\nGROUP BY status;\n-- idx_user_status不以status开头，无法使用松散索引扫描\n\n-- GROUP BY + ORDER BY\nEXPLAIN SELECT user_id, COUNT(*) AS cnt\nFROM orders\nGROUP BY user_id\nORDER BY cnt DESC;\n-- Extra: Using index; Using temporary; Using filesort\n\n-- 优化：利用索引避免filesort\nCREATE INDEX idx_status_user ON orders(status, user_id);\n\nEXPLAIN SELECT status, user_id, COUNT(*)\nFROM orders\nGROUP BY status, user_id;\n-- Extra: Using index\n```\n\n## 两种索引扫描方式\n\n| 方式 | 条件 | 效率 |\n|------|------|------|\n| Loose Index Scan | GROUP BY列是索引前缀 | 最高 |\n| Tight Index Scan | WHERE条件使用索引 | 高 |\n\n## 关键要点\n\n1. **松散索引扫描**：只扫描每组的第一条记录\n2. **紧凑索引扫描**：扫描所有满足条件的记录\n3. **Using index for group-by**：标识松散索引扫描\n4. **GROUP BY列顺序**：需要与索引列顺序一致\n\n## 注意事项\n\n- GROUP BY + ORDER BY使用不同列会产生filesort\n- 联合索引的前缀列可用于GROUP BY\n- `ONLY_FULL_GROUP_BY`模式影响SELECT字段\n- COUNT(*)可以使用覆盖索引\n- 小数据量时Using temporary影响不大",
+    "tags": ["GROUP BY优化", "松散索引扫描", "Using index"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-034",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是MySQL的索引跳跃扫描（Index Skip Scan）？",
+    "answer": "## 核心概念\n\n索引跳跃扫描（Index Skip Scan）是MySQL 8.0引入的优化，当联合索引的前缀列基数很低时，即使查询不包含前缀列，优化器也可以使用该索引。\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    gender CHAR(1),  -- 只有M/F两个值\n    age INT,\n    INDEX idx_gender_age (gender, age)\n);\n\n-- 传统上不能使用idx_gender_age\n-- 因为WHERE条件不包含gender\nEXPLAIN SELECT * FROM users WHERE age = 25;\n-- MySQL 8.0之前：type=ALL（全表扫描）\n-- MySQL 8.0：type=range，使用Index Skip Scan\n\n-- 跳跃扫描的工作原理\n-- 等价于：\nSELECT * FROM users WHERE gender = 'M' AND age = 25\nUNION ALL\nSELECT * FROM users WHERE gender = 'F' AND age = 25;\n\n-- 查看是否使用了跳跃扫描\nEXPLAIN SELECT * FROM users WHERE age > 20 AND age < 30;\n-- Extra: Using index for skip scan\n\n-- 条件限制\n-- 1. 前缀列基数必须很低（如gender只有M/F）\n-- 2. 查询条件不能包含前缀列\n-- 3. 只适用于range类型查询\n\n-- 关闭跳跃扫描\nSET optimizer_switch = 'skip_scan=off';\n```\n\n## 跳跃扫描原理\n\n```\n索引：idx_gender_age(gender, age)\n查询：WHERE age = 25\n\n步骤：\n1. 取gender的唯一值：M, F\n2. 对每个gender值执行范围查询\n   - gender='M' AND age=25\n   - gender='F' AND age=25\n3. 合并结果\n```\n\n## 关键要点\n\n1. **MySQL 8.0特性**：低版本不支持\n2. **低基数前缀**：gender只有M/F等少量值\n3. **自动启用**：优化器根据成本决定\n4. **替代全表扫描**：在某些场景下性能更好\n\n## 注意事项\n\n- 不是所有场景跳跃扫描都比全表扫描快\n- 前缀列基数太高时跳跃扫描开销大\n- 使用EXPLAIN确认是否使用了跳跃扫描\n- `skip_scan`优化器开关可以控制\n- 如果经常按age查询，建议创建单独的age索引",
+    "tags": ["Index Skip Scan", "跳跃扫描", "MySQL 8.0"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-035",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "MySQL中如何创建和删除索引？有哪些注意事项？",
+    "answer": "## 核心概念\n\n索引的创建和删除是数据库维护的基本操作。大表上创建索引需要注意锁表和性能影响。\n\n## SQL示例\n\n```sql\n-- 创建索引\nCREATE INDEX idx_name ON users(name);\nCREATE UNIQUE INDEX idx_email ON users(email);\nCREATE INDEX idx_name_age ON users(name, age);\n\n-- ALTER TABLE方式\nALTER TABLE users ADD INDEX idx_phone (phone);\nALTER TABLE users ADD UNIQUE INDEX idx_idcard (id_card);\nALTER TABLE users ADD INDEX idx_composite (a, b, c);\n\n-- 创建前缀索引\nCREATE INDEX idx_email_prefix ON users(email(10));\n\n-- 删除索引\nDROP INDEX idx_name ON users;\nALTER TABLE users DROP INDEX idx_name;\n\n-- 删除主键\nALTER TABLE users DROP PRIMARY KEY;\n\n-- 重建索引\nALTER TABLE users DROP INDEX idx_name, ADD INDEX idx_name (name);\nOPTIMIZE TABLE users;\n\n-- Online DDL（MySQL 5.6+）\nALTER TABLE users ADD INDEX idx_new (name), ALGORITHM=INPLACE, LOCK=NONE;\n\n-- 查看创建进度\nSELECT * FROM performance_schema.events_stages_current\nWHERE EVENT_NAME LIKE '%alter%';\n```\n\n## Online DDL支持\n\n| 操作 | ALGORITHM | LOCK |\n|------|-----------|------|\n| 添加索引 | INPLACE | NONE |\n| 删除索引 | INPLACE | NONE |\n| 修改列 | INPLACE | NONE |\n| 添加列 | INPLACE | NONE（8.0+） |\n| 修改主键 | COPY | SHARED |\n\n## 关键要点\n\n1. **Online DDL**：MySQL 5.6+支持不锁表创建索引\n2. **ALGORITHM=INPLACE**：原地修改，不复制表\n3. **LOCK=NONE**：不阻塞DML操作\n4. **大表操作**：仍然需要较长时间\n\n## 注意事项\n\n- MySQL 5.5之前CREATE INDEX会锁表\n- 大表创建索引使用`pt-online-schema-change`\n- 创建索引期间可以读写（Online DDL）\n- 删除索引比创建索引快\n- `innodb_online_alter_log_max_size`限制Online DDL日志大小",
+    "tags": ["创建索引", "删除索引", "Online DDL"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-036",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是聚簇索引的页合并和页分裂？",
+    "answer": "## 核心概念\n\n页分裂（Page Split）是B+树节点满时将数据分配到新页的过程。页合并（Page Merge）是相邻页数据量少时合并为一页的过程。两者都是InnoDB维护B+树平衡的机制。\n\n## 页分裂\n\n```\n触发条件：向已满的页插入新记录\n过程：\n1. 申请新数据页\n2. 将原页约50%数据移到新页\n3. 更新父节点指针\n4. 插入新记录\n\n影响：\n- 产生随机IO\n- 页空间利用率下降（约50%）\n- 索引碎片增加\n```\n\n## 页合并\n\n```\n触发条件：删除或更新后页的使用率低于MERGE_THRESHOLD（默认50%）\n过程：\n1. 检查相邻页\n2. 如果合并后不超过一页，执行合并\n3. 释放空闲页\n\n影响：\n- 减少碎片\n- 提高空间利用率\n```\n\n## SQL示例\n\n```sql\n-- 查看MERGE_THRESHOLD\nSELECT * FROM information_schema.INNODB_TABLES\nWHERE NAME = 'mydb/orders';\n\n-- 设置表的MERGE_THRESHOLD\nALTER TABLE orders COMMENT = 'MERGE_THRESHOLD=40';\n\n-- 查看索引碎片\nSELECT\n    TABLE_NAME,\n    DATA_LENGTH,\n    INDEX_LENGTH,\n    DATA_FREE\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'orders';\n\n-- 整理碎片\nOPTIMIZE TABLE orders;\n-- 或\nALTER TABLE orders ENGINE=InnoDB;\n\n-- 避免页分裂的方法\n-- 1. 使用自增主键（顺序插入）\n-- 2. 避免UUID作为主键\n-- 3. 定期OPTIMIZE TABLE\n```\n\n## 关键要点\n\n1. **顺序插入避免分裂**：自增主键是最好的选择\n2. **MERGE_THRESHOLD**：控制页合并的阈值\n3. **OPTIMIZE TABLE**：整理碎片，提高空间利用率\n4. **UUID主键问题**：随机值导致频繁页分裂\n\n## 注意事项\n\n- 页分裂会产生额外的redo log\n- 碎片过多影响范围查询性能\n- `OPTIMIZE TABLE`会锁表，大表慎用\n- `innodb_fill_factor`控制页的填充率\n- 在线整理碎片使用`pt-online-schema-change`",
+    "tags": ["页分裂", "页合并", "索引碎片"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-037",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何使用sys数据库分析索引使用情况？",
+    "answer": "## 核心概念\n\nsys数据库是MySQL 5.7+自带的性能分析工具库，基于information_schema和performance_schema提供了更易用的视图。可以用来分析索引使用情况、冗余索引等。\n\n## SQL示例\n\n```sql\n-- 查看未使用的索引\nSELECT * FROM sys.schema_unused_indexes\nWHERE object_schema = 'mydb';\n\n-- 查看冗余索引\nSELECT * FROM sys.schema_redundant_indexes\nWHERE table_schema = 'mydb';\n\n-- 查看索引统计\nSELECT * FROM sys.schema_index_statistics\nWHERE table_schema = 'mydb'\nORDER BY rows_selected DESC;\n\n-- 查看表的IO统计\nSELECT * FROM sys.schema_table_statistics\nWHERE table_schema = 'mydb'\nORDER BY total_latency DESC;\n\n-- 查看全表扫描的表\nSELECT * FROM sys.schema_tables_with_full_table_scans\nWHERE object_schema = 'mydb'\nORDER BY rows_full_scanned DESC;\n\n-- 查看语句统计（TOP SQL）\nSELECT * FROM sys.statements_with_full_table_scans\nWHERE schema = 'mydb'\nORDER BY no_index_used_count DESC\nLIMIT 10;\n\n-- 查看等待事件\nSELECT * FROM sys.waits_global_by_latency\nLIMIT 10;\n\n-- 查看用户连接统计\nSELECT * FROM sys.user_summary;\n\n-- 查看索引大小\nSELECT\n    t.TABLE_NAME,\n    i.INDEX_NAME,\n    i.CARDINALITY,\n    t.INDEX_LENGTH / 1024 / 1024 AS index_size_mb\nFROM information_schema.TABLES t\nJOIN information_schema.STATISTICS i\n    ON t.TABLE_SCHEMA = i.TABLE_SCHEMA AND t.TABLE_NAME = i.TABLE_NAME\nWHERE t.TABLE_SCHEMA = 'mydb'\nGROUP BY t.TABLE_NAME, i.INDEX_NAME\nORDER BY index_size_mb DESC;\n```\n\n## 常用sys视图\n\n| 视图 | 用途 |\n|------|------|\n| schema_unused_indexes | 未使用的索引 |\n| schema_redundant_indexes | 冗余索引 |\n| schema_index_statistics | 索引使用统计 |\n| schema_tables_with_full_table_scans | 全表扫描的表 |\n| statements_with_full_table_scans | 导致全表扫描的语句 |\n\n## 关键要点\n\n1. **定期检查**：清理未使用和冗余的索引\n2. **全表扫描**：识别需要优化的查询\n3. **性能分析**：基于performance_schema的数据\n4. **MySQL 5.7+**：sys数据库默认安装\n\n## 注意事项\n\n- sys视图查询本身可能影响性能\n- 需要开启`performance_schema`才能使用\n- 索引统计从数据库启动后开始累计\n- 重启数据库后统计信息重置\n- `schema_unused_indexes`需要运行一段时间才有参考价值",
+    "tags": ["sys数据库", "索引分析", "性能监控"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-038",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "如何判断索引是否被正确使用？",
+    "answer": "## 核心概念\n\n判断索引是否被正确使用主要通过EXPLAIN执行计划、慢查询日志和sys数据库视图。\n\n## SQL示例\n\n```sql\n-- 方法1：EXPLAIN\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n-- 检查：type不为ALL，key不为NULL\n\n-- 方法2：EXPLAIN FORMAT=JSON（更详细）\nEXPLAIN FORMAT=JSON SELECT * FROM users WHERE name = '张三';\n-- 查看access_type和key\n\n-- 方法3：EXPLAIN ANALYZE（MySQL 8.0.18+，实际执行统计）\nEXPLAIN ANALYZE SELECT * FROM users WHERE name = '张三';\n\n-- 方法4：查看执行时间\nSET profiling = 1;\nSELECT * FROM users WHERE name = '张三';\nSHOW PROFILES;\nSHOW PROFILE FOR QUERY 1;\n\n-- 方法5：慢查询日志\n-- 记录未使用索引的查询\nSET GLOBAL log_queries_not_using_indexes = ON;\n\n-- 方法6：sys数据库\nSELECT * FROM sys.schema_index_statistics\nWHERE table_name = 'users' AND index_name = 'idx_name';\n\n-- 索引使用情况判断\nEXPLAIN SELECT * FROM users WHERE name = '张三'\\G\n-- 好的标志：\n-- type: ref/eq_ref/const/range\n-- key: idx_name\n-- rows: 较小的数字\n-- Extra: Using index condition / Using index\n\n-- 差的标志：\n-- type: ALL\n-- key: NULL\n-- rows: 很大的数字\n-- Extra: Using where（无索引）\n```\n\n## EXPLAIN关键字段检查\n\n| 字段 | 好 | 差 |\n|------|-----|-----|\n| type | const/eq_ref/ref/range | ALL |\n| key | 有索引名 | NULL |\n| rows | 较小 | 很大 |\n| Extra | Using index | Using filesort |\n\n## 关键要点\n\n1. **EXPLAIN是基本工具**：每条SQL都可以EXPLAIN\n2. **type列最重要**：反映访问效率\n3. **key列看实际索引**：是否使用了预期索引\n4. **rows列估算扫描量**：越小越好\n\n## 注意事项\n\n- EXPLAIN只是估算，实际执行可能不同\n- 优化器可能因为统计信息不准确选择错误索引\n- 使用`ANALYZE TABLE`更新统计信息\n- FORCE INDEX可以强制使用特定索引\n- 索引不是万能的，需要根据实际查询模式设计",
+    "tags": ["索引使用", "EXPLAIN", "性能判断"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-039",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "什么是InnoDB的doublewrite buffer？对索引有什么影响？",
+    "answer": "## 核心概念\n\ndoublewrite buffer是InnoDB用于防止部分页写入（partial page write）导致数据损坏的机制。在将脏页写入数据文件之前，先写入doublewrite buffer，确保数据页的完整性。\n\n## 工作原理\n\n```\n1. 脏页从Buffer Pool刷新到磁盘\n2. 先将脏页写入doublewrite buffer（连续存储）\n3. 再将脏页写入实际数据文件（随机存储）\n4. 如果写入数据文件时发生崩溃：\n   - 从doublewrite buffer恢复完整的数据页\n```\n\n## SQL示例\n\n```sql\n-- 查看doublewrite配置\nSHOW VARIABLES LIKE 'innodb_doublewrite';\n\n-- 查看doublewrite状态\nSHOW STATUS LIKE 'Innodb_dblwr%';\n-- Innodb_dblwr_pages_written: 写入的页数\n-- Innodb_dblwr_writes: 写入次数\n\n-- 关闭doublewrite（不推荐）\nSET GLOBAL innodb_doublewrite = OFF;\n\n-- 使用O_DIRECT时的doublewrite\n-- innodb_flush_method = O_DIRECT\n-- 数据文件绕过OS缓存，但doublewrite仍使用OS缓存\n\n-- SSD上的优化\n-- MySQL 8.0.20+对doublewrite进行了优化\n-- 使用专用的doublewrite文件\nSHOW VARIABLES LIKE 'innodb_doublewrite_dir';\n```\n\n## 关键要点\n\n1. **防止数据损坏**：避免部分页写入导致的不一致\n2. **性能开销**：额外的写入操作\n3. **SSD优化**：SSD上doublewrite开销相对较小\n4. **崩溃恢复**：从doublewrite buffer恢复损坏的页\n\n## 注意事项\n\n- 不建议关闭doublewrite，可能导致数据损坏\n- 对写密集场景有一定性能影响\n- MySQL 8.0.20+优化了doublewrite的实现\n- SSD上的doublewrite性能影响比HDD小\n- doublewrite buffer占用约2MB空间",
+    "tags": ["doublewrite", "InnoDB", "数据完整性"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-040",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何优化LIMIT深分页查询？",
+    "answer": "## 核心概念\n\nLIMIT深分页（如`LIMIT 1000000, 10`）需要扫描大量数据后丢弃前面的行，性能很差。优化方法包括游标分页、延迟关联和子查询优化。\n\n## SQL示例\n\n```sql\n-- 深分页问题\nSELECT * FROM orders ORDER BY id LIMIT 1000000, 10;\n-- 扫描1000010行，丢弃前1000000行\n\n-- 方案1：游标分页（最高效）\n-- 上一页最后一条的id为1000000\nSELECT * FROM orders WHERE id > 1000000 ORDER BY id LIMIT 10;\n-- 只扫描10行\n\n-- 方案2：延迟关联\nSELECT o.* FROM orders o\nINNER JOIN (\n    SELECT id FROM orders ORDER BY id LIMIT 1000000, 10\n) t ON o.id = t.id;\n-- 子查询在索引中扫描（覆盖索引）\n-- 只对10条记录回表\n\n-- 方案3：子查询优化\nSELECT * FROM orders\nWHERE id >= (\n    SELECT id FROM orders ORDER BY id LIMIT 1000000, 1\n)\nLIMIT 10;\n\n-- 方案4：使用Elasticsearch\n-- 对于搜索类分页，使用ES等搜索引擎\n\n-- 方案5：业务层面优化\n-- 1. 限制分页深度（最多到100页）\n-- 2. 使用\"加载更多\"替代页码\n-- 3. 使用搜索条件缩小结果集\n```\n\n## 方案对比\n\n| 方案 | 优点 | 缺点 |\n|------|------|------|\n| 游标分页 | 最快 | 不能跳页 |\n| 延迟关联 | 支持跳页 | 需要联合索引 |\n| 子查询 | 支持跳页 | 需要有序列 |\n| Elasticsearch | 全功能 | 需要额外组件 |\n\n## 关键要点\n\n1. **游标分页最高效**：`WHERE id > last_id LIMIT n`\n2. **延迟关联**：先查主键再回表\n3. **覆盖索引**：子查询使用覆盖索引\n4. **业务优化**：限制分页深度\n\n## 注意事项\n\n- 游标分页不能实现跳页功能\n- 延迟关联需要`(ORDER BY列, 主键)`的联合索引\n- 大表分页建议使用搜索引擎\n- 无限滚动加载可以用游标分页\n- `OFFSET`越大性能越差",
+    "tags": ["深分页", "游标分页", "延迟关联"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-041",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是MySQL中的key_len？如何计算？",
+    "answer": "## 核心概念\n\nkey_len是EXPLAIN输出中显示索引使用的字节数。通过key_len可以判断联合索引使用了几个列，以及是否使用了完整的索引。\n\n## 常见类型的字节数\n\n| 类型 | 字节数 | 说明 |\n|------|--------|------|\n| INT | 4 | 整数 |\n| BIGINT | 8 | 长整数 |\n| VARCHAR(n) | n*4+2 | UTF8MB4，+2存储长度 |\n| CHAR(n) | n*4 | UTF8MB4 |\n| DATE | 3 | 日期 |\n| DATETIME | 5+(小数*1) | 日期时间 |\n| TIMESTAMP | 4+(小数*1) | 时间戳 |\n| NULL | +1 | 允许NULL额外1字节 |\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(50),      -- 50*4+2=202\n    age INT,               -- 4\n    email VARCHAR(100),    -- 100*4+2=402\n    INDEX idx_name_age (name, age)\n);\n\n-- 只使用name\nEXPLAIN SELECT * FROM users WHERE name = '张三';\n-- key_len = 202\n\n-- 使用name + age\nEXPLAIN SELECT * FROM users WHERE name = '张三' AND age = 25;\n-- key_len = 202 + 4 = 206\n\n-- 允许NULL的情况\nCREATE TABLE t2 (\n    id INT PRIMARY KEY,\n    a VARCHAR(50),  -- 允许NULL\n    INDEX idx_a (a)\n);\n\nEXPLAIN SELECT * FROM t2 WHERE a = 'test';\n-- key_len = 50*4+2+1 = 203（+1是NULL标记）\n```\n\n## key_len计算公式\n\n```\nVARCHAR(n): n * 字符集字节数 + 2（长度） + 1（如果允许NULL）\nCHAR(n): n * 字符集字节数 + 1（如果允许NULL）\nINT: 4 + 1（如果允许NULL）\nBIGINT: 8 + 1（如果允许NULL）\n```\n\n## 关键要点\n\n1. **判断索引使用程度**：key_len越大，使用的索引列越多\n2. **联合索引分析**：通过key_len判断使用了前几个列\n3. **NULL影响**：允许NULL额外增加1字节\n4. **字符集影响**：UTF8MB4每个字符4字节\n\n## 注意事项\n\n- key_len只计算WHERE条件中使用的索引部分\n- 不计算ORDER BY、GROUP BY使用的索引\n- 不是key_len越小越好，关键是使用了正确的索引列\n- `NOT NULL`约束可以减少key_len，提高索引效率",
+    "tags": ["key_len", "EXPLAIN", "索引分析"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-042",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何使用EXPLAIN FORMAT=TREE分析执行计划？",
+    "answer": "## 核心概念\n\n`EXPLAIN FORMAT=TREE`是MySQL 8.0.16引入的功能，以树形结构显示执行计划，更直观地展示查询执行流程和每个步骤的性能信息。\n\n## SQL示例\n\n```sql\n-- 基本用法\nEXPLAIN FORMAT=TREE\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三';\n\n-- 输出示例：\n-- -> Nested loop inner join  (cost=4.20 rows=10)\n--     -> Index lookup on u using idx_name (name='张三')  (cost=1.10 rows=1)\n--     -> Index lookup on o using idx_user_id (user_id=u.id)  (cost=2.10 rows=10)\n\n-- EXPLAIN ANALYZE（实际执行+统计）\nEXPLAIN ANALYZE\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三';\n\n-- 输出示例：\n-- -> Nested loop inner join  (actual time=0.150..0.200 rows=5 loops=1)\n--     -> Index lookup on u using idx_name (name='张三')  (actual time=0.050..0.060 rows=1 loops=1)\n--     -> Index lookup on o using idx_user_id (user_id=u.id)  (actual time=0.080..0.100 rows=5 loops=1)\n\n-- 格式对比\nEXPLAIN SELECT * FROM users WHERE name = '张三';          -- 传统表格\nEXPLAIN FORMAT=JSON SELECT * FROM users WHERE name = '张三'; -- JSON格式\nEXPLAIN FORMAT=TREE SELECT * FROM users WHERE name = '张三'; -- 树形格式\n```\n\n## TREE格式的优势\n\n| 格式 | 优点 | 缺点 |\n|------|------|------|\n| 传统 | 简单直观 | 不显示层级关系 |\n| JSON | 信息完整 | 阅读困难 |\n| TREE | 层级清晰 | MySQL 8.0.16+ |\n| ANALYZE | 实际统计 | 需要执行查询 |\n\n## 关键要点\n\n1. **树形结构**：清晰展示JOIN和子查询的层次\n2. **cost和rows**：显示估算成本和行数\n3. **ANALYZE实际执行**：显示实际时间和行数\n4. **MySQL 8.0.16+**：低版本不支持\n\n## 注意事项\n\n- `FORMAT=TREE`是MySQL 8.0推荐的分析方式\n- `EXPLAIN ANALYZE`会实际执行查询，耗时操作慎用\n- TREE格式中`actual time`显示实际执行时间\n- 可以对比估算rows和actual rows发现统计信息不准\n- TREE格式不显示type、key等字段",
+    "tags": ["EXPLAIN TREE", "执行计划", "MySQL 8.0"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-043",
+    "module": "MySQL索引",
+    "difficulty": 1,
+    "question": "什么是MySQL的covering index？如何识别和使用？",
+    "answer": "## 核心概念\n\ncovering index（覆盖索引）是指查询所需的所有列都包含在索引中，无需回表查询聚簇索引。EXPLAIN的Extra列显示`Using index`表示使用了覆盖索引。\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    amount DECIMAL(10,2),\n    status TINYINT,\n    created_at DATETIME,\n    INDEX idx_user_amount (user_id, amount)\n);\n\n-- 覆盖索引\nEXPLAIN SELECT user_id, amount FROM orders WHERE user_id = 100;\n-- Extra: Using index\n\n-- 非覆盖索引（需要回表）\nEXPLAIN SELECT user_id, amount, status FROM orders WHERE user_id = 100;\n-- Extra: NULL（需要回表获取status）\n\n-- 主键查询天然覆盖\nEXPLAIN SELECT * FROM orders WHERE id = 100;\n-- 聚簇索引包含完整数据\n\n-- COUNT覆盖索引\nEXPLAIN SELECT COUNT(*) FROM orders WHERE user_id = 100;\n-- Extra: Using index\n\n-- 创建覆盖索引\nCREATE INDEX idx_user_amount_status ON orders(user_id, amount, status);\n\nEXPLAIN SELECT user_id, amount, status FROM orders WHERE user_id = 100;\n-- Extra: Using index\n```\n\n## 识别覆盖索引\n\n```\nEXPLAIN输出中：\n- Extra: Using index → 覆盖索引\n- Extra: Using index condition → 索引下推（不是覆盖索引）\n- Extra: NULL → 需要回表\n```\n\n## 关键要点\n\n1. **Using index标识**：EXPLAIN中Extra列\n2. **避免回表**：直接从索引返回数据\n3. **减少IO**：不需要访问聚簇索引\n4. **设计原则**：将查询字段包含在索引中\n\n## 注意事项\n\n- 覆盖索引会增大索引存储空间\n- `SELECT *`无法利用覆盖索引\n- 联合索引的列顺序影响覆盖索引效果\n- 覆盖索引对COUNT和SUM等聚合查询有效\n- 不是所有查询都适合覆盖索引",
+    "tags": ["覆盖索引", "Using index", "性能优化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-044",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "如何分析和解决索引碎片问题？",
+    "answer": "## 核心概念\n\n索引碎片是指由于频繁的INSERT、UPDATE、DELETE操作导致索引页中存在大量空闲空间，影响查询性能和空间利用率。\n\n## SQL示例\n\n```sql\n-- 查看表碎片\nSELECT\n    TABLE_NAME,\n    DATA_LENGTH,\n    DATA_FREE,\n    ROUND(DATA_FREE / DATA_LENGTH * 100, 2) AS frag_pct\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb'\nAND DATA_LENGTH > 0\nORDER BY DATA_FREE DESC;\n\n-- 查看索引大小\nSELECT\n    INDEX_NAME,\n    STAT_VALUE AS pages,\n    STAT_VALUE * @@innodb_page_size / 1024 / 1024 AS size_mb\nFROM mysql.innodb_index_stats\nWHERE database_name = 'mydb'\nAND table_name = 'orders'\nAND stat_name = 'size';\n\n-- 整理碎片\nOPTIMIZE TABLE orders;\n-- 或\nALTER TABLE orders ENGINE=InnoDB;\n\n-- Online方式整理碎片（MySQL 5.6+）\nALTER TABLE orders ENGINE=InnoDB, ALGORITHM=INPLACE;\n\n-- 使用pt-online-schema-change\n-- pt-online-schema-change --alter 'ENGINE=InnoDB' D=mydb,t=orders\n\n-- 查看页填充率\nSHOW ENGINE INNODB STATUS\\G\n-- 在INSERT BUFFER AND ADAPTIVE HASH INDEX部分\n\n-- 设置页填充率\nSET GLOBAL innodb_fill_factor = 90;  -- 页填充90%\n```\n\n## 碎片产生原因\n\n| 操作 | 影响 |\n|------|------|\n| 随机INSERT | 页分裂产生碎片 |\n| DELETE | 页中出现空洞 |\n| UPDATE | 行迁移可能产生碎片 |\n\n## 关键要点\n\n1. **DATA_FREE**：显示空闲空间大小\n2. **OPTIMIZE TABLE**：重建表和索引\n3. **Online DDL**：不锁表整理碎片\n4. **定期维护**：大表定期整理碎片\n\n## 注意事项\n\n- `OPTIMIZE TABLE`在大表上耗时长且锁表\n- 使用`pt-online-schema-change`在线整理\n- 碎片率超过10%时建议整理\n- `innodb_fill_factor`控制新页的填充率\n- 使用自增主键可以减少碎片\n- SSD上碎片影响比HDD小",
+    "tags": ["索引碎片", "OPTIMIZE TABLE", "空间管理"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-index-045",
+    "module": "MySQL索引",
+    "difficulty": 2,
+    "question": "MySQL中如何使用索引优化JOIN查询？",
+    "answer": "## 核心概念\n\nJOIN查询的性能很大程度上取决于被驱动表的JOIN列是否有索引。有索引时使用Index Nested-Loop Join，无索引时使用Block Nested-Loop Join。\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    INDEX idx_name (name)\n);\n\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    amount DECIMAL(10,2),\n    INDEX idx_user_id (user_id)\n);\n\n-- 有索引的JOIN（Index Nested-Loop Join）\nEXPLAIN SELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id;\n-- users: type=ALL\n-- orders: type=ref, key=idx_user_id（使用索引）\n-- Extra: NULL\n\n-- 无索引的JOIN（Block Nested-Loop Join）\n-- 假设orders.user_id没有索引\nEXPLAIN SELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id;\n-- Extra: Using join buffer (Block Nested Loop)\n\n-- 优化：添加索引\nCREATE INDEX idx_user_id ON orders(user_id);\n\n-- 小表驱动大表\nEXPLAIN SELECT * FROM orders o\nJOIN users u ON o.user_id = u.id;\n-- MySQL优化器会自动选择小表作为驱动表\n\n-- 强制驱动表（STRAIGHT_JOIN）\nSELECT * FROM users u\nSTRAIGHT_JOIN orders o ON u.id = o.user_id;\n-- 强制users为驱动表\n\n-- 覆盖索引优化JOIN\nEXPLAIN SELECT o.user_id, o.amount\nFROM orders o\nJOIN users u ON o.user_id = u.id;\n-- 如果idx_user_id覆盖user_id和amount，可以避免回表\n```\n\n## JOIN算法对比\n\n| 算法 | 条件 | 性能 |\n|------|------|------|\n| Index NLJ | 被驱动表有索引 | 最好 |\n| BNL | 被驱动表无索引 | 差 |\n| Hash Join | MySQL 8.0.18+无索引 | 较好 |\n\n## 关键要点\n\n1. **被驱动表JOIN列必须有索引**：这是JOIN优化的关键\n2. **小表驱动大表**：优化器自动选择或用STRAIGHT_JOIN\n3. **Hash Join**：MySQL 8.0.18+自动用于无索引的等值JOIN\n4. **覆盖索引**：减少JOIN时的回表操作\n\n## 注意事项\n\n- JOIN列的数据类型必须一致（避免隐式转换）\n- 字符集不一致会导致索引失效\n- 多表JOIN时注意驱动表的选择\n- `join_buffer_size`影响BNL和Hash Join性能\n- 使用EXPLAIN确认JOIN是否使用了索引",
+    "tags": ["JOIN优化", "NLJ", "索引优化"],
+    "source": "高频"
+  }
+]

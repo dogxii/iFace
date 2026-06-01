@@ -1,0 +1,362 @@
+[
+  {
+    "id": "redis-cluster-001",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis主从架构中，主节点和从节点各自承担什么角色？读写分离是如何实现的？",
+    "answer": "## 核心概念\n\nRedis主从架构是最基础的高可用方案，主节点负责写操作，从节点负责读操作，通过复制机制保持数据同步。\n\n## 角色分工\n\n### 主节点（Master）\n- 接收所有写操作（SET、DEL、LPUSH等）\n- 将数据变更异步复制给从节点\n- 可以有多个从节点\n\n### 从节点（Slave/Replica）\n- 接收并执行主节点的数据变更\n- 可以处理读请求，分担主节点压力\n- 可以级联复制（从节点的从节点）\n\n## 配置方法\n\n```redis\n# 从节点配置（redis.conf）\nreplicaof 192.168.1.100 6379\nmasterauth your_password\n\n# 动态设置\nREPLICAOF 192.168.1.100 6379\n\n# 查看复制信息\nINFO replication\n```\n\n## 读写分离实现\n\n```python\nimport redis\n\nmaster = redis.Redis(host='master-host', port=6379)\nslave = redis.Redis(host='slave-host', port=6380)\n\ndef write(key, value):\n    master.set(key, value)\n\ndef read(key):\n    return slave.get(key)\n```\n\n## 注意事项\n\n- 主从复制是异步的，存在数据延迟\n- 从节点默认只读（replica-read-only yes）\n- 主节点宕机后需要手动切换或使用哨兵自动故障转移\n- 避免从节点过多，影响主节点性能",
+    "tags": ["主从架构", "读写分离", "高可用"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-002",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis主从复制的全量同步和增量同步是如何工作的？",
+    "answer": "## 核心概念\n\nRedis主从复制分为全量同步（Full Resynchronization）和增量同步（Partial Resynchronization）两种方式。\n\n## 全量同步过程\n\n1. 从节点发送 PSYNC 命令，请求同步\n2. 主节点执行 BGSAVE 生成 RDB 快照\n3. 主节点将 RDB 文件发送给从节点\n4. 从节点加载 RDB 文件，清空旧数据\n5. 主节点将同步期间的新命令写入 repl_backlog_buffer\n6. 主节点将缓冲区的命令发送给从节点\n\n## 增量同步过程\n\n1. 从节点断线重连后，发送 PSYNC runid offset\n2. 主节点检查 repl_backlog_buffer 是否包含对应数据\n3. 如果包含，发送 offset 之后的数据给从节点\n4. 如果不包含，退化为全量同步\n\n## 关键配置\n\n```redis\n# 复制积压缓冲区大小（默认1MB太小）\nrepl-backlog-size 256mb\n\n# 无连接时缓冲区释放时间\nrepl-backlog-ttl 3600\n\n# 设置从节点优先级\nreplica-priority 100\n```\n\n## 对比分析\n\n| 类型 | 触发条件 | 数据量 | 性能影响 |\n|------|----------|--------|----------|\n| 全量同步 | 首次连接、offset不在缓冲区 | 全部数据 | 大（fork+传输） |\n| 增量同步 | 断线重连、offset在缓冲区 | 部分数据 | 小 |\n\n## 注意事项\n\n- 合理设置 repl-backlog-size，避免频繁全量同步\n- repl_backlog_size = 写入速率 x 平均断线时间\n- 全量同步期间主节点的写入会暂存到缓冲区",
+    "tags": ["主从复制", "全量同步", "增量同步"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-003",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis主从复制中，如何配置主节点的密码认证？从节点如何连接主节点？",
+    "answer": "## 核心概念\n\n在生产环境中，Redis主从复制通常需要配置密码认证，以确保只有授权的从节点可以连接主节点。\n\n## 主节点配置\n\n```redis\n# 设置主节点密码\nrequirepass your_master_password\n\n# 或者使用ACL（Redis 6.0+）\nACL SETUSER default >your_master_password on ~* +@all\n```\n\n## 从节点配置\n\n```redis\n# 设置主节点密码\nmasterauth your_master_password\n\n# 指定主节点地址\nreplicaof 192.168.1.100 6379\n\n# 从节点自身密码（可选）\nrequirepass your_slave_password\n```\n\n## 动态配置\n\n```redis\n# 动态设置主节点密码\nCONFIG SET masterauth your_master_password\n\n# 动态设置从节点地址\nREPLICAOF 192.168.1.100 6379\n\n# 查看当前配置\nCONFIG GET masterauth\nCONFIG GET replicaof\n```\n\n## 注意事项\n\n- 主从节点的密码必须一致\n- 修改密码后需要重新连接才能生效\n- 使用ACL可以实现更细粒度的权限控制\n- 建议在内网环境中使用，避免密码泄露",
+    "tags": ["主从复制", "密码认证", "安全配置"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-004",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis主从复制中，从节点可以接受写操作吗？如何配置？",
+    "answer": "## 核心概念\n\n默认情况下，Redis从节点是只读的，不接受写操作。这是为了保证数据一致性。\n\n## 默认行为\n\n```redis\n# 从节点默认只读\n127.0.0.1:6380> SET test value\n(error) READONLY You can't write against a read only replica.\n```\n\n## 配置为可写\n\n```redis\n# 修改配置文件\nreplica-read-only no\n\n# 或动态设置\nCONFIG SET replica-read-only no\n```\n\n## 可写从节点的风险\n\n- **数据不一致**：从节点写入的数据不会同步到主节点和其他从节点\n- **数据丢失**：从节点重启或全量同步时，本地写入的数据会丢失\n- **脑裂问题**：网络分区时可能导致数据冲突\n\n## 适用场景\n\n- 临时数据存储（如本地缓存）\n- 本地计算结果存储\n- 测试环境\n\n## 建议\n\n- 生产环境保持从节点只读\n- 如需写入，使用主节点或考虑使用 Cluster\n- 可写从节点仅用于特殊场景",
+    "tags": ["主从复制", "只读配置", "数据一致性"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-005",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis哨兵架构的工作原理是什么？它如何实现自动故障转移？",
+    "answer": "## 核心概念\n\nRedis Sentinel（哨兵）是一个分布式系统，用于监控Redis主从节点，并在主节点故障时自动进行故障转移。\n\n## 哨兵架构组成\n\n```\n哨兵1    哨兵2    哨兵3\n  |        |        |\n  +--监控--+--监控--+\n  |        |        |\n  v        v        v\nMaster   Slave1   Slave2\n```\n\n## 故障检测流程\n\n1. **主观下线（SDOWN）**：单个哨兵认为主节点不可达\n2. **客观下线（ODOWN）**：quorum个哨兵都认为主节点不可达\n3. **故障转移**：选举领导哨兵，执行故障转移\n\n## 故障转移步骤\n\n1. 领导哨兵选择一个从节点作为新主节点\n2. 将新主节点提升为master（REPLICAOF NO ONE）\n3. 通知其他从节点复制新主节点\n4. 通知客户端新主节点地址\n5. 旧主节点恢复后成为新主节点的从节点\n\n## 配置示例\n\n```redis\n# sentinel.conf\nsentinel monitor mymaster 192.168.1.100 6379 2\nsentinel down-after-milliseconds mymaster 5000\nsentinel failover-timeout mymaster 60000\nsentinel parallel-syncs mymaster 1\n```\n\n## 注意事项\n\n- 哨兵节点数量应为奇数（3、5、7）\n- quorum设置为哨兵数量的一半以上\n- 故障转移期间会有短暂的写入不可用\n- 客户端需要支持哨兵协议",
+    "tags": ["哨兵架构", "自动故障转移", "高可用"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-006",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis哨兵架构中，如何配置多个哨兵节点？它们之间如何通信？",
+    "answer": "## 核心概念\n\nRedis哨兵节点通过发布订阅机制和心跳检测相互通信，共同监控Redis主从节点。\n\n## 哨兵配置\n\n```redis\n# sentinel.conf\nport 26379\nsentinel monitor mymaster 192.168.1.100 6379 2\nsentinel auth-pass mymaster your_password\nsentinel down-after-milliseconds mymaster 5000\nsentinel failover-timeout mymaster 60000\nsentinel parallel-syncs mymaster 1\n```\n\n## 启动多个哨兵\n\n```bash\nredis-sentinel /path/to/sentinel1.conf\nredis-sentinel /path/to/sentinel2.conf\nredis-sentinel /path/to/sentinel3.conf\n```\n\n## 哨兵通信机制\n\n- **心跳检测**：每秒发送PING命令检测主从节点状态\n- **发布订阅**：通过 `__sentinel__:hello` 频道交换哨兵信息\n- **投票协议**：故障转移时使用Raft算法选举领导哨兵\n\n## 查看哨兵状态\n\n```redis\n# 连接到哨兵\nredis-cli -p 26379\n\n# 查看主节点信息\nSENTINEL master mymaster\n\n# 查看从节点信息\nSENTINEL replicas mymaster\n\n# 查看其他哨兵\nSENTINEL sentinels mymaster\n```\n\n## 注意事项\n\n- 哨兵节点应部署在不同机器上\n- 至少部署3个哨兵节点\n- 哨兵本身也是Redis实例，占用资源较少",
+    "tags": ["哨兵架构", "哨兵配置", "节点通信"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-007",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis哨兵架构中，客户端如何连接？如何获取主节点地址？",
+    "answer": "## 核心概念\n\n在哨兵架构中，客户端需要通过哨兵获取当前主节点地址，并在故障转移后自动切换。\n\n## 连接方式\n\n### 方式一：客户端直连哨兵\n\n```redis\n# 客户端发送命令获取主节点\nSENTINEL get-master-addr-by-name mymaster\n\n# 返回结果\n1) \"192.168.1.100\"\n2) \"6379\"\n```\n\n### 方式二：使用支持哨兵的客户端\n\n```java\n// Jedis示例\nSet<String> sentinels = new HashSet<>();\nsentinels.add(\"192.168.1.101:26379\");\nsentinels.add(\"192.168.1.102:26379\");\nsentinels.add(\"192.168.1.103:26379\");\n\nJedisSentinelPool pool = new JedisSentinelPool(\"mymaster\", sentinels);\nJedis jedis = pool.getResource();\n```\n\n## 客户端行为\n\n1. 启动时连接哨兵获取主节点地址\n2. 连接到主节点进行读写操作\n3. 订阅哨兵的 +switch-master 频道\n4. 收到故障转移通知后，重新连接新主节点\n\n## 故障转移期间的处理\n\n- 客户端应实现重试机制\n- 设置合理的超时时间\n- 故障转移完成后自动切换\n\n## 注意事项\n\n- 客户端需要知道至少一个哨兵地址\n- 建议配置多个哨兵地址，提高可用性\n- 客户端应支持自动重连和故障转移",
+    "tags": ["哨兵架构", "客户端连接", "故障转移"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-008",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis哨兵架构中，如何选择新主节点？选择策略是什么？",
+    "answer": "## 核心概念\n\n当Redis主节点故障时，哨兵需要从从节点中选择一个作为新主节点。选择策略基于多个因素。\n\n## 选择流程\n\n```\n1. 过滤不健康的从节点\n   - 断线超过 down-after-milliseconds\n   - 与主节点断开时间过长\n\n2. 按优先级排序\n   - replica-priority 值小的优先\n   - 0 表示不参与选举\n\n3. 按复制偏移量排序\n   - 偏移量大的优先（数据最新）\n\n4. 按 runid 排序\n   - runid 小的优先（稳定）\n```\n\n## 配置参数\n\n```redis\n# 设置从节点优先级（数值越小优先级越高）\nreplica-priority 100\n\n# 0表示不参与选举\nreplica-priority 0\n```\n\n## 领导选举（Raft）\n\n```\n哨兵1发起选举              哨兵2          哨兵3\n    |                       |              |\n    +-- 选举请求(epoch=1) ->|              |\n    +-- 选举请求(epoch=1) ->+------------->|\n    |                       |              |\n    |<-- 投票(epoch=1) -----+              |\n    |<-- 投票(epoch=1) -----+--------------+\n    |                       |              |\n    +-- 获得多数票，成为Leader              |\n    +-- 执行故障转移 ----->+-------------->\n```\n\n## 注意事项\n\n- replica-priority=0的从节点不会被选为主节点\n- 复制偏移量越大，数据越完整\n- 故障转移期间会有短暂的写入不可用\n- parallel-syncs控制同时切换的从节点数量",
+    "tags": ["哨兵架构", "主节点选择", "故障转移"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-009",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster架构中，16384个哈希槽是如何分配的？为什么是16384个？",
+    "answer": "## 核心概念\n\nRedis Cluster使用16384个哈希槽（slot）来分布数据，每个key通过CRC16算法计算后对16384取模，决定存储在哪个槽中。\n\n## 哈希槽分配\n\n```redis\n# 创建集群时自动分配\nredis-cli --cluster create 192.168.1.101:6379 192.168.1.102:6379 \\\n  192.168.1.103:6379 --cluster-replicas 1\n\n# 3个主节点分配槽位\n# 节点A: 0-5460\n# 节点B: 5461-10922\n# 节点C: 10923-16383\n\n# 查看key所在的槽\nCLUSTER KEYSLOT mykey\n```\n\n## 为什么是16384个\n\n1. **心跳包大小**：16384个槽位用bitmap表示需要2KB（16384/8=2048字节），适合作为心跳包\n2. **集群规模**：Redis Cluster官方建议最多1000个节点，16384个槽位足够分配\n3. **性能考虑**：槽位数量过多会增加心跳包大小和计算开销\n4. **兼容性**：CRC16算法输出范围是0-65535，16384是合理的折中\n\n## 哈希标签\n\n```redis\n# 使用哈希标签确保相关key在同一个槽\nSET {user:1000}.name \"张三\"\nSET {user:1000}.age 25\n\nCLUSTER KEYSLOT {user:1000}.name\nCLUSTER KEYSLOT {user:1000}.age\n# 两个key返回相同的槽位号\n```\n\n## 注意事项\n\n- 每个主节点负责一部分槽位\n- 槽位可以在节点间迁移\n- 使用哈希标签可以保证相关数据在同一节点\n- 槽位数量固定为16384，不能修改",
+    "tags": ["Cluster架构", "哈希槽", "数据分片"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-010",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster中，gossip协议是如何工作的？节点之间如何通信？",
+    "answer": "## 核心概念\n\nRedis Cluster使用gossip协议进行节点间通信，通过周期性的消息交换来维护集群状态。\n\n## 消息类型\n\n| 消息类型 | 作用 | 发送时机 |\n|---------|------|----------|\n| PING | 心跳检测+信息交换 | 每秒 |\n| PONG | 响应PING | 收到PING时 |\n| MEET | 新节点加入 | 手动触发 |\n| FAIL | 广播故障 | 故障时 |\n\n## gossip通信流程\n\n```\n节点A                           节点B\n  |                               |\n  +-- PING(A状态+已知节点信息) --->|\n  |                               |\n  |<-- PONG(B状态+已知节点信息) ---+\n  |                               |\n  |   通过多次通信，集群状态逐渐一致 |\n```\n\n## PING消息内容\n\n```\n节点A的PING消息包含：\n- 节点A的基本信息（ID、IP、端口、角色）\n- 节点A负责的槽位信息\n- 随机选择的部分已知节点信息\n- 集群epoch（配置版本号）\n```\n\n## 故障检测\n\n```redis\n# 配置超时时间\ncluster-node-timeout 15000\n```\n\n## 注意事项\n\n- Gossip协议是最终一致性的\n- 集群状态更新有延迟\n- 节点数量过多会影响通信效率\n- 建议集群节点不超过1000个",
+    "tags": ["Cluster架构", "gossip协议", "节点通信"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-011",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster中，节点如何知道key应该存储在哪个节点？",
+    "answer": "## 核心概念\n\nRedis Cluster中，每个节点维护完整的槽位映射表，通过CRC16算法计算key对应的槽位，然后路由到正确的节点。\n\n## 槽位计算\n\n```python\n# 槽位计算公式\ndef key_to_slot(key):\n    if '{' in key and '}' in key:\n        start = key.index('{') + 1\n        end = key.index('}')\n        key = key[start:end]\n    return crc16(key) % 16384\n```\n\n## 路由机制\n\n### 1. 节点直接处理\n- 如果key在当前节点的槽位范围内，直接处理\n- 否则返回MOVED错误\n\n### 2. MOVED重定向\n\n```redis\n192.168.1.101:6379> SET mykey value\n(error) MOVED 1234 192.168.1.102:6379\n```\n\n### 3. Smart客户端\n- 缓存槽位映射表\n- 直接发送命令到正确的节点\n- 收到MOVED时更新本地缓存\n\n## 槽位映射表\n\n```redis\n# 查看完整的槽位映射\nCLUSTER SLOTS\n\n# 查看节点信息\nCLUSTER NODES\n```\n\n## 注意事项\n\n- Smart客户端可以减少重定向开销\n- 槽位映射表会定期更新\n- 集群扩缩容时槽位会重新分配\n- 使用哈希标签可以优化相关数据的访问",
+    "tags": ["Cluster架构", "key路由", "槽位映射"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-012",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster中，节点之间如何进行故障检测？主观下线和客观下线有什么区别？",
+    "answer": "## 核心概念\n\nRedis Cluster使用主观下线（PFAIL）和客观下线（FAIL）两种机制进行故障检测。\n\n## 故障检测流程\n\n```\n节点A定期PING节点B\n    |\n    +-- 超时未收到PONG\n    |\n    +-- 标记节点B为PFAIL（主观下线）\n            |\n            +-- 广播PFAIL给其他节点\n            |\n            +-- 多数节点同意 -> 标记为FAIL（客观下线）\n                    |\n                    +-- 广播FAIL消息\n```\n\n## PFAIL vs FAIL\n\n| 类型 | 判断者 | 条件 | 说明 |\n|------|--------|------|------|\n| PFAIL | 单个节点 | 超时无响应 | 主观判断 |\n| FAIL | 多数节点 | 多数同意 | 客观判断 |\n\n## 配置参数\n\n```redis\n# 集群超时时间（毫秒）\ncluster-node-timeout 15000\n\n# 节点间通信频率\ncluster-announce-port 6379\n```\n\n## 故障转移过程\n\n```\n1. 从节点检测到主节点FAIL\n2. 从节点发起选举\n3. 其他主节点投票\n4. 获得多数票的从节点晋升为主节点\n5. 新主节点接管槽位\n6. 其他从节点复制新主节点\n```\n\n## 注意事项\n\n- cluster-node-timeout设置过短会导致误判\n- 设置过长会延长故障恢复时间\n- 网络分区可能导致脑裂\n- 建议cluster-node-timeout设置为15-30秒",
+    "tags": ["Cluster架构", "故障检测", "高可用"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-013",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "什么是一致性哈希？它与Redis Cluster的哈希槽有什么区别？",
+    "answer": "## 核心概念\n\n一致性哈希和哈希槽都是分布式系统中的数据分片方案，但实现方式不同。\n\n## 一致性哈希\n\n### 原理\n- 将整个哈希值空间组织成一个虚拟的圆环\n- 节点和数据都映射到环上\n- 数据存储在顺时针方向遇到的第一个节点\n\n### 优缺点\n- 优点：节点增删时只影响相邻节点，数据迁移量小\n- 缺点：数据分布可能不均匀，需要虚拟节点解决数据倾斜\n\n## 哈希槽方案\n\n### 原理\n- 固定16384个槽位\n- key通过CRC16计算后对16384取模\n- 每个节点负责一部分槽位\n\n### 优缺点\n- 优点：数据分布均匀，槽位分配灵活，易于管理\n- 缺点：槽位数量固定，扩缩容需要迁移槽位\n\n## 对比分析\n\n| 特性 | 一致性哈希 | 哈希槽 |\n|------|------------|--------|\n| 数据分布 | 可能不均匀 | 均匀 |\n| 扩缩容影响 | 小 | 需要迁移 |\n| 实现复杂度 | 较高 | 较低 |\n| 虚拟节点 | 需要 | 不需要 |\n\n## Redis选择哈希槽的原因\n\n1. 数据分布更均匀\n2. 槽位管理更简单\n3. 支持在线扩缩容\n4. 便于监控和调试",
+    "tags": ["数据分片", "一致性哈希", "哈希槽"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-014",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "什么是哈希标签（Hash Tag）？如何使用它优化相关数据的访问？",
+    "answer": "## 核心概念\n\n哈希标签（Hash Tag）允许强制多个key存储在同一个槽位中，通过在key中使用花括号{}来指定。\n\n## 基本用法\n\n```redis\n# 使用哈希标签\nSET {user:1000}.name \"张三\"\nSET {user:1000}.age 25\nSET {user:1000}.email \"zhangsan@example.com\"\n\n# 这些key会在同一个槽位\nCLUSTER KEYSLOT {user:1000}.name\nCLUSTER KEYSLOT {user:1000}.age\n# 返回相同的槽位号\n```\n\n## 哈希标签规则\n\n```redis\n# 只有第一个{}中的内容用于计算槽位\nSET {user:1000}.profile {user:1000}.data\n# 两个key会在同一个槽位\n\n# 没有{}时，整个key用于计算\nSET user:1000:name \"张三\"\n```\n\n## 应用场景\n\n### 1. 事务操作\n\n```redis\nMULTI\nSET {order:123}.status \"paid\"\nSET {order:123}.amount 100\nEXEC\n```\n\n### 2. Lua脚本\n\n```redis\nEVAL \"return {redis.call('GET', KEYS[1]), redis.call('GET', KEYS[2])}\" \\\n  2 {user:1000}.name {user:1000}.age\n```\n\n### 3. 聚合操作\n\n```redis\nMGET {user:1000}.name {user:1000}.age {user:1000}.email\n```\n\n## 注意事项\n\n- 哈希标签可能导致数据分布不均匀\n- 避免使用相同的哈希标签过多\n- 合理设计key的命名规范\n- 监控各槽位的数据量",
+    "tags": ["数据分片", "哈希标签", "key设计"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-015",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster中，如何进行resharding（重新分片）？",
+    "answer": "## 核心概念\n\nResharding是将槽位从一个节点迁移到另一个节点的过程，用于集群扩缩容或负载均衡。\n\n## 手动Resharding\n\n```bash\n# 使用redis-cli工具\nredis-cli --cluster reshard 192.168.1.101:6379\n\n# 交互式输入\n# How many slots do you want to move? 1000\n# What is the receiving node ID? <new_node_id>\n# Source node: <source_node_id>\n```\n\n## 迁移过程\n\n```\n源节点                    目标节点\n  |                         |\n  +-- MIGRATE key --------->|  逐个迁移key\n  |                         |\n  +-- 更新槽位映射          +-- 更新槽位映射\n  |                         |\n  +-- 释放槽位 ------------>+-- 接管槽位\n```\n\n## MIGRATE命令\n\n```redis\n# 迁移单个key（原子操作）\nMIGRATE target_host target_port key db timeout [COPY] [REPLACE]\n\n# 迁移期间key被阻塞\n```\n\n## 使用工具批量迁移\n\n```bash\nredis-cli --cluster reshard 192.168.1.101:6379 \\\n  --cluster-from <source_node_id> \\\n  --cluster-to <target_node_id> \\\n  --cluster-slots 1000 --cluster-yes\n```\n\n## 迁移期间的行为\n\n- 正在迁移的槽位：源节点返回ASK重定向\n- 已迁移的槽位：目标节点正常处理\n- 客户端需要支持ASK重定向\n\n## 注意事项\n\n- 迁移期间服务正常可用\n- 大key迁移可能导致阻塞\n- 建议在低峰期进行迁移\n- 迁移完成后更新客户端配置",
+    "tags": ["数据分片", "resharding", "槽位迁移"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-016",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis Cluster中，如何添加新节点？",
+    "answer": "## 核心概念\n\n向Redis Cluster添加新节点需要先将节点加入集群，然后分配槽位。\n\n## 添加主节点\n\n```bash\n# 1. 启动新节点\nredis-server --port 7007 --cluster-enabled yes \\\n  --cluster-config-file nodes-7007.conf\n\n# 2. 将节点加入集群\nredis-cli --cluster add-node 192.168.1.107:6379 192.168.1.101:6379\n\n# 3. 查看集群节点\nredis-cli -c -h 192.168.1.101 -p 6379 CLUSTER NODES\n\n# 4. 分配槽位\nredis-cli --cluster reshard 192.168.1.101:6379\n```\n\n## 添加从节点\n\n```bash\n# 方式一：添加时指定为从节点\nredis-cli --cluster add-node 192.168.1.108:6379 192.168.1.101:6379 \\\n  --cluster-slave --cluster-master-id <master_node_id>\n\n# 方式二：先加入再设置为从节点\nredis-cli -c -h 192.168.1.108 -p 6379\nCLUSTER REPLICATE <master_node_id>\n```\n\n## 配置新节点\n\n```redis\n# redis.conf\ncluster-enabled yes\ncluster-config-file nodes.conf\ncluster-node-timeout 15000\n```\n\n## 验证节点状态\n\n```redis\nCLUSTER INFO\nCLUSTER NODES\nredis-cli --cluster check 192.168.1.101:6379\n```\n\n## 注意事项\n\n- 新节点需要配置cluster-enabled yes\n- 添加主节点后需要分配槽位\n- 从节点会自动同步主节点数据\n- 建议在低峰期进行节点添加",
+    "tags": ["集群扩缩容", "添加节点", "集群管理"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-017",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis Cluster中，如何删除节点？",
+    "answer": "## 核心概念\n\n从Redis Cluster删除节点需要先迁移槽位（如果是主节点），然后将节点从集群中移除。\n\n## 删除主节点\n\n```bash\n# 1. 迁移槽位到其他节点\nredis-cli --cluster reshard 192.168.1.101:6379 \\\n  --cluster-from <node_to_remove> \\\n  --cluster-to <other_node> \\\n  --cluster-slots <slot_count> --cluster-yes\n\n# 2. 确认槽位已迁移\nredis-cli --cluster check 192.168.1.101:6379\n\n# 3. 删除节点\nredis-cli --cluster del-node 192.168.1.101:6379 <node_id>\n```\n\n## 删除从节点\n\n```bash\n# 直接删除从节点（不需要迁移槽位）\nredis-cli --cluster del-node 192.168.1.101:6379 <slave_node_id>\n```\n\n## 手动删除\n\n```redis\n# 1. 迁移槽位\nCLUSTER SETSLOT <slot> MIGRATING <target_node_id>\nCLUSTER GETKEYSINSLOT <slot> <count>\nMIGRATE <target_host> <target_port> <key> <db> <timeout>\nCLUSTER SETSLOT <slot> NODE <target_node_id>\n\n# 2. 忘记节点\nCLUSTER FORGET <node_id>\n```\n\n## 注意事项\n\n- 删除主节点前必须迁移所有槽位\n- 删除节点后，其他节点会通过gossip收到通知\n- 确保集群仍有足够的主节点和从节点\n- 建议在低峰期进行节点删除",
+    "tags": ["集群扩缩容", "删除节点", "集群管理"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-018",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster扩缩容时，如何保证数据不丢失？迁移过程中客户端如何处理？",
+    "answer": "## 核心概念\n\nRedis Cluster扩缩容过程中，通过MIGRATE命令的原子性和ASK重定向机制保证数据不丢失。\n\n## 数据迁移保证\n\n### 1. 原子性迁移\n\n```redis\n# MIGRATE命令是原子性的\nMIGRATE <target_host> <target_port> <key> <db> <timeout>\n# 迁移期间key在源节点被阻塞\n# 目标节点加载成功后源节点删除key\n```\n\n### 2. ASK重定向\n\n```redis\n# 迁移中的key，客户端收到ASK重定向\nASK 1234 192.168.1.102:6379\n\n# 客户端处理流程\nASKING          # 先发送ASKING命令\nSET mykey value # 再发送原命令\n```\n\n## 客户端处理逻辑\n\n```python\ndef send_command(command, key):\n    slot = crc16(key) % 16384\n    node = get_node_for_slot(slot)\n    \n    try:\n        return node.execute(command)\n    except AskError as e:\n        # 槽位正在迁移\n        e.node.execute('ASKING')\n        return e.node.execute(command)\n    except MovedError as e:\n        # 槽位已迁移完成\n        update_slot_cache(e.slot, e.node)\n        return e.node.execute(command)\n```\n\n## 注意事项\n\n- 迁移期间避免大key操作\n- 合理设置MIGRATE超时时间\n- 监控迁移进度\n- 迁移完成后验证数据完整性",
+    "tags": ["集群扩缩容", "数据迁移", "数据安全"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-019",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis Cluster中，MOVED重定向和ASK重定向有什么区别？",
+    "answer": "## 核心概念\n\nMOVED和ASK都是Redis Cluster中的重定向机制，但使用场景不同。\n\n## MOVED重定向\n\n### 使用场景\n- 槽位已经永久迁移到其他节点\n- 客户端访问了错误的节点\n\n### 响应格式\n\n```redis\nMOVED 1234 192.168.1.102:6379\n# 格式：MOVED <slot> <host>:<port>\n```\n\n### 客户端行为\n- 更新本地槽位映射表\n- 重新发送命令到新节点\n\n## ASK重定向\n\n### 使用场景\n- 槽位正在迁移中\n- 源节点返回ASK重定向\n\n### 响应格式\n\n```redis\nASK 1234 192.168.1.102:6379\n# 格式：ASK <slot> <host>:<port>\n```\n\n### 客户端行为\n- 发送ASKING命令到目标节点\n- 发送原命令到目标节点\n- 不更新本地槽位映射表\n\n## 对比分析\n\n| 特性 | MOVED | ASK |\n|------|-------|-----|\n| 场景 | 槽位已迁移 | 槽位迁移中 |\n| 映射表更新 | 是 | 否 |\n| 后续访问 | 直接访问新节点 | 需要ASKING命令 |\n| 临时性 | 永久 | 临时 |\n\n## 注意事项\n\n- Smart客户端需要支持两种重定向\n- ASK是临时的，下次访问可能还需要ASKING\n- MOVED会更新本地映射表，后续直接访问新节点",
+    "tags": ["客户端路由", "MOVED", "ASK"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-020",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "什么是Smart客户端？它如何优化Redis Cluster的访问？",
+    "answer": "## 核心概念\n\nSmart客户端是能够自动处理Redis Cluster重定向、缓存槽位映射表的客户端，可以显著减少网络开销。\n\n## Smart客户端特性\n\n### 1. 槽位映射缓存\n\n```java\n// Jedis Cluster示例\nSet<HostAndPort> nodes = new HashSet<>();\nnodes.add(new HostAndPort(\"192.168.1.101\", 6379));\nnodes.add(new HostAndPort(\"192.168.1.102\", 6379));\nnodes.add(new HostAndPort(\"192.168.1.103\", 6379));\n\nJedisCluster jedisCluster = new JedisCluster(nodes);\n\n// 客户端会自动缓存槽位映射\njedisCluster.set(\"mykey\", \"value\");\n```\n\n### 2. 自动重定向处理\n- 收到MOVED时更新本地映射表\n- 收到ASK时发送ASKING命令\n- 自动重试失败的命令\n\n### 3. 连接池管理\n- 为每个节点维护连接池\n- 自动管理连接生命周期\n- 支持连接复用\n\n## 常用Smart客户端\n\n| 语言 | 客户端 | 特点 |\n|------|--------|------|\n| Java | Jedis Cluster | 简单易用 |\n| Java | Lettuce | 异步支持 |\n| Java | Redisson | 功能丰富 |\n| Python | redis-py-cluster | 功能完善 |\n| Go | go-redis | 高性能 |\n\n## 注意事项\n\n- Smart客户端需要知道至少一个节点地址\n- 建议配置多个种子节点\n- 定期更新槽位映射表\n- 处理好连接异常和重试",
+    "tags": ["客户端路由", "Smart客户端", "连接管理"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-021",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "如何使用SETNX实现分布式锁？有什么注意事项？",
+    "answer": "## 核心概念\n\nSETNX（SET if Not eXists）是Redis实现分布式锁的基础命令，可以保证只有一个客户端能成功设置key。\n\n## 基本实现\n\n```redis\n# 获取锁（带唯一标识和过期时间）\nSET lock:order:123 <unique_id> NX EX 30\n\n# 返回OK表示获取成功\n# 返回nil表示获取失败\n```\n\n## 释放锁（Lua脚本保证原子性）\n\n```redis\nEVAL \"if redis.call('GET', KEYS[1]) == ARGV[1] then return redis.call('DEL', KEYS[1]) else return 0 end\" 1 lock:order:123 <unique_id>\n```\n\n## Python完整实现\n\n```python\nimport uuid\nimport redis\n\nclass RedisLock:\n    def __init__(self, key, ttl=10):\n        self.key = key\n        self.ttl = ttl\n        self.lock_id = str(uuid.uuid4())\n        self.redis = redis.Redis()\n    \n    def acquire(self):\n        return self.redis.set(self.key, self.lock_id, nx=True, ex=self.ttl)\n    \n    def release(self):\n        lua_script = \"\"\"\n        if redis.call('GET', KEYS[1]) == ARGV[1] then\n            return redis.call('DEL', KEYS[1])\n        else\n            return 0\n        end\n        \"\"\"\n        return self.redis.eval(lua_script, 1, self.key, self.lock_id)\n```\n\n## 注意事项\n\n### 1. 原子性问题\n- SETNX和EXPIRE必须原子执行\n- 使用SET key value NX EX seconds\n\n### 2. 锁超时问题\n- 设置合理的过期时间\n- 避免业务未完成锁已过期\n\n### 3. 锁释放问题\n- 只释放自己持有的锁\n- 使用唯一标识验证\n\n### 4. 主从一致性问题\n- 主节点宕机可能导致锁丢失\n- 使用Redlock算法解决",
+    "tags": ["分布式锁", "SETNX", "并发控制"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-022",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "什么是Redlock算法？它解决了什么问题？",
+    "answer": "## 核心概念\n\nRedlock是Redis作者Antirez提出的分布式锁算法，用于解决单Redis实例锁的可靠性问题。\n\n## 算法流程\n\n```\n1. 获取当前时间T1\n2. 依次向N个Redis实例加锁（相同key、唯一值、短超时）\n3. 计算加锁耗时 = T2 - T1\n4. 如果在N/2+1个以上实例加锁成功，且耗时 < 锁超时时间\n5. 加锁成功，锁有效时间 = 超时时间 - 耗时\n```\n\n## 代码实现\n\n```python\nclass Redlock:\n    def __init__(self, nodes):\n        self.nodes = nodes\n        self.quorum = len(nodes) // 2 + 1\n    \n    def acquire(self, resource, ttl=10000):\n        lock_id = str(uuid.uuid4())\n        start = time.time() * 1000\n        \n        acquired = 0\n        for node in self.nodes:\n            try:\n                if node.set(resource, lock_id, nx=True, px=ttl):\n                    acquired += 1\n            except redis.RedisError:\n                pass\n        \n        elapsed = time.time() * 1000 - start\n        validity = ttl - elapsed - 100\n        \n        if acquired >= self.quorum and validity > 0:\n            return {'resource': resource, 'lock_id': lock_id, 'validity': validity}\n        else:\n            self.release(resource, lock_id)\n            return None\n```\n\n## 解决的问题\n\n- 单Redis实例宕机导致锁失效\n- 主从切换可能导致锁丢失\n- 提供更高的可靠性保证\n\n## 注意事项\n\n- 至少需要5个独立Redis实例（非主从集群）\n- 大多数节点可用时才能获取锁\n- 时钟漂移会影响算法正确性\n- 存在争议，考虑使用Zookeeper或etcd替代",
+    "tags": ["分布式锁", "Redlock", "高可用"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-023",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Martin Kleppmann对Redlock的批评是什么？如何回应？",
+    "answer": "## 核心概念\n\nMartin Kleppmann在文章\"How to do distributed locking\"中对Redlock算法提出了批评，引发了分布式锁实现的深入讨论。\n\n## Kleppmann的主要批评\n\n### 1. 时钟依赖问题\n\n```\nRedlock依赖时钟同步\n如果节点时钟不一致，算法可能失效\n\n节点A时钟快，认为锁已过期\n节点B时钟慢，认为锁未过期\n可能导致多个客户端同时持有锁\n```\n\n### 2. GC暂停问题\n\n```\n客户端A获取锁\n客户端A发生GC暂停\n锁过期\n客户端B获取锁\n客户端A的GC恢复\n两个客户端同时操作 -> 数据不一致\n```\n\n### 3. 网络延迟问题\n\n- 网络延迟可能导致锁超时判断不准确\n- 客户端和服务器的时间不一致\n\n## 解决方案：Fencing Token\n\n```python\ndef acquire_lock_with_token(lock_key):\n    token = generate_monotonic_token()\n    if redis.set(lock_key, token, nx=True, ex=ttl):\n        return token\n    return None\n\n# 操作时验证token\ndef perform_operation(token):\n    if storage.check_token(token):\n        storage.perform()\n    else:\n        raise StaleTokenError()\n```\n\n## Antirez的回应\n\n- 承认时钟问题，但认为实际环境中可控\n- GC暂停是应用层面的问题，不是锁的问题\n- 建议使用更大的超时时间\n\n## 实践建议\n\n- 如果对安全性要求极高，使用fencing token\n- 如果对性能要求高，接受Redlock的局限性\n- 考虑使用Zookeeper或etcd等共识系统",
+    "tags": ["分布式锁", "Redlock", "争议讨论"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-024",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "什么是分布式锁的看门狗机制？如何实现？",
+    "answer": "## 核心概念\n\n看门狗机制是自动续期分布式锁的机制，防止业务未完成时锁过期。\n\n## 问题背景\n\n```redis\n# 获取锁，设置30秒过期\nSET lock:order:123 1 NX EX 30\n\n# 业务执行超过30秒\n# 锁自动过期 -> 其他客户端获取锁 -> 并发问题\n```\n\n## 看门狗实现\n\n```python\nimport threading\nimport time\nimport redis\n\nclass WatchDogLock:\n    def __init__(self, key, ttl=30):\n        self.key = key\n        self.ttl = ttl\n        self.lock_id = str(uuid.uuid4())\n        self.redis = redis.Redis()\n        self.watchdog = None\n    \n    def acquire(self):\n        result = self.redis.set(self.key, self.lock_id, nx=True, ex=self.ttl)\n        if result:\n            self._start_watchdog()\n        return result\n    \n    def _start_watchdog(self):\n        def renew():\n            while True:\n                time.sleep(self.ttl // 3)\n                lua = \"if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('EXPIRE',KEYS[1],ARGV[2]) else return 0 end\"\n                if not self.redis.eval(lua, 1, self.key, self.lock_id, self.ttl):\n                    break\n        self.watchdog = threading.Thread(target=renew, daemon=True)\n        self.watchdog.start()\n    \n    def release(self):\n        lua = \"if redis.call('GET',KEYS[1])==ARGV[1] then return redis.call('DEL',KEYS[1]) else return 0 end\"\n        return self.redis.eval(lua, 1, self.key, self.lock_id)\n```\n\n## Redisson的实现（Java）\n\n```java\n// Redisson内置看门狗\nRLock lock = redisson.getLock(\"myLock\");\n\n// 默认30秒过期，每10秒续期\nlock.lock();\n\n// 业务完成后释放锁\nlock.unlock();\n```\n\n## 实现要点\n\n- 续期间隔通常是锁过期时间的1/3\n- 只有持有锁的客户端才能续期\n- 使用Lua脚本保证续期的原子性\n- 业务完成后停止看门狗\n\n## 注意事项\n\n- 看门狗线程需要正确管理生命周期\n- 避免看门狗泄漏\n- 考虑网络异常导致续期失败\n- Redisson已内置实现，推荐使用",
+    "tags": ["分布式锁", "看门狗", "锁续期"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-025",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "如何使用Redis实现分布式限流？令牌桶和滑动窗口有什么区别？",
+    "answer": "## 核心概念\n\n分布式限流用于控制API的访问速率，Redis可以实现多种限流算法。\n\n## 令牌桶算法\n\n### 原理\n- 固定速率向桶中添加令牌\n- 请求需要消耗令牌\n- 桶满时不再添加\n- 允许一定的突发流量\n\n### Redis实现\n\n```lua\nlocal key = KEYS[1]\nlocal rate = tonumber(ARGV[1])\nlocal capacity = tonumber(ARGV[2])\nlocal now = tonumber(ARGV[3])\nlocal requested = tonumber(ARGV[4])\n\nlocal last_time = tonumber(redis.call('HGET', key, 'last_time') or now)\nlocal tokens = tonumber(redis.call('HGET', key, 'tokens') or capacity)\n\nlocal delta = math.max(0, now - last_time)\nlocal new_tokens = math.min(capacity, tokens + delta * rate)\n\nif new_tokens >= requested then\n    new_tokens = new_tokens - requested\n    redis.call('HSET', key, 'tokens', new_tokens, 'last_time', now)\n    return 1\nelse\n    return 0\nend\n```\n\n## 滑动窗口算法\n\n### 原理\n- 使用ZSet记录请求时间戳\n- 统计固定时间窗口内的请求数\n- 超过阈值则拒绝\n\n### Redis实现\n\n```lua\nlocal key = KEYS[1]\nlocal window = tonumber(ARGV[1])\nlocal limit = tonumber(ARGV[2])\nlocal now = tonumber(ARGV[3])\n\nredis.call('ZREMRANGEBYSCORE', key, 0, now - window)\nlocal count = redis.call('ZCARD', key)\n\nif count < limit then\n    redis.call('ZADD', key, now, now .. math.random())\n    redis.call('EXPIRE', key, window)\n    return 1\nelse\n    return 0\nend\n```\n\n## 对比分析\n\n| 特性 | 令牌桶 | 滑动窗口 |\n|------|--------|----------|\n| 粒度 | 平滑 | 固定窗口 |\n| 突发处理 | 允许突发 | 严格限制 |\n| 实现复杂度 | 较高 | 较低 |\n| 内存占用 | 低 | 较高 |\n\n## 注意事项\n\n- 令牌桶适合允许突发流量的场景\n- 滑动窗口适合严格限流的场景\n- 使用Lua脚本保证原子性\n- 高并发场景可结合本地限流",
+    "tags": ["分布式限流", "令牌桶", "滑动窗口"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-026",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "如何使用Redis实现简单的计数器限流？",
+    "answer": "## 核心概念\n\n计数器限流是最简单的限流方式，通过统计时间窗口内的请求次数来实现。\n\n## 固定窗口实现\n\n```lua\n-- 固定窗口限流（每分钟最多100次请求）\nlocal key = KEYS[1] .. ':' .. math.floor(ARGV[1] / 60)\nlocal limit = tonumber(ARGV[2])\n\nlocal count = redis.call('INCR', key)\nif count == 1 then\n    redis.call('EXPIRE', key, 60)\nend\n\nif count <= limit then\n    return 1\nelse\n    return 0\nend\n```\n\n## 滑动窗口改进\n\n```lua\n-- 使用多个小窗口模拟滑动窗口\nlocal key_prefix = KEYS[1]\nlocal limit = tonumber(ARGV[2])\nlocal now = tonumber(ARGV[1])\nlocal total = 0\n\nfor i = 0, 5 do\n    local sub_key = key_prefix .. ':' .. (now - i * 10)\n    local count = redis.call('GET', sub_key) or 0\n    total = total + tonumber(count)\nend\n\nif total < limit then\n    local current_key = key_prefix .. ':' .. now\n    redis.call('INCR', current_key)\n    redis.call('EXPIRE', current_key, 60)\n    return 1\nelse\n    return 0\nend\n```\n\n## Python实现\n\n```python\nimport time\nimport redis\n\ndef is_allowed(user_id, limit=100, window=60):\n    r = redis.Redis()\n    key = f'rate_limit:user:{user_id}:{int(time.time()) // window}'\n    \n    count = r.incr(key)\n    if count == 1:\n        r.expire(key, window)\n    \n    return count <= limit\n```\n\n## 注意事项\n\n- 固定窗口存在临界点问题（窗口切换时可能通过2倍流量）\n- 滑动窗口更平滑但实现复杂\n- 考虑分布式环境下的计数准确性\n- 合理设置窗口大小和限制数量",
+    "tags": ["分布式限流", "计数器", "API限流"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-027",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "如何使用Redis实现分布式限流的滑动窗口？请给出完整实现。",
+    "answer": "## 核心概念\n\n滑动窗口限流通过维护时间窗口内的请求记录，实现更精确的限流控制。\n\n## 完整Lua脚本\n\n```lua\n-- KEYS[1]: 限流key\n-- ARGV[1]: 窗口大小（毫秒）\n-- ARGV[2]: 最大请求数\n-- ARGV[3]: 当前时间戳（毫秒）\n-- ARGV[4]: 请求唯一标识\n\nlocal key = KEYS[1]\nlocal window = tonumber(ARGV[1])\nlocal limit = tonumber(ARGV[2])\nlocal now = tonumber(ARGV[3])\nlocal uuid = ARGV[4]\n\n-- 移除窗口外的请求\nredis.call('ZREMRANGEBYSCORE', key, 0, now - window)\n\n-- 获取当前窗口内的请求数\nlocal count = redis.call('ZCARD', key)\n\nif count < limit then\n    redis.call('ZADD', key, now, uuid)\n    redis.call('PEXPIRE', key, window)\n    return {1, limit - count - 1}\nelse\n    local oldest = redis.call('ZRANGE', key, 0, 0, 'WITHSCORES')\n    local retry_after = oldest[2] and (tonumber(oldest[2]) + window - now) or window\n    return {0, 0, retry_after}\nend\n```\n\n## Java实现\n\n```java\npublic class SlidingWindowRateLimiter {\n    private StringRedisTemplate redis;\n    private DefaultRedisScript<List> script;\n    \n    public RateResult isAllowed(String key, int window, int limit) {\n        List<Long> result = redis.execute(\n            script,\n            Collections.singletonList(key),\n            String.valueOf(window),\n            String.valueOf(limit),\n            String.valueOf(System.currentTimeMillis()),\n            UUID.randomUUID().toString()\n        );\n        \n        boolean allowed = result.get(0) == 1L;\n        long remaining = result.get(1);\n        return new RateResult(allowed, remaining);\n    }\n}\n```\n\n## 性能优化\n\n```lua\n-- 使用Hash代替ZSet减少内存占用\nlocal window_key = math.floor(now / window)\nlocal count = redis.call('HINCRBY', key, window_key, 1)\n\nif count == 1 then\n    redis.call('EXPIRE', key, window / 1000)\nend\n\nreturn count <= limit\n```\n\n## 注意事项\n\n- 窗口大小和限制数量需要根据业务调整\n- 考虑分布式环境下的时钟同步\n- 监控限流效果，及时调整参数\n- 处理好限流后的降级策略",
+    "tags": ["分布式限流", "滑动窗口", "完整实现"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-028",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "如何使用Redis实现延迟队列？ZSet实现的原理是什么？",
+    "answer": "## 核心概念\n\n延迟队列用于处理需要延迟执行的任务，Redis的ZSet可以很好地实现延迟队列。\n\n## ZSet实现原理\n\n- 使用ZSet的score存储任务的执行时间戳\n- 成员存储任务数据\n- 通过轮询获取到期的任务\n\n## 生产者\n\n```redis\n# 添加延迟任务\nZADD delay:queue 1706745600000 \"task:order:1001:cancel\"\nZADD delay:queue 1706745660000 \"task:order:1002:remind\"\n```\n\n## 消费者（Lua脚本保证原子性）\n\n```lua\nlocal tasks = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, 10)\nfor i, task in ipairs(tasks) do\n    redis.call('ZREM', KEYS[1], task)\nend\nreturn tasks\n```\n\n## Python完整实现\n\n```python\nimport time\nimport redis\nimport json\n\ndef add_delay_task(queue, task_data, delay_seconds):\n    execute_time = int(time.time() * 1000) + delay_seconds * 1000\n    redis.zadd(queue, {json.dumps(task_data): execute_time})\n\ndef consume_delay_queue(queue):\n    while True:\n        now = int(time.time() * 1000)\n        lua = \"\"\"\n        local tasks = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, 10)\n        for i, task in ipairs(tasks) do\n            redis.call('ZREM', KEYS[1], task)\n        end\n        return tasks\n        \"\"\"\n        tasks = redis.eval(lua, 1, queue, now)\n        for task in tasks:\n            process_task(json.loads(task))\n        time.sleep(0.1)\n```\n\n## 应用场景\n\n- 订单超时取消\n- 延迟通知\n- 定时任务调度\n- 优惠券过期提醒\n\n## 注意事项\n\n- 消费者需要轮询或使用Redis的键空间通知\n- 避免频繁轮询导致性能问题\n- 考虑任务执行失败的重试机制\n- 使用Lua脚本保证原子性",
+    "tags": ["延迟队列", "ZSet", "任务调度"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-029",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "什么是延迟队列的Bucket？如何实现？",
+    "answer": "## 核心概念\n\nBucket是延迟队列的优化方案，将任务按时间分桶存储，减少轮询的开销。\n\n## 传统方案的问题\n\n```redis\n# 传统ZSet方案\n# 问题：轮询时需要扫描整个ZSet\n# 当任务量大时，性能下降\nZRANGEBYSCORE delay_queue 0 <current_timestamp>\n```\n\n## Bucket实现\n\n### 1. 分桶策略\n\n```redis\n# 按分钟分桶\n# bucket_key = delay_queue:{minute_timestamp}\n\ndelay_queue:1704067200  -- 2024-01-01 00:00:00\ndelay_queue:1704067260  -- 2024-01-01 00:01:00\n```\n\n### 2. 添加任务\n\n```lua\nlocal minute = math.floor(ARGV[1] / 60) * 60\nlocal bucket_key = KEYS[1] .. ':' .. minute\n\nredis.call('ZADD', bucket_key, ARGV[1], ARGV[2])\nredis.call('EXPIRE', bucket_key, 120)  -- 2分钟后过期\n```\n\n### 3. 获取任务\n\n```lua\nlocal current_minute = math.floor(ARGV[1] / 60) * 60\nlocal prev_minute = current_minute - 60\n\n-- 扫描当前和前一个桶\nlocal tasks1 = redis.call('ZRANGEBYSCORE', KEYS[1]..':'..prev_minute, 0, ARGV[1])\nlocal tasks2 = redis.call('ZRANGEBYSCORE', KEYS[1]..':'..current_minute, 0, ARGV[1])\n\n-- 合并结果并删除\nfor i, task in ipairs(tasks1) do\n    redis.call('ZREM', KEYS[1]..':'..prev_minute, task)\nend\nfor i, task in ipairs(tasks2) do\n    redis.call('ZREM', KEYS[1]..':'..current_minute, task)\nend\n\nlocal result = {}\nfor i, v in ipairs(tasks1) do table.insert(result, v) end\nfor i, v in ipairs(tasks2) do table.insert(result, v) end\nreturn result\n```\n\n## 优化点\n\n- 桶大小需要根据任务量调整（分钟/小时）\n- 设置合理的过期时间，避免内存泄漏\n- 避免桶过大导致扫描慢\n- 避免桶过小导致桶数量过多\n\n## 注意事项\n\n- 考虑跨桶的任务处理\n- 空桶需要及时清理\n- 监控各桶的任务分布",
+    "tags": ["延迟队列", "Bucket", "性能优化"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-030",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "如何使用Redis实现排行榜？ZSet有什么优势？",
+    "answer": "## 核心概念\n\nRedis的ZSet（有序集合）天然支持排行榜功能，通过score存储分数，自动排序。\n\n## 基本实现\n\n```redis\n# 添加玩家分数\nZADD leaderboard 1000 player1\nZADD leaderboard 1500 player2\nZADD leaderboard 800 player3\n\n# 更新分数\nZINCRBY leaderboard 100 player1\n\n# 获取排名（从高到低）\nZREVRANGE leaderboard 0 9 WITHSCORES\n\n# 获取玩家排名\nZREVRANK leaderboard player1\n\n# 获取玩家分数\nZSCORE leaderboard player1\n```\n\n## 排行榜功能\n\n```redis\n# 获取前10名\nZREVRANGE leaderboard 0 9 WITHSCORES\n\n# 获取玩家排名（从0开始）\nZREVRANK leaderboard player1\n\n# 获取玩家分数\nZSCORE leaderboard player1\n\n# 分页获取\nZREVRANGE leaderboard 0 9 WITHSCORES    -- 第1页\nZREVRANGE leaderboard 10 19 WITHSCORES  -- 第2页\n```\n\n## 实时更新\n\n```redis\n# 更新分数（原子操作）\nZINCRBY leaderboard 50 player1\n\n# 批量更新\nZADD leaderboard 1200 player1 1800 player2\n```\n\n## 分数相同处理\n\n```redis\n# 使用复合分数：分数 * 10000000000 + (MAX_TIME - 时间戳)\n# 分数高的排前面，分数相同则先达到的排前面\nZADD leaderboard 10000000092 \"user:1001\"\n```\n\n## 应用场景\n\n- 游戏排行榜\n- 电商销量排行\n- 社交媒体热度榜\n- 学生成绩排名\n\n## 注意事项\n\n- ZSet的score是浮点数，注意精度问题\n- 大量数据时考虑分片\n- 定期清理过期数据\n- ZINCRBY是原子操作，支持并发更新",
+    "tags": ["排行榜", "ZSet", "实时排序"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-031",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis排行榜如何实现分页查询？如何优化大量数据的分页？",
+    "answer": "## 核心概念\n\nRedis排行榜分页查询使用ZREVRANGE或ZRANGE命令，通过offset和count参数实现分页。\n\n## 基本分页\n\n```redis\n# 分页查询（从高到低）\nZREVRANGE leaderboard 0 9 WITHSCORES    -- 第1页\nZREVRANGE leaderboard 10 19 WITHSCORES  -- 第2页\nZREVRANGE leaderboard 20 29 WITHSCORES  -- 第3页\n```\n\n## 大量数据优化\n\n### 1. 游标分页\n\n```redis\n# 获取上一页的最后一名分数\nZSCORE leaderboard <last_member>\n\n# 获取分数小于上一页最后一名的数据\nZREVRANGEBYSCORE leaderboard <last_score> -inf LIMIT 0 10\n```\n\n### 2. 缓存热门数据\n\n```redis\n# 缓存Top 100\nSET leaderboard:top100 <cached_data>\nEXPIRE leaderboard:top100 60\n```\n\n### 3. Pipeline批量操作\n\n```python\npipe = redis.pipeline()\nfor user_id in user_ids:\n    pipe.zscore('leaderboard', user_id)\n    pipe.zrevrank('leaderboard', user_id)\nresults = pipe.execute()\n```\n\n### 4. 限制查询范围\n\n```redis\n# 限制最大查询范围\nZREVRANGE leaderboard 0 999 WITHSCORES  -- 最多返回1000条\n```\n\n## 应用示例\n\n```python\ndef get_nearby_users(user_id, range=5):\n    rank = redis.zrevrank('leaderboard', user_id)\n    start = max(0, rank - range)\n    stop = rank + range\n    return redis.zrevrange('leaderboard', start, stop, withscores=True)\n```\n\n## 注意事项\n\n- 大量数据时避免深分页（offset越大越慢）\n- 使用游标分页提高性能\n- 考虑数据一致性问题\n- 监控排行榜大小",
+    "tags": ["排行榜", "分页查询", "性能优化"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-032",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "什么是热点Key问题？如何发现热点Key？",
+    "answer": "## 核心概念\n\n热点Key是指被大量访问的Key，可能导致单个节点负载过高，影响集群性能。\n\n## 热点Key的影响\n\n- 单个节点负载过高\n- 响应延迟增加\n- 可能导致节点OOM\n- 影响集群整体性能\n\n## 发现热点Key\n\n### 1. 使用redis-cli --hotkeys\n\n```redis\n# 需要开启LFU淘汰策略\nmaxmemory-policy allkeys-lfu\n\n# 查找热点Key\nredis-cli --hotkeys\n```\n\n### 2. 使用MONITOR命令\n\n```bash\n# 监控所有命令（生产环境慎用）\nredis-cli monitor | head -n 10000 | awk '{print $4}' | sort | uniq -c | sort -rn\n```\n\n### 3. 使用OBJECT FREQ\n\n```redis\n# 查看Key的访问频率（需要LFU）\nOBJECT FREQ mykey\n```\n\n### 4. 客户端代理统计\n\n```python\nclass HotKeyDetector:\n    def __init__(self, threshold=1000):\n        self.counter = {}\n        self.threshold = threshold\n    \n    def record(self, key):\n        self.counter[key] = self.counter.get(key, 0) + 1\n    \n    def get_hot_keys(self):\n        return [k for k, v in self.counter.items() if v > self.threshold]\n```\n\n## 热点Key的判断标准\n\n- 访问频率明显高于其他Key\n- 单个Key的QPS超过节点承载能力\n- 导致节点响应延迟增加\n\n## 注意事项\n\n- 热点Key是相对的，需要根据业务场景判断\n- 监控时注意性能开销\n- 及时发现并处理热点Key\n- 考虑使用本地缓存",
+    "tags": ["热点Key", "性能监控", "问题发现"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-033",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "如何解决Redis热点Key问题？本地缓存如何实现？",
+    "answer": "## 核心概念\n\n热点Key问题可以通过本地缓存、Key拆分、读写分离等方式解决。\n\n## 解决方案\n\n### 1. 本地缓存\n\n```python\nfrom cachetools import TTLCache\n\nlocal_cache = TTLCache(maxsize=10000, ttl=10)\n\ndef get_with_local_cache(key):\n    if key in local_cache:\n        return local_cache[key]\n    value = redis.get(key)\n    local_cache[key] = value\n    return value\n```\n\n### 2. 本地缓存 + Redis（二级缓存）\n\n```python\ndef get(key):\n    # 1. 查本地缓存\n    value = local_cache.get_if_present(key)\n    if value:\n        return value\n    \n    # 2. 查Redis\n    value = redis.get(key)\n    if value:\n        local_cache.put(key, value)\n    return value\n```\n\n### 3. Key拆分\n\n```python\nimport random\n\ndef get_hot_product(product_id):\n    # 随机选择一个子Key\n    suffix = random.randint(0, 9)\n    key = f'product:{product_id}:{suffix}'\n    return redis.get(key)\n\ndef set_hot_product(product_id, value):\n    # 写入所有子Key\n    for i in range(10):\n        redis.set(f'product:{product_id}:{i}', value)\n```\n\n### 4. 读写分离\n\n```python\n# 从节点处理读请求\nreplica = get_replica_for_key(key)\nvalue = replica.get(key)\n```\n\n## 使用Caffeine（Java）\n\n```java\nLoadingCache<String, String> cache = Caffeine.newBuilder()\n    .maximumSize(10000)\n    .expireAfterWrite(60, TimeUnit.SECONDS)\n    .build(key -> redis.get(key));\n\nString value = cache.get(key);\n```\n\n## 注意事项\n\n- 本地缓存需要考虑一致性问题\n- 设置合理的过期时间\n- 监控缓存命中率\n- 避免缓存雪崩（过期时间加随机值）",
+    "tags": ["热点Key", "本地缓存", "性能优化"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-034",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "如何通过Key拆分解决热点Key问题？",
+    "answer": "## 核心概念\n\nKey拆分是将热点Key分散到多个子Key中，降低单个Key的访问压力。\n\n## 拆分策略\n\n### 1. 随机拆分\n\n```python\nimport random\n\ndef get_hot_key(base_key, shard_count=10):\n    suffix = random.randint(0, shard_count - 1)\n    return f'{base_key}:{suffix}'\n\ndef set_hot_key(base_key, value, shard_count=10):\n    for i in range(shard_count):\n        redis.set(f'{base_key}:{i}', value)\n```\n\n### 2. 一致性哈希拆分\n\n```python\nimport hashlib\n\ndef get_shard_key(base_key, user_id, shard_count=10):\n    hash_val = int(hashlib.md5(user_id.encode()).hexdigest(), 16)\n    suffix = hash_val % shard_count\n    return f'{base_key}:{suffix}'\n```\n\n### 3. 按用户拆分\n\n```redis\n# 按用户ID拆分\nSET product:1000:user:{user_id} value\n\n# 读取时根据用户ID\nGET product:1000:user:{user_id}\n```\n\n## 写入策略\n\n### 全量写入\n\n```python\ndef set_hot_product(product_id, value, shard_count=10):\n    for i in range(shard_count):\n        redis.set(f'product:{product_id}:{i}', value)\n```\n\n### 异步写入\n\n```python\n# 主Key写入后，异步同步到子Key\ndef set_with_async_sync(key, value):\n    redis.set(key, value)\n    # 发送消息到队列，后台任务同步到子Key\n    mq.publish('sync_hot_key', {'key': key, 'value': value})\n```\n\n## 读取策略\n\n```python\n# 随机读取\ndef get_random_shard(base_key, shard_count=10):\n    suffix = random.randint(0, shard_count - 1)\n    return redis.get(f'{base_key}:{suffix}')\n\n# 轮询读取\ndef get_round_robin_shard(base_key, shard_count=10):\n    counter = redis.incr(f'{base_key}:counter')\n    suffix = counter % shard_count\n    return redis.get(f'{base_key}:{suffix}')\n```\n\n## 应用场景\n\n- 热门商品详情\n- 热门新闻内容\n- 热门用户信息\n- 秒杀活动商品\n\n## 注意事项\n\n- 拆分数量需要根据访问量调整\n- 写入时需要同步所有子Key\n- 考虑数据一致性问题\n- 监控各子Key的访问分布",
+    "tags": ["热点Key", "Key拆分", "负载均衡"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-035",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "什么是大Key问题？如何发现Redis中的大Key？",
+    "answer": "## 核心概念\n\n大Key是指存储了大量数据的Key，可能导致内存占用过高、阻塞其他请求等问题。\n\n## 大Key的标准\n\n- String类型：值大于10KB\n- Hash、List、Set、ZSet：元素数量大于5000个\n- 或者内存占用大于10MB\n\n## 大Key的影响\n\n- 内存占用过高\n- 读写阻塞（DEL大Key可能阻塞几秒）\n- 网络传输慢\n- 主从同步延迟\n- 集群扩缩容困难\n\n## 发现大Key\n\n### 1. 使用redis-cli --bigkeys\n\n```bash\nredis-cli --bigkeys\n\n# 输出示例\n# Biggest string: user:1000:profile (102400 bytes)\n# Biggest list: queue:orders (500000 items)\n# Biggest set: tags:popular (100000 members)\n# Biggest zset: leaderboard (200000 members)\n```\n\n### 2. 使用MEMORY USAGE\n\n```redis\nMEMORY USAGE mykey\n# 返回字节数\n```\n\n### 3. 使用SCAN + 类型检查\n\n```python\ndef scan_big_keys(threshold=10240):\n    cursor = 0\n    big_keys = []\n    while True:\n        cursor, keys = redis.scan(cursor, count=100)\n        for key in keys:\n            size = redis.memory_usage(key)\n            if size and size > threshold:\n                big_keys.append((key, size))\n        if cursor == 0:\n            break\n    return big_keys\n```\n\n### 4. 使用redis-rdb-tools\n\n```bash\n# 分析RDB文件\nrdb --command memory dump.rdb --bytes 10240 -f memory.csv\n```\n\n## 各类型大小检查命令\n\n```redis\nSTRLEN mykey    # String长度\nHLEN mykey      # Hash字段数\nLLEN mykey      # List元素数\nSCARD mykey     # Set元素数\nZCARD mykey     # ZSet元素数\n```\n\n## 注意事项\n\n- 定期扫描大Key\n- 生产环境谨慎使用KEYS命令\n- 使用SCAN代替KEYS\n- 考虑使用redis-rdb-tools离线分析",
+    "tags": ["大Key", "性能问题", "发现方法"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-036",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "如何安全地删除Redis中的大Key？UNLINK命令有什么优势？",
+    "answer": "## 核心概念\n\n大Key删除会阻塞Redis，使用UNLINK命令可以异步删除，避免阻塞。\n\n## DEL vs UNLINK\n\n```redis\n# DEL：同步删除，会阻塞\nDEL bigkey\n# 删除大Key时可能阻塞几秒甚至几十秒\n\n# UNLINK：异步删除，不阻塞（Redis 4.0+）\nUNLINK bigkey\n# 立即返回，后台异步释放内存\n```\n\n## UNLINK实现原理\n\n```\n1. 将Key从数据库中移除（阻塞时间很短）\n2. 将Key的内存释放任务放入异步队列\n3. 后台线程异步释放内存\n```\n\n## 渐进式删除\n\n### Hash类型\n\n```python\ndef delete_hash_gradually(key, batch_size=100):\n    while True:\n        cursor, fields = redis.hscan(key, count=batch_size)\n        if fields:\n            redis.hdel(key, *fields.keys())\n        if cursor == 0:\n            break\n    redis.unlink(key)\n```\n\n### List类型\n\n```python\ndef delete_list_gradually(key, batch_size=100):\n    while redis.llen(key) > 0:\n        redis.ltrim(key, batch_size, -1)\n    redis.unlink(key)\n```\n\n### Set类型\n\n```python\ndef delete_set_gradually(key, batch_size=100):\n    while True:\n        members = redis.spop(key, batch_size)\n        if not members:\n            break\n```\n\n### ZSet类型\n\n```python\ndef delete_zset_gradually(key, batch_size=100):\n    while True:\n        members = redis.zrange(key, 0, batch_size - 1)\n        if not members:\n            break\n        redis.zrem(key, *members)\n```\n\n## 注意事项\n\n- UNLINK需要Redis 4.0+\n- 渐进式删除需要多次调用\n- 监控删除进度\n- 避免在高峰期删除大Key\n- 删除前最好先备份数据",
+    "tags": ["大Key", "UNLINK", "渐进删除"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-037",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "如何对Redis大Key进行拆分？有哪些拆分策略？",
+    "answer": "## 核心概念\n\n大Key拆分是将一个大Key分散为多个小Key，降低单个Key的大小，提高性能。\n\n## 拆分策略\n\n### 1. Hash拆分\n\n```redis\n# 原始大Hash\nHSET user:1000:profile name \"张三\" age 25 email \"zhangsan@example.com\"\n\n# 拆分为多个小Hash\nHSET user:1000:basic name \"张三\" age 25\nHSET user:1000:contact email \"zhangsan@example.com\" phone \"13800138000\"\nHSET user:1000:extra address \"北京市\"\n```\n\n### 2. List拆分\n\n```redis\n# 按时间拆分\nLPUSH queue:orders:2024-01 order1 order2\nLPUSH queue:orders:2024-02 order3 order4\n```\n\n### 3. Set拆分\n\n```redis\n# 按类别拆分\nSADD tags:article:1000:tech tag1 tag2\nSADD tags:article:1000:life tag3 tag4\n```\n\n### 4. ZSet拆分\n\n```redis\n# 按分数范围拆分\nZADD leaderboard:0-1000 500 player1\nZADD leaderboard:1001-2000 1500 player2\n```\n\n### 5. String拆分\n\n```python\nimport hashlib\n\ndef split_large_string(key, value, chunk_size=10240):\n    chunks = [value[i:i+chunk_size] for i in range(0, len(value), chunk_size)]\n    for i, chunk in enumerate(chunks):\n        redis.set(f'{key}:chunk:{i}', chunk)\n    redis.set(f'{key}:chunks', len(chunks))\n```\n\n## 在线拆分实现\n\n```python\ndef migrate_hash(key, new_key_prefix, batch_size=100):\n    cursor = 0\n    while True:\n        cursor, fields = redis.hscan(key, cursor, count=batch_size)\n        for field, value in fields.items():\n            shard = hash(field) % 10\n            redis.hset(f'{new_key_prefix}:{shard}', field, value)\n        if cursor == 0:\n            break\n    redis.unlink(key)\n```\n\n## 双写策略\n\n```python\n# 写入时同时写新旧Key\ndef write_with_migration(key, field, value):\n    redis.hset(key, field, value)\n    shard = hash(field) % 10\n    redis.hset(f'{key}:{shard}', field, value)\n\n# 读取时优先读新Key\ndef read_with_migration(key, field):\n    shard = hash(field) % 10\n    value = redis.hget(f'{key}:{shard}', field)\n    if value is None:\n        value = redis.hget(key, field)\n    return value\n```\n\n## 注意事项\n\n- 拆分需要考虑业务逻辑\n- 拆分后需要修改读写代码\n- 考虑数据一致性问题\n- 监控拆分后的性能",
+    "tags": ["大Key", "Key拆分", "数据优化"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-038",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis大Key问题会导致哪些性能问题？如何预防？",
+    "answer": "## 核心概念\n\n大Key问题会导致内存占用、网络传输、阻塞等多方面的性能问题。\n\n## 性能问题\n\n### 1. 内存问题\n\n```redis\n# 大Key占用大量内存\nMEMORY USAGE bigkey\n\n# 可能导致内存碎片\nINFO memory\n# mem_fragmentation_ratio > 1.5 表示碎片严重\n```\n\n### 2. 阻塞问题\n\n```redis\n# DEL命令阻塞\nDEL bigkey  # 可能阻塞几秒\n\n# 读取大Key阻塞\nGET bigkey  # 网络传输慢\nLRANGE biglist 0 -1  # 返回大量数据\n```\n\n### 3. 主从同步问题\n\n```redis\n# 大Key同步延迟\n# 主从数据不一致\n# 可能触发全量同步\n```\n\n### 4. 集群扩缩容问题\n\n```redis\n# 大Key迁移耗时\nMIGRATE target_host target_port bigkey 0 60000\n# 可能导致迁移超时\n```\n\n## 预防措施\n\n### 1. Key设计规范\n\n- String类型不超过10KB\n- Hash、List、Set、ZSet元素不超过5000个\n- 设置合理的过期时间\n\n### 2. 使用合适的数据结构\n\n```redis\n# 使用Hash代替String\nHSET user:1000 name \"张三\" age 25\n# 比 JSON 字符串更省内存\n```\n\n### 3. 监控告警\n\n```bash\n# 定期扫描大Key\nredis-cli --bigkeys\n\n# 监控内存使用\nredis-cli info memory\n```\n\n### 4. 代码规范\n\n```python\n# 避免一次性获取所有数据\ndef get_large_list(key, page, size):\n    return redis.lrange(key, page * size, (page + 1) * size - 1)\n```\n\n### 5. 定期清理\n\n```redis\n# 设置过期时间\nEXPIRE key 3600\n\n# 使用UNLINK删除大Key\nUNLINK bigkey\n```\n\n## 最佳实践\n\n- String类型不超过10KB\n- 集合类型元素不超过5000个\n- 定期扫描和清理大Key\n- 使用UNLINK代替DEL\n- 监控内存使用情况",
+    "tags": ["大Key", "性能问题", "预防措施"],
+    "source": "高频"
+  },
+  {
+    "id": "redis-cluster-039",
+    "module": "Redis集群",
+    "difficulty": 2,
+    "question": "Redis主从架构中，如何监控主从同步状态？",
+    "answer": "## 核心概念\n\n监控Redis主从同步状态对于保证数据一致性至关重要。\n\n## 监控命令\n\n### INFO replication\n\n```redis\n# 主节点查看\nINFO replication\n\n# 返回信息\n# role:master\n# connected_slaves:2\n# slave0:ip=192.168.1.102,port=6379,state=online,offset=12345,lag=0\n# slave1:ip=192.168.1.103,port=6379,state=online,offset=12345,lag=1\n\n# 从节点查看\nINFO replication\n\n# 返回信息\n# role:slave\n# master_host:192.168.1.101\n# master_port:6379\n# master_link_status:up\n# master_last_io_seconds_ago:1\n# master_sync_in_progress:0\n# slave_repl_offset:12345\n```\n\n### 关键指标\n\n| 指标 | 说明 | 告警阈值 |\n|------|------|----------|\n| connected_slaves | 连接的从节点数 | < 预期值 |\n| slave_lag | 从节点延迟（秒） | > 10 |\n| master_link_status | 主节点连接状态 | != up |\n| master_last_io_seconds_ago | 上次通信时间 | > 10 |\n| slave_repl_offset | 复制偏移量差距 | > 1000 |\n\n## 监控脚本\n\n```bash\n#!/bin/bash\nMASTER_HOST=\"192.168.1.101\"\nSLAVE_HOST=\"192.168.1.102\"\n\nMASTER_OFFSET=$(redis-cli -h $MASTER_HOST INFO replication | grep repl_offset | cut -d: -f2)\nSLAVE_OFFSET=$(redis-cli -h $SLAVE_HOST INFO replication | grep slave_repl_offset | cut -d: -f2)\n\nDELAY=$((MASTER_OFFSET - SLAVE_OFFSET))\n\nif [ $DELAY -gt 1000 ]; then\n    echo \"WARNING: Slave delay is $DELAY bytes\"\nfi\n```\n\n## Prometheus监控\n\n```yaml\n# 使用redis_exporter\n# 关键指标\nredis_connected_slaves\nredis_repl_offset\nredis_master_link_status\n```\n\n## 告警设置\n\n- 主节点连接从节点数下降\n- 从节点延迟超过阈值\n- 主节点连接状态异常\n- 复制偏移量差距过大\n\n## 注意事项\n\n- 定期检查同步状态\n- 设置合理的告警阈值\n- 及时处理同步异常\n- 监控网络延迟",
+    "tags": ["主从复制", "监控", "同步状态"],
+    "source": "中频"
+  },
+  {
+    "id": "redis-cluster-040",
+    "module": "Redis集群",
+    "difficulty": 3,
+    "question": "Redis Cluster中，如何处理脑裂问题？",
+    "answer": "## 核心概念\n\n脑裂（Split Brain）是指网络分区导致集群出现多个主节点，可能导致数据不一致。\n\n## 脑裂场景\n\n```\n网络分区前：\nMaster A <--> Slave A1\nMaster B <--> Slave B1\n\n网络分区后：\n分区1: Master A + Slave A1\n分区2: Master B + Slave B1\n        Slave A1 可能晋升为 Master A'\n        -> 出现两个主节点A和A1\n```\n\n## 解决方案\n\n### 1. 配置最少从节点写入\n\n```redis\n# 要求至少1个从节点连接才允许写入\nmin-replicas-to-write 1\n\n# 从节点延迟不超过10秒\nmin-replicas-max-lag 10\n```\n\n### 2. 配置超时时间\n\n```redis\n# 集群节点超时时间\ncluster-node-timeout 15000\n\n# 主节点超时后，从节点才能发起选举\n```\n\n### 3. 使用Cluster的投票机制\n\n```redis\n# 需要大多数主节点投票才能选举新主节点\n# 网络分区时，少数派分区无法选举\n```\n\n## 客户端处理\n\n```python\ndef write_with_consistency(key, value):\n    try:\n        master.set(key, value)\n        # 等待从节点同步\n        replicas = get_replicas(master)\n        for replica in replicas:\n            replica.wait(1, timeout=1000)\n    except RedisError:\n        handle_write_failure()\n```\n\n## 预防措施\n\n### 1. 网络优化\n- 使用可靠的网络\n- 避免单点故障\n- 部署在不同机房\n\n### 2. 配置优化\n\n```redis\n# 生产环境推荐配置\nmin-replicas-to-write 1\nmin-replicas-max-lag 10\ncluster-node-timeout 15000\n```\n\n### 3. 监控告警\n\n```bash\nredis-cli cluster info\nredis-cli cluster nodes\n```\n\n## 脑裂恢复\n\n1. 修复网络分区\n2. 等待集群自动恢复\n3. 检查数据一致性\n4. 修复不一致的数据\n\n## 注意事项\n\n- 脑裂是分布式系统的固有问题\n- 配置min-replicas-to-write会影响可用性\n- 需要在一致性和可用性之间权衡\n- 定期检查集群健康状态",
+    "tags": ["Cluster架构", "脑裂", "数据一致性"],
+    "source": "高频"
+  }
+]

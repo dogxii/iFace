@@ -1,0 +1,509 @@
+[
+  {
+    "id": "mysql-opt-001",
+    "module": "MySQL优化",
+    "difficulty": 1,
+    "question": "MySQL中有哪些常见的SQL优化技巧？",
+    "answer": "## 核心概念\n\nSQL优化是提升数据库性能的核心工作。主要从索引优化、查询重写、表结构优化等方面入手。\n\n## 常见优化技巧\n\n### 1. 避免SELECT *\n```sql\n-- 差\nSELECT * FROM users WHERE id = 1;\n\n-- 好\nSELECT id, name, email FROM users WHERE id = 1;\n```\n\n### 2. 使用索引覆盖\n```sql\n-- 创建覆盖索引\nCREATE INDEX idx_name_email ON users(name, email);\n\n-- 查询字段都在索引中\nSELECT name, email FROM users WHERE name = '张三';\n-- Extra: Using index\n```\n\n### 3. 避免索引失效\n```sql\n-- 差：函数导致索引失效\nSELECT * FROM users WHERE YEAR(created_at) = 2024;\n\n-- 好：范围查询\nSELECT * FROM users WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';\n```\n\n### 4. 小表驱动大表\n```sql\n-- 小结果集驱动大结果集\nSELECT * FROM orders o\nWHERE o.user_id IN (SELECT id FROM users WHERE status = 'active');\n-- users表小（active状态少），orders表大\n```\n\n### 5. 分页优化\n```sql\n-- 差：深分页\nSELECT * FROM orders LIMIT 1000000, 10;\n\n-- 好：游标分页\nSELECT * FROM orders WHERE id > 1000000 LIMIT 10;\n```\n\n## 关键要点\n\n1. **EXPLAIN分析**：每条SQL都要EXPLAIN\n2. **索引优先**：大多数优化围绕索引\n3. **避免全表扫描**：确保WHERE条件使用索引\n4. **减少数据传输**：只查需要的字段和行\n\n## 注意事项\n\n- 不要盲目加索引，索引有写入开销\n- 优化是持续过程，定期分析慢查询\n- 使用`pt-query-digest`分析慢查询日志\n- 数据量变化后需要重新评估索引",
+    "tags": [
+      "SQL优化",
+      "查询优化",
+      "最佳实践"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-002",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的分页查询？",
+    "answer": "## 核心概念\n\n分页查询的性能问题主要出现在深分页（OFFSET很大）时。优化方法包括游标分页、延迟关联、子查询优化等。\n\n## SQL示例\n\n```sql\n-- 原始分页（深分页慢）\nSELECT * FROM orders ORDER BY id LIMIT 1000000, 10;\n-- 扫描1000010行，丢弃前1000000行\n\n-- 方案1：游标分页\n-- 上一页最后一条id=1000000\nSELECT * FROM orders WHERE id > 1000000 ORDER BY id LIMIT 10;\n-- 只扫描10行\n\n-- 方案2：延迟关联\nSELECT o.* FROM orders o\nINNER JOIN (\n    SELECT id FROM orders ORDER BY id LIMIT 1000000, 10\n) t ON o.id = t.id;\n-- 子查询使用覆盖索引，只回表10次\n\n-- 方案3：子查询定位\nSELECT * FROM orders\nWHERE id >= (SELECT id FROM orders ORDER BY id LIMIT 1000000, 1)\nLIMIT 10;\n\n-- 方案4：业务限制分页深度\n-- 前端只允许翻到100页\nSELECT * FROM orders ORDER BY id LIMIT 9900, 10;\n\n-- 方案5：使用Elasticsearch\n-- 搜索类分页使用ES\n```\n\n## 方案对比\n\n| 方案 | 优点 | 缺点 |\n|------|------|------|\n| 游标分页 | 最快 | 不能跳页 |\n| 延迟关联 | 可跳页 | 需要联合索引 |\n| 子查询 | 可跳页 | 需要有序列 |\n| ES | 全功能 | 需要额外组件 |\n\n## 关键要点\n\n1. **游标分页最高效**：`WHERE id > last_id LIMIT n`\n2. **延迟关联减少回表**：先查主键再取数据\n3. **覆盖索引**：子查询使用覆盖索引\n4. **业务层面限制**：限制最大页码\n\n## 注意事项\n\n- 游标分页不能实现跳页功能\n- 延迟关联需要合适的索引\n- 大表分页考虑使用搜索引擎\n- 无限滚动加载适合游标分页",
+    "tags": [
+      "分页优化",
+      "深分页",
+      "游标分页"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-003",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的COUNT查询？",
+    "answer": "## 核心概念\n\nCOUNT查询的优化取决于统计需求。InnoDB的COUNT(*)需要遍历索引，MyISAM的COUNT(*)非常快（存储了行数）。\n\n## SQL示例\n\n```sql\n-- 基本COUNT\nSELECT COUNT(*) FROM orders;  -- 统计所有行\nSELECT COUNT(id) FROM orders;  -- 统计id非NULL的行\nSELECT COUNT(DISTINCT user_id) FROM orders;  -- 统计不重复的user_id\n\n-- 带条件的COUNT\nSELECT COUNT(*) FROM orders WHERE status = 1;\n-- 需要合适的索引\nCREATE INDEX idx_status ON orders(status);\n\n-- 使用覆盖索引优化COUNT\nEXPLAIN SELECT COUNT(*) FROM orders WHERE user_id = 100;\n-- 如果有idx_user_id索引，可以使用覆盖索引\n\n-- 近似值（大表快速统计）\nSELECT TABLE_ROWS FROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'orders';\n-- 估算值，不精确但很快\n\n-- 缓存COUNT结果\n-- 对于频繁查询的COUNT，维护计数器\nUPDATE counters SET count = count + 1 WHERE name = 'orders';\nSELECT count FROM counters WHERE name = 'orders';\n\n-- Redis缓存\n-- 使用Redis的INCR/DECR维护计数\n```\n\n## COUNT对比\n\n| 函数 | 说明 | 性能 |\n|------|------|------|\n| COUNT(*) | 统计所有行（含NULL） | InnoDB较慢 |\n| COUNT(col) | 统计col非NULL的行 | InnoDB较慢 |\n| COUNT(DISTINCT col) | 统计不重复值 | 最慢 |\n| TABLE_ROWS | 估算行数 | 最快 |\n\n## 关键要点\n\n1. **InnoDB COUNT(*)需要遍历**：比MyISAM慢\n2. **覆盖索引优化**：避免回表\n3. **近似值**：`information_schema.TABLES`\n4. **缓存计数器**：频繁COUNT的场景\n\n## 注意事项\n\n- 大表精确COUNT很慢\n- 使用缓存或近似值替代\n- `COUNT(*)`和`COUNT(1)`性能相同\n- `COUNT(col)`忽略NULL值\n- 定期更新统计信息",
+    "tags": [
+      "COUNT优化",
+      "行数统计",
+      "近似值"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-004",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的ORDER BY查询？",
+    "answer": "## 核心概念\n\nORDER BY查询可以利用索引的有序性避免额外的排序操作（filesort）。索引列的顺序和查询条件决定了是否可以利用索引排序。\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    amount DECIMAL(10,2),\n    created_at DATETIME,\n    INDEX idx_user_created (user_id, created_at)\n);\n\n-- 利用索引排序\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY created_at;\n-- Extra: 无filesort（利用索引排序）\n\n-- 不能利用索引排序\nEXPLAIN SELECT * FROM orders\nWHERE user_id = 100\nORDER BY amount;\n-- Extra: Using filesort\n\n-- 覆盖索引+排序\nCREATE INDEX idx_user_amount_created ON orders(user_id, amount, created_at);\n\nEXPLAIN SELECT user_id, amount FROM orders\nWHERE user_id = 100\nORDER BY amount;\n-- Extra: Using index\n\n-- MySQL 8.0降序索引\nCREATE INDEX idx_created_desc ON orders(created_at DESC);\n\nEXPLAIN SELECT * FROM orders ORDER BY created_at DESC;\n-- 利用降序索引\n\n-- GROUP BY + ORDER BY\nEXPLAIN SELECT user_id, COUNT(*) AS cnt\nFROM orders\nGROUP BY user_id\nORDER BY cnt DESC;\n-- Extra: Using temporary; Using filesort\n\n-- 优化：索引中包含GROUP BY列\n```\n\n## 优化策略\n\n| 策略 | 说明 |\n|------|------|\n| 利用索引 | ORDER BY列在索引中 |\n| 覆盖索引 | 避免回表 |\n| 降序索引 | MySQL 8.0支持 |\n| LIMIT | 减少排序数据量 |\n| 避免filesort | 检查Extra列 |\n\n## 关键要点\n\n1. **索引排序最快**：避免filesort\n2. **覆盖索引**：减少回表开销\n3. **LIMIT减少数据**：只排序需要的行\n4. **MySQL 8.0降序索引**：支持混合排序\n\n## 注意事项\n\n- ORDER BY方向需与索引方向一致\n- filesort不一定是性能瓶颈\n- 小数据量时filesort影响不大\n- `max_length_for_sort_data`影响排序算法\n- ORDER BY RAND()性能极差",
+    "tags": [
+      "ORDER BY优化",
+      "filesort",
+      "索引排序"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-005",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的GROUP BY查询？",
+    "answer": "## 核心概念\n\nGROUP BY查询可以利用索引避免临时表和文件排序。松散索引扫描（Loose Index Scan）是最高效的方式。\n\n## SQL示例\n\n```sql\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    status TINYINT,\n    amount DECIMAL(10,2),\n    INDEX idx_user_status (user_id, status)\n);\n\n-- 松散索引扫描\nEXPLAIN SELECT user_id, COUNT(*)\nFROM orders\nGROUP BY user_id;\n-- Extra: Using index for group-by\n\n-- 紧凑索引扫描\nEXPLAIN SELECT user_id, status, COUNT(*)\nFROM orders\nWHERE user_id = 100\nGROUP BY user_id, status;\n-- 使用idx_user_status索引\n\n-- 不能利用索引\nEXPLAIN SELECT status, COUNT(*)\nFROM orders\nGROUP BY status;\n-- Extra: Using temporary; Using filesort\n\n-- 优化：创建合适的索引\nCREATE INDEX idx_status_user ON orders(status, user_id);\n\nEXPLAIN SELECT status, COUNT(*)\nFROM orders\nGROUP BY status;\n-- Extra: Using index\n\n-- GROUP BY + ORDER BY\nEXPLAIN SELECT user_id, COUNT(*) AS cnt\nFROM orders\nGROUP BY user_id\nORDER BY cnt DESC;\n-- 无法避免filesort（聚合后的排序）\n```\n\n## 松散索引扫描 vs 紧凑索引扫描\n\n| 方式 | 条件 | 效率 |\n|------|------|------|\n| Loose Index Scan | GROUP BY列是索引前缀 | 最高 |\n| Tight Index Scan | WHERE条件使用索引 | 高 |\n\n## 关键要点\n\n1. **松散索引扫描最优**：只扫描每组的第一条\n2. **索引列顺序**：GROUP BY列需与索引顺序一致\n3. **Using index for group-by**：标识松散索引扫描\n4. **GROUP BY + ORDER BY**：很难同时利用索引\n\n## 注意事项\n\n- GROUP BY列需要与索引列顺序一致\n- `ONLY_FULL_GROUP_BY`模式影响SELECT字段\n- 小数据量时Using temporary影响不大\n- COUNT(*)可以利用覆盖索引\n- GROUP_CONCAT可能导致filesort",
+    "tags": [
+      "GROUP BY优化",
+      "松散索引扫描",
+      "Using index"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-006",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的JOIN查询？",
+    "answer": "## 核心概念\n\nJOIN优化的核心是确保被驱动表的JOIN列有索引，并选择合适的驱动表。\n\n## SQL示例\n\n```sql\nCREATE TABLE users (\n    id BIGINT PRIMARY KEY,\n    name VARCHAR(50),\n    INDEX idx_name (name)\n);\n\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    amount DECIMAL(10,2),\n    INDEX idx_user_id (user_id)\n);\n\n-- 好的JOIN（有索引）\nEXPLAIN SELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id;\n-- orders表使用idx_user_id索引\n\n-- 差的JOIN（无索引）\n-- 假设orders.user_id没有索引\nEXPLAIN SELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id;\n-- Extra: Using join buffer (Block Nested Loop)\n\n-- 优化：添加索引\nCREATE INDEX idx_user_id ON orders(user_id);\n\n-- 小表驱动大表\nEXPLAIN SELECT * FROM orders o\nJOIN users u ON o.user_id = u.id;\n-- MySQL优化器自动选择小表作驱动表\n\n-- 强制驱动表\nSELECT * FROM users u\nSTRAIGHT_JOIN orders o ON u.id = o.user_id;\n-- 强制users为驱动表\n\n-- 覆盖索引优化JOIN\nEXPLAIN SELECT o.user_id, o.amount\nFROM orders o\nJOIN users u ON o.user_id = u.id;\n-- 如果idx_user_id覆盖user_id和amount\n\n-- Hash Join（MySQL 8.0.18+）\n-- 无索引的等值JOIN自动使用Hash Join\n```\n\n## JOIN算法\n\n| 算法 | 条件 | 性能 |\n|------|------|------|\n| Index NLJ | 被驱动表有索引 | 最好 |\n| BNL | 被驱动表无索引 | 差 |\n| Hash Join | MySQL 8.0.18+等值JOIN | 较好 |\n\n## 关键要点\n\n1. **被驱动表JOIN列必须有索引**\n2. **小表驱动大表**：优化器自动选择\n3. **Hash Join**：MySQL 8.0.18+自动使用\n4. **覆盖索引**：减少JOIN时的回表\n\n## 注意事项\n\n- JOIN列数据类型必须一致\n- 字符集不一致导致索引失效\n- 多表JOIN时注意驱动表选择\n- `join_buffer_size`影响BNL性能\n- 使用EXPLAIN确认JOIN是否使用索引",
+    "tags": [
+      "JOIN优化",
+      "NLJ",
+      "Hash Join"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-007",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的子查询？",
+    "answer": "## 核心概念\n\n子查询可能性能较差，特别是关联子查询。通常可以将子查询改写为JOIN来优化。\n\n## SQL示例\n\n```sql\n-- 差：IN子查询\nSELECT * FROM orders\nWHERE user_id IN (SELECT id FROM users WHERE status = 'active');\n\n-- 好：改写为JOIN\nSELECT o.* FROM orders o\nJOIN users u ON o.user_id = u.id\nWHERE u.status = 'active';\n\n-- 差：EXISTS子查询\nSELECT * FROM orders o\nWHERE EXISTS (\n    SELECT 1 FROM users u\n    WHERE u.id = o.user_id AND u.status = 'active'\n);\n\n-- 好：改写为JOIN\nSELECT DISTINCT o.* FROM orders o\nJOIN users u ON o.user_id = u.id\nWHERE u.status = 'active';\n\n-- 差：关联子查询\nSELECT o.*,\n    (SELECT u.name FROM users u WHERE u.id = o.user_id) AS user_name\nFROM orders o;\n\n-- 好：LEFT JOIN\nSELECT o.*, u.name AS user_name\nFROM orders o\nLEFT JOIN users u ON o.user_id = u.id;\n\n-- 差：派生表（FROM子查询）\nSELECT * FROM (\n    SELECT user_id, SUM(amount) AS total\n    FROM orders\n    GROUP BY user_id\n) t\nWHERE t.total > 1000;\n\n-- 好：使用CTE（MySQL 8.0+）\nWITH user_totals AS (\n    SELECT user_id, SUM(amount) AS total\n    FROM orders\n    GROUP BY user_id\n)\nSELECT * FROM user_totals WHERE total > 1000;\n```\n\n## 优化对比\n\n| 原始写法 | 优化写法 | 原因 |\n|----------|----------|------|\n| IN子查询 | JOIN | MySQL优化器可能将IN转为JOIN |\n| EXISTS子查询 | JOIN | 减少子查询执行次数 |\n| 标量子查询 | LEFT JOIN | 避免每行执行子查询 |\n| 派生表 | CTE | 提高可读性，可能优化执行 |\n\n## 关键要点\n\n1. **JOIN通常优于子查询**：优化器可以更好地优化\n2. **关联子查询性能差**：外层每行执行一次\n3. **MySQL会自动优化**：某些子查询会被转为JOIN\n4. **CTE提高可读性**：MySQL 8.0+支持\n\n## 注意事项\n\n- 不是所有子查询都需要改写\n- 使用EXPLAIN对比优化前后的执行计划\n- `IN`子查询结果集过大时改用JOIN\n- `NOT EXISTS`通常比`NOT IN`性能好（NULL安全）\n- 某些场景子查询更直观",
+    "tags": [
+      "子查询优化",
+      "JOIN替代",
+      "查询重写"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-008",
+    "module": "MySQL优化",
+    "difficulty": 3,
+    "question": "什么是分库分表？有哪些策略？",
+    "answer": "## 核心概念\n\n分库分表是将数据分散到多个数据库或多张表中，解决单库单表的数据量和性能瓶颈。\n\n## 分片策略\n\n### 垂直分库\n按业务模块拆分到不同数据库。\n```\n用户库：users, user_profiles\n订单库：orders, order_items\n商品库：products, categories\n```\n\n### 垂直分表\n将大表的列拆分到多张表。\n```\nusers表（热数据）：id, name, email\nuser_profiles表（冷数据）：user_id, bio, avatar\n```\n\n### 水平分表\n按行拆分到多张表。\n```\norders_0: id % 4 = 0\norders_1: id % 4 = 1\norders_2: id % 4 = 2\norders_3: id % 4 = 3\n```\n\n### 水平分库\n按行拆分到多个数据库。\n```\ndb_0: user_id % 4 = 0\n...\ndb_3: user_id % 4 = 3\n```\n\n## SQL示例\n\n```sql\n-- 水平分表\nCREATE TABLE orders_0 LIKE orders;\nCREATE TABLE orders_1 LIKE orders;\nCREATE TABLE orders_2 LIKE orders;\nCREATE TABLE orders_3 LIKE orders;\n\n-- 路由规则：id % 4\nINSERT INTO orders_0 VALUES (...);  -- id % 4 = 0\n\n-- 查询需要访问所有分表\nSELECT * FROM orders_0 WHERE user_id = 100\nUNION ALL\nSELECT * FROM orders_1 WHERE user_id = 100\nUNION ALL\nSELECT * FROM orders_2 WHERE user_id = 100\nUNION ALL\nSELECT * FROM orders_3 WHERE user_id = 100;\n\n-- 分片键选择\n-- user_id: 适合按用户查询\n-- order_id: 适合按订单查询\n```\n\n## 分片策略对比\n\n| 策略 | 优点 | 缺点 |\n|------|------|------|\n| 垂直分库 | 业务隔离 | 跨库JOIN困难 |\n| 垂直分表 | 热冷分离 | 需要JOIN |\n| 水平分表 | 减少单表数据量 | 跨表查询困难 |\n| 水平分库 | 分散压力 | 分布式事务 |\n\n## 关键要点\n\n1. **单表超过500万行考虑分表**\n2. **分片键选择很重要**：影响查询路由\n3. **避免跨分片JOIN**：性能差\n4. **分布式事务**：分库后需要考虑\n\n## 注意事项\n\n- 分库分表增加系统复杂度\n- 跨分片查询需要聚合\n- 分片键选择影响查询效率\n- 使用ShardingSphere等中间件\n- 非必要不分库分表",
+    "tags": [
+      "分库分表",
+      "水平拆分",
+      "垂直拆分"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-009",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "什么是读写分离？如何实现？",
+    "answer": "## 核心概念\n\n读写分离是将读操作和写操作分别发送到不同的数据库实例。主库处理写操作，从库处理读操作，提升整体吞吐量。\n\n## 架构图示\n\n```\n应用层\n  ↓\n中间件（MyCat/ShardingSphere/ProxySQL）\n  ↓           ↓\n主库（写）   从库（读）\n  ↓\n主从复制\n```\n\n## 实现方式\n\n### 1. 应用层实现\n```java\n// 代码中手动路由\nif (isRead) {\n    dataSource = slaveDataSource;\n} else {\n    dataSource = masterDataSource;\n}\n```\n\n### 2. 中间件实现\n```yaml\n# ShardingSphere配置\ndataSources:\n  master:\n    url: jdbc:mysql://master:3306/db\n  slave0:\n    url: jdbc:mysql://slave0:3306/db\n  slave1:\n    url: jdbc:mysql://slave1:3306/db\n\nrules:\n  - !READWRITE_SPLITTING\n    dataSources:\n      ds:\n        writeDataSourceName: master\n        readDataSourceNames:\n          - slave0\n          - slave1\n```\n\n### 3. ProxySQL配置\n```sql\n-- 添加后端MySQL实例\nINSERT INTO mysql_servers (hostgroup_id, hostname, port)\nVALUES (10, 'master', 3306);  -- 写组\nINSERT INTO mysql_servers (hostgroup_id, hostname, port)\nVALUES (20, 'slave', 3306);   -- 读组\n\n-- 配置路由规则\nINSERT INTO mysql_query_rules (rule_id, match_pattern, destination_hostgroup)\nVALUES (1, '^SELECT.*FOR UPDATE', 10),  -- 写\n       (2, '^SELECT', 20);              -- 读\n```\n\n## 关键要点\n\n1. **主库写从库读**：分散压力\n2. **主从复制延迟**：需要考虑数据一致性\n3. **中间件方案**：透明路由\n4. **强制走主库**：某些读需要走主库\n\n## 注意事项\n\n- 主从复制有延迟（通常毫秒级）\n- 写后立即读需要走主库\n- 从库故障时需要自动切换\n- 中间件方案比应用层更灵活\n- 连接池配置需要区分读写",
+    "tags": [
+      "读写分离",
+      "主从复制",
+      "中间件"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-010",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "MySQL主从复制的原理是什么？",
+    "answer": "## 核心概念\n\nMySQL主从复制是异步将主库的数据变更同步到从库的过程。基于binlog实现，分为三个阶段：binlog dump、relay log、SQL thread。\n\n## 复制流程\n\n```\n主库：\n1. 事务提交，写入binlog\n2. dump thread发送binlog给从库\n\n从库：\n1. IO thread接收binlog，写入relay log\n2. SQL thread读取relay log，重放SQL\n3. 数据与主库保持最终一致\n```\n\n## SQL示例\n\n```sql\n-- 主库配置\n-- my.cnf\n[mysqld]\nserver-id = 1\nlog-bin = mysql-bin\nbinlog-format = ROW\nsync-binlog = 1\n\n-- 创建复制用户\nCREATE USER 'repl'@'%' IDENTIFIED BY 'password';\nGRANT REPLICATION SLAVE ON *.* TO 'repl'@'%';\n\n-- 查看主库状态\nSHOW MASTER STATUS;\n\n-- 从库配置\n-- my.cnf\n[mysqld]\nserver-id = 2\nrelay-log = relay-bin\nread-only = ON\n\n-- 配置复制\nCHANGE MASTER TO\n    MASTER_HOST = 'master_ip',\n    MASTER_USER = 'repl',\n    MASTER_PASSWORD = 'password',\n    MASTER_LOG_FILE = 'mysql-bin.000001',\n    MASTER_LOG_POS = 154;\n\n-- 启动复制\nSTART SLAVE;\n\n-- 查看复制状态\nSHOW SLAVE STATUS\\G\n-- Slave_IO_Running: Yes\n-- Slave_SQL_Running: Yes\n\n-- GTID复制（MySQL 5.6+）\nCHANGE MASTER TO\n    MASTER_HOST = 'master_ip',\n    MASTER_USER = 'repl',\n    MASTER_PASSWORD = 'password',\n    MASTER_AUTO_POSITION = 1;\n```\n\n## 复制格式\n\n| 格式 | 说明 | 优缺点 |\n|------|------|--------|\n| STATEMENT | 记录SQL语句 | 日志小，但有函数问题 |\n| ROW | 记录行变化 | 日志大，但最可靠 |\n| MIXED | 混合模式 | 折中方案 |\n\n## 关键要点\n\n1. **基于binlog**：主库的binlog是复制的源头\n2. **异步复制**：默认异步，有延迟\n3. **ROW格式推荐**：最可靠的复制格式\n4. **GTID复制**：MySQL 5.6+的高级复制方式\n\n## 注意事项\n\n- 主从复制有延迟（通常毫秒级）\n- 从库需要设置`read-only`防止误写\n- 复制中断需要手动处理\n- GTID复制简化了故障切换\n- 半同步复制可以减少数据丢失风险",
+    "tags": [
+      "主从复制",
+      "binlog",
+      "复制原理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-011",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的大表查询？",
+    "answer": "## 核心概念\n\n大表查询优化需要从索引设计、查询重写、分页优化、读写分离等多方面入手。\n\n## SQL示例\n\n```sql\n-- 1. 确保使用索引\nEXPLAIN SELECT * FROM big_table WHERE user_id = 100;\n-- 检查type、key\n\n-- 2. 覆盖索引\nCREATE INDEX idx_user_status ON big_table(user_id, status);\nSELECT user_id, status FROM big_table WHERE user_id = 100;\n\n-- 3. 分页优化\n-- 差\nSELECT * FROM big_table LIMIT 1000000, 10;\n-- 好\nSELECT * FROM big_table WHERE id > 1000000 LIMIT 10;\n\n-- 4. 分批处理\n-- 大批量操作分批执行\nDELETE FROM big_table WHERE created_at < '2024-01-01' LIMIT 1000;\n\n-- 5. 使用汇总表\n-- 预计算统计数据\nCREATE TABLE daily_stats AS\nSELECT DATE(created_at) AS dt, COUNT(*) AS cnt, SUM(amount) AS total\nFROM big_table\nGROUP BY DATE(created_at);\n\n-- 6. 读写分离\n-- 读操作发送到从库\n\n-- 7. 分区表\nCREATE TABLE big_table (\n    id BIGINT,\n    created_at DATETIME,\n    ...\n) PARTITION BY RANGE (YEAR(created_at)) (\n    PARTITION p2023 VALUES LESS THAN (2024),\n    PARTITION p2024 VALUES LESS THAN (2025),\n    PARTITION p2025 VALUES LESS THAN (2026)\n);\n\n-- 分区裁剪\nSELECT * FROM big_table WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';\n-- 只扫描p2024分区\n\n-- 8. 使用LIMIT限制结果\nSELECT * FROM big_table WHERE user_id = 100 LIMIT 100;\n```\n\n## 优化策略\n\n| 策略 | 场景 |\n|------|------|\n| 索引优化 | 查询条件列 |\n| 覆盖索引 | 减少回表 |\n| 分页优化 | 深分页 |\n| 汇总表 | 聚合查询 |\n| 分区表 | 时间序列数据 |\n| 读写分离 | 读多写少 |\n\n## 关键要点\n\n1. **索引是基础**：确保查询使用索引\n2. **覆盖索引减少IO**：避免回表\n3. **分页优化必须做**：深分页性能差\n4. **汇总表预计算**：避免实时聚合\n\n## 注意事项\n\n- 大表加索引使用Online DDL\n- 批量操作一定要分批\n- 分区表需要合理的分区键\n- 定期分析慢查询日志\n- 大表DDL使用pt-online-schema-change",
+    "tags": [
+      "大表优化",
+      "查询优化",
+      "分区表"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-012",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的INSERT操作？",
+    "answer": "## 核心概念\n\nINSERT优化主要从批量插入、减少索引维护、调整配置参数等方面入手。\n\n## SQL示例\n\n```sql\n-- 1. 批量插入\n-- 差\nINSERT INTO users (name) VALUES ('张三');\nINSERT INTO users (name) VALUES ('李四');\nINSERT INTO users (name) VALUES ('王五');\n\n-- 好\nINSERT INTO users (name) VALUES ('张三'), ('李四'), ('王五');\n\n-- 2. LOAD DATA INFILE\nLOAD DATA INFILE '/tmp/data.csv'\nINTO TABLE users\nFIELDS TERMINATED BY ','\nLINES TERMINATED BY '\\n'\n(name, email);\n\n-- 3. 关闭自动提交\nSET autocommit = 0;\nINSERT INTO users (name) VALUES ('张三');\nINSERT INTO users (name) VALUES ('李四');\nCOMMIT;\nSET autocommit = 1;\n\n-- 4. 临时禁用索引\nALTER TABLE users DISABLE KEYS;\n-- 批量插入\nALTER TABLE users ENABLE KEYS;\n\n-- 5. 调整配置\nSET GLOBAL innodb_flush_log_at_trx_commit = 2;\nSET GLOBAL sync_binlog = 100;\n\n-- 6. 使用replace into / insert on duplicate key\nINSERT INTO users (id, name) VALUES (1, '张三')\nON DUPLICATE KEY UPDATE name = '张三';\n\n-- 7. 顺序插入（使用自增主键）\n-- UUID主键随机插入导致页分裂\n```\n\n## 性能对比\n\n| 方式 | 性能 | 说明 |\n|------|------|------|\n| 单条INSERT | 慢 | 每次都刷盘 |\n| 批量INSERT | 快 | 减少IO |\n| LOAD DATA | 最快 | 批量加载 |\n| 事务包裹 | 较快 | 减少提交次数 |\n\n## 关键要点\n\n1. **批量插入最高效**：减少网络和IO开销\n2. **LOAD DATA最快**：比INSERT快20倍\n3. **减少索引维护**：大表插入前禁用索引\n4. **顺序插入**：使用自增主键\n\n## 注意事项\n\n- 批量大小建议1000-5000条\n- LOAD DATA需要FILE权限\n- `innodb_flush_log_at_trx_commit=2`可能丢数据\n- UUID主键导致随机插入，影响性能\n- 插入后记得恢复配置",
+    "tags": [
+      "INSERT优化",
+      "批量插入",
+      "LOAD DATA"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-013",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的UPDATE和DELETE操作？",
+    "answer": "## 核心概念\n\n大批量UPDATE和DELETE操作会导致长事务、锁等待和binlog膨胀。需要分批执行并优化索引。\n\n## SQL示例\n\n```sql\n-- 大批量DELETE\n-- 差：一次性删除\nDELETE FROM logs WHERE created_at < '2024-01-01';\n-- 长事务，大量undo log\n\n-- 好：分批删除\nDELETE FROM logs WHERE created_at < '2024-01-01' LIMIT 1000;\n-- 循环执行直到影响行数为0\n\n-- 大批量UPDATE\n-- 差\nUPDATE orders SET status = 2 WHERE status = 1;\n\n-- 好：分批更新\nUPDATE orders SET status = 2 WHERE status = 1 LIMIT 1000;\n\n-- 使用索引优化WHERE条件\nCREATE INDEX idx_created_at ON logs(created_at);\nCREATE INDEX idx_status ON orders(status);\n\n-- 删除历史数据（使用分区）\nALTER TABLE logs DROP PARTITION p2023;\n-- 比DELETE快得多\n\n-- 使用pt-archiver归档\n-- pt-archiver --source h=master,D=db,t=logs \\\n--   --dest h=slave,D=db_archive,t=logs \\\n--   --where \"created_at < '2024-01-01'\" \\\n--   --limit 1000 --commit-each\n\n-- 避免锁冲突\n-- 选择低峰期执行\n-- 使用RC隔离级别减少锁范围\n```\n\n## 优化策略\n\n| 策略 | 说明 |\n|------|------|\n| 分批执行 | LIMIT限制每批大小 |\n| 索引优化 | WHERE条件使用索引 |\n| 分区删除 | DROP PARTITION比DELETE快 |\n| pt-archiver | 专业归档工具 |\n| 低峰期执行 | 减少对业务影响 |\n\n## 关键要点\n\n1. **分批执行**：每批1000-5000条\n2. **索引优化**：确保WHERE条件走索引\n3. **分区删除最快**：ALTER TABLE DROP PARTITION\n4. **pt-archiver**：专业归档工具\n\n## 注意事项\n\n- 大批量操作会导致长事务\n- DELETE不会释放空间（需要OPTIMIZE TABLE）\n- UPDATE可能产生行迁移\n- 分批执行需要应用层循环\n- 执行前先EXPLAIN确认影响范围",
+    "tags": [
+      "UPDATE优化",
+      "DELETE优化",
+      "批量操作"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-014",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用MySQL的慢查询日志？",
+    "answer": "## 核心概念\n\n慢查询日志记录执行时间超过阈值的SQL语句，是定位慢SQL的主要工具。\n\n## SQL示例\n\n```sql\n-- 查看慢查询配置\nSHOW VARIABLES LIKE 'slow_query%';\nSHOW VARIABLES LIKE 'long_query_time';\n\n-- 开启慢查询日志\nSET GLOBAL slow_query_log = ON;\nSET GLOBAL long_query_time = 1;  -- 超过1秒记录\nSET GLOBAL log_queries_not_using_indexes = ON;\n\n-- 查看慢查询日志位置\nSHOW VARIABLES LIKE 'slow_query_log_file';\n\n-- 慢查询日志分析工具\n```\n\n```bash\n# mysqldumpslow分析\nmysqldumpslow -s t -t 10 /var/log/mysql/slow.log\n# -s t: 按总时间排序\n# -t 10: 取前10条\n\n# pt-query-digest分析\npt-query-digest /var/log/mysql/slow.log\n\n# 输出示例：\n# Rank  Query ID    Response time  Calls  R/Call\n# ==== ==========  =============  =====  ======\n#    1  0xABC123    150.0000  50.0%   200   0.7500\n```\n\n## 分析步骤\n\n```\n1. 开启慢查询日志\n2. 运行一段时间收集数据\n3. 使用pt-query-digest分析TOP SQL\n4. 对每条慢SQL使用EXPLAIN\n5. 根据执行计划优化\n6. 验证优化效果\n```\n\n## 关键要点\n\n1. **long_query_time**：设置合理的阈值\n2. **pt-query-digest**：专业的分析工具\n3. **TOP SQL**：优先优化执行时间最长的SQL\n4. **EXPLAIN分析**：每条慢SQL都要EXPLAIN\n\n## 注意事项\n\n- 生产环境建议开启慢查询日志\n- `log_queries_not_using_indexes`可能产生大量日志\n- 慢查询日志会增加IO开销\n- 定期分析慢查询日志\n- `SHOW PROFILES`可以查看最近SQL的执行时间",
+    "tags": [
+      "慢查询日志",
+      "pt-query-digest",
+      "SQL分析"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-015",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用performance_schema分析性能？",
+    "answer": "## 核心概念\n\nperformance_schema是MySQL的性能监控框架，收集服务器运行时的各种性能数据。\n\n## SQL示例\n\n```sql\n-- 查看performance_schema是否开启\nSHOW VARIABLES LIKE 'performance_schema';\n\n-- 查看TOP SQL（按总时间排序）\nSELECT\n    DIGEST_TEXT,\n    COUNT_STAR AS exec_count,\n    ROUND(SUM_TIMER_WAIT / 1e12, 2) AS total_sec,\n    ROUND(AVG_TIMER_WAIT / 1e12, 4) AS avg_sec,\n    SUM_ROWS_EXAMINED AS rows_examined,\n    SUM_ROWS_SENT AS rows_sent\nFROM performance_schema.events_statements_summary_by_digest\nORDER BY SUM_TIMER_WAIT DESC\nLIMIT 10;\n\n-- 查看等待事件\nSELECT\n    EVENT_NAME,\n    COUNT_STAR,\n    ROUND(SUM_TIMER_WAIT / 1e12, 2) AS total_sec\nFROM performance_schema.events_waits_summary_global_by_event_name\nWHERE COUNT_STAR > 0\nORDER BY SUM_TIMER_WAIT DESC\nLIMIT 10;\n\n-- 查看表IO统计\nSELECT\n    OBJECT_SCHEMA,\n    OBJECT_NAME,\n    COUNT_READ,\n    COUNT_WRITE,\n    ROUND(SUM_TIMER_READ / 1e12, 2) AS read_sec,\n    ROUND(SUM_TIMER_WRITE / 1e12, 2) AS write_sec\nFROM performance_schema.table_io_waits_summary_by_table\nWHERE OBJECT_SCHEMA = 'mydb'\nORDER BY SUM_TIMER_WAIT DESC;\n\n-- 查看索引使用情况\nSELECT\n    OBJECT_SCHEMA,\n    OBJECT_NAME,\n    INDEX_NAME,\n    COUNT_FETCH,\n    COUNT_INSERT,\n    COUNT_UPDATE,\n    COUNT_DELETE\nFROM performance_schema.table_io_waits_summary_by_index_usage\nWHERE OBJECT_SCHEMA = 'mydb'\nORDER BY COUNT_FETCH DESC;\n\n-- 查看内存使用\nSELECT\n    EVENT_NAME,\n    CURRENT_COUNT_USED,\n    CURRENT_NUMBER_OF_BYTES_USED\nFROM performance_schema.memory_summary_global_by_event_name\nORDER BY CURRENT_NUMBER_OF_BYTES_USED DESC\nLIMIT 10;\n```\n\n## 常用视图\n\n| 视图 | 用途 |\n|------|------|\n| events_statements_summary_by_digest | SQL统计 |\n| events_waits_summary_global_by_event_name | 等待事件 |\n| table_io_waits_summary_by_table | 表IO统计 |\n| table_io_waits_summary_by_index_usage | 索引使用 |\n| memory_summary_global_by_event_name | 内存使用 |\n\n## 关键要点\n\n1. **TOP SQL分析**：找到最耗时的SQL\n2. **等待事件分析**：找到瓶颈所在\n3. **索引使用统计**：发现未使用的索引\n4. **内存分析**：排查内存问题\n\n## 注意事项\n\n- performance_schema默认开启\n- 大量监控数据可能影响性能\n- 重启后统计信息重置\n- `events_statements_summary_by_digest`最有用\n- 定期清理统计信息",
+    "tags": [
+      "performance_schema",
+      "性能监控",
+      "TOP SQL"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-016",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用pt-query-digest分析慢查询？",
+    "answer": "## 核心概念\n\npt-query-digest是Percona Toolkit中的慢查询分析工具，可以汇总和排序慢查询日志中的SQL。\n\n## 使用方法\n\n```bash\n# 分析慢查询日志\npt-query-digest /var/log/mysql/slow.log\n\n# 分析最近1小时的慢查询\npt-query-digest --since '1h' /var/log/mysql/slow.log\n\n# 分析特定时间范围\npt-query-digest --since '2024-06-15 10:00:00' --until '2024-06-15 11:00:00' /var/log/mysql/slow.log\n\n# 输出到文件\npt-query-digest /var/log/mysql/slow.log > report.txt\n\n# 分析binlog\nmysqlbinlog mysql-bin.000001 | pt-query-digest --type binlog\n\n# 分析general log\npt-query-digest --type genlog /var/log/mysql/general.log\n```\n\n## 输出解读\n\n```\n# Profile\n# Rank Query ID           Response time  Calls  R/Call  V/M\n# ==== ================== =============  =====  ======  ====\n#    1 0xABC123DEF456...  150.0000 50.0%    200  0.7500  0.01 SELECT orders\n#    2 0xDEF789ABC123...   80.0000 26.7%    100  0.8000  0.02 SELECT users\n#    3 0x123ABC456DEF...   70.0000 23.3%     50  1.4000  0.05 UPDATE orders\n\n# Query 1: 总时间150秒，调用200次，平均0.75秒\n# EXPLAIN: type=ALL, rows=1000000\n# 优化建议：添加索引\n```\n\n## 关键指标\n\n| 指标 | 含义 |\n|------|------|\n| Response time | 总响应时间 |\n| Calls | 调用次数 |\n| R/Call | 每次平均耗时 |\n| V/M | 方差/均值比（越稳定越小） |\n\n## 关键要点\n\n1. **关注Response time**：总时间最长的SQL优先优化\n2. **R/Call**：单次耗时长的SQL需要优化\n3. **Calls**：调用频繁的SQL即使单次快也需要优化\n4. **EXPLAIN**：对TOP SQL进行EXPLAIN分析\n\n## 注意事项\n\n- pt-query-digest需要单独安装（Percona Toolkit）\n- 分析大量日志可能需要较长时间\n- 定期分析慢查询日志\n- 结合EXPLAIN进行优化\n- 记录优化前后的性能对比",
+    "tags": [
+      "pt-query-digest",
+      "慢查询分析",
+      "Percona"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-017",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的连接配置？",
+    "answer": "## 核心概念\n\n连接配置影响数据库的并发处理能力。合理配置连接数、超时时间和连接池参数可以提升性能。\n\n## SQL示例\n\n```sql\n-- 查看连接相关配置\nSHOW VARIABLES LIKE 'max_connections';\nSHOW VARIABLES LIKE 'wait_timeout';\nSHOW VARIABLES LIKE 'interactive_timeout';\nSHOW VARIABLES LIKE 'thread_cache_size';\n\n-- 设置最大连接数\nSET GLOBAL max_connections = 500;\n\n-- 设置连接超时\nSET GLOBAL wait_timeout = 600;          -- 非交互式连接超时\nSET GLOBAL interactive_timeout = 600;   -- 交互式连接超时\n\n-- 设置线程缓存\nSET GLOBAL thread_cache_size = 64;\n\n-- 查看当前连接\nSHOW PROCESSLIST;\nSHOW STATUS LIKE 'Threads%';\n\n-- 连接池配置（HikariCP示例）\n-- spring.datasource.hikari.maximum-pool-size=20\n-- spring.datasource.hikari.minimum-idle=5\n-- spring.datasource.hikari.idle-timeout=600000\n-- spring.datasource.hikari.max-lifetime=1800000\n-- spring.datasource.hikari.connection-timeout=30000\n```\n\n## 连接参数说明\n\n| 参数 | 建议值 | 说明 |\n|------|--------|------|\n| max_connections | 500-1000 | 最大连接数 |\n| wait_timeout | 300-600 | 空闲连接超时 |\n| thread_cache_size | 64-128 | 线程缓存大小 |\n| connect_timeout | 10 | 连接建立超时 |\n\n## 关键要点\n\n1. **使用连接池**：避免频繁创建销毁连接\n2. **合理设置超时**：避免空闲连接占用资源\n3. **线程缓存**：减少线程创建开销\n4. **监控连接数**：避免连接数耗尽\n\n## 注意事项\n\n- max_connections不是越大越好\n- 连接数过多会消耗内存\n- 使用连接池管理连接\n- 定期检查SHOW PROCESSLIST\n- 长连接需要定期断开重连",
+    "tags": [
+      "连接配置",
+      "连接池",
+      "max_connections"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-018",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的内存配置？",
+    "answer": "## 核心概念\n\nMySQL的内存配置直接影响性能。Buffer Pool、Sort Buffer、Join Buffer等参数需要根据服务器内存合理设置。\n\n## SQL示例\n\n```sql\n-- Buffer Pool（最重要的参数）\nSHOW VARIABLES LIKE 'innodb_buffer_pool_size';\n-- 建议：物理内存的70-80%\nSET GLOBAL innodb_buffer_pool_size = 8 * 1024 * 1024 * 1024;  -- 8GB\n\n-- Buffer Pool实例数\nSHOW VARIABLES LIKE 'innodb_buffer_pool_instances';\n-- 多实例减少锁竞争\n\n-- 排序缓冲\nSHOW VARIABLES LIKE 'sort_buffer_size';\nSET GLOBAL sort_buffer_size = 4 * 1024 * 1024;  -- 4MB\n\n-- JOIN缓冲\nSHOW VARIABLES LIKE 'join_buffer_size';\nSET GLOBAL join_buffer_size = 4 * 1024 * 1024;  -- 4MB\n\n-- 读缓冲\nSHOW VARIABLES LIKE 'read_buffer_size';\nSHOW VARIABLES LIKE 'read_rnd_buffer_size';\n\n-- 临时表大小\nSHOW VARIABLES LIKE 'tmp_table_size';\nSHOW VARIABLES LIKE 'max_heap_table_size';\n\n-- 线程缓存\nSHOW VARIABLES LIKE 'thread_cache_size';\n\n-- 查看内存使用\nSELECT * FROM sys.memory_global_total;\nSELECT * FROM sys.memory_by_thread_by_current_bytes LIMIT 10;\n```\n\n## 内存参数建议\n\n| 参数 | 建议值 | 说明 |\n|------|--------|------|\n| innodb_buffer_pool_size | 70-80%内存 | 最重要 |\n| sort_buffer_size | 2-4MB | 排序缓冲 |\n| join_buffer_size | 2-4MB | JOIN缓冲 |\n| tmp_table_size | 64-128MB | 临时表大小 |\n| thread_cache_size | 64-128 | 线程缓存 |\n\n## 关键要点\n\n1. **Buffer Pool最重要**：占大部分内存\n2. **每个连接独立缓冲**：不是全局共享\n3. **太大浪费内存**：需要根据并发数调整\n4. **监控内存使用**：避免OOM\n\n## 注意事项\n\n- 每个会话的缓冲是独立分配的\n- sort_buffer_size设置太大会浪费内存\n- 8GB服务器的Buffer Pool建议6GB\n- 使用`sys.memory_global_total`监控内存\n- 临时表超过tmp_table_size会写磁盘",
+    "tags": [
+      "内存配置",
+      "Buffer Pool",
+      "性能调优"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-019",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的IO配置？",
+    "answer": "## 核心概念\n\nIO配置影响MySQL的读写性能。redo log刷盘策略、innodb_flush_method等参数需要根据存储类型和性能需求设置。\n\n## SQL示例\n\n```sql\n-- redo log刷盘策略\nSHOW VARIABLES LIKE 'innodb_flush_log_at_trx_commit';\n-- 0: 每秒刷盘（可能丢1秒数据）\n-- 1: 每次提交刷盘（最安全）\n-- 2: 每次提交写OS缓存\n\n-- binlog刷盘策略\nSHOW VARIABLES LIKE 'sync_binlog';\n-- 0: 由OS决定\n-- 1: 每次提交刷盘（最安全）\n-- N: 每N次提交刷盘\n\n-- 双1配置（最安全）\nSET GLOBAL innodb_flush_log_at_trx_commit = 1;\nSET GLOBAL sync_binlog = 1;\n\n-- 折中配置（性能优先）\nSET GLOBAL innodb_flush_log_at_trx_commit = 2;\nSET GLOBAL sync_binlog = 100;\n\n-- innodb_flush_method\nSHOW VARIABLES LIKE 'innodb_flush_method';\n-- fsync: 默认\n-- O_DIRECT: 绕过OS缓存（推荐SSD）\n-- O_DSYNC: 日志使用O_SYNC\n\n-- SSD推荐配置\nSET GLOBAL innodb_flush_method = 'O_DIRECT';\n\n-- redo log大小\nSHOW VARIABLES LIKE 'innodb_log_file_size';\n-- 建议：1-2GB\n\n-- IO容量\nSHOW VARIABLES LIKE 'innodb_io_capacity';\n-- HDD: 200-400\n-- SSD: 2000-10000\n\nSHOW VARIABLES LIKE 'innodb_io_capacity_max';\n-- 通常是innodb_io_capacity的2倍\n```\n\n## IO配置建议\n\n| 参数 | HDD | SSD |\n|------|-----|-----|\n| innodb_flush_log_at_trx_commit | 1 | 1或2 |\n| sync_binlog | 1 | 1或100 |\n| innodb_flush_method | fsync | O_DIRECT |\n| innodb_io_capacity | 200 | 2000 |\n| innodb_io_capacity_max | 400 | 4000 |\n\n## 关键要点\n\n1. **双1配置最安全**：每次提交都刷盘\n2. **O_DIRECT适合SSD**：绕过OS缓存\n3. **io_capacity**：告诉InnoDB磁盘IO能力\n4. **redo log大小**：影响写入性能\n\n## 注意事项\n\n- 双1配置性能最差但最安全\n- 折中配置可能丢少量数据\n- SSD建议使用O_DIRECT\n- io_capacity设置不当会影响刷脏页速度\n- redo log太小会导致频繁checkpoint",
+    "tags": [
+      "IO配置",
+      "刷盘策略",
+      "SSD优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-020",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用EXPLAIN FORMAT=JSON分析执行计划？",
+    "answer": "## 核心概念\n\nEXPLAIN FORMAT=JSON提供比传统格式更详细的执行计划信息，包括成本估算、索引使用细节等。\n\n## SQL示例\n\n```sql\n-- JSON格式EXPLAIN\nEXPLAIN FORMAT=JSON\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三';\n\n-- 输出示例（简化）：\n-- {\n--   \"query_block\": {\n--     \"select_id\": 1,\n--     \"cost_info\": { \"query_cost\": \"4.20\" },\n--     \"nested_loop\": [\n--       {\n--         \"table\": { \"table_name\": \"u\",\n--           \"access_type\": \"ref\",\n--           \"key\": \"idx_name\",\n--           \"rows_examined_per_scan\": 1,\n--           \"cost_info\": { \"read_cost\": \"1.00\" }\n--         }\n--       },\n--       {\n--         \"table\": { \"table_name\": \"o\",\n--           \"access_type\": \"ref\",\n--           \"key\": \"idx_user_id\",\n--           \"rows_examined_per_scan\": 10,\n--           \"cost_info\": { \"read_cost\": \"2.10\" }\n--         }\n--       }\n--     ]\n--   }\n-- }\n\n-- TREE格式（MySQL 8.0.16+）\nEXPLAIN FORMAT=TREE\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三';\n\n-- ANALYZE格式（MySQL 8.0.18+，实际执行）\nEXPLAIN ANALYZE\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.name = '张三';\n```\n\n## JSON关键字段\n\n| 字段 | 含义 |\n|------|------|\n| query_cost | 总查询成本 |\n| access_type | 访问类型 |\n| key | 使用的索引 |\n| rows_examined_per_scan | 每次扫描行数 |\n| read_cost | 读取成本 |\n| sort_cost | 排序成本 |\n\n## 关键要点\n\n1. **成本信息**：JSON格式包含成本估算\n2. **更详细的索引信息**：key_length等\n3. **TREE格式更直观**：MySQL 8.0.16+\n4. **ANALYZE实际执行**：显示实际时间和行数\n\n## 注意事项\n\n- JSON格式信息量大，需要工具解析\n- TREE格式更推荐使用\n- ANALYZE会实际执行查询\n- 成本是估算值，实际可能不同\n- 使用`FORMAT=TRADITIONAL`回到传统格式",
+    "tags": [
+      "EXPLAIN JSON",
+      "执行计划",
+      "成本分析"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-021",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的临时表使用？",
+    "answer": "## 核心概念\n\nMySQL在执行复杂查询时可能使用临时表。内存临时表性能好但有大小限制，超出后转为磁盘临时表。\n\n## SQL示例\n\n```sql\n-- 查看临时表配置\nSHOW VARIABLES LIKE 'tmp_table_size';\nSHOW VARIABLES LIKE 'max_heap_table_size';\n\n-- 设置临时表大小\nSET GLOBAL tmp_table_size = 128 * 1024 * 1024;  -- 128MB\nSET GLOBAL max_heap_table_size = 128 * 1024 * 1024;\n\n-- 查看临时表使用情况\nSHOW STATUS LIKE 'Created_tmp%';\n-- Created_tmp_tables: 创建的临时表数\n-- Created_tmp_disk_tables: 磁盘临时表数\n\n-- 导致临时表的操作\n-- GROUP BY\n-- DISTINCT\n-- UNION\n-- ORDER BY与GROUP BY不同列\n-- 多表UPDATE/DELETE\n\n-- 优化临时表\n-- 使用索引避免临时表\nCREATE INDEX idx_user_status ON orders(user_id, status);\n\n-- GROUP BY使用索引\nEXPLAIN SELECT user_id, COUNT(*)\nFROM orders\nGROUP BY user_id;\n-- Extra: Using index for group-by（无临时表）\n\n-- 减少临时表大小\n-- 只选择需要的列\nSELECT user_id, COUNT(*) FROM orders GROUP BY user_id;\n-- 而不是\nSELECT * FROM orders GROUP BY user_id;\n\n-- 使用UNION ALL替代UNION\nSELECT name FROM users\nUNION ALL\nSELECT name FROM admins;\n-- UNION ALL不去重，不需要临时表\n```\n\n## 临时表使用场景\n\n| 操作 | 是否使用临时表 |\n|------|---------------|\n| GROUP BY（无索引） | 是 |\n| DISTINCT | 是 |\n| UNION（去重） | 是 |\n| ORDER BY与GROUP BY不同列 | 是 |\n| GROUP BY（有索引） | 否 |\n| UNION ALL | 否 |\n\n## 关键要点\n\n1. **内存临时表性能好**：比磁盘临时表快得多\n2. **索引避免临时表**：GROUP BY使用索引\n3. **tmp_table_size**：控制内存临时表大小\n4. **Created_tmp_disk_tables**：监控磁盘临时表\n\n## 注意事项\n\n- 磁盘临时表使用MyISAM引擎\n- 每个会话独立的临时表\n- tmp_table_size和max_heap_table_size需要同时设置\n- 临时表超过大小限制自动转为磁盘\n- 使用EXPLAIN的Extra列检查是否使用临时表",
+    "tags": [
+      "临时表",
+      "tmp_table_size",
+      "Using temporary"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-022",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的文件排序（filesort）？",
+    "answer": "## 核心概念\n\nfilesort是MySQL在无法利用索引排序时使用的排序算法。分为单路排序和双路排序两种模式。\n\n## SQL示例\n\n```sql\n-- 导致filesort的操作\nEXPLAIN SELECT * FROM orders ORDER BY amount;\n-- Extra: Using filesort\n\n-- 优化：使用索引\nCREATE INDEX idx_amount ON orders(amount);\nEXPLAIN SELECT * FROM orders ORDER BY amount;\n-- 无filesort\n\n-- 查看filesort配置\nSHOW VARIABLES LIKE 'sort_buffer_size';\nSHOW VARIABLES LIKE 'max_length_for_sort_data';\n\n-- 单路排序 vs 双路排序\n-- max_length_for_sort_data默认4096字节\n-- 查询字段总长度 <= max_length_for_sort_data → 单路排序\n-- 查询字段总长度 > max_length_for_sort_data → 双路排序\n\n-- 单路排序：一次读取所有字段，排序后直接返回\n-- 双路排序：先读取排序字段排序，再回表读取其他字段\n\n-- 优化filesort\n-- 1. 减少SELECT字段（避免双路排序）\nSELECT id, amount FROM orders ORDER BY amount;\n\n-- 2. 使用LIMIT减少排序数据\nSELECT * FROM orders ORDER BY amount LIMIT 10;\n\n-- 3. 调整sort_buffer_size\nSET SESSION sort_buffer_size = 4 * 1024 * 1024;  -- 4MB\n```\n\n## 排序算法对比\n\n| 算法 | 条件 | 流程 |\n|------|------|------|\n| 单路排序 | 字段总长<=4096 | 一次读取，排序后返回 |\n| 双路排序 | 字段总长>4096 | 排序后回表读取 |\n\n## 关键要点\n\n1. **索引避免filesort**：ORDER BY列建索引\n2. **单路排序更快**：避免回表\n3. **sort_buffer_size**：影响排序性能\n4. **LIMIT减少数据**：只排序需要的行\n\n## 注意事项\n\n- filesort不一定是性能瓶颈\n- 小数据量filesort影响不大\n- sort_buffer_size太大会浪费内存\n- `max_length_for_sort_data`影响排序算法选择\n- 使用EXPLAIN检查是否使用filesort",
+    "tags": [
+      "filesort",
+      "排序优化",
+      "sort_buffer"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-023",
+    "module": "MySQL优化",
+    "difficulty": 3,
+    "question": "什么是ShardingSphere？如何使用？",
+    "answer": "## 核心概念\n\nShardingSphere是Apache开源的分布式数据库中间件，支持数据分片、读写分离、分布式事务等功能。\n\n## 核心功能\n\n| 功能 | 说明 |\n|------|------|\n| 数据分片 | 水平分库分表 |\n| 读写分离 | 主从读写分离 |\n| 分布式事务 | XA/Seata事务 |\n| 影子库 | 压测隔离 |\n| 数据加密 | 字段级加密 |\n\n## 配置示例\n\n```yaml\n# ShardingSphere-JDBC配置\n# application.yml\nspring:\n  shardingsphere:\n    datasource:\n      names: ds0, ds1\n      ds0:\n        type: com.zaxxer.hikari.HikariDataSource\n        driver-class-name: com.mysql.cj.jdbc.Driver\n        jdbc-url: jdbc:mysql://localhost:3306/db0\n        username: root\n        password: root\n      ds1:\n        type: com.zaxxer.hikari.HikariDataSource\n        driver-class-name: com.mysql.cj.jdbc.Driver\n        jdbc-url: jdbc:mysql://localhost:3306/db1\n        username: root\n        password: root\n    rules:\n      sharding:\n        tables:\n          orders:\n            actual-data-nodes: ds$->{0..1}.orders_$->{0..3}\n            table-strategy:\n              standard:\n                sharding-column: order_id\n                sharding-algorithm-name: orders-inline\n            database-strategy:\n              standard:\n                sharding-column: user_id\n                sharding-algorithm-name: db-inline\n        sharding-algorithms:\n          orders-inline:\n            type: INLINE\n            props:\n              algorithm-expression: orders_$->{order_id % 4}\n          db-inline:\n            type: INLINE\n            props:\n              algorithm-expression: ds$->{user_id % 2}\n```\n\n## 关键要点\n\n1. **透明分片**：应用无需修改SQL\n2. **多种分片策略**：哈希、范围、复合\n3. **分布式事务**：支持XA和Seata\n4. **读写分离**：自动路由读写请求\n\n## 注意事项\n\n- 分片键选择影响查询性能\n- 跨分片查询需要归并排序\n- 分布式事务有性能开销\n- ShardingSphere支持JDBC和Proxy两种模式\n- 生产环境建议使用ShardingSphere-Proxy",
+    "tags": [
+      "ShardingSphere",
+      "数据分片",
+      "中间件"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-024",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的连接池配置？",
+    "answer": "## 核心概念\n\n连接池复用数据库连接，避免频繁创建销毁的开销。合理配置连接池参数对性能至关重要。\n\n## HikariCP配置示例\n\n```yaml\n# Spring Boot配置\nspring:\n  datasource:\n    hikari:\n      # 最大连接数\n      maximum-pool-size: 20\n      # 最小空闲连接\n      minimum-idle: 5\n      # 空闲连接超时（毫秒）\n      idle-timeout: 600000\n      # 连接最大生命周期（毫秒）\n      max-lifetime: 1800000\n      # 连接超时（毫秒）\n      connection-timeout: 30000\n      # 连接测试查询\n      connection-test-query: SELECT 1\n      # 连接泄漏检测阈值\n      leak-detection-threshold: 60000\n```\n\n## 参数说明\n\n| 参数 | 建议值 | 说明 |\n|------|--------|------|\n| maximum-pool-size | 10-50 | 最大连接数 |\n| minimum-idle | 5-10 | 最小空闲连接 |\n| idle-timeout | 600000 | 空闲连接超时 |\n| max-lifetime | 1800000 | 连接最大生命周期 |\n| connection-timeout | 30000 | 获取连接超时 |\n\n## 最佳实践\n\n```\n1. maximum-pool-size计算公式：\n   最大连接数 = (CPU核心数 * 2) + 有效磁盘数\n\n2. 不要设置太大：\n   - 每个连接消耗内存\n   - MySQL连接有开销\n   - 过多连接导致上下文切换\n\n3. 定期回收空闲连接：\n   - idle-timeout控制\n   - 避免连接被服务端断开\n\n4. 连接泄漏检测：\n   - leak-detection-threshold\n   - 检测未关闭的连接\n```\n\n## 关键要点\n\n1. **连接池大小**：根据并发需求设置\n2. **空闲超时**：回收空闲连接\n3. **最大生命周期**：避免使用过期连接\n4. **连接测试**：确保连接有效\n\n## 注意事项\n\n- 连接池不是越大越好\n- MySQL默认max_connections=151\n- 连接池大小不应超过MySQL最大连接数\n- 生产环境建议使用HikariCP\n- 监控连接池使用情况",
+    "tags": [
+      "连接池",
+      "HikariCP",
+      "连接配置"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-025",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何监控MySQL的性能指标？",
+    "answer": "## 核心概念\n\nMySQL性能监控需要关注查询性能、连接状态、锁等待、Buffer Pool命中率等指标。\n\n## SQL示例\n\n```sql\n-- 查询性能\nSHOW GLOBAL STATUS LIKE 'Queries';\nSHOW GLOBAL STATUS LIKE 'Slow_queries';\nSHOW GLOBAL STATUS LIKE 'Com_select';\nSHOW GLOBAL STATUS LIKE 'Com_insert';\n\n-- 连接状态\nSHOW GLOBAL STATUS LIKE 'Threads_connected';\nSHOW GLOBAL STATUS LIKE 'Threads_running';\nSHOW GLOBAL STATUS LIKE 'Max_used_connections';\n\n-- Buffer Pool\nSHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read%';\n-- 命中率 = 1 - (reads / read_requests)\n\n-- 锁等待\nSHOW GLOBAL STATUS LIKE 'Innodb_row_lock%';\nSHOW GLOBAL STATUS LIKE 'Table_locks_waited';\n\n-- 临时表\nSHOW GLOBAL STATUS LIKE 'Created_tmp%';\n\n-- 慢查询\nSHOW GLOBAL STATUS LIKE 'Slow_queries';\n\n-- QPS和TPS计算\n-- QPS = Queries / 运行时间\n-- TPS = (Com_commit + Com_rollback) / 运行时间\n\n-- sys数据库\nSELECT * FROM sys.host_summary;\nSELECT * FROM sys.user_summary;\nSELECT * FROM sys.statement_analysis LIMIT 10;\n```\n\n## 监控工具\n\n| 工具 | 说明 |\n|------|------|\n| Prometheus + Grafana | 开源监控方案 |\n| PMM (Percona Monitoring) | 专业MySQL监控 |\n| Zabbix | 通用监控平台 |\n| MySQL Enterprise Monitor | 官方商业监控 |\n\n## 关键指标\n\n| 指标 | 含义 | 告警阈值 |\n|------|------|----------|\n| QPS | 每秒查询数 | 根据基线 |\n| TPS | 每秒事务数 | 根据基线 |\n| 命中率 | Buffer Pool命中率 | < 99% |\n| 慢查询数 | 每秒慢查询 | > 10 |\n| 连接数 | 活跃连接 | > 80%最大值 |\n\n## 关键要点\n\n1. **QPS/TPS**：核心性能指标\n2. **Buffer Pool命中率**：应超过99%\n3. **慢查询监控**：及时发现慢SQL\n4. **连接数监控**：避免连接耗尽\n\n## 注意事项\n\n- 建立性能基线，对比异常\n- 使用Prometheus + Grafana可视化\n- 设置合理的告警阈值\n- 定期分析慢查询日志\n- 关注锁等待和死锁",
+    "tags": [
+      "性能监控",
+      "QPS",
+      "TPS"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-026",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的binlog配置？",
+    "answer": "## 核心概念\n\nbinlog是MySQL主从复制和数据恢复的基础。合理配置binlog格式、大小和保留策略很重要。\n\n## SQL示例\n\n```sql\n-- 查看binlog配置\nSHOW VARIABLES LIKE 'log_bin';\nSHOW VARIABLES LIKE 'binlog_format';\nSHOW VARIABLES LIKE 'sync_binlog';\nSHOW VARIABLES LIKE 'expire_logs_days';\nSHOW VARIABLES LIKE 'max_binlog_size';\n\n-- 推荐配置\n-- my.cnf\n[mysqld]\nlog-bin = mysql-bin\nbinlog-format = ROW\nsync-binlog = 1\nexpire_logs_days = 7\nmax_binlog_size = 500M\nbinlog_cache_size = 4M\n\n-- 查看binlog列表\nSHOW BINARY LOGS;\nSHOW MASTER STATUS;\n\n-- 查看binlog事件\nSHOW BINLOG EVENTS IN 'mysql-bin.000001' LIMIT 10;\n\n-- 手动清理binlog\nPURGE BINARY LOGS BEFORE '2024-06-01 00:00:00';\nPURGE BINARY LOGS TO 'mysql-bin.000010';\n\n-- 查看binlog大小\nSHOW STATUS LIKE 'Binlog_cache%';\n```\n\n## binlog格式对比\n\n| 格式 | 内容 | 优缺点 |\n|------|------|--------|\n| STATEMENT | SQL语句 | 日志小，但有函数问题 |\n| ROW | 行变化 | 日志大，最可靠 |\n| MIXED | 混合 | 折中方案 |\n\n## 关键要点\n\n1. **ROW格式推荐**：最可靠的复制格式\n2. **sync_binlog=1**：最安全的刷盘策略\n3. **expire_logs_days**：自动清理过期binlog\n4. **max_binlog_size**：控制单个binlog大小\n\n## 注意事项\n\n- ROW格式binlog比STATEMENT大很多\n- `sync_binlog=1`会影响写入性能\n- binlog保留时间需要考虑从库延迟\n- 大事务会生成大量binlog\n- 使用mysqlbinlog工具解析binlog",
+    "tags": [
+      "binlog配置",
+      "主从复制",
+      "日志管理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-027",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的redo log配置？",
+    "answer": "## 核心概念\n\nredo log是InnoDB的预写日志，保证事务的持久性。合理配置redo log大小和刷盘策略影响写入性能。\n\n## SQL示例\n\n```sql\n-- 查看redo log配置\nSHOW VARIABLES LIKE 'innodb_log_file_size';\nSHOW VARIABLES LIKE 'innodb_log_files_in_group';\nSHOW VARIABLES LIKE 'innodb_flush_log_at_trx_commit';\nSHOW VARIABLES LIKE 'innodb_log_buffer_size';\n\n-- 推荐配置\n-- my.cnf\n[mysqld]\ninnodb_log_file_size = 1G\ninnodb_log_files_in_group = 2\ninnodb_flush_log_at_trx_commit = 1\ninnodb_log_buffer_size = 64M\n\n-- 刷盘策略\n-- innodb_flush_log_at_trx_commit:\n-- 0: 每秒刷盘（可能丢1秒数据）\n-- 1: 每次提交刷盘（最安全）\n-- 2: 每次提交写OS缓存\n\n-- 查看redo log状态\nSHOW ENGINE INNODB STATUS\\G\n-- LOG部分\n```\n\n## 配置建议\n\n| 参数 | 建议值 | 说明 |\n|------|--------|------|\n| innodb_log_file_size | 1-2G | redo log文件大小 |\n| innodb_log_files_in_group | 2-4 | redo log文件数 |\n| innodb_flush_log_at_trx_commit | 1 | 刷盘策略 |\n| innodb_log_buffer_size | 64M | redo log缓冲区 |\n\n## 关键要点\n\n1. **redo log大小影响性能**：太小会导致频繁checkpoint\n2. **flush策略决定安全性**：1最安全，0最快\n3. **总大小 = file_size * files_in_group**\n4. **redo log是循环写入**：空间有限\n\n## 注意事项\n\n- innodb_log_file_size修改需要重启MySQL\n- redo log太大恢复时间长\n- redo log太小影响写入性能\n- 生产环境建议`innodb_flush_log_at_trx_commit=1`\n- 双1配置是最安全的选择",
+    "tags": [
+      "redo log",
+      "刷盘策略",
+      "持久性"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-028",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用MySQL的查询缓存？（MySQL 8.0之前）",
+    "answer": "## 核心概念\n\n查询缓存（Query Cache）将SELECT语句的结果缓存在内存中，相同查询直接返回缓存结果。MySQL 8.0已移除此功能。\n\n## SQL示例\n\n```sql\n-- 查看查询缓存配置（MySQL 5.7及之前）\nSHOW VARIABLES LIKE 'query_cache_type';\nSHOW VARIABLES LIKE 'query_cache_size';\n\n-- 开启查询缓存\nSET GLOBAL query_cache_type = 1;\nSET GLOBAL query_cache_size = 1048576;  -- 1MB\n\n-- 查看缓存状态\nSHOW STATUS LIKE 'Qcache%';\n-- Qcache_hits: 缓存命中次数\n-- Qcache_inserts: 缓存插入次数\n-- Qcache_not_cached: 未缓存的查询数\n\n-- 命中率\n-- Qcache_hits / (Qcache_hits + Qcache_not_cached)\n\n-- 手动清理缓存\nRESET QUERY CACHE;\nFLUSH QUERY CACHE;\n\n-- SQL_CACHE提示\nSELECT SQL_CACHE * FROM users WHERE id = 1;\n\n-- SQL_NO_CACHE提示\nSELECT SQL_NO_CACHE * FROM users WHERE id = 1;\n```\n\n## 为什么MySQL 8.0移除查询缓存\n\n| 原因 | 说明 |\n|------|------|\n| 表有更新则缓存失效 | 命中率低 |\n| 全局锁竞争 | 影响并发 |\n| 内存管理开销 | 维护成本高 |\n| 应用层缓存更好 | Redis等 |\n\n## 关键要点\n\n1. **MySQL 8.0已移除**：不再支持查询缓存\n2. **表更新导致失效**：命中率通常很低\n3. **全局锁影响并发**：高并发下反而更慢\n4. **使用应用层缓存**：Redis等方案更好\n\n## 注意事项\n\n- 生产环境不建议使用查询缓存\n- MySQL 8.0之前的版本可以考虑禁用\n- 应用层缓存（Redis）更灵活\n- 读多写少的场景可能有一定效果\n- 查询缓存对prepared statements无效",
+    "tags": [
+      "查询缓存",
+      "Query Cache",
+      "MySQL 8.0"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-029",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的表结构设计？",
+    "answer": "## 核心概念\n\n良好的表结构设计是性能优化的基础。包括选择合适的数据类型、范式与反范式的权衡、字段设计等。\n\n## SQL示例\n\n```sql\n-- 1. 选择合适的数据类型\n-- 差\nCREATE TABLE users (\n    id BIGINT,              -- 太大\n    name VARCHAR(1000),     -- 太大\n    status VARCHAR(20),     -- 应该用TINYINT\n    created_at VARCHAR(20)  -- 应该用DATETIME\n);\n\n-- 好\nCREATE TABLE users (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n    name VARCHAR(50),\n    status TINYINT DEFAULT 0,\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n);\n\n-- 2. 避免NULL（尽量）\n-- 差\nCREATE TABLE orders (\n    id INT,\n    amount DECIMAL(10,2) NULL,\n    status TINYINT NULL\n);\n\n-- 好\nCREATE TABLE orders (\n    id INT,\n    amount DECIMAL(10,2) NOT NULL DEFAULT 0,\n    status TINYINT NOT NULL DEFAULT 0\n);\n\n-- 3. 主键设计\n-- 差：UUID\nCREATE TABLE users (\n    id CHAR(36) PRIMARY KEY  -- 无序，导致页分裂\n);\n\n-- 好：自增ID\nCREATE TABLE users (\n    id BIGINT AUTO_INCREMENT PRIMARY KEY\n);\n\n-- 4. 字段适当冗余（反范式）\n-- 订单表冗余用户名称，避免JOIN\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    user_id INT,\n    user_name VARCHAR(50),  -- 冗余字段\n    amount DECIMAL(10,2)\n);\n\n-- 5. 分表设计\n-- 热冷数据分离\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(50),  -- 热数据\n    email VARCHAR(100)\n);\n\nCREATE TABLE user_profiles (\n    user_id INT PRIMARY KEY,\n    bio TEXT,          -- 冷数据\n    avatar VARCHAR(500)\n);\n```\n\n## 设计原则\n\n| 原则 | 说明 |\n|------|------|\n| 选小类型 | 够用就好 |\n| 避免NULL | 默认值替代 |\n| 顺序主键 | 自增ID |\n| 适当冗余 | 减少JOIN |\n| 热冷分离 | 提升性能 |\n\n## 关键要点\n\n1. **数据类型要小**：节省存储和内存\n2. **主键要有序**：避免页分裂\n3. **适当反范式**：提升查询性能\n4. **VARCHAR长度合理**：不要随意给255\n\n## 注意事项\n\n- 数据类型影响索引大小\n- UUID主键导致随机IO\n- 冗余字段增加维护成本\n- 大字段考虑拆分到扩展表\n- 枚举值使用TINYINT而非VARCHAR",
+    "tags": [
+      "表结构设计",
+      "数据类型",
+      "主键设计"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-030",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用MySQL的分区表？",
+    "answer": "## 核心概念\n\n分区表将一张大表的数据分散到多个物理分区中，可以提升查询性能和管理效率。\n\n## SQL示例\n\n```sql\n-- 按范围分区（RANGE）\nCREATE TABLE orders (\n    id BIGINT,\n    user_id INT,\n    amount DECIMAL(10,2),\n    created_at DATETIME,\n    PRIMARY KEY (id, created_at)\n) PARTITION BY RANGE (YEAR(created_at)) (\n    PARTITION p2023 VALUES LESS THAN (2024),\n    PARTITION p2024 VALUES LESS THAN (2025),\n    PARTITION p2025 VALUES LESS THAN (2026),\n    PARTITION pmax VALUES LESS THAN MAXVALUE\n);\n\n-- 按哈希分区（HASH）\nCREATE TABLE users (\n    id BIGINT,\n    name VARCHAR(50),\n    PRIMARY KEY (id)\n) PARTITION BY HASH (id) PARTITIONS 4;\n\n-- 按列表分区（LIST）\nCREATE TABLE regional_data (\n    id BIGINT,\n    region VARCHAR(20),\n    data VARCHAR(100)\n) PARTITION BY LIST COLUMNS (region) (\n    PARTITION p_north VALUES IN ('北京', '天津', '河北'),\n    PARTITION p_south VALUES IN ('上海', '江苏', '浙江'),\n    PARTITION p_west VALUES IN ('四川', '重庆', '云南')\n);\n\n-- 分区裁剪（只扫描相关分区）\nEXPLAIN SELECT * FROM orders\nWHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';\n-- 只扫描p2024分区\n\n-- 管理分区\nALTER TABLE orders ADD PARTITION (PARTITION p2026 VALUES LESS THAN (2027));\nALTER TABLE orders DROP PARTITION p2023;  -- 快速删除分区数据\nALTER TABLE orders REORGANIZE PARTITION pmax INTO (\n    PARTITION p2026 VALUES LESS THAN (2027),\n    PARTITION pmax VALUES LESS THAN MAXVALUE\n);\n```\n\n## 分区类型\n\n| 类型 | 适用场景 |\n|------|----------|\n| RANGE | 按时间范围 |\n| HASH | 均匀分布 |\n| LIST | 按枚举值 |\n| KEY | 类似HASH |\n\n## 关键要点\n\n1. **分区裁剪**：只扫描相关分区\n2. **快速删除**：DROP PARTITION比DELETE快\n3. **主键必须包含分区键**\n4. **全局索引和分区索引**\n\n## 注意事项\n\n- 分区表的主键必须包含分区键\n- 分区数不要太多（建议不超过100）\n- 分区裁剪需要WHERE条件包含分区键\n- 跨分区查询需要扫描多个分区\n- MySQL 8.0支持自动分区管理",
+    "tags": [
+      "分区表",
+      "RANGE分区",
+      "分区裁剪"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-032",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的IN查询？",
+    "answer": "## 核心概念\n\nIN查询可以使用索引，但IN列表过大时可能影响性能。优化方法包括限制IN列表大小、使用临时表替代等。\n\n## SQL示例\n\n```sql\n-- IN查询使用索引\nEXPLAIN SELECT * FROM users WHERE id IN (1, 2, 3, 4, 5);\n-- type: range\n\n-- IN列表过大\nSELECT * FROM users WHERE id IN (1, 2, 3, ..., 10000);\n-- 可能影响性能\n\n-- 优化：分批查询\nSELECT * FROM users WHERE id IN (1, 2, 3, ..., 1000);\nSELECT * FROM users WHERE id IN (1001, 1002, ..., 2000);\n-- ...\n\n-- 使用临时表替代\nCREATE TEMPORARY TABLE tmp_ids (id INT);\nINSERT INTO tmp_ids VALUES (1), (2), (3), ...;\n\nSELECT u.* FROM users u\nJOIN tmp_ids t ON u.id = t.id;\n\n-- IN子查询优化\n-- 差\nSELECT * FROM orders\nWHERE user_id IN (SELECT id FROM users WHERE status = 'active');\n\n-- 好：改写为JOIN\nSELECT o.* FROM orders o\nJOIN users u ON o.user_id = u.id\nWHERE u.status = 'active';\n\n-- EXISTS替代IN（大子查询）\nSELECT * FROM orders o\nWHERE EXISTS (\n    SELECT 1 FROM users u\n    WHERE u.id = o.user_id AND u.status = 'active'\n);\n\n-- NOT EXISTS替代NOT IN（NULL安全）\nSELECT * FROM orders o\nWHERE NOT EXISTS (\n    SELECT 1 FROM users u\n    WHERE u.id = o.user_id\n);\n```\n\n## 优化策略\n\n| 场景 | 策略 |\n|------|------|\n| IN列表小 | 直接使用 |\n| IN列表大 | 分批或临时表 |\n| IN子查询 | JOIN替代 |\n| NOT IN | NOT EXISTS替代 |\n\n## 关键要点\n\n1. **IN可以使用索引**：range类型\n2. **IN列表不要太大**：建议不超过1000\n3. **子查询用JOIN替代**：性能更好\n4. **NOT IN有NULL陷阱**：用NOT EXISTS替代\n\n## 注意事项\n\n- IN列表过大会影响优化器选择\n- NOT IN遇到NULL返回空结果\n- 使用EXPLAIN验证索引使用情况\n- 临时表方案适合大批量数据\n- MySQL会自动将IN子查询转为JOIN",
+    "tags": [
+      "IN查询",
+      "子查询优化",
+      "NOT IN"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-033",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的LIKE查询？",
+    "answer": "## 核心概念\n\nLIKE查询中前缀匹配可以使用索引，中缀和后缀匹配会全表扫描。优化方法包括使用前缀索引、全文索引或搜索引擎。\n\n## SQL示例\n\n```sql\n-- 前缀匹配（走索引）\nEXPLAIN SELECT * FROM users WHERE name LIKE '张%';\n-- type: range\n\n-- 中缀匹配（不走索引）\nEXPLAIN SELECT * FROM users WHERE name LIKE '%三%';\n-- type: ALL\n\n-- 后缀匹配（不走索引）\nEXPLAIN SELECT * FROM users WHERE name LIKE '%三';\n-- type: ALL\n\n-- 优化方案1：反转索引（后缀匹配）\nALTER TABLE users ADD COLUMN name_reverse VARCHAR(50);\nUPDATE users SET name_reverse = REVERSE(name);\nCREATE INDEX idx_name_reverse ON users(name_reverse);\n\n-- 查询时反转\nSELECT * FROM users WHERE name_reverse LIKE REVERSE('三') || '%';\n-- 等价于 name LIKE '%三'\n\n-- 优化方案2：全文索引\nALTER TABLE users ADD FULLTEXT INDEX ft_name (name);\n\nSELECT * FROM users\nWHERE MATCH(name) AGAINST('张三' IN BOOLEAN MODE);\n\n-- 优化方案3：覆盖索引减少回表\nCREATE INDEX idx_name_email ON users(name, email);\n\nSELECT name, email FROM users WHERE name LIKE '%三%';\n-- Extra: Using index\n\n-- 优化方案4：使用搜索引擎\n-- Elasticsearch适合模糊搜索\n```\n\n## 优化策略\n\n| 场景 | 策略 |\n|------|------|\n| 前缀匹配 | 使用索引 |\n| 后缀匹配 | 反转索引 |\n| 中缀匹配 | 全文索引/ES |\n| 通用 | 覆盖索引 |\n\n## 关键要点\n\n1. **前缀匹配走索引**：`LIKE 'abc%'`\n2. **中缀不走索引**：`LIKE '%abc%'`\n3. **全文索引**：适合文本搜索\n4. **Elasticsearch**：适合复杂搜索\n\n## 注意事项\n\n- `%abc%`全表扫描，性能差\n- 全文索引不支持中文分词（需要ngram）\n- 覆盖索引可以减少回表开销\n- 大数据量的模糊搜索建议使用ES\n- 反转索引只适合固定后缀匹配",
+    "tags": [
+      "LIKE优化",
+      "全文索引",
+      "模糊查询"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-034",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的多表关联查询？",
+    "answer": "## 核心概念\n\n多表关联查询优化需要关注驱动表选择、被驱动表索引、JOIN顺序等因素。\n\n## SQL示例\n\n```sql\n-- 多表JOIN\nEXPLAIN SELECT u.name, o.amount, p.product_name\nFROM users u\nJOIN orders o ON u.id = o.user_id\nJOIN products p ON o.product_id = p.id\nWHERE u.status = 'active';\n\n-- 优化1：确保被驱动表有索引\nCREATE INDEX idx_user_id ON orders(user_id);\nCREATE INDEX idx_product_id ON orders(product_id);\n\n-- 优化2：小表驱动大表\n-- users表（active状态少）驱动orders表\n\n-- 优化3：使用STRAIGHT_JOIN强制驱动表\nSELECT * FROM users u\nSTRAIGHT_JOIN orders o ON u.id = o.user_id\nWHERE u.status = 'active';\n\n-- 优化4：减少JOIN列的数据类型长度\n-- 使用INT而非BIGINT\n-- 使用CHAR(36)而非VARCHAR(36)\n\n-- 优化5：覆盖索引\nCREATE INDEX idx_user_amount ON orders(user_id, amount);\n\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id;\n\n-- 优化6：分步查询\n-- 先查出符合条件的ID\nSELECT id FROM users WHERE status = 'active';\n\n-- 再根据ID查询详情\nSELECT u.name, o.amount\nFROM users u\nJOIN orders o ON u.id = o.user_id\nWHERE u.id IN (1, 2, 3, ...);\n\n-- 优化7：使用子查询预先过滤\nSELECT u.name, o.amount\nFROM (\n    SELECT * FROM users WHERE status = 'active'\n) u\nJOIN orders o ON u.id = o.user_id;\n```\n\n## 优化策略\n\n| 策略 | 说明 |\n|------|------|\n| 确保索引 | JOIN列必须有索引 |\n| 小表驱动 | 优化器自动选择或强制 |\n| 覆盖索引 | 减少回表 |\n| 减少列长度 | JOIN列类型要小 |\n| 分步查询 | 先查ID再查详情 |\n\n## 关键要点\n\n1. **被驱动表JOIN列必须有索引**\n2. **小表驱动大表**：减少循环次数\n3. **覆盖索引**：减少回表开销\n4. **JOIN数量不要太多**：建议不超过5个\n\n## 注意事项\n\n- 多表JOIN时优化器可能选错驱动表\n- JOIN列数据类型必须一致\n- 字符集不一致导致索引失效\n- 使用EXPLAIN确认JOIN执行计划\n- 考虑将大JOIN拆分为多个小查询",
+    "tags": [
+      "多表JOIN",
+      "驱动表",
+      "JOIN优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-035",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的索引设计？",
+    "answer": "## 核心概念\n\n索引设计是数据库性能优化的核心。需要考虑查询模式、数据分布、写入频率等因素。\n\n## SQL示例\n\n```sql\n-- 1. 分析查询模式\n-- 找出最常用的WHERE、ORDER BY、GROUP BY条件\nEXPLAIN SELECT * FROM orders WHERE user_id = 100 AND status = 1;\n\n-- 2. 选择高区分度的列\nSELECT\n    COUNT(DISTINCT user_id) / COUNT(*) AS user_id_sel,\n    COUNT(DISTINCT status) / COUNT(*) AS status_sel\nFROM orders;\n\n-- 3. 联合索引列顺序\n-- 等值查询在前，范围查询在后\nCREATE INDEX idx_user_status_created ON orders(user_id, status, created_at);\n\n-- 4. 覆盖索引\n-- 将查询字段包含在索引中\nCREATE INDEX idx_user_amount_status ON orders(user_id, amount, status);\n\n-- 5. 避免冗余索引\n-- (a, b) 已经覆盖了 (a)\n-- 不需要再创建 idx_a\n\n-- 6. 使用sys数据库检查\nSELECT * FROM sys.schema_unused_indexes WHERE object_schema = 'mydb';\nSELECT * FROM sys.schema_redundant_indexes WHERE table_schema = 'mydb';\n\n-- 7. 前缀索引（长字符串）\nCREATE INDEX idx_email_prefix ON users(email(10));\n\n-- 8. 函数索引（MySQL 8.0+）\nCREATE INDEX idx_lower_email ON users((LOWER(email)));\n\n-- 9. 索引合并优化\n-- 频繁使用OR的列，分别建索引\nCREATE INDEX idx_name ON users(name);\nCREATE INDEX idx_email ON users(email);\n\n-- 10. 定期分析和优化\nANALYZE TABLE orders;\nOPTIMIZE TABLE orders;\n```\n\n## 索引设计原则\n\n| 原则 | 说明 |\n|------|------|\n| 高区分度 | 选择性高的列优先 |\n| 等值优先 | 等值查询列放在前面 |\n| 覆盖索引 | 查询字段包含在索引中 |\n| 避免冗余 | 不创建重复索引 |\n| 控制数量 | 单表索引不超过5-6个 |\n\n## 关键要点\n\n1. **查询驱动设计**：根据实际查询设计索引\n2. **联合索引列顺序**：等值在前，范围在后\n3. **覆盖索引减少回表**\n4. **定期清理未使用索引**\n\n## 注意事项\n\n- 索引不是越多越好\n- 频繁更新的列不适合建索引\n- 大文本列使用前缀索引\n- 使用EXPLAIN验证索引效果\n- 定期检查和清理无用索引",
+    "tags": [
+      "索引设计",
+      "索引优化",
+      "联合索引"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-036",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何处理MySQL的死锁问题？",
+    "answer": "## 核心概念\n\n死锁是并发事务之间互相等待对方释放锁导致的。InnoDB自动检测死锁并回滚代价最小的事务。\n\n## SQL示例\n\n```sql\n-- 查看死锁日志\nSHOW ENGINE INNODB STATUS\\G\n\n-- 死锁相关配置\nSHOW VARIABLES LIKE 'innodb_deadlock_detect';\nSHOW VARIABLES LIKE 'innodb_lock_wait_timeout';\n\n-- 设置锁等待超时\nSET GLOBAL innodb_lock_wait_timeout = 10;\n\n-- 查看锁等待\nSELECT * FROM performance_schema.data_lock_waits;\n\n-- 查看当前锁\nSELECT * FROM performance_schema.data_locks;\n\n-- 杀掉阻塞事务\nKILL <thread_id>;\n\n-- 避免死锁的方法\n-- 1. 按固定顺序访问表和行\nBEGIN;\nSELECT * FROM users WHERE id = 1 FOR UPDATE;\nSELECT * FROM orders WHERE id = 1 FOR UPDATE;\nCOMMIT;\n\n-- 2. 保持事务短小\n-- 不要在事务中做网络请求\n\n-- 3. 使用合适的索引\n-- 避免锁升级（无索引导致表锁）\n\n-- 4. 降低隔离级别\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n-- RC级别没有间隙锁\n\n-- 5. 应用层重试\n-- 捕获死锁异常并重试\n```\n\n## 死锁处理流程\n\n```\n1. 发现死锁（超时或日志）\n2. 查看SHOW ENGINE INNODB STATUS\n3. 分析死锁原因\n4. 优化SQL或索引\n5. 应用层增加重试逻辑\n```\n\n## 关键要点\n\n1. **InnoDB自动检测**：回滚代价小的事务\n2. **SHOW ENGINE INNODB STATUS**：查看死锁日志\n3. **应用层重试**：捕获异常并重试\n4. **避免死锁**：固定顺序、短事务、合适索引\n\n## 注意事项\n\n- 死锁是正常现象，关键是如何处理\n- 频繁死锁需要优化SQL和索引\n- RC级别可以避免间隙锁导致的死锁\n- 大事务增加死锁概率\n- 应用层需要死锁重试机制",
+    "tags": [
+      "死锁处理",
+      "锁优化",
+      "重试机制"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-037",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何优化MySQL的批量操作？",
+    "answer": "## 核心概念\n\n批量操作需要分批执行，避免长事务、锁等待和binlog膨胀。\n\n## SQL示例\n\n```sql\n-- 批量插入\n-- 差：逐条插入\nINSERT INTO users (name) VALUES ('张三');\nINSERT INTO users (name) VALUES ('李四');\n\n-- 好：批量插入\nINSERT INTO users (name) VALUES ('张三'), ('李四'), ('王五'), ...;\n-- 每批1000-5000条\n\n-- 批量更新\n-- 差：一次性更新\nUPDATE orders SET status = 2 WHERE status = 1;\n\n-- 好：分批更新\nUPDATE orders SET status = 2 WHERE status = 1 LIMIT 1000;\n-- 循环执行直到影响行数为0\n\n-- 批量删除\n-- 差：一次性删除\nDELETE FROM logs WHERE created_at < '2024-01-01';\n\n-- 好：分批删除\nDELETE FROM logs WHERE created_at < '2024-01-01' LIMIT 1000;\n\n-- 使用LOAD DATA批量导入\nLOAD DATA INFILE '/tmp/data.csv'\nINTO TABLE users\nFIELDS TERMINATED BY ','\nLINES TERMINATED BY '\\n';\n\n-- 批量插入+更新\nINSERT INTO products (id, name, stock) VALUES\n(1, '手机', 100),\n(2, '平板', 50)\nON DUPLICATE KEY UPDATE stock = VALUES(stock);\n\n-- 使用事务包裹批量操作\nSET autocommit = 0;\nSTART TRANSACTION;\nINSERT INTO users (name) VALUES ('张三');\nINSERT INTO users (name) VALUES ('李四');\n-- ... 每1000条提交一次\nCOMMIT;\nSET autocommit = 1;\n```\n\n## 批量操作建议\n\n| 操作 | 批量大小 | 说明 |\n|------|----------|------|\n| INSERT | 1000-5000 | 受限于max_allowed_packet |\n| UPDATE | 1000-2000 | 避免长事务 |\n| DELETE | 1000-2000 | 避免长事务 |\n| LOAD DATA | 无限制 | 最快的方式 |\n\n## 关键要点\n\n1. **分批执行**：避免长事务\n2. **LOAD DATA最快**：大批量导入首选\n3. **事务包裹**：减少提交次数\n4. **批量大小适中**：1000-5000条\n\n## 注意事项\n\n- 大批量操作会生成大量binlog\n- 分批操作需要应用层循环\n- LOAD DATA需要FILE权限\n- 批量操作建议在低峰期执行\n- 监控执行进度",
+    "tags": [
+      "批量操作",
+      "分批处理",
+      "LOAD DATA"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-038",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用MySQL的ANALYZE TABLE？",
+    "answer": "## 核心概念\n\nANALYZE TABLE用于更新表的统计信息，帮助优化器选择更好的执行计划。\n\n## SQL示例\n\n```sql\n-- 更新统计信息\nANALYZE TABLE orders;\nANALYZE TABLE users;\n\n-- 批量分析\nANALYZE TABLE orders, users, products;\n\n-- 查看统计信息\nSHOW INDEX FROM orders;\n-- Cardinality列显示基数\n\n-- 查看表统计\nSELECT TABLE_NAME, TABLE_ROWS, AVG_ROW_LENGTH\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb';\n\n-- InnoDB统计信息持久化\nSHOW VARIABLES LIKE 'innodb_stats_persistent';\n-- ON: 统计信息持久化到磁盘\n-- OFF: 每次重启重新计算\n\n-- 统计信息采样页数\nSHOW VARIABLES LIKE 'innodb_stats_persistent_sample_pages';\n-- 默认20，增大可以提高准确性\n\n-- 手动设置统计信息\nUPDATE mysql.innodb_index_stats\nSET stat_value = 1000000\nWHERE database_name = 'mydb'\nAND table_name = 'orders'\nAND index_name = 'PRIMARY'\nAND stat_name = 'size';\n```\n\n## 统计信息类型\n\n| 统计信息 | 说明 |\n|----------|------|\n| Cardinality | 索引基数（不重复值数） |\n| TABLE_ROWS | 表行数估算 |\n| AVG_ROW_LENGTH | 平均行长度 |\n| Data_length | 数据大小 |\n| Index_length | 索引大小 |\n\n## 关键要点\n\n1. **更新统计信息**：优化器依赖统计信息选择索引\n2. **Cardinality最重要**：影响索引选择\n3. **持久化统计信息**：避免重启后丢失\n4. **采样页数影响准确性**：增大可以提高准确性\n\n## 注意事项\n\n- ANALYZE TABLE会加读锁\n- 大表分析可能耗时较长\n- 统计信息不准确会导致优化器选错索引\n- 建议定期执行ANALYZE TABLE\n- `innodb_stats_persistent_sample_pages`影响分析速度和准确性",
+    "tags": [
+      "ANALYZE TABLE",
+      "统计信息",
+      "优化器"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-039",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何使用MySQL的optimizer_trace分析优化器决策？",
+    "answer": "## 核心概念\n\noptimizer_trace是MySQL 5.6引入的功能，可以查看优化器的详细决策过程，包括索引选择、JOIN顺序等。\n\n## SQL示例\n\n```sql\n-- 开启optimizer_trace\nSET optimizer_trace = 'enabled=on';\n\n-- 执行查询\nSELECT * FROM orders\nWHERE user_id = 100 AND status = 1\nORDER BY created_at\nLIMIT 10;\n\n-- 查看trace\nSELECT * FROM information_schema.optimizer_trace\\G\n\n-- 关闭optimizer_trace\nSET optimizer_trace = 'enabled=off';\n\n-- 格式化输出\nSELECT JSON_PRETTY(TRACE)\nFROM information_schema.optimizer_trace\nWHERE QUERY LIKE '%SELECT * FROM orders%';\n\n-- trace关键字段\n-- steps: 优化步骤\n--   considered_execution_plans: 考虑的执行计划\n--   rows_estimation: 行数估算\n--   considered_access_paths: 考虑的访问路径\n--   chosen_access_path: 选择的访问路径\n--   attaching_conditions_to_tables: 附加条件\n--   finalizing_table_conditions: 最终条件\n```\n\n## trace关键节点\n\n| 节点 | 含义 |\n|------|------|\n| join_preparation | JOIN准备阶段 |\n| join_optimization | JOIN优化阶段 |\n| join_execution | JOIN执行阶段 |\n| considered_access_paths | 考虑的访问路径 |\n| rows_estimation | 行数估算 |\n\n## 关键要点\n\n1. **查看优化器决策**：理解为什么选择某个索引\n2. **行数估算**：优化器估算的扫描行数\n3. **访问路径**：全表扫描 vs 索引扫描\n4. **成本比较**：不同方案的成本对比\n\n## 注意事项\n\n- optimizer_trace会消耗额外资源\n- 只在调试时开启，用完关闭\n- trace信息量大，需要工具解析\n- 可以帮助理解优化器为什么不选某个索引\n- 结合EXPLAIN一起分析",
+    "tags": [
+      "optimizer_trace",
+      "优化器分析",
+      "执行计划"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-opt-040",
+    "module": "MySQL优化",
+    "difficulty": 2,
+    "question": "如何进行MySQL的容量规划？",
+    "answer": "## 核心概念\n\n容量规划是根据业务增长预测数据库的资源需求，包括存储空间、内存、CPU、连接数等。\n\n## 规划方法\n\n```sql\n-- 1. 数据量增长预测\n-- 当前数据量\nSELECT TABLE_NAME, TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb';\n\n-- 月增长量估算\n-- 假设每月新增100万条订单\n-- 1年后：100万 * 12 = 1200万条\n\n-- 2. 存储空间预测\n-- 每行大小\nSELECT AVG_ROW_LENGTH * TABLE_ROWS AS current_size\nFROM information_schema.TABLES\nWHERE TABLE_NAME = 'orders';\n\n-- 年增长空间 = 月增量 * 12 * 每行大小\n\n-- 3. 内存需求\n-- Buffer Pool大小 = 热数据大小\n-- 建议：物理内存的70-80%\n\n-- 4. 连接数需求\n-- 峰值连接数 = 应用服务器数 * 每服务器连接数\n\n-- 5. QPS/TPS需求\n-- 当前QPS\nSHOW GLOBAL STATUS LIKE 'Queries';\n-- 峰值QPS通常是平均值的3-5倍\n\n-- 6. IO需求\n-- 查看当前IO状态\nSHOW GLOBAL STATUS LIKE 'Innodb_data%';\nSHOW GLOBAL STATUS LIKE 'Innodb_os%';\n```\n\n## 容量规划表\n\n| 资源 | 计算公式 | 建议 |\n|------|----------|------|\n| 存储 | 当前大小 * (1 + 月增长率 * 12) | 预留50% |\n| 内存 | 热数据大小 / 0.7 | 预留30% |\n| 连接 | 应用数 * 单应用连接 | 预留20% |\n| CPU | 峰值QPS / 单核QPS | 预留30% |\n\n## 关键要点\n\n1. **数据增长预测**：根据业务增长估算\n2. **存储空间预留**：至少预留50%\n3. **内存估算**：Buffer Pool是关键\n4. **连接数规划**：考虑峰值需求\n\n## 注意事项\n\n- 定期评估容量使用情况\n- 监控资源使用率，提前扩容\n- 分库分表应对数据量增长\n- 读写分离应对QPS增长\n- 预留足够的缓冲空间",
+    "tags": [
+      "容量规划",
+      "资源评估",
+      "性能预估"
+    ],
+    "source": "高频"
+  }
+]

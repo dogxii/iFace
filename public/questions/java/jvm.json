@@ -1,0 +1,362 @@
+[
+  {
+    "id": "java-jvm-001",
+    "module": "JVM",
+    "difficulty": 1,
+    "question": "JVM内存模型包含哪些区域？各自的作用是什么？",
+    "answer": "## 核心概念\n\nJVM内存主要分为线程私有和线程共享两大类。\n\n### 线程私有\n\n```\n+-------------------+\n|   程序计数器      |  <- 当前执行字节码的行号\n+-------------------+\n|   虚拟机栈        |  <- 方法执行的栈帧\n+-------------------+\n|   本地方法栈      |  <- Native方法执行\n+-------------------+\n```\n\n### 线程共享\n\n```\n+-------------------+\n|   堆（Heap）      |  <- 对象实例、数组\n+-------------------+\n|   方法区          |  <- 类信息、常量、静态变量\n+-------------------+\n```\n\n### 各区域详解\n\n#### 1. 程序计数器\n- 当前线程执行的字节码行号\n- 唯一不会OOM的区域\n\n#### 2. 虚拟机栈\n- 每个方法创建一个栈帧\n- 包含局部变量表、操作数栈、动态链接、返回地址\n- 栈深度超限抛StackOverflowError\n\n#### 3. 本地方法栈\n- 为Native方法服务\n- HotSpot中与虚拟机栈合二为一\n\n#### 4. 堆\n- 最大的内存区域\n- 所有对象实例分配在此\n- 分为新生代和老年代\n\n#### 5. 方法区\n- 存储类元数据、常量池\n- JDK8后使用元空间（Metaspace）\n- 永久代在JDK8前使用\n\n## 关键要点\n\n- 程序计数器是唯一不会OOM的区域\n- 堆是GC主要管理的区域\n- 虚拟机栈是线程私有的\n- 方法区在JDK8后改为元空间\n\n## 注意事项\n\n- 栈溢出通常是递归过深\n- 堆溢出通常是内存泄漏\n- 元空间使用本地内存",
+    "tags": ["内存模型", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-002",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "Java堆内存是如何分代的？为什么要分代？",
+    "answer": "## 核心概念\n\nJava堆内存采用分代收集策略，分为新生代和老年代。\n\n### 堆内存结构\n\n```\n+-----------------------------------+\n|              Java堆               |\n+----------------+------------------+\n|    新生代      |     老年代       |\n+--------+-------+------------------+\n| Eden | S0 | S1 |                  |\n| 80%  |10% |10% |      100%        |\n+--------+-------+------------------+\n```\n\n### 分代策略\n\n```\n对象创建 -> Eden区\n   |\nEden满 -> Minor GC -> 存活对象 -> S0/S1\n   |\n年龄达到阈值(默认15) -> 老年代\n   |\n老年代满 -> Major GC / Full GC\n```\n\n### 代码示例\n\n```java\n// 对象优先在Eden分配\nbyte[] data = new byte[1024 * 1024];\n\n// 大对象直接进入老年代\n// -XX:PretenureSizeThreshold=3145728\nbyte[] bigObject = new byte[4 * 1024 * 1024];\n\n// 长期存活对象进入老年代\n// -XX:MaxTenuringThreshold=15\n```\n\n### JVM参数\n\n```bash\n# 设置堆大小\n-Xms512m -Xmx1024m\n\n# 设置新生代大小\n-Xmn256m\n\n# 设置新生代比例\n-XX:SurvivorRatio=8\n\n# 设置晋升阈值\n-XX:MaxTenuringThreshold=15\n```\n\n## 关键要点\n\n- 新生代：Eden + S0 + S1，默认8:1:1\n- 老年代：存放长期存活对象\n- 分代基于对象生命周期特征\n- 不同代使用不同GC算法\n\n## 注意事项\n\n- 大对象直接进入老年代\n- 动态年龄判断\n- 空间分配担保",
+    "tags": ["内存模型", "堆内存"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-003",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "虚拟机栈中存储了什么？栈帧包含哪些内容？",
+    "answer": "## 核心概念\n\n虚拟机栈是线程私有的，每个方法调用创建一个栈帧。\n\n### 栈帧结构\n\n```\n+-------------------+\n|     栈帧          |\n+-------------------+\n| 局部变量表        | <- 存储方法参数和局部变量\n+-------------------+\n| 操作数栈          | <- 方法执行的工作区\n+-------------------+\n| 动态链接          | <- 指向运行时常量池\n+-------------------+\n| 方法返回地址      | <- 方法退出后继续执行的位置\n+-------------------+\n| 附加信息          |\n+-------------------+\n```\n\n### 局部变量表\n\n```java\npublic void method(int a, long b, Object c) {\n    int x = 1;\n    String s = \"hello\";\n}\n// 局部变量表：\n// [0] this (引用)\n// [1] a (int, slot 0)\n// [2] b (long, slot 1-2)\n// [3] c (引用)\n// [4] x (int)\n// [5] s (引用)\n```\n\n### 操作数栈\n\n```java\nint a = 1;\nint b = 2;\nint c = a + b;\n\n// 操作数栈变化：\n// [] -> [1] -> [1,2] -> [3]\n```\n\n## 关键要点\n\n- 局部变量表存储方法参数和局部变量\n- 操作数栈用于计算\n- 动态链接支持多态\n- 方法返回地址用于恢复调用者\n\n## 注意事项\n\n- 栈深度超限抛StackOverflowError\n- 局部变量表大小编译期确定\n- slot是局部变量表的最小单位",
+    "tags": ["内存模型", "虚拟机栈"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-004",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是方法区？永久代和元空间有什么区别？",
+    "answer": "## 核心概念\n\n方法区是JVM规范定义的内存区域，用于存储类元数据。\n\n### 方法区演变\n\n```\nJDK7及之前：永久代（PermGen）\n  - 使用JVM堆内存\n  - -XX:PermSize -XX:MaxPermSize\n\nJDK8及之后：元空间（Metaspace）\n  - 使用本地内存（Native Memory）\n  - -XX:MetaspaceSize -XX:MaxMetaspaceSize\n```\n\n### 存储内容\n\n```\n+-------------------+\n|     方法区        |\n+-------------------+\n| 类元数据          | <- 类名、方法、字段\n+-------------------+\n| 运行时常量池      | <- 编译期生成的字面量和符号引用\n+-------------------+\n| 静态变量          | <- static修饰的变量\n+-------------------+\n| JIT编译后的代码   |\n+-------------------+\n```\n\n### 永久代 vs 元空间\n\n| 特性 | 永久代 | 元空间 |\n|------|--------|--------|\n| 内存位置 | JVM堆 | 本地内存 |\n| 大小限制 | 固定，易OOM | 默认无限制 |\n| GC | Full GC时回收 | 元空间GC |\n| 参数 | PermSize | MetaspaceSize |\n\n## 关键要点\n\n- 方法区是JVM规范，永久代和元空间是实现\n- JDK8后永久代被元空间替代\n- 元空间使用本地内存，不易OOM\n- 运行时常量池属于方法区\n\n## 注意事项\n\n- 动态生成大量类会导致元空间溢出\n- 元空间大小可通过参数限制\n- 字符串常量池在JDK7后移到堆中",
+    "tags": ["内存模型", "方法区"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-005",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是直接内存？与堆内存有什么区别？",
+    "answer": "## 核心概念\n\n直接内存不属于JVM堆，是通过Native方法分配的堆外内存。\n\n### 对比分析\n\n```\n+-------------------+     +-------------------+\n|     JVM堆        |     |    直接内存       |\n| +---------------+ |     |                   |\n| | 对象实例      | |     | NIO DirectBuffer  |\n| | 数组          | |     | MappedByteBuffer  |\n| +---------------+ |     |                   |\n+-------------------+     +-------------------+\n| GC自动管理       |     | 手动管理/Unsafe   |\n+-------------------+     +-------------------+\n```\n\n### 使用场景\n\n```java\n// NIO直接内存\nByteBuffer directBuffer = ByteBuffer.allocateDirect(1024);\n\n// 传统堆内存\nByteBuffer heapBuffer = ByteBuffer.allocate(1024);\n\n// 性能对比\n// 直接内存：避免堆内外数据复制\n// 堆内存：受GC管理\n```\n\n### 内存分配\n\n```java\n// 使用Unsafe分配直接内存\nUnsafe unsafe = Unsafe.getUnsafe();\nlong address = unsafe.allocateMemory(1024);\nunsafe.putLong(address, 12345L);\nlong value = unsafe.getLong(address);\nunsafe.freeMemory(address);\n```\n\n### JVM参数\n\n```bash\n# 限制直接内存大小\n-XX:MaxDirectMemorySize=256m\n```\n\n## 关键要点\n\n- 直接内存不属于JVM堆\n- NIO使用直接内存提高性能\n- 直接内存避免数据复制\n- 直接内存不受GC直接影响\n\n## 注意事项\n\n- 直接内存溢出OutOfMemoryError\n- 需要手动释放或等待Full GC\n- 分配和释放成本较高",
+    "tags": ["内存模型", "直接内存"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-006",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "Java中有哪些垃圾回收算法？各自有什么特点？",
+    "answer": "## 核心概念\n\nJava中主要有三种基础垃圾回收算法。\n\n### 1. 标记-清除算法\n\n```\n标记阶段：遍历对象图，标记存活对象\n清除阶段：回收未标记对象\n\n+---+---+---+---+---+---+---+---+\n| A |   | B |   | C |   |   |   |  <- 标记前\n+---+---+---+---+---+---+---+---+\n| A |   | B |   | C |   |   |   |  <- 标记后\n+---+---+---+---+---+---+---+---+\n| A |   | B |   | C |空 |空 |空 |  <- 清除后（产生碎片）\n+---+---+---+---+---+---+---+---+\n```\n\n### 2. 标记-整理算法\n\n```\n标记阶段：标记存活对象\n整理阶段：存活对象向一端移动\n\n+---+---+---+---+---+---+---+---+\n| A |   | B |   | C |   |   |   |\n+---+---+---+---+---+---+---+---+\n| A | B | C |   |   |   |   |   |  <- 整理后（无碎片）\n+---+---+---+---+---+---+---+---+\n```\n\n### 3. 复制算法\n\n```\n将内存分为两块，每次使用其中一块\nGC时将存活对象复制到另一块\n\n+---+---+---+---+   +---+---+---+---+\n| A |   | B |   | -> |   |   |   |   |\n+---+---+---+---+   +---+---+---+---+\n|   |   |   |   | <- | A | B |   |   |\n+---+---+---+---+   +---+---+---+---+\n```\n\n## 关键要点\n\n- 标记-清除：产生碎片，效率不稳定\n- 标记-整理：无碎片，效率较低\n- 复制算法：无碎片，空间利用率低\n- 分代收集：新生代用复制，老年代用标记整理\n\n## 注意事项\n\n- 新生代通常使用复制算法\n- 老年代使用标记-清除或标记-整理\n- 现代GC算法是这些的组合",
+    "tags": ["垃圾回收", "算法"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-007",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是对象存活判定？引用计数法和可达性分析有什么区别？",
+    "answer": "## 核心概念\n\nGC需要判断对象是否存活，主要有两种方法。\n\n### 1. 引用计数法\n\n```java\n// 每个对象维护一个引用计数器\nObject a = new Object(); // refCount=1\nObject b = a;            // refCount=2\na = null;                // refCount=1\nb = null;                // refCount=0 -> 可回收\n\n// 问题：循环引用\nclass Node {\n    Node next;\n}\nNode n1 = new Node();\nNode n2 = new Node();\nn1.next = n2; // n1 refCount=2\nn2.next = n1; // n2 refCount=2\nn1 = null;    // n1 refCount=1\nn2 = null;    // n2 refCount=1\n// 两者都无法回收！\n```\n\n### 2. 可达性分析\n\n```\nGC Roots\n   |\n   +-- 局部变量\n   +-- 静态变量\n   +-- 活动线程\n   +-- JNI引用\n   |\n   v\n  +---+     +---+     +---+\n  | A | --> | B | --> | C |  <- 可达，存活\n  +---+     +---+     +---+\n\n  +---+     +---+\n  | D | --> | E |              <- 不可达，可回收\n  +---+     +---+\n```\n\n### GC Roots类型\n\n```\n1. 虚拟机栈中引用的对象\n2. 方法区中静态属性引用的对象\n3. 方法区中常量引用的对象\n4. 本地方法栈中JNI引用的对象\n5. synchronized持有的对象\n```\n\n## 关键要点\n\n- 引用计数法简单但无法解决循环引用\n- 可达性分析是JVM采用的方法\n- GC Roots是可达性分析的起点\n- 不可达对象并非立即回收\n\n## 注意事项\n\n- 引用计数法在Python等语言中使用\n- Java使用可达性分析\n- 不可达对象会经历两次标记",
+    "tags": ["垃圾回收", "对象判定"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-008",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "Java中有哪些引用类型？各自有什么特点？",
+    "answer": "## 核心概念\n\nJava提供了四种引用类型，强度依次减弱。\n\n### 1. 强引用（Strong Reference）\n\n```java\nObject obj = new Object(); // 强引用\n// 只要引用存在，对象就不会被回收\n// 即使OOM也不会回收\n```\n\n### 2. 软引用（Soft Reference）\n\n```java\nSoftReference<byte[]> softRef = new SoftReference<>(new byte[1024*1024]);\nbyte[] data = softRef.get(); // 获取对象\n\n// 内存不足时会被回收\n// 适合缓存场景\n```\n\n### 3. 弱引用（Weak Reference）\n\n```java\nWeakReference<Object> weakRef = new WeakReference<>(new Object());\nObject obj = weakRef.get();\n\n// 下次GC时会被回收\n// ThreadLocal的Key就是弱引用\n```\n\n### 4. 虚引用（Phantom Reference）\n\n```java\nReferenceQueue<Object> queue = new ReferenceQueue<>();\nPhantomReference<Object> phantomRef =\n    new PhantomReference<>(new Object(), queue);\n\nphantomRef.get(); // 永远返回null\n// 用于跟踪对象被GC的时机\n```\n\n### 对比分析\n\n| 引用类型 | GC时机 | 用途 |\n|----------|--------|------|\n| 强引用 | 不回收 | 普通引用 |\n| 软引用 | 内存不足 | 缓存 |\n| 弱引用 | 下次GC | ThreadLocal |\n| 虚引用 | 随时 | 跟踪GC |\n\n## 关键要点\n\n- 强引用不会被回收\n- 软引用适合做缓存\n- 弱引用下次GC就回收\n- 虚引用无法获取对象\n\n## 注意事项\n\n- 软引用在内存紧张时回收\n- 弱引用在WeakHashMap中使用\n- 虚引用配合ReferenceQueue使用",
+    "tags": ["垃圾回收", "引用类型"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-009",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是安全点和安全区域？",
+    "answer": "## 核心概念\n\n安全点和安全区域是GC时线程暂停的机制。\n\n### 安全点（Safepoint）\n\n```\nGC时需要所有线程暂停（Stop The World）\n线程不能在任意位置暂停，必须在安全点\n\n安全点位置：\n1. 方法调用\n2. 循环跳转\n3. 异常跳转\n4. JNI调用\n```\n\n### 如何到达安全点\n\n```\n1. 抢先式中断（Preemptive）\n   - GC发生时，中断所有线程\n   - 如果线程不在安全点，恢复执行\n   - 等到达安全点后再次中断\n\n2. 主动式中断（Voluntary）\n   - 设置一个标志位\n   - 线程主动轮询标志位\n   - 发现标志位后主动挂起\n```\n\n### 安全区域（Safe Region）\n\n```\n安全区域是安全点的扩展\n适用于线程处于Sleep或Blocked状态\n\n线程进入安全区域时：\n- 标记自己进入安全区域\n- GC时不需要等待这些线程\n\n线程离开安全区域时：\n- 检查GC是否完成\n- 未完成则等待\n```\n\n### 代码示例\n\n```java\n// 线程在安全点暂停\npublic void compute() {\n    for (int i = 0; i < 1000000; i++) {\n        // 循环体内可能有安全点\n        // GC可能在这里暂停线程\n    }\n}\n```\n\n## 关键要点\n\n- 安全点是GC暂停线程的位置\n- 安全区域是安全点的扩展\n- 主动式中断是主流实现\n- 线程必须到达安全点才能暂停\n\n## 注意事项\n\n- 安全点太少会导致GC等待时间长\n- 安全点太多会影响执行效率\n- 长时间运行的循环可能延迟到达安全点",
+    "tags": ["垃圾回收", "安全点"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-010",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是记忆集和写屏障？",
+    "answer": "## 核心概念\n\n记忆集和写屏障用于解决跨代引用问题。\n\n### 跨代引用问题\n\n```\n老年代 -> 新生代 的引用\nGC时需要扫描整个老年代来找到新生代的引用\n效率很低\n```\n\n### 记忆集（Remembered Set）\n\n```\n记忆集记录跨代引用关系\n\n新生代记忆集：\n+-------------------+\n| Card 0: 老年代100 |\n| Card 1: 老年代200 |\n| Card 2: -         |\n+-------------------+\n\nGC时只需要扫描记忆集中的老年代对象\n```\n\n### 卡表（Card Table）\n\n```\n卡表是记忆集的实现方式\n将老年代划分为固定大小的卡页\n\nbyte[] cardTable = new byte[HEAP_SIZE / CARD_SIZE];\n\ncardTable[i] = DIRTY; // 该卡页存在跨代引用\ncardTable[i] = CLEAN; // 该卡页无跨代引用\n```\n\n### 写屏障（Write Barrier）\n\n```java\n// 写屏障用于维护卡表\n// 在引用赋值时触发\n\n// 伪代码\nvoid oop_field_store(oop* field, oop new_value) {\n    *field = new_value;\n    // 写屏障：标记卡页为脏\n    int card_index = ((long)field - heap_start) >> CARD_SHIFT;\n    cardTable[card_index] = DIRTY;\n}\n```\n\n## 关键要点\n\n- 记忆集避免全堆扫描\n- 卡表是记忆集的实现\n- 写屏障在引用赋值时触发\n- 减少GC扫描范围\n\n## 注意事项\n\n- 记忆集有维护开销\n- 写屏障有性能影响\n- 卡表粒度影响精度和开销",
+    "tags": ["垃圾回收", "记忆集"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-011",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "Serial垃圾收集器的特点是什么？",
+    "answer": "## 核心概念\n\nSerial是最基本的垃圾收集器，单线程执行。\n\n### 工作原理\n\n```\n+-------------------+\n|   Serial收集器    |\n+-------------------+\n| 新生代：复制算法  |\n| 老年代：标记整理  |\n| 单线程执行        |\n| Stop The World    |\n+-------------------+\n\nGC时：\n1. 暂停所有用户线程\n2. 单线程执行GC\n3. 恢复用户线程\n```\n\n### Serial + Serial Old\n\n```\n新生代：Serial（复制算法）\n老年代：Serial Old（标记整理算法）\n\n适用场景：\n- Client模式\n- 单CPU环境\n- 嵌入式设备\n```\n\n### JVM参数\n\n```bash\n# 使用Serial收集器\n-XX:+UseSerialGC\n\n# 新生代：Serial\n# 老年代：Serial Old\n```\n\n### 代码示例\n\n```bash\n# 启动参数\njava -XX:+UseSerialGC -Xms128m -Xmx128m MyApp\n\n# GC日志\n[GC (Allocation Failure)\n  [DefNew: 32768K->4096K(39296K), 0.0123456 secs]\n  32768K->8192K(126720K), 0.0123789 secs]\n```\n\n## 关键要点\n\n- Serial是单线程收集器\n- 新生代用复制算法\n- 老年代用标记整理\n- 适合单CPU、小堆场景\n\n## 注意事项\n\n- STW时间较长\n- 适合客户端程序\n- 不适合服务器端",
+    "tags": ["垃圾收集器", "Serial"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-012",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "ParNew和Parallel Scavenge收集器有什么区别？",
+    "answer": "## 核心概念\n\n两者都是新生代并行收集器，但目标不同。\n\n### ParNew收集器\n\n```\n- Serial的多线程版本\n- 与CMS配合使用\n- 关注停顿时间\n\n新生代：ParNew（复制算法，多线程）\n老年代：CMS（标记清除）\n```\n\n### Parallel Scavenge收集器\n\n```\n- 关注吞吐量\n- 与Parallel Old配合\n- 自适应调节策略\n\n吞吐量 = 用户代码运行时间 / (用户代码运行时间 + GC时间)\n```\n\n### 对比分析\n\n| 特性 | ParNew | Parallel Scavenge |\n|------|--------|-------------------|\n| 目标 | 低延迟 | 高吞吐量 |\n| 配合 | CMS | Parallel Old |\n| 自适应 | 不支持 | 支持 |\n| 场景 | Web应用 | 后台计算 |\n\n### JVM参数\n\n```bash\n# ParNew + CMS\n-XX:+UseParNewGC -XX:+UseConcMarkSweepGC\n\n# Parallel Scavenge + Parallel Old\n-XX:+UseParallelGC\n\n# Parallel Scavenge参数\n-XX:MaxGCPauseMillis=200  # 最大停顿时间\n-XX:GCTimeRatio=99        # 吞吐量\n-XX:+UseAdaptiveSizePolicy # 自适应调节\n```\n\n## 关键要点\n\n- ParNew关注延迟，Parallel Scavenge关注吞吐量\n- ParNew配合CMS，Parallel Scavenge配合Parallel Old\n- Parallel Scavenge支持自适应调节\n- 选择取决于应用场景\n\n## 注意事项\n\n- ParNew在JDK9后不推荐\n- Parallel Scavenge是默认收集器\n- 吞吐量优先选Parallel",
+    "tags": ["垃圾收集器", "ParNew"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-013",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "CMS垃圾收集器的工作原理是什么？有什么缺点？",
+    "answer": "## 核心概念\n\nCMS（Concurrent Mark Sweep）是老年代收集器，目标是低延迟。\n\n### 工作流程\n\n```\n1. 初始标记（Initial Mark）\n   - STW，标记GC Roots直接关联的对象\n   - 速度很快\n\n2. 并发标记（Concurrent Mark）\n   - 与用户线程并发执行\n   - 遍历对象图\n   - 耗时较长\n\n3. 重新标记（Remark）\n   - STW，修正并发标记期间变化\n   - 比初始标记长，比并发标记短\n\n4. 并发清除（Concurrent Sweep）\n   - 与用户线程并发执行\n   - 清除未标记对象\n```\n\n### 流程图\n\n```\n用户线程:  ----||========================||========----\n                |                       |\n初始标记:  ======||========================||========\n                        |               |\n并发标记:        ========||=========================\n                                      |\n重新标记:                       ========||==========\n                                      |\n并发清除:                       =========||=========\n```\n\n### 缺点\n\n```\n1. CPU敏感：并发阶段占用CPU资源\n2. 浮动垃圾：并发阶段产生的垃圾无法清除\n3. 空间碎片：标记清除算法产生碎片\n4. 并发失败：空间不足时退化为Serial Old\n```\n\n### JVM参数\n\n```bash\n-XX:+UseConcMarkSweepGC\n-XX:CMSInitiatingOccupancyFraction=70 # 触发阈值\n-XX:+UseCMSCompactAtFullCollection    # Full GC后压缩\n-XX:CMSFullGCsBeforeCompaction=0      # 多少次Full GC后压缩\n```\n\n## 关键要点\n\n- CMS目标是低延迟\n- 并发标记和清除减少STW时间\n- 存在内存碎片问题\n- JDK9后标记为废弃\n\n## 注意事项\n\n- 浮动垃圾需要预留空间\n- 并发失败会导致长时间停顿\n- JDK14后移除CMS",
+    "tags": ["垃圾收集器", "CMS"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-014",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "G1垃圾收集器的特点和工作原理是什么？",
+    "answer": "## 核心概念\n\nG1（Garbage-First）是面向服务端的垃圾收集器，JDK9后默认。\n\n### 核心特点\n\n```\n1. Region化内存布局\n2. 可预测的停顿时间模型\n3. 整体标记整理，局部复制\n4. 并发与并行结合\n```\n\n### Region布局\n\n```\n+------+------+------+------+------+\n| Eden | Eden | Surv | Old  | Old  |\n+------+------+------+------+------+\n| Old  | Old  | Hum  | Free | Eden |\n+------+------+------+------+------+\n| Eden | Old  | Old  | Free | Free |\n+------+------+------+------+------+\n\n- Eden：新生代Eden区\n- Surv：新生代Survivor区\n- Old：老年代\n- Hum：大对象区域（Humongous）\n- Free：空闲区域\n```\n\n### 工作流程\n\n```\n1. 初始标记（Initial Mark）\n   - STW，标记GC Roots直接关联对象\n   - 借助Young GC完成\n\n2. 并发标记（Concurrent Mark）\n   - 与用户线程并发执行\n   - 遍历对象图\n\n3. 最终标记（Final Mark）\n   - STW，处理并发标记遗留的SATB\n\n4. 筛选回收（Cleanup）\n   - STW，选择回收价值高的Region\n   - 复制存活对象到空Region\n```\n\n### JVM参数\n\n```bash\n-XX:+UseG1GC\n-XX:MaxGCPauseMillis=200    # 目标停顿时间\n-XX:G1HeapRegionSize=1m     # Region大小\n-XX:InitiatingHeapOccupancyPercent=45 # 触发阈值\n```\n\n## 关键要点\n\n- Region化内存布局\n- 可预测的停顿时间\n- 适合大堆内存\n- JDK9后默认收集器\n\n## 注意事项\n\n- G1需要额外内存维护Region\n- 小堆不一定比CMS快\n- 合理设置目标停顿时间",
+    "tags": ["垃圾收集器", "G1"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-015",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "ZGC垃圾收集器有什么特点？适用于什么场景？",
+    "answer": "## 核心概念\n\nZGC是JDK11引入的低延迟垃圾收集器，目标亚毫秒级停顿。\n\n### 核心特点\n\n```\n1. 停顿时间不超过1ms\n2. 停顿时间不会随堆增大而增大\n3. 支持TB级别堆内存\n4. 吞吐量损失不超过15%\n```\n\n### 技术实现\n\n```\n1. 着色指针（Colored Pointers）\n   - 指针中存储GC信息\n   - 支持并发转移\n\n2. 读屏障（Load Barrier）\n   - 读对象引用时检查\n   - 支持并发转移\n\n3. 多重映射\n   - 同一物理内存映射多个虚拟地址\n   - 支持对象移动\n```\n\n### 工作流程\n\n```\n1. 初始标记（Pause Mark Start）\n   - STW，标记GC Roots\n\n2. 并发标记（Concurrent Mark）\n   - 与用户线程并发执行\n\n3. 并发预备重分配\n   - 选择需要回收的Region\n\n4. 并发重分配\n   - 复制对象到新Region\n   - 使用转发表记录映射\n\n5. 并发重映射\n   - 修正对象引用\n```\n\n### JVM参数\n\n```bash\n-XX:+UseZGC\n-Xmx16g\n-XX:+ZGenerational # JDK21分代ZGC\n```\n\n## 关键要点\n\n- ZGC目标亚毫秒级停顿\n- 着色指针和读屏障是核心技术\n- 适合大堆、低延迟场景\n- JDK21引入分代ZGC\n\n## 注意事项\n\n- ZGC吞吐量略低于G1\n- 需要较大堆内存\n- JDK15后可用于生产",
+    "tags": ["垃圾收集器", "ZGC"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-016",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "类加载的过程是怎样的？",
+    "answer": "## 核心概念\n\n类加载分为加载、验证、准备、解析、初始化五个阶段。\n\n### 类加载流程\n\n```\n加载 -> 验证 -> 准备 -> 解析 -> 初始化 -> 使用 -> 卸载\n\n        连接阶段\n+-------+-------+-------+\n| 验证  | 准备  | 解析  |\n+-------+-------+-------+\n```\n\n### 各阶段详解\n\n#### 1. 加载（Loading）\n```java\n// 1. 通过类全限定名获取二进制字节流\n// 2. 将字节流转化为方法区的运行时数据结构\n// 3. 在堆中生成Class对象\n```\n\n#### 2. 验证（Verification）\n```\n- 文件格式验证：Class文件格式\n- 元数据验证：语义分析\n- 字节码验证：方法体验证\n- 符号引用验证：引用验证\n```\n\n#### 3. 准备（Preparation）\n```java\n// 为类变量分配内存并设置零值\npublic static int value = 123;\n// 准备阶段：value = 0\n// 初始化阶段：value = 123\n\n// final变量在准备阶段赋值\npublic static final int VALUE = 123;\n// 准备阶段：VALUE = 123\n```\n\n#### 4. 解析（Resolution）\n```\n将符号引用替换为直接引用\n- 类/接口解析\n- 字段解析\n- 方法解析\n- 接口方法解析\n```\n\n#### 5. 初始化（Initialization）\n```java\n// 执行类构造器<clinit>()\n// 按顺序执行static代码块和static变量赋值\n```\n\n## 关键要点\n\n- 加载、验证、准备、解析、初始化\n- 准备阶段设置零值\n- 初始化执行<clinit>()\n- 解析将符号引用转为直接引用\n\n## 注意事项\n\n- final变量在准备阶段赋值\n- <clinit>()是线程安全的\n- 不是所有类都会被初始化",
+    "tags": ["类加载", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-017",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "什么是双亲委派模型？为什么要使用双亲委派？",
+    "answer": "## 核心概念\n\n双亲委派是类加载器的层次结构和加载策略。\n\n### 类加载器层次\n\n```\n+-------------------+\n| Bootstrap         | <- 加载rt.jar等核心类\n+-------------------+\n| Extension         | <- 加载ext目录\n+-------------------+\n| Application       | <- 加载classpath\n+-------------------+\n| Custom            | <- 自定义类加载器\n+-------------------+\n```\n\n### 双亲委派流程\n\n```\n加载请求\n   |\n   v\nCustom ClassLoader\n   |\n   | 委派给父加载器\n   v\nApplication ClassLoader\n   |\n   | 委派给父加载器\n   v\nExtension ClassLoader\n   |\n   | 委派给父加载器\n   v\nBootstrap ClassLoader\n   |\n   | 尝试加载\n   v\n   成功？-- 是 --> 返回\n   |\n   否\n   v\n   子加载器尝试加载\n```\n\n### 代码实现\n\n```java\nprotected Class<?> loadClass(String name, boolean resolve)\n    throws ClassNotFoundException {\n    // 1. 检查是否已加载\n    Class<?> c = findLoadedClass(name);\n\n    if (c == null) {\n        try {\n            // 2. 委派给父加载器\n            if (parent != null) {\n                c = parent.loadClass(name, false);\n            } else {\n                c = findBootstrapClassOrNull(name);\n            }\n        } catch (ClassNotFoundException e) {\n            // 父加载器无法加载\n        }\n\n        if (c == null) {\n            // 3. 自己加载\n            c = findClass(name);\n        }\n    }\n\n    if (resolve) {\n        resolveClass(c);\n    }\n    return c;\n}\n```\n\n## 关键要点\n\n- 双亲委派保证类的唯一性\n- 核心类由Bootstrap加载\n- 防止用户自定义核心类\n- 每个类加载器有独立的命名空间\n\n## 注意事项\n\n- 可以通过自定义类加载器打破双亲委派\n- SPI机制使用线程上下文类加载器\n- OSGI使用网状类加载结构",
+    "tags": ["类加载", "双亲委派"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-018",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "如何自定义类加载器？有哪些应用场景？",
+    "answer": "## 核心概念\n\n自定义类加载器可以实现类的隔离、热部署等功能。\n\n### 实现方式\n\n```java\npublic class CustomClassLoader extends ClassLoader {\n    private String classPath;\n\n    public CustomClassLoader(String classPath) {\n        this.classPath = classPath;\n    }\n\n    @Override\n    protected Class<?> findClass(String name) throws ClassNotFoundException {\n        try {\n            byte[] data = loadClassData(name);\n            return defineClass(name, data, 0, data.length);\n        } catch (IOException e) {\n            throw new ClassNotFoundException(name, e);\n        }\n    }\n\n    private byte[] loadClassData(String name) throws IOException {\n        String path = classPath + name.replace('.', File.separatorChar) + \".class\";\n        try (InputStream is = new FileInputStream(path);\n             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {\n            byte[] buffer = new byte[1024];\n            int len;\n            while ((len = is.read(buffer)) != -1) {\n                baos.write(buffer, 0, len);\n            }\n            return baos.toByteArray();\n        }\n    }\n}\n```\n\n### 使用示例\n\n```java\nCustomClassLoader loader1 = new CustomClassLoader(\"/path1/\");\nCustomClassLoader loader2 = new CustomClassLoader(\"/path2/\");\n\nClass<?> clazz1 = loader1.loadClass(\"com.example.MyClass\");\nClass<?> clazz2 = loader2.loadClass(\"com.example.MyClass\");\n\n// 不同类加载器加载的类不相等\nSystem.out.println(clazz1 == clazz2); // false\n```\n\n### 应用场景\n\n```\n1. 热部署：修改后重新加载类\n2. 类隔离：不同应用使用不同类版本\n3. 加密保护：加载加密的class文件\n4. 远程加载：从网络加载类\n```\n\n## 关键要点\n\n- 继承ClassLoader，重写findClass方法\n- defineClass将字节转化为Class对象\n- 不同类加载器加载的类不相等\n- 可以打破双亲委派\n\n## 注意事项\n\n- 避免重复加载核心类\n- 注意类的卸载问题\n- 合理设计类加载器层次",
+    "tags": ["类加载", "自定义"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-019",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是SPI机制？为什么需要线程上下文类加载器？",
+    "answer": "## 核心概念\n\nSPI（Service Provider Interface）是Java的服务提供者机制，需要打破双亲委派。\n\n### SPI原理\n\n```\nSPI在rt.jar中定义接口\n实现类在classpath的jar中\nBootstrap无法加载classpath的类\n\n解决方案：\n使用线程上下文类加载器\n```\n\n### 线程上下文类加载器\n\n```java\n// 获取线程上下文类加载器\nClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();\n\n// 设置线程上下文类加载器\nThread.currentThread().setContextClassLoader(customClassLoader);\n```\n\n### SPI使用示例\n\n```java\n// JDBC SPI\n// 1. 定义接口（java.sql.Driver，在rt.jar中）\n// 2. 实现类（mysql-connector-java，在classpath中）\n// 3. 服务发现\n\n// ServiceLoader实现\nServiceLoader<Driver> loader = ServiceLoader.load(Driver.class);\nfor (Driver driver : loader) {\n    System.out.println(driver.getClass().getName());\n}\n```\n\n### ServiceLoader源码\n\n```java\npublic final class ServiceLoader<S> implements Iterable<S> {\n    public static <S> ServiceLoader<S> load(Class<S> service) {\n        ClassLoader cl = Thread.currentThread().getContextClassLoader();\n        return ServiceLoader.load(service, cl);\n    }\n}\n```\n\n### 流程图\n\n```\nBootstrap加载Driver接口\n        |\n        | 无法加载MySQL实现\n        v\n使用线程上下文类加载器\n        |\n        | Application ClassLoader\n        v\n加载mysql-connector-java.jar\n```\n\n## 关键要点\n\n- SPI需要打破双亲委派\n- 线程上下文类加载器是桥梁\n- JDBC、JNDI等都使用SPI\n- ServiceLoader是SPI的实现\n\n## 注意事项\n\n- 线程上下文类加载器可能引起混乱\n- 框架中需要注意类加载器设置\n- Tomcat等容器有自己的类加载策略",
+    "tags": ["类加载", "SPI"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-020",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "如何打破双亲委派模型？有哪些场景需要打破？",
+    "answer": "## 核心概念\n\n双亲委派不是强制约束，可以通过重写loadClass方法打破。\n\n### 打破方式\n\n#### 方式1：重写loadClass方法\n\n```java\npublic class BreakingClassLoader extends ClassLoader {\n    @Override\n    protected Class<?> loadClass(String name, boolean resolve)\n            throws ClassNotFoundException {\n        // 先检查是否已加载\n        Class<?> c = findLoadedClass(name);\n\n        if (c == null) {\n            // 不委派给父加载器，直接自己加载\n            if (name.startsWith(\"com.example\")) {\n                c = findClass(name);\n            } else {\n                // 核心类仍使用双亲委派\n                c = super.loadClass(name, resolve);\n            }\n        }\n\n        if (resolve) {\n            resolveClass(c);\n        }\n        return c;\n    }\n}\n```\n\n#### 方式2：线程上下文类加载器\n\n```java\n// SPI机制\nClassLoader cl = Thread.currentThread().getContextClassLoader();\n```\n\n#### 方式3：OSGI类加载\n\n```\n+--------+     +--------+\n| BundleA| <-> | BundleB|\n+--------+     +--------+\n| LoaderA|     | LoaderB|\n+--------+     +--------+\n\n每个Bundle有自己的类加载器\nBundle之间可以相互导入导出包\n```\n\n### 需要打破的场景\n\n```\n1. SPI机制：JDBC、JNDI等\n2. 热部署：Tomcat、JBoss\n3. 代码热替换：调试工具\n4. 模块化：OSGI、Jigsaw\n5. 类隔离：不同应用不同版本\n```\n\n### Tomcat类加载器\n\n```\n+-------------------+\n| Bootstrap         |\n+-------------------+\n| System            |\n+-------------------+\n| Common            |\n+--------+--------+\n| WebApp1 | WebApp2 |  <- 每个应用独立\n+--------+--------+\n| Jsp1    | Jsp2    |  <- JSP热加载\n+--------+--------+\n```\n\n## 关键要点\n\n- 重写loadClass可以打破双亲委派\n- SPI使用线程上下文类加载器\n- OSGI使用网状类加载结构\n- 热部署需要打破双亲委派\n\n## 注意事项\n\n- 打破双亲委派可能导致类冲突\n- 需要谨慎设计类加载策略\n- 注意类的卸载和内存泄漏",
+    "tags": ["类加载", "双亲委派"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-021",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "常用的JVM参数有哪些？如何配置？",
+    "answer": "## 核心概念\n\nJVM参数用于控制JVM的行为和性能。\n\n### 内存参数\n\n```bash\n# 堆内存\n-Xms512m          # 初始堆大小\n-Xmx1024m         # 最大堆大小\n-Xmn256m          # 新生代大小\n-Xss256k          # 栈大小\n\n# 方法区\n-XX:MetaspaceSize=256m\n-XX:MaxMetaspaceSize=512m\n\n# 直接内存\n-XX:MaxDirectMemorySize=256m\n```\n\n### 垃圾收集器参数\n\n```bash\n# Serial\n-XX:+UseSerialGC\n\n# Parallel\n-XX:+UseParallelGC\n-XX:ParallelGCThreads=4\n\n# CMS\n-XX:+UseConcMarkSweepGC\n-XX:CMSInitiatingOccupancyFraction=70\n\n# G1\n-XX:+UseG1GC\n-XX:MaxGCPauseMillis=200\n-XX:G1HeapRegionSize=1m\n\n# ZGC\n-XX:+UseZGC\n```\n\n### GC日志参数\n\n```bash\n# JDK8\n-XX:+PrintGCDetails\n-XX:+PrintGCDateStamps\n-Xloggc:/path/to/gc.log\n\n# JDK9+\n-Xlog:gc*:file=/path/to/gc.log:time,uptime,level,tags\n```\n\n### 其他参数\n\n```bash\n# OOM时dump\n-XX:+HeapDumpOnOutOfMemoryError\n-XX:HeapDumpPath=/path/to/dump.hprof\n\n# 字符串常量池\n-XX:StringTableSize=60013\n\n# 对象晋升阈值\n-XX:MaxTenuringThreshold=15\n```\n\n## 关键要点\n\n- -Xms和-Xmx通常设置相同\n- 根据应用特点选择收集器\n- 生产环境必须配置GC日志\n- 配置OOM dump便于排查\n\n## 注意事项\n\n- 参数需要根据实际情况调整\n- 使用工具分析GC日志\n- 关注堆外内存",
+    "tags": ["JVM参数", "调优"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-022",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "如何进行JVM性能调优？",
+    "answer": "## 核心概念\n\nJVM调优目标是找到最佳的内存分配和GC策略。\n\n### 调优步骤\n\n```\n1. 监控现状\n   - GC日志分析\n   - 内存监控\n   - CPU监控\n\n2. 发现问题\n   - Full GC频繁\n   - GC停顿时间长\n   - 内存泄漏\n\n3. 分析原因\n   - 对象生命周期\n   - 内存分配速率\n   - GC日志分析\n\n4. 调整参数\n   - 堆大小\n   - 新生代比例\n   - GC算法\n\n5. 验证效果\n   - 对比调优前后\n   - 压测验证\n```\n\n### 常见问题和解决方案\n\n#### Full GC频繁\n```bash\n# 增大老年代\n-Xms2g -Xmx2g -Xmn1g\n\n# 调整晋升阈值\n-XX:MaxTenuringThreshold=15\n\n# 使用G1\n-XX:+UseG1GC\n```\n\n#### 停顿时间长\n```bash\n# 使用低延迟收集器\n-XX:+UseG1GC -XX:MaxGCPauseMillis=200\n\n# 或ZGC\n-XX:+UseZGC\n\n# 减小堆大小\n-Xmx2g\n```\n\n#### 内存泄漏\n```bash\n# 开启OOM dump\n-XX:+HeapDumpOnOutOfMemoryError\n\n# 使用MAT分析\n# 查找大对象和泄漏链路\n```\n\n### 监控工具\n\n```bash\n# jstat\ngcutil <pid> 1000\n\n# jmap\n-heap <pid>\n\n# JFR\n-XX:StartFlightRecording=duration=60s,filename=recording.jfr\n```\n\n## 关键要点\n\n- 先监控再调优\n- GC日志是重要依据\n- 不要盲目调参\n- 压测验证效果\n\n## 注意事项\n\n- 调优是持续过程\n- 关注业务场景\n- 平衡延迟和吞吐量",
+    "tags": ["JVM调优", "性能"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-023",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是GC日志？如何分析GC日志？",
+    "answer": "## 核心概念\n\nGC日志记录了GC的详细信息，是调优的重要依据。\n\n### GC日志格式\n\n```bash\n# JDK8格式\n[GC (Allocation Failure)\n  [PSYoungGen: 32768K->4096K(39296K)]\n  32768K->8192K(126720K), 0.0123456 secs]\n  [Times: user=0.02 sys=0.00, real=0.01 secs]\n\n# JDK9+格式\n[0.123s][info][gc] GC(0) Pause Young (Allocation Failure)\n  32M->8M(128M) 0.012s\n```\n\n### 日志参数\n\n```bash\n# JDK8\n-XX:+PrintGCDetails\n-XX:+PrintGCDateStamps\n-XX:+PrintGCTimeStamps\n-Xloggc:/path/to/gc.log\n-XX:+UseGCLogFileRotation\n-XX:NumberOfGCLogFiles=5\n-XX:GCLogFileSize=20M\n\n# JDK9+\n-Xlog:gc*=debug:file=/path/to/gc.log:time,uptime,level,tags:filecount=5,filesize=20M\n```\n\n### 分析要点\n\n```\n1. GC频率\n   - Young GC频率\n   - Full GC频率\n\n2. GC耗时\n   - 单次GC时间\n   - 总GC时间占比\n\n3. 内存变化\n   - GC前后内存大小\n   - 晋升到老年代的对象量\n\n4. 吞吐量\n   - 吞吐量 = 用户代码时间 / (用户代码时间 + GC时间)\n```\n\n### 工具推荐\n\n```\n1. GCEasy：在线分析工具\n2. GCViewer：本地分析工具\n3. JVisualVM：JDK自带\n4. JFR：JDK Flight Recorder\n```\n\n## 关键要点\n\n- GC日志记录GC详细信息\n- 关注GC频率、耗时、内存变化\n- 吞吐量是重要指标\n- 使用工具辅助分析\n\n## 注意事项\n\n- 生产环境必须开启GC日志\n- 定期轮转避免日志过大\n- 关注Full GC和长时间停顿",
+    "tags": ["JVM调优", "GC日志"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-024",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "如何排查和解决内存溢出（OOM）问题？",
+    "answer": "## 核心概念\n\nOOM是JVM内存不足时抛出的异常，需要分析堆dump定位问题。\n\n### OOM类型\n\n```\n1. java.lang.OutOfMemoryError: Java heap space\n   - 堆内存不足\n\n2. java.lang.OutOfMemoryError: Metaspace\n   - 元空间不足\n\n3. java.lang.OutOfMemoryError: Direct buffer memory\n   - 直接内存不足\n\n4. java.lang.OutOfMemoryError: unable to create new native thread\n   - 无法创建新线程\n\n5. java.lang.StackOverflowError\n   - 栈溢出\n```\n\n### 排查步骤\n\n```bash\n# 1. 开启OOM dump\n-XX:+HeapDumpOnOutOfMemoryError\n-XX:HeapDumpPath=/path/to/dump.hprof\n\n# 2. 分析dump文件\n# 使用MAT、JVisualVM等工具\n\n# 3. 查找大对象\n# dominator tree\n# leak suspects report\n\n# 4. 分析引用链路\n# 找到GC Root到泄漏对象的路径\n```\n\n### 常见场景和解决\n\n#### 1. 内存泄漏\n```java\n// 静态集合持有对象\nstatic List<Object> list = new ArrayList<>();\npublic void add(Object obj) {\n    list.add(obj); // 永远不会释放\n}\n\n// 解决：定期清理或使用弱引用\n```\n\n#### 2. 大对象分配\n```java\n// 一次性加载大文件\nbyte[] data = Files.readAllBytes(path);\n\n// 解决：流式处理或分批读取\n```\n\n#### 3. 线程过多\n```java\n// 创建大量线程\nfor (int i = 0; i < 100000; i++) {\n    new Thread(() -> {}).start();\n}\n\n// 解决：使用线程池\n```\n\n## 关键要点\n\n- OOM类型不同，原因不同\n- 堆dump是排查OOM的关键\n- MAT是分析dump的利器\n- 找到泄漏链路是核心\n\n## 注意事项\n\n- 生产环境必须开启dump\n- dump文件可能很大\n- 分析需要经验和工具",
+    "tags": ["JVM调优", "OOM"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-025",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是字节码？Java字节码的结构是怎样的？",
+    "answer": "## 核心概念\n\n字节码是Java编译器生成的中间代码，由JVM解释执行。\n\n### Class文件结构\n\n```\n+-------------------+\n| Magic Number      | 0xCAFEBABE\n+-------------------+\n| 版本号            | minor_version, major_version\n+-------------------+\n| 常量池            | constant_pool_count, constant_pool[]\n+-------------------+\n| 访问标志          | access_flags\n+-------------------+\n| 类/父类/接口      | this_class, super_class, interfaces\n+-------------------+\n| 字段表            | fields_count, fields[]\n+-------------------+\n| 方法表            | methods_count, methods[]\n+-------------------+\n| 属性表            | attributes_count, attributes[]\n+-------------------+\n```\n\n### 查看字节码\n\n```bash\n# javap命令\njavap -v -p MyClass.class\n\n# 输出示例\npublic class com.example.MyClass\n  minor version: 0\n  major version: 52\n  flags: ACC_PUBLIC, ACC_SUPER\nConstant pool:\n   #1 = Methodref    #4.#15\n   #2 = String       #16\n   ...\n```\n\n### 字节码指令\n\n```java\n// 源代码\npublic int add(int a, int b) {\n    return a + b;\n}\n\n// 字节码\npublic int add(int, int);\n    Code:\n      stack=2, locals=3, args_size=3\n         0: iload_1    // 加载a\n         1: iload_2    // 加载b\n         2: iadd       // 加法\n         3: ireturn    // 返回\n```\n\n### 常见指令\n\n```\n加载：iload, lload, fload, dload, aload\n存储：istore, lstore, fstore, dstore, astore\n运算：iadd, isub, imul, idiv\n比较：ifeq, ifne, iflt, ifge\n方法：invokevirtual, invokeinterface, invokespecial, invokestatic\n```\n\n## 关键要点\n\n- 字节码是JVM的中间代码\n- Class文件有固定结构\n- javap可以查看字节码\n- 字节码指令是栈式指令\n\n## 注意事项\n\n- 字节码与JVM语言无关\n- 理解字节码有助于性能优化\n- ASM、Javassist可以操作字节码",
+    "tags": ["字节码", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-026",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是字节码增强？有哪些常见的字节码操作库？",
+    "answer": "## 核心概念\n\n字节码增强是在运行时修改或生成字节码的技术。\n\n### 常见库\n\n#### 1. ASM\n```java\n// ASM是底层字节码操作库\nClassReader cr = new ClassReader(className);\nClassWriter cw = new ClassWriter(cr, ClassWriter.COMPUTE_MAXS);\nClassVisitor cv = new MyClassVisitor(cw);\ncr.accept(cv, 0);\nbyte[] modifiedClass = cw.toByteArray();\n\n// MethodVisitor\npublic class MyMethodVisitor extends MethodVisitor {\n    @Override\n    public void visitCode() {\n        // 方法开始时插入代码\n        mv.visitFieldInsn(Opcodes.GETSTATIC, \"java/lang/System\", \"out\",\n            \"Ljava/io/PrintStream;\");\n        mv.visitLdcInsn(\"Method start\");\n        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, \"java/io/PrintStream\", \"println\",\n            \"(Ljava/lang/String;)V\", false);\n        super.visitCode();\n    }\n}\n```\n\n#### 2. Javassist\n```java\n// Javassist更易使用\nClassPool pool = ClassPool.getDefault();\nCtClass cc = pool.get(\"com.example.MyClass\");\n\nCtMethod method = cc.getDeclaredMethod(\"myMethod\");\nmethod.insertBefore(\"System.out.println(\\\"Before\\\");\");\nmethod.insertAfter(\"System.out.println(\\\"After\\\");\");\n\nClass<?> clazz = cc.toClass();\n```\n\n#### 3. Byte Buddy\n```java\n// Byte Buddy面向高层API\nClass<?> dynamicType = new ByteBuddy()\n    .subclass(Target.class)\n    .method(named(\"toString\"))\n    .intercept(FixedValue.value(\"Hello ByteBuddy!\"))\n    .make()\n    .load(classLoader, ClassLoadingStrategy.Default.WRAPPER)\n    .getLoaded();\n```\n\n### 应用场景\n\n```\n1. AOP：Spring AOP、AspectJ\n2. 监控：APM工具\n3. 热部署：热替换类\n4. 代理：动态代理\n5. Mock：测试框架\n```\n\n## 关键要点\n\n- ASM底层但性能好\n- Javassist使用简单\n- Byte Buddy功能强大\n- 选择取决于需求\n\n## 注意事项\n\n- 字节码增强有性能开销\n- 注意ClassLoader问题\n- 调试困难",
+    "tags": ["字节码", "增强"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-027",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是方法内联？JVM是如何进行方法内联的？",
+    "answer": "## 核心概念\n\n方法内联是JIT编译器的重要优化，将方法调用替换为方法体。\n\n### 内联原理\n\n```java\n// 内联前\npublic int compute() {\n    return add(1, 2);\n}\n\npublic int add(int a, int b) {\n    return a + b;\n}\n\n// 内联后\npublic int compute() {\n    return 1 + 2; // 直接替换\n}\n```\n\n### 内联条件\n\n```\n1. 方法体大小\n   - 小方法更容易内联\n   - -XX:MaxInlineSize=35 字节\n\n2. 调用频率\n   - 热点方法更容易内联\n   - -XX:FreqInlineSize=325 字节\n\n3. 方法特征\n   - 静态方法、私有方法、final方法更容易\n   - 虚方法需要类型推断\n```\n\n### 内联优化\n\n```java\n// 内联后的优化\n// 1. 常量折叠\nint result = 1 + 2; // -> int result = 3;\n\n// 2. 死代码消除\nif (false) {\n    // 被消除\n}\n\n// 3. 逃逸分析\n// 如果对象不逃逸，可以栈上分配\n```\n\n### JVM参数\n\n```bash\n# 控制内联\n-XX:+Inline\n-XX:MaxInlineSize=35\n-XX:FreqInlineSize=325\n-XX:MaxInlineLevel=9\n\n# 打印内联信息\n-XX:+PrintInlining\n```\n\n### 代码示例\n\n```java\n// 容易内联\npublic final int add(int a, int b) {\n    return a + b;\n}\n\n// 不容易内联\npublic int process(List<String> list) {\n    // 方法体过大\n    // 循环、异常处理等\n}\n```\n\n## 关键要点\n\n- 内联消除方法调用开销\n- 小方法更容易内联\n- 热点方法更容易内联\n- 内联后可以进一步优化\n\n## 注意事项\n\n- 过度内联导致代码膨胀\n- 虚方法内联需要类型推断\n- -XX:+PrintInlining查看内联情况",
+    "tags": ["JIT编译", "方法内联"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-028",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是逃逸分析？有哪些优化？",
+    "answer": "## 核心概念\n\n逃逸分析判断对象是否逃逸出方法或线程，据此进行优化。\n\n### 逃逸类型\n\n```java\n// 1. 方法逃逸\npublic Object create() {\n    Object obj = new Object();\n    return obj; // 逃逸出方法\n}\n\n// 2. 线程逃逸\npublic void process() {\n    Object obj = new Object();\n    sharedObj = obj; // 逃逸到其他线程\n}\n\n// 3. 不逃逸\npublic void compute() {\n    Object obj = new Object();\n    obj.toString(); // 不逃逸\n}\n```\n\n### 优化策略\n\n#### 1. 栈上分配\n```java\n// 不逃逸的对象可以在栈上分配\npublic void compute() {\n    Point p = new Point(1, 2);\n    int x = p.x;\n    // 方法结束，栈帧弹出，自动回收\n    // 无需GC\n}\n```\n\n#### 2. 标量替换\n```java\n// 对象拆分为基本类型\n// 原始代码\npublic int compute() {\n    Point p = new Point(1, 2);\n    return p.x + p.y;\n}\n\n// 优化后\npublic int compute() {\n    int x = 1;\n    int y = 2;\n    return x + y;\n}\n```\n\n#### 3. 同步消除\n```java\n// 不逃逸的对象不需要同步\npublic void compute() {\n    Object obj = new Object();\n    synchronized (obj) {\n        // 不逃逸，可以消除同步\n    }\n}\n```\n\n### JVM参数\n\n```bash\n-XX:+DoEscapeAnalysis     # 开启逃逸分析\n-XX:+EliminateAllocations # 开启标量替换\n-XX:+EliminateLocks       # 开启同步消除\n```\n\n## 关键要点\n\n- 逃逸分析是JIT的重要优化\n- 栈上分配减少GC压力\n- 标量替换减少对象创建\n- 同步消除减少锁开销\n\n## 注意事项\n\n- 逃逸分析有开销\n- 不是所有对象都能优化\n- 需要配合JIT使用",
+    "tags": ["JIT编译", "逃逸分析"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-029",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是JIT编译？解释执行和编译执行有什么区别？",
+    "answer": "## 核心概念\n\nJIT（Just-In-Time）编译是将热点代码编译为本地机器码的技术。\n\n### 执行模式\n\n```\n1. 解释执行\n   - 逐条解释字节码\n   - 启动快，执行慢\n\n2. 编译执行\n   - 将字节码编译为机器码\n   - 启动慢，执行快\n\n3. 混合执行\n   - JVM默认模式\n   - 先解释执行，热点代码编译\n```\n\n### JIT编译器\n\n```\n+-------------------+\n|   C1编译器        | <- Client Compiler\n|   优化较少，编译快|\n+-------------------+\n|   C2编译器        | <- Server Compiler\n|   优化多，编译慢  |\n+-------------------+\n|   Graal编译器     | <- JDK10+实验性\n+-------------------+\n```\n\n### 分层编译\n\n```\nLevel 0: 解释执行\nLevel 1: C1编译，无性能分析\nLevel 2: C1编译，有限性能分析\nLevel 3: C1编译，完整性能分析\nLevel 4: C2编译\n\n代码执行：\n解释 -> C1 -> C2\n```\n\n### 热点探测\n\n```java\n// 基于计数器\n// 1. 方法调用计数器\n// 2. 回边计数器\n\n// 当计数器超过阈值时\n// 触发JIT编译\n\n-XX:CompileThreshold=10000\n```\n\n### JVM参数\n\n```bash\n# 混合模式\n-Xmixed\n\n# 解释模式\n-Xint\n\n# 编译模式\n-Xcomp\n\n# 分层编译\n-XX:+TieredCompilation\n```\n\n## 关键要点\n\n- JIT将热点代码编译为机器码\n- C1优化少，C2优化多\n- 分层编译结合两者优点\n- 热点探测触发编译\n\n## 注意事项\n\n- JIT编译有开销\n- 预热时间影响性能\n- 优化可能改变代码行为",
+    "tags": ["JIT编译", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-030",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是对象的内存布局？对象头包含哪些信息？",
+    "answer": "## 核心概念\n\nJava对象在内存中由对象头、实例数据和对齐填充组成。\n\n### 对象内存布局\n\n```\n+-------------------+\n|     对象头        |\n|  Mark Word (8字节)|\n|  Klass Pointer    |\n|  [数组长度]       |\n+-------------------+\n|     实例数据      |\n|  字段1            |\n|  字段2            |\n|  ...              |\n+-------------------+\n|     对齐填充      |\n|  Padding          |\n+-------------------+\n```\n\n### Mark Word结构\n\n```\n64位JVM：\n+------+--------+------+--------+--------+\n|unused|hashcode|unused|  age   |  lock  |\n| 1bit | 31bit  | 4bit | 4bit   |  2bit  |\n+------+--------+------+--------+--------+\n\n锁状态：\n01: 无锁/偏向锁\n00: 轻量级锁\n10: 重量级锁\n11: GC标记\n```\n\n### Klass Pointer\n\n```\n指向方法区中的类元数据\n\n对象 -> Klass Pointer -> Class对象 -> 方法区类信息\n```\n\n### 代码示例\n\n```java\n// 使用JOL查看对象布局\nClassLayout layout = ClassLayout.parseInstance(new Object());\nSystem.out.println(layout.toPrintable());\n\n// 输出示例\n// java.lang.Object object internals:\n//  OFFSET  SIZE   TYPE DESCRIPTION\n//       0     4        (object header)\n//       4     4        (object header)\n//       8     4        (object header)\n//      12     4        (loss due to the next object alignment)\n// Instance size: 16 bytes\n```\n\n### 对齐填充\n\n```\n对象大小必须是8字节的整数倍\n不足时需要填充\n\n例如：\n对象头: 12字节\n实例数据: 3字节\n总计: 15字节\n填充: 1字节\n最终: 16字节\n```\n\n## 关键要点\n\n- 对象由对象头、实例数据、对齐填充组成\n- Mark Word存储锁状态、hashcode、GC年龄\n- Klass Pointer指向类元数据\n- 对象大小必须8字节对齐\n\n## 注意事项\n\n- 对象头大小与JVM实现相关\n- 压缩指针可以减少对象头大小\n- JOL工具可以查看对象布局",
+    "tags": ["对象内存", "对象头"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-031",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是对象的创建过程？",
+    "answer": "## 核心概念\n\n对象创建包括类加载、内存分配、初始化等步骤。\n\n### 创建流程\n\n```\n1. 类加载检查\n   - 检查类是否已加载\n   - 未加载则触发类加载\n\n2. 内存分配\n   - 指针碰撞（Bump the Pointer）\n   - 空闲列表（Free List）\n\n3. 初始化零值\n   - 将内存空间初始化为零值\n\n4. 设置对象头\n   - Mark Word\n   - Klass Pointer\n\n5. 执行<init>方法\n   - 执行构造函数\n```\n\n### 内存分配方式\n\n```\n指针碰撞：\n+---+---+---+---+---+---+---+---+\n| A | B | C |   |   |   |   |   |\n+---+---+---+---+---+---+---+---+\n              ^\n              | 指针\n              v\n            分配新对象\n\n空闲列表：\n+---+---+---+---+---+---+---+---+\n| A |空 | B |空 | C |空 |   |空 |\n+---+---+---+---+---+---+---+---+\n空闲列表: [1, 3, 5, 7]\n```\n\n### 线程安全\n\n```java\n// CAS + 失败重试\n// TLAB（Thread Local Allocation Buffer）\n\n// TLAB：\n// 每个线程在Eden区预分配一小块内存\n// 线程优先在TLAB中分配\n// 无需同步\n```\n\n### 代码示例\n\n```java\n// 对象创建\nObject obj = new Object();\n\n// 字节码\n// new           # 分配内存\n// dup           # 复制引用\n// invokespecial # 调用构造函数\n// astore_1      # 存储引用\n```\n\n## 关键要点\n\n- 对象创建需要类加载、内存分配、初始化\n- 指针碰撞和空闲列表是两种分配方式\n- TLAB保证线程安全\n- 对象创建是原子操作\n\n## 注意事项\n\n- TLAB可以提高分配效率\n- 大对象直接在老年代分配\n- 内存分配是热点优化",
+    "tags": ["对象内存", "创建过程"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-032",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是压缩指针？为什么需要压缩指针？",
+    "answer": "## 核心概念\n\n压缩指针是JVM优化64位指针的技术，减少内存占用。\n\n### 问题背景\n\n```\n64位JVM：\n- 指针占8字节\n- 增加内存开销\n- 降低缓存效率\n\n32位JVM：\n- 指针占4字节\n- 最大堆4GB\n```\n\n### 压缩指针原理\n\n```\n压缩前：\n指针 = 0x00000000 0x00000000 0x12345678\n\n压缩后：\n指针 = 0x12345678\n偏移量 = 对象地址 / 8\n\n实际地址 = 压缩指针 * 8 + 堆基地址\n```\n\n### 对象头优化\n\n```\n压缩前：\nMark Word: 8字节\nKlass Pointer: 8字节\n总计: 16字节\n\n压缩后：\nMark Word: 8字节\nKlass Pointer: 4字节\n总计: 12字节 -> 对齐到16字节\n```\n\n### JVM参数\n\n```bash\n# 开启压缩指针（默认开启）\n-XX:+UseCompressedOops\n-XX:+UseCompressedClassPointers\n\n# 关闭压缩指针\n-XX:-UseCompressedOops\n\n# 堆超过32GB自动关闭\n```\n\n### 代码示例\n\n```java\n// 使用JOL查看\nObject obj = new Object();\nClassLayout layout = ClassLayout.parseInstance(obj);\nSystem.out.println(layout.toPrintable());\n\n// 压缩指针下\n// Klass Pointer: 4 bytes\n// 对象大小: 16 bytes\n```\n\n## 关键要点\n\n- 压缩指针减少64位指针开销\n- 堆小于32GB时有效\n- 减少内存占用，提高缓存效率\n- 默认开启\n\n## 注意事项\n\n- 堆超过32GB无效\n- 压缩指针有计算开销\n- 影响最大堆大小",
+    "tags": ["对象内存", "压缩指针"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-033",
+    "module": "JVM",
+    "difficulty": 2,
+    "question": "什么是jps工具？如何使用？",
+    "answer": "## 核心概念\n\njps（JVM Process Status Tool）用于查看Java进程信息。\n\n### 基本用法\n\n```bash\n# 列出Java进程PID和主类名\njps\n\n# 输出示例\n12345 Bootstrap\n12346 Jps\n```\n\n### 常用参数\n\n```bash\n# 显示主类全限定名\njps -l\n\n# 输出：12345 org.apache.catalina.startup.Bootstrap\n\n# 显示JVM参数\njps -v\n\n# 输出：12345 Bootstrap -Xms512m -Xmx1024m ...\n\n# 显示传递给main方法的参数\njps -m\n\n# 输出：12345 Bootstrap start\n\n# 组合使用\njps -lv\n```\n\n### 使用场景\n\n```bash\n# 1. 查找Java进程PID\njps -l | grep myapp\n\n# 2. 查看进程启动参数\njps -v | grep myapp\n\n# 3. 结合其他工具\n# jstack <pid>\n# jmap <pid>\n# jstat <pid>\n```\n\n### 其他查找PID方式\n\n```bash\n# 使用ps命令\nps -ef | grep java\n\n# 使用pgrep\npgrep -f myapp\n\n# 使用lsof\nlsof -i:8080\n```\n\n## 关键要点\n\n- jps列出Java进程\n- -l显示主类名\n- -v显示JVM参数\n- -m显示main参数\n\n## 注意事项\n\n- jps只显示当前用户的进程\n- 需要权限访问临时目录\n- 有时进程可能不显示",
+    "tags": ["诊断工具", "jps"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-034",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是jstack工具？如何分析线程问题？",
+    "answer": "## 核心概念\n\njstack用于生成JVM线程快照，分析线程状态和死锁。\n\n### 基本用法\n\n```bash\n# 生成线程快照\njstack <pid>\n\n# 输出到文件\njstack <pid> > thread_dump.txt\n\n# 强制dump（进程无响应时）\njstack -F <pid>\n\n# 包含锁信息\njstack -l <pid>\n```\n\n### 线程状态\n\n```\nNEW: 未启动\nRUNNABLE: 运行中\nBLOCKED: 阻塞（等待锁）\nWAITING: 无限等待\nTIMED_WAITING: 超时等待\nTERMINATED: 终止\n```\n\n### 分析死锁\n\n```\nFound one Java-level deadlock:\n=============================\n\"Thread-1\":\n  waiting to lock monitor (object 0x...),\n  which is held by \"Thread-0\"\n\"Thread-0\":\n  waiting to lock monitor (object 0x...),\n  which is held by \"Thread-1\"\n```\n\n### 分析CPU高\n\n```bash\n# 1. 找到CPU高的线程\ntop -Hp <pid>\n\n# 2. 转换线程ID为16进制\nprintf '%x\\n' <tid>\n\n# 3. 在jstack中查找\njstack <pid> | grep <tid_hex> -A 30\n```\n\n### 代码示例\n\n```java\n// 模拟死锁\nObject lockA = new Object();\nObject lockB = new Object();\n\nnew Thread(() -> {\n    synchronized (lockA) {\n        try { Thread.sleep(100); } catch (Exception e) {}\n        synchronized (lockB) {}\n    }\n}).start();\n\nnew Thread(() -> {\n    synchronized (lockB) {\n        synchronized (lockA) {}\n    }\n}).start();\n```\n\n## 关键要点\n\n- jstack生成线程快照\n- 可以分析死锁\n- 可以分析CPU高问题\n- -F强制dump\n\n## 注意事项\n\n- dump时应用会暂停\n- 结合top分析CPU问题\n- 定期dump分析",
+    "tags": ["诊断工具", "jstack"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-035",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是jmap工具？如何分析堆内存？",
+    "answer": "## 核心概念\n\njmap用于生成堆dump文件，分析内存使用情况。\n\n### 基本用法\n\n```bash\n# 查看堆内存使用\njmap -heap <pid>\n\n# 输出示例\nHeap Configuration:\n   MinHeapFreeRatio = 40\n   MaxHeapFreeRatio = 70\n   MaxHeapSize = 1073741824 (1024.0MB)\n\nHeap Usage:\nEden Space:\n   capacity = 268435456 (256.0MB)\n   used = 134217728 (128.0MB)\n```\n\n### 生成dump\n\n```bash\n# 生成堆dump\njmap -dump:format=b,file=heap.hprof <pid>\n\n# OOM时自动生成\n-XX:+HeapDumpOnOutOfMemoryError\n-XX:HeapDumpPath=/path/to/dump.hprof\n\n# 只dump存活对象\njmap -dump:live,format=b,file=heap.hprof <pid>\n```\n\n### 查看对象统计\n\n```bash\n# 直方图\njmap -histo <pid>\n\n# 只统计存活对象\njmap -histo:live <pid>\n\n# 输出示例\nnum     #instances         #bytes  class name\n   1:        890123       71209840  [B\n   2:        456789       36543120  [C\n   3:        123456       14814720  java.lang.String\n```\n\n### 分析工具\n\n```\n1. MAT (Memory Analyzer Tool)\n   - Eclipse插件\n   - Leak Suspects报告\n   - Dominator Tree\n\n2. JVisualVM\n   - JDK自带\n   - 实时监控\n   - 堆dump分析\n\n3. JProfiler\n   - 商业工具\n   - 功能强大\n```\n\n## 关键要点\n\n- jmap生成堆dump\n- -histo查看对象统计\n- -heap查看堆配置\n- MAT是分析dump的利器\n\n## 注意事项\n\n- dump时应用会暂停\n- dump文件可能很大\n- live选项触发Full GC",
+    "tags": ["诊断工具", "jmap"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-036",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是jstat工具？如何监控GC？",
+    "answer": "## 核心概念\n\njstat用于监控JVM的GC和类加载等统计信息。\n\n### 基本用法\n\n```bash\n# 查看GC信息\ngc <pid>\n\n# 输出示例\n S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT     GCT\n1024.0 1024.0  0.0   128.0  8192.0   4096.0   10240.0    5120.0   4480.0 3987.2 384.0  352.0     12    0.045   1      0.123    0.168\n```\n\n### 常用选项\n\n```bash\n# GC统计\ngcutil <pid> 1000\n\n# 输出示例\n  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT\n  0.00  12.50  50.00  50.00  89.00  91.67     12    0.045     1    0.123    0.168\n\n# 统计区间\ngcutil <pid> 1000 10\n\n# 类加载统计\nclass <pid>\n\n# 编译统计\ncompiler <pid>\n```\n\n### 字段含义\n\n```\nS0C/S1C: Survivor0/1容量\nS0U/S1U: Survivor0/1使用量\nEC: Eden容量\nEU: Eden使用量\nOC: Old容量\nOU: Old使用量\nYGC: Young GC次数\nYGCT: Young GC总耗时\nFGC: Full GC次数\nFGCT: Full GC总耗时\nGCT: GC总耗时\n```\n\n### 监控脚本\n\n```bash\n#!/bin/bash\n# 监控GC并报警\nwhile true; do\n    gc_info=$(jstat -gcutil $1 | tail -1)\n    fgc=$(echo $gc_info | awk '{print $8}')\n    if [ $fgc -gt 10 ]; then\n        echo \"Full GC频繁: $fgc\"\n    fi\n    sleep 5\ndone\n```\n\n## 关键要点\n\n- jstat监控GC统计\n- gcutil查看GC使用率\n- 可以设置采样间隔\n- 用于实时监控和告警\n\n## 注意事项\n\n- 不影响应用性能\n- 结合监控系统使用\n- 关注Full GC频率",
+    "tags": ["诊断工具", "jstat"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-037",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是JFR（JDK Flight Recorder）？如何使用？",
+    "answer": "## 核心概念\n\nJFR是JDK自带的低开销性能监控工具，记录JVM和应用事件。\n\n### 基本使用\n\n```bash\n# 启动时开始录制\njava -XX:StartFlightRecording=duration=60s,filename=recording.jfr MyApp\n\n# 运行时开始录制\njcmd <pid> JFR.start duration=60s filename=recording.jfr\n\n# 停止录制\njcmd <pid> JFR.stop\n\n# 查看录制状态\njcmd <pid> JFR.check\n```\n\n### 代码中使用\n\n```java\n// JFR事件\n@Name(\"com.example.MyEvent\")\n@Label(\"My Event\")\n@Category(\"Custom\")\nclass MyEvent extends Event {\n    @Label(\"Message\")\n    String message;\n}\n\n// 触发事件\nMyEvent event = new MyEvent();\nevent.message = \"Hello\";\nevent.commit();\n```\n\n### 录制内容\n\n```\n1. JVM事件\n   - GC事件\n   - JIT编译\n   - 类加载\n   - 线程事件\n\n2. 系统事件\n   - CPU使用\n   - 内存使用\n   - IO事件\n\n3. 应用事件\n   - 方法执行\n   - 异常\n   - 自定义事件\n```\n\n### 分析工具\n\n```\n1. JDK Mission Control (JMC)\n   - 可视化分析\n   - 火焰图\n   - 自动分析规则\n\n2. jfr命令行\njfr print recording.jfr\njfr summary recording.jfr\n```\n\n### JVM参数\n\n```bash\n# 持续录制\n-XX:StartFlightRecording=settings=default\n\n# 配置文件\n-XX:FlightRecorderConfiguration=profile\n\n# 限制文件大小\n-XX:FlightRecorderConfiguration=maxsize=100m\n```\n\n## 关键要点\n\n- JFR是低开销监控工具\n- 记录JVM和应用事件\n- JMC是可视化分析工具\n- 适合生产环境使用\n\n## 注意事项\n\n- JFR开销很低（<1%）\n- JDK11+免费使用\n- 可以持续录制",
+    "tags": ["诊断工具", "JFR"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-038",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是Arthas？有哪些常用功能？",
+    "answer": "## 核心概念\n\nArthas是阿里巴巴开源的Java诊断工具，功能强大。\n\n### 安装和启动\n\n```bash\n# 下载\ncurl -O https://arthas.aliyun.com/arthas-boot.jar\n\n# 启动\njava -jar arthas-boot.jar\n\n# 选择Java进程\n```\n\n### 常用命令\n\n#### 1. dashboard\n```bash\n# 实时面板\ndashboard\n\n# 显示线程、内存、GC信息\n```\n\n#### 2. thread\n```bash\n# 查看线程信息\nthread\n\n# 查看阻塞线程\nthread -b\n\n# 查看CPU最高的线程\nthread -n 3\n```\n\n#### 3. jad\n```bash\n# 反编译类\njad com.example.MyClass\n\n# 反编译方法\njad com.example.MyClass myMethod\n```\n\n#### 4. watch\n```bash\n# 观察方法执行\nwatch com.example.MyClass myMethod \"{params, returnObj}\" -x 2\n\n# 观察返回值\nwatch com.example.MyClass myMethod returnObj\n\n# 观察异常\nwatch com.example.MyClass myMethod throwExp\n```\n\n#### 5. trace\n```bash\n# 方法调用追踪\ntrace com.example.MyClass myMethod\n\n# 显示调用耗时\ntrace com.example.MyClass myMethod '#cost > 100'\n```\n\n#### 6. stack\n```bash\n# 方法调用栈\nstack com.example.MyClass myMethod\n```\n\n#### 7. monitor\n```bash\n# 方法监控\nmonitor com.example.MyClass myMethod -c 5\n```\n\n### 使用场景\n\n```\n1. 线程问题分析\n2. 方法执行监控\n3. 类反编译\n4. 性能分析\n5. 热更新代码\n```\n\n## 关键要点\n\n- Arthas是在线诊断工具\n- 支持线程、方法、类分析\n- 不需要重启应用\n- 功能丰富\n\n## 注意事项\n\n- 注意权限控制\n- 生产环境谨慎使用\n- 避免影响性能",
+    "tags": ["诊断工具", "Arthas"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-039",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是MAT（Memory Analyzer Tool）？如何分析内存泄漏？",
+    "answer": "## 核心概念\n\nMAT是Eclipse的内存分析工具，用于分析堆dump文件。\n\n### 基本使用\n\n```bash\n# 1. 生成dump\njmap -dump:format=b,file=heap.hprof <pid>\n\n# 2. 打开MAT\n# File -> Open Heap Dump\n\n# 3. 分析报告\n# Leak Suspects Report\n# Top Consumers\n```\n\n### 核心功能\n\n#### 1. Leak Suspects\n```\n自动分析可能的内存泄漏\n给出嫌疑对象和引用链路\n```\n\n#### 2. Dominator Tree\n```\n显示占用内存最多的对象\n对象到GC Root的引用链\n\n+-- java.lang.Object[] (20%)\n|   +-- java.util.HashMap$Node[] (15%)\n|       +-- java.util.HashMap (10%)\n```\n\n#### 3. Histogram\n```\n按类统计对象数量和大小\n\nClass Name | Objects | Shallow Heap | Retained Heap\nbyte[]     | 100000  | 10MB         | 10MB\nString     | 50000   | 2MB          | 8MB\n```\n\n#### 4. OQL查询\n```sql\n-- 查询大于1MB的数组\nSELECT * FROM byte[] WHERE @retainedHeapSize > 1048576\n\n-- 查询特定类\nSELECT * FROM com.example.MyClass\n\n-- 查询线程\nSELECT * FROM java.lang.Thread\n```\n\n### 分析步骤\n\n```\n1. 打开Leak Suspects\n2. 查看嫌疑对象\n3. 查看引用链路\n4. 分析为什么不能回收\n5. 定位代码问题\n```\n\n### 常见泄漏模式\n\n```java\n// 1. 静态集合\nstatic List<Object> list = new ArrayList<>();\n\n// 2. 未关闭的资源\nConnection conn = getConnection();\n// 未调用close()\n\n// 3. ThreadLocal\nThreadLocal<Object> local = new ThreadLocal<>();\nlocal.set(new Object());\n// 未调用remove()\n```\n\n## 关键要点\n\n- MAT是分析堆dump的利器\n- Leak Suspects自动分析泄漏\n- Dominator Tree显示对象占用\n- OQL用于自定义查询\n\n## 注意事项\n\n- dump文件可能很大\n- 需要足够内存分析\n- 结合代码分析",
+    "tags": ["诊断工具", "MAT"],
+    "source": "高频"
+  },
+  {
+    "id": "java-jvm-040",
+    "module": "JVM",
+    "difficulty": 3,
+    "question": "什么是VisualVM？有哪些常用功能？",
+    "answer": "## 核心概念\n\nVisualVM是JDK自带的可视化监控、故障处理工具。\n\n### 启动方式\n\n```bash\n# 启动VisualVM\njvisualvm\n\n# 或\njvisualvm --jdkhome /path/to/jdk\n```\n\n### 核心功能\n\n#### 1. 概览\n```\n- JVM参数\n- 系统属性\n- JVM信息\n```\n\n#### 2. 监视\n```\n- CPU使用率\n- 堆内存使用\n- 线程数量\n- 类加载数量\n```\n\n#### 3. 线程\n```\n- 线程状态\n- 线程dump\n- 死锁检测\n```\n\n#### 4. 抽样器\n```\n- CPU采样\n- 内存采样\n- 火焰图（插件）\n```\n\n#### 5. 堆Dump\n```\n- 生成堆dump\n- 分析对象\n- 查找泄漏\n```\n\n### 插件安装\n\n```\n1. 打开VisualVM\n2. 工具 -> 插件\n3. 安装Visual GC\n4. 安装BTrace Workbench\n```\n\n### Visual GC插件\n```\n+-------------------+\n|   Visual GC       |\n+-------------------+\n| Eden | S0 | S1    |\n| 80%  | 10%| 10%   |\n+-------------------+\n| Old Generation     |\n| 50%                |\n+-------------------+\n| Metaspace          |\n| 30%                |\n+-------------------+\n```\n\n### 使用场景\n\n```\n1. 实时监控JVM状态\n2. 分析线程问题\n3. 分析内存问题\n4. 性能调优\n5. 故障排查\n```\n\n### 常用操作\n\n```bash\n# 远程连接\n# 1. 启动JMX\njava -Dcom.sun.management.jmxremote \\\n     -Dcom.sun.management.jmxremote.port=9010 \\\n     -Dcom.sun.management.jmxremote.ssl=false \\\n     -Dcom.sun.management.jmxremote.authenticate=false \\\n     MyApp\n\n# 2. VisualVM连接\n# 右键 -> 添加JMX连接\n```\n\n## 关键要点\n\n- VisualVM是JDK自带的监控工具\n- 支持CPU、内存、线程监控\n- Visual GC可视化GC\n- 支持远程连接\n\n## 注意事项\n\n- JDK9后需要单独下载\n- 远程连接需要JMX配置\n- 生产环境谨慎使用",
+    "tags": ["诊断工具", "VisualVM"],
+    "source": "高频"
+  }
+]

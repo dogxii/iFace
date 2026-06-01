@@ -1,0 +1,362 @@
+[
+  {
+    "id": "java-spring-001",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "什么是IoC（控制反转）？Spring是如何实现IoC的？",
+    "answer": "## 核心概念\n\nIoC（Inversion of Control）是将对象创建和依赖管理交给容器的编程思想。\n\n### 传统方式 vs IoC\n\n```java\n// 传统方式：自己创建和管理依赖\npublic class UserService {\n    private UserDao userDao = new UserDaoImpl();\n}\n\n// IoC方式：容器创建和注入\npublic class UserService {\n    @Autowired\n    private UserDao userDao;\n}\n```\n\n### Spring IoC实现\n\n```java\n@Component\npublic class UserDaoImpl implements UserDao {\n}\n\n@Service\npublic class UserService {\n    @Autowired\n    private UserDao userDao;\n}\n\n@Configuration\n@ComponentScan(\"com.example\")\npublic class AppConfig {\n}\n\nAnnotationConfigApplicationContext context =\n    new AnnotationConfigApplicationContext(AppConfig.class);\nUserService userService = context.getBean(UserService.class);\n```\n\n### IoC容器\n\n```\nBeanFactory：基础容器\n  |\nApplicationContext：高级容器\n  +-- ClassPathXmlApplicationContext\n  +-- AnnotationConfigApplicationContext\n  +-- WebApplicationContext\n```\n\n## 关键要点\n\n- IoC是控制反转，DI是依赖注入\n- IoC容器负责对象的创建和管理\n- BeanFactory是基础容器\n- ApplicationContext是高级容器\n\n## 注意事项\n\n- IoC降低了代码耦合度\n- DI是IoC的具体实现方式\n- Spring通过反射创建Bean",
+    "tags": ["IoC", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-002",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "什么是依赖注入（DI）？有哪些注入方式？",
+    "answer": "## 核心概念\n\n依赖注入是IoC的具体实现，将依赖对象注入到需要的地方。\n\n### 注入方式\n\n#### 1. 构造器注入（推荐）\n```java\n@Service\npublic class UserService {\n    private final UserDao userDao;\n\n    @Autowired\n    public UserService(UserDao userDao) {\n        this.userDao = userDao;\n    }\n}\n```\n\n#### 2. Setter注入\n```java\n@Service\npublic class UserService {\n    private UserDao userDao;\n\n    @Autowired\n    public void setUserDao(UserDao userDao) {\n        this.userDao = userDao;\n    }\n}\n```\n\n#### 3. 字段注入\n```java\n@Service\npublic class UserService {\n    @Autowired\n    private UserDao userDao;\n}\n```\n\n### 对比分析\n\n| 注入方式 | 优点 | 缺点 |\n|----------|------|------|\n| 构造器注入 | 不可变、可测试 | 代码多 |\n| Setter注入 | 灵活、可选依赖 | 可能不完整 |\n| 字段注入 | 简洁 | 不可变、难测试 |\n\n## 关键要点\n\n- 构造器注入是推荐方式\n- 字段注入不推荐用于核心业务\n- @Qualifier解决多个Bean冲突\n- DI降低代码耦合度\n\n## 注意事项\n\n- 构造器注入保证依赖不可变\n- 字段注入难以进行单元测试\n- 循环依赖问题",
+    "tags": ["DI", "注入方式"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-003",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "什么是AOP（面向切面编程）？Spring AOP的原理是什么？",
+    "answer": "## 核心概念\n\nAOP（Aspect-Oriented Programming）将横切关注点从业务代码中分离。\n\n### 核心概念\n\n```\n切面（Aspect）：横切关注点的模块化\n连接点（Join Point）：程序执行的特定点\n通知（Advice）：切面在特定连接点的动作\n切入点（Pointcut）：匹配连接点的表达式\n```\n\n### 通知类型\n\n```java\n@Aspect\n@Component\npublic class LogAspect {\n\n    @Before(\"execution(* com.example.service.*.*(..))\")\n    public void before(JoinPoint joinPoint) {\n        System.out.println(\"Before: \" + joinPoint.getSignature());\n    }\n\n    @After(\"execution(* com.example.service.*.*(..))\")\n    public void after(JoinPoint joinPoint) {\n        System.out.println(\"After: \" + joinPoint.getSignature());\n    }\n\n    @AfterReturning(pointcut = \"execution(* com.example.service.*.*(..))\", returning = \"result\")\n    public void afterReturning(JoinPoint joinPoint, Object result) {\n        System.out.println(\"Return: \" + result);\n    }\n\n    @AfterThrowing(pointcut = \"execution(* com.example.service.*.*(..))\", throwing = \"ex\")\n    public void afterThrowing(JoinPoint joinPoint, Exception ex) {\n        System.out.println(\"Exception: \" + ex.getMessage());\n    }\n\n    @Around(\"execution(* com.example.service.*.*(..))\")\n    public Object around(ProceedingJoinPoint joinPoint) throws Throwable {\n        System.out.println(\"Around before\");\n        Object result = joinPoint.proceed();\n        System.out.println(\"Around after\");\n        return result;\n    }\n}\n```\n\n### Spring AOP实现原理\n\n```\nJDK动态代理：\n- 基于接口\n- 使用Proxy.newProxyInstance\n\nCGLIB代理：\n- 基于继承\n- 使用字节码生成子类\n```\n\n## 关键要点\n\n- AOP分离横切关注点\n- Spring AOP基于代理实现\n- JDK动态代理和CGLIB代理\n- 五种通知类型\n\n## 注意事项\n\n- Spring AOP是运行时织入\n- 只能代理public方法\n- 自调用不会触发AOP",
+    "tags": ["AOP", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-004",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "JDK动态代理和CGLIB代理有什么区别？",
+    "answer": "## 核心概念\n\nSpring AOP使用JDK动态代理或CGLIB代理实现。\n\n### JDK动态代理\n\n```java\npublic interface UserService {\n    void save();\n}\n\nInvocationHandler handler = new InvocationHandler() {\n    private Object target;\n    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {\n        System.out.println(\"Before\");\n        Object result = method.invoke(target, args);\n        System.out.println(\"After\");\n        return result;\n    }\n};\n\nUserService proxy = (UserService) Proxy.newProxyInstance(\n    target.getClass().getClassLoader(),\n    target.getClass().getInterfaces(),\n    handler\n);\n```\n\n### CGLIB代理\n\n```java\nEnhancer enhancer = new Enhancer();\nenhancer.setSuperclass(UserServiceImpl.class);\nenhancer.setCallback(new MethodInterceptor() {\n    @Override\n    public Object intercept(Object obj, Method method, Object[] args,\n                            MethodProxy methodProxy) throws Throwable {\n        System.out.println(\"Before\");\n        Object result = methodProxy.invokeSuper(obj, args);\n        System.out.println(\"After\");\n        return result;\n    }\n});\n\nUserServiceImpl proxy = (UserServiceImpl) enhancer.create();\n```\n\n### 对比分析\n\n| 特性 | JDK动态代理 | CGLIB代理 |\n|------|------------|----------|\n| 实现方式 | 基于接口 | 基于继承 |\n| 要求 | 必须实现接口 | 不能是final类 |\n| 性能 | 调用快 | 生成快 |\n| Spring默认 | 有接口时使用 | 无接口时使用 |\n\n## 关键要点\n\n- JDK代理基于接口，CGLIB基于继承\n- JDK代理使用Proxy，CGLIB使用Enhancer\n- Spring默认根据是否有接口选择\n- CGLIB不能代理final类和方法\n\n## 注意事项\n\n- CGLIB通过字节码生成子类\n- JDK代理调用性能更好\n- Spring Boot 2.x默认使用CGLIB",
+    "tags": ["AOP", "代理"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-005",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "AOP的切入点表达式有哪些？如何使用？",
+    "answer": "## 核心概念\n\n切入点表达式用于匹配连接点（方法执行点）。\n\n### 表达式类型\n\n#### 1. execution\n```java\n@Around(\"execution(* com.example.service.*.*(..))\")\n// * - 任意返回类型\n// com.example.service.* - 包下任意类\n// .* - 任意方法\n// (..) - 任意参数\n```\n\n#### 2. within\n```java\n@Around(\"within(com.example.service.*)\")\n```\n\n#### 3. @annotation\n```java\n@Around(\"@annotation(com.example.annotation.Log)\")\n```\n\n#### 4. @within\n```java\n@Around(\"@within(org.springframework.stereotype.Service)\")\n```\n\n#### 5. args\n```java\n@Around(\"args(java.lang.String, int)\")\n```\n\n#### 6. bean\n```java\n@Around(\"bean(userService)\")\n```\n\n### 组合表达式\n\n```java\n// && 与\n@Around(\"execution(* com.example.service.*.*(..)) && @annotation(Log)\")\n\n// || 或\n@Around(\"execution(* com.example.service.*.*(..)) || execution(* com.example.dao.*.*(..))\")\n\n// ! 非\n@Around(\"execution(* com.example.service.*.*(..)) && !execution(* com.example.service.TestService.*(..))\")\n```\n\n## 关键要点\n\n- execution是最常用的表达式\n- @annotation匹配注解\n- 可以组合多个表达式\n- Spring AOP只支持方法级别\n\n## 注意事项\n\n- 表达式过于宽泛影响性能\n- 注意通配符的使用\n- 测试切入点是否匹配",
+    "tags": ["AOP", "切入点"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-006",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring Bean的生命周期是怎样的？",
+    "answer": "## 核心概念\n\nSpring Bean的生命周期包括创建、初始化、使用和销毁。\n\n### 生命周期流程\n\n```\n1. 实例化\n2. 属性赋值\n3. Aware接口回调\n4. BeanPostProcessor前置处理\n5. 初始化\n   - @PostConstruct\n   - InitializingBean.afterPropertiesSet()\n   - 自定义init-method\n6. BeanPostProcessor后置处理（AOP代理在此创建）\n7. 使用\n8. 销毁\n   - @PreDestroy\n   - DisposableBean.destroy()\n   - 自定义destroy-method\n```\n\n### 代码示例\n\n```java\n@Component\npublic class MyBean implements InitializingBean, DisposableBean,\n        BeanNameAware, BeanFactoryAware {\n\n    private String beanName;\n\n    @Override\n    public void setBeanName(String name) {\n        this.beanName = name;\n    }\n\n    @PostConstruct\n    public void postConstruct() {\n        System.out.println(\"PostConstruct\");\n    }\n\n    @Override\n    public void afterPropertiesSet() {\n        System.out.println(\"afterPropertiesSet\");\n    }\n\n    @PreDestroy\n    public void preDestroy() {\n        System.out.println(\"PreDestroy\");\n    }\n\n    @Override\n    public void destroy() {\n        System.out.println(\"destroy\");\n    }\n}\n```\n\n## 关键要点\n\n- 实例化 -> 属性赋值 -> 初始化 -> 使用 -> 销毁\n- Aware接口用于获取容器信息\n- BeanPostProcessor是扩展点\n- AOP代理在后置处理中创建\n\n## 注意事项\n\n- 初始化顺序：@PostConstruct -> afterPropertiesSet -> init-method\n- 单例Bean容器关闭时销毁",
+    "tags": ["Bean生命周期", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-007",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "BeanPostProcessor的作用是什么？有哪些应用？",
+    "answer": "## 核心概念\n\nBeanPostProcessor是Spring提供的扩展点，可以在Bean初始化前后进行处理。\n\n### 接口定义\n\n```java\npublic interface BeanPostProcessor {\n    default Object postProcessBeforeInitialization(Object bean, String beanName) {\n        return bean;\n    }\n    default Object postProcessAfterInitialization(Object bean, String beanName) {\n        return bean;\n    }\n}\n```\n\n### 自定义实现\n\n```java\n@Component\npublic class CustomBeanPostProcessor implements BeanPostProcessor {\n    @Override\n    public Object postProcessBeforeInitialization(Object bean, String beanName) {\n        if (bean instanceof UserService) {\n            System.out.println(\"Before init: \" + beanName);\n        }\n        return bean;\n    }\n}\n```\n\n### 常见应用\n\n```\n1. AOP代理创建：AbstractAutoProxyCreator\n2. @Autowired注入：AutowiredAnnotationBeanPostProcessor\n3. @Transactional处理\n4. @Value注入\n```\n\n## 关键要点\n\n- BeanPostProcessor是Spring扩展点\n- 在初始化前后处理Bean\n- AOP、@Autowired等都依赖它\n- 可以自定义实现\n\n## 注意事项\n\n- 多个PostProcessor有顺序\n- @Order注解控制顺序",
+    "tags": ["Bean生命周期", "扩展点"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-008",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Bean的作用域有哪些？各自有什么特点？",
+    "answer": "## 核心概念\n\nSpring Bean有多种作用域，控制Bean的创建和生命周期。\n\n### 作用域类型\n\n```java\n// 1. singleton（默认）\n@Scope(\"singleton\")\n\n// 2. prototype\n@Scope(\"prototype\")\n\n// 3. request\n@Scope(\"request\")\n\n// 4. session\n@Scope(\"session\")\n\n// 5. application\n@Scope(\"application\")\n```\n\n### 对比分析\n\n| 作用域 | 实例数量 | 生命周期 |\n|--------|---------|----------|\n| singleton | 1 | 容器生命周期 |\n| prototype | N | 请求时创建 |\n| request | N | 请求生命周期 |\n| session | N | 会话生命周期 |\n| application | 1 | 应用生命周期 |\n\n### 注入问题\n\n```java\n@Component\n@Scope(\"singleton\")\npublic class SingletonService {\n    @Autowired\n    private PrototypeBean prototypeBean; // 始终是同一个实例\n\n    @Autowired\n    private ObjectFactory<PrototypeBean> prototypeBeanFactory;\n\n    @Lookup\n    public PrototypeBean getPrototypeBean() {\n        return null;\n    }\n}\n```\n\n## 关键要点\n\n- singleton是默认作用域\n- prototype每次创建新实例\n- request/session用于Web应用\n- 注入不同作用域需要注意\n\n## 注意事项\n\n- singleton注入prototype会失效\n- 使用ObjectFactory或@Lookup解决",
+    "tags": ["Bean作用域", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-009",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "什么是循环依赖？Spring是如何解决循环依赖的？",
+    "answer": "## 核心概念\n\n循环依赖是指两个或多个Bean相互依赖，形成环形依赖关系。\n\n### 三级缓存\n\n```java\n// 一级缓存：完整的Bean\nprivate final Map<String, Object> singletonObjects = new ConcurrentHashMap<>();\n\n// 二级缓存：早期曝光的Bean（半成品）\nprivate final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>();\n\n// 三级缓存：Bean工厂\nprivate final Map<String, ObjectFactory<?>> singletonFactories = new ConcurrentHashMap<>();\n```\n\n### 解决流程\n\n```\n1. 创建ServiceA\n   - 实例化ServiceA\n   - 将ServiceA工厂放入三级缓存\n   - 填充属性，发现依赖ServiceB\n\n2. 创建ServiceB\n   - 实例化ServiceB\n   - 将ServiceB工厂放入三级缓存\n   - 填充属性，发现依赖ServiceA\n   - 从三级缓存获取ServiceA工厂\n   - 创建ServiceA早期引用，放入二级缓存\n\n3. 完成ServiceA\n   - 从二级缓存获取ServiceB早期引用\n   - 填充完成，放入一级缓存\n```\n\n## 关键要点\n\n- 三级缓存解决循环依赖\n- singleton和prototype的处理不同\n- 构造器注入无法解决循环依赖\n- AOP代理在二级缓存中处理\n\n## 注意事项\n\n- 只支持singleton作用域\n- 构造器注入无法解决\n- 设计上应避免循环依赖",
+    "tags": ["循环依赖", "三级缓存"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-010",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "为什么构造器注入无法解决循环依赖？",
+    "answer": "## 核心概念\n\n构造器注入在实例化时就需要依赖，无法使用三级缓存。\n\n### 问题分析\n\n```java\n@Service\npublic class ServiceA {\n    private final ServiceB serviceB;\n    @Autowired\n    public ServiceA(ServiceB serviceB) {\n        this.serviceB = serviceB;\n    }\n}\n\n@Service\npublic class ServiceB {\n    private final ServiceA serviceA;\n    @Autowired\n    public ServiceB(ServiceA serviceA) {\n        this.serviceA = serviceA;\n    }\n}\n```\n\n### 执行流程\n\n```\n1. 创建ServiceA -> 需要ServiceB -> 去创建ServiceB\n2. 创建ServiceB -> 需要ServiceA -> 去创建ServiceA\n3. 无限循环 -> StackOverflowError\n```\n\n### 字段注入为什么可以\n\n```\n1. 实例化ServiceA（空对象）\n2. 将ServiceA工厂放入三级缓存\n3. 填充属性，需要ServiceB\n4. 创建ServiceB\n5. ServiceB需要ServiceA\n6. 从三级缓存获取ServiceA早期引用\n7. 注入完成\n```\n\n### 解决方案\n\n```java\n// 使用@Lazy\n@Service\npublic class ServiceA {\n    private final ServiceB serviceB;\n    @Autowired\n    public ServiceA(@Lazy ServiceB serviceB) {\n        this.serviceB = serviceB;\n    }\n}\n```\n\n## 关键要点\n\n- 构造器注入在实例化时就需要依赖\n- 字段注入在属性填充时才需要依赖\n- @Lazy可以延迟解决\n\n## 注意事项\n\n- 设计上应避免循环依赖\n- 循环依赖是设计问题",
+    "tags": ["循环依赖", "构造器注入"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-011",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "@Autowired注解的工作原理是什么？",
+    "answer": "## 核心概念\n\n@Autowired是Spring的自动注入注解，由AutowiredAnnotationBeanPostProcessor处理。\n\n### 注入流程\n\n```\n1. 扫描@Autowired注解\n2. 按类型查找Bean\n3. 处理多个候选（@Qualifier、@Primary）\n4. 注入依赖\n```\n\n### 代码示例\n\n```java\n// 字段注入\n@Autowired\nprivate UserDao userDao;\n\n// 构造器注入\n@Autowired\npublic UserService(UserDao userDao) {\n    this.userDao = userDao;\n}\n\n// 集合注入\n@Autowired\nprivate List<UserDao> userDaoList;\n\n// required=false\n@Autowired(required = false)\nprivate UserDao userDao;\n```\n\n### 多个候选Bean\n\n```java\n@Autowired\n@Qualifier(\"mysqlUserDao\")\nprivate UserDao userDao;\n\n@Primary\n@Component\npublic class MysqlUserDao implements UserDao {\n}\n```\n\n## 关键要点\n\n- @Autowired按类型注入\n- 由AutowiredAnnotationBeanPostProcessor处理\n- @Qualifier指定Bean名称\n- @Primary标记首选Bean\n\n## 注意事项\n\n- 多个候选Bean需要指定\n- required=false允许null\n- 构造器注入是推荐方式",
+    "tags": ["@Autowired", "自动注入"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-012",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "@Autowired和@Resource有什么区别？",
+    "answer": "## 核心概念\n\n@Autowired和@Resource都是注入注解，但来源和实现不同。\n\n### 对比分析\n\n| 特性 | @Autowired | @Resource |\n|------|-----------|----------|\n| 来源 | Spring | JSR-250 |\n| 注入方式 | 按类型 | 按名称 |\n| 指定名称 | @Qualifier | name属性 |\n| 必须存在 | required属性 | 默认必须 |\n\n### 代码示例\n\n```java\n// @Autowired按类型\n@Autowired\nprivate UserDao userDao;\n\n// @Resource按名称\n@Resource\nprivate UserDao userDao; // 匹配名为userDao的Bean\n\n// @Resource指定名称\n@Resource(name = \"mysqlUserDao\")\nprivate UserDao userDao;\n```\n\n### 执行流程\n\n```\n@Autowired：\n1. 按类型查找\n2. 多个候选用@Qualifier\n3. 找不到用required处理\n\n@Resource：\n1. 按名称查找\n2. 找不到按类型查找\n3. 多个候选报错\n```\n\n## 关键要点\n\n- @Autowired按类型，@Resource按名称\n- @Autowired是Spring注解\n- @Resource是Java标准注解\n\n## 注意事项\n\n- @Resource先按名称再按类型\n- @Autowired先按类型\n- 多个候选需要指定",
+    "tags": ["@Autowired", "@Resource"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-013",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Boot的自动配置原理是什么？",
+    "answer": "## 核心概念\n\nSpring Boot自动配置根据依赖自动配置Bean。\n\n### 核心注解\n\n```java\n@SpringBootApplication\n// 包含\n@SpringBootConfiguration\n@EnableAutoConfiguration\n@ComponentScan\n```\n\n### 自动配置流程\n\n```\n1. @EnableAutoConfiguration\n2. AutoConfigurationImportSelector\n3. 加载META-INF/spring.factories\n4. 获取所有自动配置类\n5. 过滤（@Conditional）\n6. 注册Bean\n```\n\n### spring.factories文件\n\n```properties\norg.springframework.boot.autoconfigure.EnableAutoConfiguration=\\\n  org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration,\\\n  org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration\n```\n\n### @Conditional注解\n\n```java\n@Configuration\n@ConditionalOnClass(DataSource.class)\n@ConditionalOnProperty(prefix = \"spring.datasource\", name = \"url\")\npublic class DataSourceAutoConfiguration {\n\n    @Bean\n    @ConditionalOnMissingBean\n    public DataSource dataSource() {\n        // 创建DataSource\n    }\n}\n```\n\n### 常用条件注解\n\n```java\n@ConditionalOnClass        // 类路径存在类\n@ConditionalOnMissingBean  // 容器不存在Bean\n@ConditionalOnProperty     // 配置属性满足\n@ConditionalOnWebApplication // Web应用\n```\n\n## 关键要点\n\n- 自动配置通过@EnableAutoConfiguration触发\n- AutoConfigurationImportSelector加载配置类\n- spring.factories定义自动配置类\n- @Conditional控制配置条件\n\n## 注意事项\n\n- 自动配置优先级低\n- 用户配置可以覆盖自动配置\n- 可以排除特定自动配置",
+    "tags": ["自动配置", "Spring Boot"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-014",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Boot的条件注解有哪些？如何自定义？",
+    "answer": "## 核心概念\n\n条件注解控制自动配置是否生效。\n\n### 内置条件注解\n\n```java\n@ConditionalOnClass(DataSource.class)\n@ConditionalOnMissingClass(\"com.example.SomeClass\")\n@ConditionalOnBean(DataSource.class)\n@ConditionalOnMissingBean(DataSource.class)\n@ConditionalOnProperty(prefix = \"spring.datasource\", name = \"url\")\n@ConditionalOnResource(resources = \"classpath:mysql.properties\")\n@ConditionalOnWebApplication\n@ConditionalOnExpression(\"${spring.cache.type} == 'redis'\")\n```\n\n### 自定义条件注解\n\n```java\n@Target({ElementType.TYPE, ElementType.METHOD})\n@Retention(RetentionPolicy.RUNTIME)\n@Conditional(CustomCondition.class)\npublic @interface ConditionalOnCustom {\n    String value();\n}\n\npublic class CustomCondition implements Condition {\n    @Override\n    public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {\n        String value = (String) metadata\n            .getAnnotationAttributes(ConditionalOnCustom.class.getName())\n            .get(\"value\");\n        return \"dev\".equals(value);\n    }\n}\n```\n\n## 关键要点\n\n- @Conditional是基础注解\n- 内置多种条件注解\n- 可以自定义条件注解\n- 条件注解控制配置生效\n\n## 注意事项\n\n- 条件注解影响自动配置\n- 注意条件的顺序\n- 测试条件是否生效",
+    "tags": ["自动配置", "条件注解"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-015",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Boot的配置加载顺序是怎样的？",
+    "answer": "## 核心概念\n\nSpring Boot配置有多个来源，按优先级加载。\n\n### 配置来源优先级\n\n```\n1. 命令行参数\n2. JNDI属性\n3. Java系统属性\n4. 操作系统环境变量\n5. application-{profile}.yml\n6. application.yml\n7. @PropertySource注解\n8. 默认属性\n```\n\n### 多环境配置\n\n```yaml\n# application.yml\nspring:\n  profiles:\n    active: dev\n\n# application-dev.yml\nserver:\n  port: 8080\n\n# application-prod.yml\nserver:\n  port: 80\n```\n\n### 配置绑定\n\n```java\n@ConfigurationProperties(prefix = \"app\")\npublic class AppProperties {\n    private String name;\n    private String version;\n}\n```\n\n## 关键要点\n\n- 配置有多个来源和优先级\n- 命令行参数优先级最高\n- 多环境配置使用profile\n- @ConfigurationProperties绑定配置\n\n## 注意事项\n\n- 注意配置优先级\n- 敏感配置需要加密\n- 生产环境配置外部化",
+    "tags": ["自动配置", "配置加载"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-016",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring MVC的请求处理流程是怎样的？",
+    "answer": "## 核心概念\n\nSpring MVC基于DispatcherServlet处理HTTP请求。\n\n### 核心组件\n\n```\nDispatcherServlet: 前端控制器\nHandlerMapping: 处理器映射\nHandlerAdapter: 处理器适配器\nViewResolver: 视图解析器\n```\n\n### 请求流程\n\n```\n1. 客户端发送请求\n2. DispatcherServlet接收\n3. HandlerMapping查找Handler\n4. HandlerAdapter执行Handler\n5. 返回ModelAndView\n6. ViewResolver解析View\n7. 渲染视图\n8. 返回响应\n```\n\n### 源码分析\n\n```java\nprotected void doDispatch(HttpServletRequest request, HttpServletResponse response) {\n    // 1. 查找Handler\n    HandlerExecutionChain mappedHandler = getHandler(request);\n    // 2. 获取HandlerAdapter\n    HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());\n    // 3. 执行拦截器前置处理\n    if (!mappedHandler.applyPreHandle(request, response)) return;\n    // 4. 执行Handler\n    ModelAndView mv = ha.handle(request, response, mappedHandler.getHandler());\n    // 5. 执行拦截器后置处理\n    mappedHandler.applyPostHandle(request, response, mv);\n    // 6. 渲染视图\n    processDispatchResult(request, response, mappedHandler, mv, ex);\n}\n```\n\n## 关键要点\n\n- DispatcherServlet是核心\n- HandlerMapping查找Handler\n- HandlerAdapter执行Handler\n- 拦截器在流程中生效\n\n## 注意事项\n\n- @RestController返回JSON\n- @Controller配合ViewResolver\n- 拦截器按顺序执行",
+    "tags": ["MVC流程", "DispatcherServlet"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-017",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring MVC的参数绑定是如何实现的？",
+    "answer": "## 核心概念\n\n参数绑定将HTTP请求参数映射到方法参数。\n\n### 参数绑定方式\n\n```java\n// @PathVariable\n@GetMapping(\"/user/{id}\")\npublic User getUser(@PathVariable Long id) { }\n\n// @RequestParam\n@GetMapping(\"/users\")\npublic List<User> getUsers(@RequestParam String name) { }\n\n// @RequestBody\n@PostMapping(\"/user\")\npublic User createUser(@RequestBody User user) { }\n\n// @RequestHeader\n@GetMapping(\"/info\")\npublic String getInfo(@RequestHeader String token) { }\n\n// @CookieValue\n@GetMapping(\"/cookie\")\npublic String getCookie(@CookieValue String sessionId) { }\n```\n\n### 自定义参数解析器\n\n```java\n@Component\npublic class CurrentUserArgumentResolver implements HandlerMethodArgumentResolver {\n    @Override\n    public boolean supportsParameter(MethodParameter parameter) {\n        return parameter.hasParameterAnnotation(CurrentUser.class);\n    }\n\n    @Override\n    public Object resolveArgument(MethodParameter parameter,\n                                 ModelAndViewContainer mavContainer,\n                                 NativeWebRequest webRequest,\n                                 WebDataBinderFactory binderFactory) {\n        return getCurrentUser();\n    }\n}\n```\n\n## 关键要点\n\n- @PathVariable绑定路径参数\n- @RequestParam绑定查询参数\n- @RequestBody绑定请求体\n- HandlerMethodArgumentResolver是扩展点\n\n## 注意事项\n\n- 参数类型自动转换\n- @Validated校验参数\n- 自定义参数解析器",
+    "tags": ["MVC流程", "参数绑定"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-018",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring MVC的异常处理机制是怎样的？",
+    "answer": "## 核心概念\n\nSpring MVC提供了多种异常处理方式。\n\n### 1. @ExceptionHandler\n```java\n@RestControllerAdvice\npublic class GlobalExceptionHandler {\n\n    @ExceptionHandler(BusinessException.class)\n    public Result handleBusinessException(BusinessException e) {\n        return Result.error(e.getCode(), e.getMessage());\n    }\n\n    @ExceptionHandler(Exception.class)\n    public Result handleException(Exception e) {\n        return Result.error(\"系统异常\");\n    }\n}\n```\n\n### 2. HandlerExceptionResolver\n```java\n@Component\npublic class CustomExceptionResolver implements HandlerExceptionResolver {\n    @Override\n    public ModelAndView resolveException(HttpServletRequest request,\n                                        HttpServletResponse response,\n                                        Object handler, Exception ex) {\n        ModelAndView mv = new ModelAndView(\"error\");\n        mv.addObject(\"message\", ex.getMessage());\n        return mv;\n    }\n}\n```\n\n### 异常处理顺序\n\n```\n1. @ExceptionHandler（当前Controller）\n2. @ControllerAdvice中的@ExceptionHandler\n3. HandlerExceptionResolver\n4. Spring Boot默认错误页面\n```\n\n## 关键要点\n\n- @ExceptionHandler处理异常\n- @ControllerAdvice全局异常处理\n- HandlerExceptionResolver是扩展点\n- 异常处理有优先级\n\n## 注意事项\n\n- 异常处理要记录日志\n- 返回友好错误信息\n- 区分业务异常和系统异常",
+    "tags": ["MVC流程", "异常处理"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-019",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "拦截器（Interceptor）和过滤器（Filter）有什么区别？",
+    "answer": "## 核心概念\n\n拦截器和过滤器都是请求处理的拦截机制，但实现和作用不同。\n\n### 对比分析\n\n| 特性 | Filter | Interceptor |\n|------|--------|-------------|\n| 规范 | Servlet规范 | Spring MVC |\n| 作用范围 | 所有请求 | DispatcherServlet |\n| 获取Bean | 困难 | 容易 |\n| 执行顺序 | 先执行 | 后执行 |\n| 依赖 | Servlet API | Spring API |\n\n### 执行顺序\n\n```\n请求 -> Filter -> DispatcherServlet -> Interceptor -> Controller\n响应 -> Controller -> Interceptor -> DispatcherServlet -> Filter\n```\n\n### Filter示例\n\n```java\n@Component\npublic class MyFilter implements Filter {\n    @Override\n    public void doFilter(ServletRequest request, ServletResponse response,\n                        FilterChain chain) throws IOException, ServletException {\n        System.out.println(\"Filter before\");\n        chain.doFilter(request, response);\n        System.out.println(\"Filter after\");\n    }\n}\n```\n\n### Interceptor示例\n\n```java\n@Component\npublic class MyInterceptor implements HandlerInterceptor {\n    @Override\n    public boolean preHandle(HttpServletRequest request,\n                           HttpServletResponse response, Object handler) {\n        return true;\n    }\n}\n```\n\n## 关键要点\n\n- Filter是Servlet规范，Interceptor是Spring MVC\n- Filter作用范围更广\n- Interceptor可以获取Spring Bean\n- Filter先于Interceptor执行\n\n## 注意事项\n\n- Filter适合通用处理\n- Interceptor适合业务处理\n- 注意执行顺序",
+    "tags": ["拦截器", "过滤器"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-020",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "如何自定义拦截器？有哪些应用场景？",
+    "answer": "## 核心概念\n\n自定义拦截器可以实现权限校验、日志记录等功能。\n\n### 实现步骤\n\n```java\n// 1. 实现HandlerInterceptor\n@Component\npublic class AuthInterceptor implements HandlerInterceptor {\n    @Override\n    public boolean preHandle(HttpServletRequest request,\n                           HttpServletResponse response,\n                           Object handler) throws Exception {\n        String token = request.getHeader(\"Authorization\");\n        if (token == null || !validateToken(token)) {\n            response.setStatus(401);\n            return false;\n        }\n        return true;\n    }\n}\n\n// 2. 注册拦截器\n@Configuration\npublic class WebMvcConfig implements WebMvcConfigurer {\n    @Autowired\n    private AuthInterceptor authInterceptor;\n\n    @Override\n    public void addInterceptors(InterceptorRegistry registry) {\n        registry.addInterceptor(authInterceptor)\n                .addPathPatterns(\"/api/**\")\n                .excludePathPatterns(\"/api/login\", \"/api/register\");\n    }\n}\n```\n\n### 应用场景\n\n```\n1. 权限校验：检查Token、权限\n2. 日志记录：请求日志、耗时统计\n3. 接口限流：限制请求频率\n4. 参数校验：公共参数校验\n```\n\n## 关键要点\n\n- 实现HandlerInterceptor接口\n- 注册到InterceptorRegistry\n- 可以配置路径匹配\n- 多个拦截器按顺序执行\n\n## 注意事项\n\n- preHandle返回false中断请求\n- 注意拦截器顺序\n- 静态资源可以排除",
+    "tags": ["拦截器", "自定义"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-021",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring事务管理的核心概念是什么？",
+    "answer": "## 核心概念\n\nSpring事务管理提供了声明式和编程式两种方式。\n\n### 事务特性（ACID）\n\n```\n1. 原子性（Atomicity）：事务是不可分割的工作单位\n2. 一致性（Consistency）：事务前后数据保持一致\n3. 隔离性（Isolation）：并发事务互不干扰\n4. 持久性（Durability）：事务提交后永久保存\n```\n\n### 声明式事务\n\n```java\n@Service\npublic class UserService {\n    @Transactional\n    public void transfer(Long fromId, Long toId, BigDecimal amount) {\n        accountService.debit(fromId, amount);\n        accountService.credit(toId, amount);\n    }\n}\n```\n\n### 事务传播行为\n\n```java\n@Transactional(propagation = Propagation.REQUIRED)    // 有事务加入，没有创建\n@Transactional(propagation = Propagation.REQUIRES_NEW) // 总是创建新事务\n@Transactional(propagation = Propagation.NESTED)       // 嵌套事务\n```\n\n### 事务隔离级别\n\n| 隔离级别 | 脏读 | 不可重复读 | 幻读 |\n|---------|------|----------|------|\n| READ_UNCOMMITTED | 有 | 有 | 有 |\n| READ_COMMITTED | 无 | 有 | 有 |\n| REPEATABLE_READ | 无 | 无 | 有 |\n| SERIALIZABLE | 无 | 无 | 无 |\n\n## 关键要点\n\n- 声明式事务使用@Transactional\n- 传播行为控制事务边界\n- 隔离级别控制并发问题\n\n## 注意事项\n\n- @Transactional只能用于public方法\n- 自调用不会触发事务\n- 异常类型影响回滚",
+    "tags": ["事务管理", "基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-022",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "@Transactional注解的属性有哪些？如何使用？",
+    "answer": "## 核心概念\n\n@Transactional有多个属性控制事务行为。\n\n### 核心属性\n\n```java\n@Transactional(\n    value = \"transactionManager\",  // 事务管理器\n    propagation = Propagation.REQUIRED, // 传播行为\n    isolation = Isolation.DEFAULT,      // 隔离级别\n    timeout = -1,                       // 超时时间\n    readOnly = false,                   // 是否只读\n    rollbackFor = Exception.class,      // 回滚异常\n    noRollbackFor = Exception.class     // 不回滚异常\n)\n```\n\n### rollbackFor属性\n\n```java\n// 默认只回滚RuntimeException和Error\n@Transactional\npublic void method() throws Exception {\n    throw new Exception(); // 不会回滚\n}\n\n// 指定回滚异常\n@Transactional(rollbackFor = Exception.class)\npublic void method() throws Exception {\n    throw new Exception(); // 会回滚\n}\n```\n\n### readOnly属性\n\n```java\n@Transactional(readOnly = true)\npublic User getUser(Long id) {\n    return userRepository.findById(id);\n}\n```\n\n## 关键要点\n\n- propagation控制传播行为\n- isolation控制隔离级别\n- rollbackFor控制回滚异常\n- readOnly优化只读查询\n\n## 注意事项\n\n- 默认只回滚RuntimeException\n- 建议指定rollbackFor = Exception.class\n- 只读查询设置readOnly = true",
+    "tags": ["事务管理", "@Transactional"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-023",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring事务失效的场景有哪些？",
+    "answer": "## 核心概念\n\nSpring事务基于AOP代理实现，某些场景会导致事务失效。\n\n### 失效场景\n\n#### 1. 自调用\n```java\n@Service\npublic class UserService {\n    public void outerMethod() {\n        this.innerMethod(); // 自调用，不会经过代理\n    }\n\n    @Transactional\n    public void innerMethod() {\n        // 事务不会生效\n    }\n}\n```\n\n#### 2. 非public方法\n```java\n@Transactional\nprivate void method() { // 事务不会生效\n}\n```\n\n#### 3. 异常类型不匹配\n```java\n@Transactional\npublic void method() throws Exception {\n    throw new Exception(); // 默认不回滚\n}\n```\n\n#### 4. 异常被吞掉\n```java\n@Transactional\npublic void method() {\n    try {\n        // 业务代码\n    } catch (Exception e) {\n        // 异常被吞掉，不会回滚\n    }\n}\n```\n\n#### 5. 传播行为设置错误\n```java\n@Transactional(propagation = Propagation.NOT_SUPPORTED)\npublic void method() { // 非事务执行\n}\n```\n\n### 解决方案\n\n```java\n// 使用AopContext.currentProxy()\n((UserService) AopContext.currentProxy()).innerMethod();\n\n// 注入自己\n@Autowired\nprivate UserService self;\n\n// 使用编程式事务\n@Autowired\nprivate TransactionTemplate transactionTemplate;\n```\n\n## 关键要点\n\n- 自调用不会经过代理\n- 非public方法不支持事务\n- 异常类型要匹配\n- 异常不能被吞掉\n\n## 注意事项\n\n- 了解事务失效场景\n- 使用AopContext或注入自己\n- 指定rollbackFor",
+    "tags": ["事务管理", "事务失效"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-024",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring事务的实现原理是什么？",
+    "answer": "## 核心概念\n\nSpring事务基于AOP代理和TransactionManager实现。\n\n### 核心组件\n\n```\nPlatformTransactionManager: 事务管理器\nTransactionDefinition: 事务定义\nTransactionStatus: 事务状态\n```\n\n### 实现原理\n\n```\n1. @Transactional注解被解析\n2. TransactionInterceptor拦截\n3. 获取事务管理器\n4. 根据传播行为决定是否创建事务\n5. 执行业务方法\n6. 根据异常决定提交或回滚\n```\n\n### 源码分析\n\n```java\n// TransactionInterceptor\npublic Object invoke(MethodInvocation invocation) throws Throwable {\n    // 1. 获取事务属性\n    TransactionAttribute txAttr = tas.getTransactionAttribute(...);\n    // 2. 获取事务管理器\n    PlatformTransactionManager tm = determineTransactionManager(txAttr);\n    // 3. 创建事务\n    TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, ...);\n    try {\n        // 4. 执行业务方法\n        retVal = invocation.proceed();\n    } catch (Throwable ex) {\n        // 5. 异常处理\n        completeTransactionAfterThrowing(txInfo, ex);\n        throw ex;\n    }\n    // 6. 提交事务\n    commitTransactionAfterReturning(txInfo);\n    return retVal;\n}\n```\n\n### 事务管理器\n\n```java\nDataSourceTransactionManager  // JDBC事务\nJpaTransactionManager         // JPA事务\nJtaTransactionManager         // JTA事务（分布式）\n```\n\n## 关键要点\n\n- 事务基于AOP代理实现\n- TransactionInterceptor是核心\n- TransactionManager管理事务\n- 传播行为决定事务边界\n\n## 注意事项\n\n- 理解传播行为很重要\n- 异常类型影响回滚\n- 事务管理器要匹配",
+    "tags": ["事务管理", "原理"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-025",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring事件机制的原理是什么？有哪些应用场景？",
+    "answer": "## 核心概念\n\nSpring事件机制基于观察者模式，实现组件间解耦通信。\n\n### 核心组件\n\n```\nApplicationEvent: 事件对象\nApplicationListener: 事件监听器\nApplicationEventPublisher: 事件发布器\n```\n\n### 实现步骤\n\n```java\n// 1. 定义事件\npublic class UserRegisterEvent extends ApplicationEvent {\n    private String username;\n    public UserRegisterEvent(Object source, String username) {\n        super(source);\n        this.username = username;\n    }\n}\n\n// 2. 发布事件\n@Service\npublic class UserService {\n    @Autowired\n    private ApplicationEventPublisher eventPublisher;\n\n    public void register(String username) {\n        userRepository.save(user);\n        eventPublisher.publishEvent(new UserRegisterEvent(this, username));\n    }\n}\n\n// 3. 监听事件\n@Component\npublic class UserRegisterListener {\n    @EventListener\n    public void handleUserRegister(UserRegisterEvent event) {\n        System.out.println(\"用户注册: \" + event.getUsername());\n    }\n}\n```\n\n### @EventListener注解\n\n```java\n@EventListener\npublic void handleEvent(UserRegisterEvent event) { }\n\n@EventListener(condition = \"#event.username == 'admin'\")\npublic void handleAdmin(UserRegisterEvent event) { }\n\n@EventListener\n@Async\npublic void handleAsync(UserRegisterEvent event) { }\n```\n\n## 关键要点\n\n- 基于观察者模式\n- ApplicationEvent是事件基类\n- @EventListener简化监听\n- 支持异步和条件监听\n\n## 注意事项\n\n- 事件处理默认同步\n- @Async实现异步\n- 注意事务边界",
+    "tags": ["事件机制", "观察者模式"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-026",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "如何实现Spring事件的异步处理？",
+    "answer": "## 核心概念\n\nSpring事件默认同步处理，可以通过@Async实现异步。\n\n### 实现方式\n\n```java\n// 1. 启用异步支持\n@Configuration\n@EnableAsync\npublic class AsyncConfig {\n    @Bean\n    public Executor asyncExecutor() {\n        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();\n        executor.setCorePoolSize(5);\n        executor.setMaxPoolSize(10);\n        executor.setQueueCapacity(100);\n        executor.setThreadNamePrefix(\"async-\");\n        executor.initialize();\n        return executor;\n    }\n}\n\n// 2. 异步监听事件\n@Component\npublic class UserEventListener {\n    @EventListener\n    @Async\n    public void handleUserRegister(UserRegisterEvent event) {\n        System.out.println(\"异步处理: \" + event.getUsername());\n    }\n}\n```\n\n### 事务事件\n\n```java\n@Component\npublic class TransactionalEventListener {\n\n    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)\n    public void handleAfterCommit(UserRegisterEvent event) {\n        // 事务提交后处理\n    }\n}\n```\n\n### 事务阶段\n\n```\nBEFORE_COMMIT: 事务提交前\nAFTER_COMMIT: 事务提交后（默认）\nAFTER_ROLLBACK: 事务回滚后\nAFTER_COMPLETION: 事务完成后\n```\n\n## 关键要点\n\n- @EnableAsync启用异步支持\n- @Async实现异步执行\n- @TransactionalEventListener监听事务事件\n- 配置线程池\n\n## 注意事项\n\n- 异步处理需要注意异常\n- 事务事件在事务阶段触发\n- 合理配置线程池",
+    "tags": ["事件机制", "异步"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-027",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring Security的核心概念是什么？",
+    "answer": "## 核心概念\n\nSpring Security是Spring的安全框架，提供认证和授权功能。\n\n### 核心组件\n\n```\nSecurityContextHolder: 安全上下文持有者\nSecurityContext: 安全上下文\nAuthentication: 认证信息\nUserDetails: 用户详情\nUserDetailsService: 用户详情服务\n```\n\n### 认证流程\n\n```\n1. 用户提交凭证\n2. AuthenticationManager处理\n3. AuthenticationProvider验证\n4. UserDetailsService加载用户\n5. 密码验证\n6. 创建Authentication对象\n7. 存入SecurityContextHolder\n```\n\n### 基本配置\n\n```java\n@Configuration\n@EnableWebSecurity\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {\n        http\n            .authorizeHttpRequests(auth -> auth\n                .requestMatchers(\"/public/**\").permitAll()\n                .requestMatchers(\"/admin/**\").hasRole(\"ADMIN\")\n                .anyRequest().authenticated()\n            )\n            .formLogin(form -> form.loginPage(\"/login\").permitAll())\n            .logout(logout -> logout.logoutSuccessUrl(\"/\"));\n        return http.build();\n    }\n\n    @Bean\n    public PasswordEncoder passwordEncoder() {\n        return new BCryptPasswordEncoder();\n    }\n}\n```\n\n## 关键要点\n\n- SecurityContextHolder存储认证信息\n- UserDetailsService加载用户\n- AuthenticationManager管理认证\n- SecurityFilterChain配置安全规则\n\n## 注意事项\n\n- 密码要加密存储\n- 注意CSRF防护\n- 合理配置权限",
+    "tags": ["Security", "认证授权"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-028",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Security的过滤器链是怎样的？",
+    "answer": "## 核心概念\n\nSpring Security通过过滤器链实现安全功能。\n\n### 核心过滤器\n\n```\nSecurityContextPersistenceFilter: 加载SecurityContext\nUsernamePasswordAuthenticationFilter: 处理表单登录\nBasicAuthenticationFilter: 处理Basic认证\nExceptionTranslationFilter: 处理安全异常\nFilterSecurityInterceptor: 权限校验\n```\n\n### 自定义过滤器\n\n```java\n@Component\npublic class JwtAuthenticationFilter extends OncePerRequestFilter {\n    @Override\n    protected void doFilterInternal(HttpServletRequest request,\n                                   HttpServletResponse response,\n                                   FilterChain filterChain)\n            throws ServletException, IOException {\n        String token = request.getHeader(\"Authorization\");\n        if (token != null && token.startsWith(\"Bearer \")) {\n            token = token.substring(7);\n            if (validateToken(token)) {\n                Authentication auth = createAuthentication(token);\n                SecurityContextHolder.getContext().setAuthentication(auth);\n            }\n        }\n        filterChain.doFilter(request, response);\n    }\n}\n\n// 注册过滤器\n@Configuration\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {\n        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);\n        return http.build();\n    }\n}\n```\n\n## 关键要点\n\n- 过滤器链按顺序执行\n- 每个过滤器负责特定功能\n- 可以自定义过滤器\n- 过滤器顺序很重要\n\n## 注意事项\n\n- 注意过滤器顺序\n- 自定义过滤器要正确注册\n- 理解每个过滤器的作用",
+    "tags": ["Security", "过滤器链"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-029",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Boot Starter的原理是什么？如何自定义Starter？",
+    "answer": "## 核心概念\n\nStarter是Spring Boot的依赖管理和自动配置机制。\n\n### Starter组成\n\n```\nspring-boot-starter-xxx/\n  +-- pom.xml                    # 依赖管理\n  +-- src/main/resources/\n       +-- META-INF/spring.factories # 自动配置\n```\n\n### 自定义Starter步骤\n\n```java\n// 1. 创建自动配置类\n@Configuration\n@ConditionalOnClass(MyService.class)\n@EnableConfigurationProperties(MyProperties.class)\npublic class MyAutoConfiguration {\n    @Bean\n    @ConditionalOnMissingBean\n    public MyService myService(MyProperties properties) {\n        return new MyService(properties.getName());\n    }\n}\n\n// 2. 创建配置属性\n@ConfigurationProperties(prefix = \"my.service\")\npublic class MyProperties {\n    private String name = \"default\";\n    private int timeout = 3000;\n}\n\n// 3. 创建spring.factories\n// META-INF/spring.factories\n// org.springframework.boot.autoconfigure.EnableAutoConfiguration=\\\n//   com.example.MyAutoConfiguration\n```\n\n### 使用Starter\n```yaml\nmy:\n  service:\n    name: my-app\n    timeout: 5000\n```\n\n## 关键要点\n\n- Starter简化依赖管理\n- 自动配置通过spring.factories\n- @Conditional控制配置条件\n- @ConfigurationProperties绑定配置\n\n## 注意事项\n\n- 命名规范：xxx-spring-boot-starter\n- 提供合理的默认值\n- 使用@Conditional控制",
+    "tags": ["Starter", "自动配置"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-030",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "如何自定义Spring Boot Starter？",
+    "answer": "## 核心概念\n\n自定义Starter需要创建自动配置模块和Starter模块。\n\n### 项目结构\n```\nmy-spring-boot-starter/\n  +-- my-spring-boot-autoconfigure/\n  |    +-- src/main/java/\n  |    |    +-- MyAutoConfiguration.java\n  |    |    +-- MyProperties.java\n  |    |    +-- MyService.java\n  |    +-- src/main/resources/META-INF/spring.factories\n  +-- my-spring-boot-starter/pom.xml\n```\n\n### 自动配置类\n```java\n@Configuration\n@ConditionalOnClass(MyService.class)\n@EnableConfigurationProperties(MyProperties.class)\npublic class MyAutoConfiguration {\n\n    @Bean\n    @ConditionalOnMissingBean\n    @ConditionalOnProperty(prefix = \"my.service\", name = \"enabled\",\n                          havingValue = \"true\", matchIfMissing = true)\n    public MyService myService(MyProperties properties) {\n        return new MyService(properties.getName(), properties.getTimeout());\n    }\n}\n```\n\n### 配置属性\n```java\n@ConfigurationProperties(prefix = \"my.service\")\npublic class MyProperties {\n    private String name = \"default\";\n    private int timeout = 3000;\n    private boolean enabled = true;\n    private List<String> servers = new ArrayList<>();\n}\n```\n\n## 关键要点\n\n- 分为autoconfigure和starter两个模块\n- @Conditional控制自动配置\n- @ConfigurationProperties绑定配置\n- spring.factories注册配置类\n\n## 注意事项\n\n- 提供合理的默认值\n- 使用@ConditionalOnMissingBean\n- 编写文档和示例",
+    "tags": ["Starter", "自定义"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-031",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring Boot的Profile配置如何使用？",
+    "answer": "## 核心概念\n\nProfile用于区分不同环境的配置。\n\n### 配置文件\n```\napplication.yml           # 公共配置\napplication-dev.yml       # 开发环境\napplication-test.yml      # 测试环境\napplication-prod.yml      # 生产环境\n```\n\n### 激活Profile\n\n```yaml\n# 配置文件激活\nspring:\n  profiles:\n    active: dev\n```\n\n```bash\n# 命令行激活\njava -jar app.jar --spring.profiles.active=prod\n\n# 环境变量激活\nexport SPRING_PROFILES_ACTIVE=prod\n\n# JVM参数激活\njava -Dspring.profiles.active=prod -jar app.jar\n```\n\n### @Profile注解\n\n```java\n@Configuration\npublic class DataSourceConfig {\n    @Bean\n    @Profile(\"dev\")\n    public DataSource devDataSource() {\n        return new EmbeddedDatabaseBuilder().build();\n    }\n\n    @Bean\n    @Profile(\"prod\")\n    public DataSource prodDataSource() {\n        return DataSourceBuilder.create().build();\n    }\n}\n```\n\n### Profile分组\n```yaml\nspring:\n  profiles:\n    group:\n      production: prod,proddb,prodmq\n      test: testdb,testmq\n```\n\n## 关键要点\n\n- Profile区分不同环境\n- 多种激活方式\n- @Profile注解控制Bean\n- 配置文件优先级\n\n## 注意事项\n\n- 公共配置放在application.yml\n- 敏感配置外部化\n- 使用@Profile控制Bean",
+    "tags": ["Profile", "多环境"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-032",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Boot的配置绑定有哪些方式？",
+    "answer": "## 核心概念\n\nSpring Boot提供了多种配置绑定方式。\n\n### 1. @Value\n```java\n@Value(\"${app.name}\")\nprivate String appName;\n\n@Value(\"${app.timeout:3000}\")\nprivate int timeout;\n\n@Value(\"#{systemProperties['user.home']}\")\nprivate String home;\n```\n\n### 2. @ConfigurationProperties\n```java\n@Component\n@ConfigurationProperties(prefix = \"app\")\npublic class AppProperties {\n    private String name;\n    private int timeout;\n    private List<String> servers;\n    private Map<String, String> headers;\n}\n```\n\n### 3. @PropertySource\n```java\n@Configuration\n@PropertySource(\"classpath:custom.properties\")\npublic class CustomConfig {\n    @Value(\"${custom.property}\")\n    private String property;\n}\n```\n\n### 4. Environment\n```java\n@Component\npublic class MyComponent {\n    @Autowired\n    private Environment env;\n\n    public String getAppName() {\n        return env.getProperty(\"app.name\");\n    }\n}\n```\n\n### 数据校验\n```java\n@Component\n@ConfigurationProperties(prefix = \"app\")\n@Validated\npublic class AppProperties {\n    @NotNull\n    private String name;\n\n    @Min(1000)\n    @Max(10000)\n    private int timeout;\n}\n```\n\n## 关键要点\n\n- @Value绑定单个值\n- @ConfigurationProperties绑定对象\n- 支持松散绑定\n- 支持数据校验\n\n## 注意事项\n\n- @ConfigurationProperties更推荐\n- 注意松散绑定规则\n- 配置元数据提供IDE提示",
+    "tags": ["Profile", "配置绑定"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-033",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的@Transactional和编程式事务有什么区别？",
+    "answer": "## 核心概念\n\nSpring提供了声明式和编程式两种事务管理方式。\n\n### 声明式事务\n```java\n@Service\npublic class UserService {\n    @Transactional\n    public void transfer(Long fromId, Long toId, BigDecimal amount) {\n        accountService.debit(fromId, amount);\n        accountService.credit(toId, amount);\n    }\n}\n```\n\n### 编程式事务\n```java\n@Service\npublic class UserService {\n    @Autowired\n    private TransactionTemplate transactionTemplate;\n\n    public void transfer(Long fromId, Long toId, BigDecimal amount) {\n        transactionTemplate.execute(status -> {\n            try {\n                accountService.debit(fromId, amount);\n                accountService.credit(toId, amount);\n                return null;\n            } catch (Exception e) {\n                status.setRollbackOnly();\n                throw e;\n            }\n        });\n    }\n}\n```\n\n### 对比分析\n\n| 特性 | 声明式事务 | 编程式事务 |\n|------|-----------|----------|\n| 使用方式 | @Transactional | TransactionTemplate |\n| 代码侵入 | 低 | 高 |\n| 灵活性 | 一般 | 高 |\n| 粒度 | 方法级别 | 代码块级别 |\n| 适用场景 | 大多数场景 | 复杂事务逻辑 |\n\n### 事务失效场景对比\n```java\n// 声明式事务：自调用失效\npublic void method() {\n    this.innerMethod(); // 事务不生效\n}\n\n// 编程式事务：不受代理影响\npublic void method() {\n    transactionTemplate.execute(status -> {\n        // 事务生效\n        return null;\n    });\n}\n```\n\n## 关键要点\n\n- 声明式事务使用简单\n- 编程式事务更灵活\n- 编程式事务不受代理影响\n- 根据场景选择合适方式\n\n## 注意事项\n\n- 优先使用声明式事务\n- 复杂场景使用编程式事务\n- 理解两种方式的区别",
+    "tags": ["事务管理", "编程式"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-034",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的BeanFactory和ApplicationContext有什么区别？",
+    "answer": "## 核心概念\n\nBeanFactory和ApplicationContext都是Spring容器，但功能不同。\n\n### 对比分析\n\n| 特性 | BeanFactory | ApplicationContext |\n|------|------------|-------------------|\n| Bean加载 | 延迟加载 | 预加载 |\n| 国际化 | 不支持 | 支持 |\n| 事件发布 | 不支持 | 支持 |\n| AOP | 基本支持 | 完整支持 |\n| Web支持 | 不支持 | 支持 |\n| 资源访问 | 基本支持 | 完整支持 |\n\n### ApplicationContext实现\n```java\n// ClassPathXmlApplicationContext\nApplicationContext context =\n    new ClassPathXmlApplicationContext(\"beans.xml\");\n\n// AnnotationConfigApplicationContext\nApplicationContext context =\n    new AnnotationConfigApplicationContext(AppConfig.class);\n\n// WebApplicationContext\nWebApplicationContext context =\n    WebApplicationContextUtils.getWebApplicationContext(servletContext);\n```\n\n### 国际化支持\n```java\nApplicationContext context = new ClassPathXmlApplicationContext(\"beans.xml\");\nString message = context.getMessage(\"hello\", null, Locale.CHINA);\n```\n\n## 关键要点\n\n- BeanFactory是基础容器\n- ApplicationContext是高级容器\n- ApplicationContext功能更丰富\n- 大多数场景使用ApplicationContext\n\n## 注意事项\n\n- BeanFactory延迟加载节省资源\n- ApplicationContext预加载便于发现错误\n- Spring Boot默认使用ApplicationContext",
+    "tags": ["BeanFactory", "ApplicationContext"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-035",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的@Async注解是如何实现的？",
+    "answer": "## 核心概念\n\n@Async通过AOP代理实现异步执行。\n\n### 实现原理\n```\n1. @EnableAsync启用异步支持\n2. AsyncAnnotationBeanPostProcessor处理@Async\n3. 创建代理对象\n4. 代理拦截方法调用\n5. 提交到线程池执行\n```\n\n### 使用方式\n```java\n@Configuration\n@EnableAsync\npublic class AsyncConfig {\n    @Bean\n    public Executor taskExecutor() {\n        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();\n        executor.setCorePoolSize(5);\n        executor.setMaxPoolSize(10);\n        executor.setQueueCapacity(100);\n        executor.setThreadNamePrefix(\"async-\");\n        executor.initialize();\n        return executor;\n    }\n}\n\n@Service\npublic class AsyncService {\n    @Async\n    public void asyncMethod() {\n        System.out.println(\"Async: \" + Thread.currentThread().getName());\n    }\n\n    @Async(\"taskExecutor\")\n    public void asyncWithExecutor() { }\n\n    @Async\n    public CompletableFuture<String> asyncWithResult() {\n        return CompletableFuture.completedFuture(\"result\");\n    }\n}\n```\n\n### 异步方法限制\n```java\n// 1. 必须是public方法\n@Async\nprivate void method() {} // 不生效\n\n// 2. 不能是static方法\n@Async\npublic static void method() {} // 不生效\n\n// 3. 自调用不生效\npublic void outerMethod() {\n    this.innerMethod(); // 不会异步\n}\n```\n\n### 异步异常处理\n```java\n@Configuration\n@EnableAsync\npublic class AsyncConfig implements AsyncConfigurer {\n    @Override\n    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {\n        return (ex, method, params) -> {\n            log.error(\"异步方法异常: {}\", method.getName(), ex);\n        };\n    }\n}\n```\n\n## 关键要点\n\n- @Async通过AOP代理实现\n- 需要@EnableAsync启用\n- 方法必须是public\n- 返回void或Future\n\n## 注意事项\n\n- 自调用不生效\n- 异常需要特殊处理\n- 合理配置线程池",
+    "tags": ["@Async", "异步"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-036",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的@Cacheable注解是如何实现的？",
+    "answer": "## 核心概念\n\n@Cacheable通过AOP代理实现方法结果缓存。\n\n### 使用方式\n```java\n@Configuration\n@EnableCaching\npublic class CacheConfig {\n    @Bean\n    public CacheManager cacheManager() {\n        return new ConcurrentMapCacheManager(\"users\");\n    }\n}\n\n@Service\npublic class UserService {\n\n    @Cacheable(value = \"users\", key = \"#id\")\n    public User getUser(Long id) {\n        return userRepository.findById(id);\n    }\n\n    @CachePut(value = \"users\", key = \"#user.id\")\n    public User updateUser(User user) {\n        return userRepository.save(user);\n    }\n\n    @CacheEvict(value = \"users\", key = \"#id\")\n    public void deleteUser(Long id) {\n        userRepository.deleteById(id);\n    }\n}\n```\n\n### SpEL表达式\n```java\n@Cacheable(value = \"users\", key = \"#id\")\n@Cacheable(value = \"users\", key = \"#user.id\")\n@Cacheable(value = \"users\", condition = \"#id > 0\")\n@Cacheable(value = \"users\", unless = \"#result == null\")\n```\n\n### 缓存实现\n```\nConcurrentMapCacheManager  # 本地缓存\nRedisCacheManager          # Redis缓存\nEhCacheCacheManager        # EhCache缓存\nCaffeineCacheManager       # Caffeine缓存\n```\n\n## 关键要点\n\n- @Cacheable通过AOP代理实现\n- 支持多种缓存实现\n- SpEL表达式定义key\n- 缓存注解组合使用\n\n## 注意事项\n\n- 自调用不生效\n- 注意缓存穿透、击穿、雪崩\n- 合理设置缓存过期时间",
+    "tags": ["@Cacheable", "缓存"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-037",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的@Scheduled注解是如何实现的？",
+    "answer": "## 核心概念\n\n@Scheduled通过ScheduledAnnotationBeanPostProcessor实现定时任务。\n\n### 使用方式\n```java\n@Configuration\n@EnableScheduling\npublic class ScheduleConfig {\n    @Bean\n    public TaskScheduler taskScheduler() {\n        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();\n        scheduler.setPoolSize(5);\n        return scheduler;\n    }\n}\n\n@Component\npublic class ScheduledTasks {\n\n    @Scheduled(fixedRate = 5000)\n    public void fixedRateTask() { }\n\n    @Scheduled(fixedDelay = 5000)\n    public void fixedDelayTask() { }\n\n    @Scheduled(initialDelay = 1000, fixedRate = 5000)\n    public void initialDelayTask() { }\n\n    @Scheduled(cron = \"0 0/5 * * * ?\")\n    public void cronTask() { }\n}\n```\n\n### Cron表达式\n```\n格式: 秒 分 时 日 月 周 [年]\n\n示例:\n0 0/5 * * * ?        # 每5分钟\n0 0 0 * * ?           # 每天0点\n0 0 12 ? * MON-FRI    # 工作日12点\n```\n\n### 动态定时任务\n```java\n@Component\npublic class DynamicScheduler implements SchedulingConfigurer {\n    private String cron = \"0 0/5 * * * ?\";\n\n    @Override\n    public void configureTasks(ScheduledTaskRegistrar registrar) {\n        registrar.addTriggerTask(\n            () -> System.out.println(\"Dynamic task\"),\n            triggerContext -> {\n                CronTrigger trigger = new CronTrigger(cron);\n                return trigger.nextExecution(triggerContext);\n            }\n        );\n    }\n}\n```\n\n## 关键要点\n\n- @Scheduled实现定时任务\n- 支持fixedRate、fixedDelay、cron\n- @EnableScheduling启用支持\n- 可以动态配置cron\n\n## 注意事项\n\n- 默认单线程执行\n- 配置线程池避免阻塞\n- 分布式环境使用分布式调度",
+    "tags": ["@Scheduled", "定时任务"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-038",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的@Validated注解是如何实现参数校验的？",
+    "answer": "## 核心概念\n\n@Validated通过AOP和JSR-303实现参数校验。\n\n### 使用方式\n```java\n@Service\n@Validated\npublic class UserService {\n    public User getUser(@NotNull Long id) {\n        return userRepository.findById(id);\n    }\n}\n```\n\n### 实体校验\n```java\npublic class User {\n    @NotNull(message = \"ID不能为空\")\n    private Long id;\n\n    @NotBlank(message = \"用户名不能为空\")\n    @Size(min = 2, max = 20, message = \"用户名长度2-20\")\n    private String username;\n\n    @Email(message = \"邮箱格式不正确\")\n    private String email;\n\n    @Min(value = 0, message = \"年龄不能小于0\")\n    @Max(value = 150, message = \"年龄不能大于150\")\n    private Integer age;\n\n    @Pattern(regexp = \"^1[3-9]\\\\d{9}$\", message = \"手机号格式不正确\")\n    private String phone;\n}\n```\n\n### 常用注解\n```java\n@NotNull       // 不能为null\n@NotBlank      // 不能为null和空字符串\n@NotEmpty      // 不能为null和空集合\n@Size          // 大小限制\n@Min @Max      // 数值范围\n@Email         // 邮箱格式\n@Pattern       // 正则匹配\n```\n\n### 分组校验\n```java\npublic interface Create {}\npublic interface Update {}\n\npublic class User {\n    @NotNull(groups = Update.class)\n    private Long id;\n\n    @NotBlank(groups = {Create.class, Update.class})\n    private String username;\n}\n```\n\n### 异常处理\n```java\n@RestControllerAdvice\npublic class ValidationExceptionHandler {\n    @ExceptionHandler(ConstraintViolationException.class)\n    public Result handleValidation(ConstraintViolationException e) {\n        String message = e.getConstraintViolations()\n            .stream()\n            .map(ConstraintViolation::getMessage)\n            .collect(Collectors.joining(\", \"));\n        return Result.error(400, message);\n    }\n}\n```\n\n## 关键要点\n\n- @Validated启用参数校验\n- JSR-303定义校验注解\n- 支持分组校验\n- 校验失败抛出异常\n\n## 注意事项\n\n- @Validated和@Valid区别\n- 自定义校验注解\n- 统一异常处理",
+    "tags": ["@Validated", "参数校验"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-039",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring的@Value注解支持哪些用法？",
+    "answer": "## 核心概念\n\n@Value注解用于注入配置值，支持多种表达式。\n\n### 基本用法\n```java\n@Component\npublic class MyComponent {\n    // 注入配置值\n    @Value(\"${app.name}\")\n    private String appName;\n\n    // 默认值\n    @Value(\"${app.timeout:3000}\")\n    private int timeout;\n\n    // 系统属性\n    @Value(\"#{systemProperties['user.home']}\")\n    private String home;\n\n    // SpEL表达式\n    @Value(\"#{1 + 2}\")\n    private int result;\n\n    // 注入其他Bean属性\n    @Value(\"#{myBean.name}\")\n    private String beanName;\n\n    // 三元表达式\n    @Value(\"#{myBean.name ?: 'default'}\")\n    private String nameWithDefault;\n}\n```\n\n### 随机值\n```java\n@Component\npublic class MyComponent {\n    @Value(\"${random.int}\")\n    private int randomInt;\n\n    @Value(\"${random.uuid}\")\n    private String randomUuid;\n\n    @Value(\"${random.int(100)}\")\n    private int randomInt100;\n\n    @Value(\"${random.int[10,200]}\")\n    private int randomIntRange;\n}\n```\n\n### 环境变量\n```java\n@Component\npublic class MyComponent {\n    @Value(\"${JAVA_HOME}\")\n    private String javaHome;\n\n    @Value(\"${user.name}\")\n    private String userName;\n}\n```\n\n## 关键要点\n\n- ${}注入配置值\n- #{}SpEL表达式\n- 支持默认值\n- 支持随机值\n\n## 注意事项\n\n- @Value不支持松散绑定\n- 复杂配置使用@ConfigurationProperties\n- 注意SpEL表达式安全",
+    "tags": ["@Value", "配置注入"],
+    "source": "高频"
+  },
+  {
+    "id": "java-spring-040",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Boot的Actuator有什么作用？如何使用？",
+    "answer": "## 核心概念\n\nActuator是Spring Boot的监控和管理模块。\n\n### 引入依赖\n```xml\n<dependency>\n    <groupId>org.springframework.boot</groupId>\n    <artifactId>spring-boot-starter-actuator</artifactId>\n</dependency>\n```\n\n### 核心端点\n```\n/actuator/health        # 健康检查\n/actuator/info          # 应用信息\n/actuator/metrics       # 指标信息\n/actuator/env           # 环境变量\n/actuator/beans         # Bean列表\n/actuator/mappings      # URL映射\n/actuator/configprops   # 配置属性\n/actuator/loggers       # 日志配置\n/actuator/threaddump    # 线程dump\n/actuator/heapdump      # 堆dump\n```\n\n### 配置\n```yaml\nmanagement:\n  endpoints:\n    web:\n      exposure:\n        include: \"*\"  # 暴露所有端点\n  endpoint:\n    health:\n      show-details: always  # 显示详细信息\n```\n\n### 健康检查\n```java\n@Component\npublic class CustomHealthIndicator implements HealthIndicator {\n    @Override\n    public Health health() {\n        boolean isHealthy = checkHealth();\n        if (isHealthy) {\n            return Health.up()\n                .withDetail(\"message\", \"服务正常\")\n                .build();\n        } else {\n            return Health.down()\n                .withDetail(\"message\", \"服务异常\")\n                .build();\n        }\n    }\n}\n```\n\n### 自定义指标\n```java\n@Component\npublic class CustomMetrics {\n    private final Counter requestCounter;\n\n    public CustomMetrics(MeterRegistry registry) {\n        this.requestCounter = Counter.builder(\"custom.requests\")\n            .description(\"请求计数\")\n            .register(registry);\n    }\n\n    public void recordRequest() {\n        requestCounter.increment();\n    }\n}\n```\n\n### 集成Prometheus\n```xml\n<dependency>\n    <groupId>io.micrometer</groupId>\n    <artifactId>micrometer-registry-prometheus</artifactId>\n</dependency>\n```\n\n## 关键要点\n\n- Actuator提供应用监控端点\n- 健康检查、指标、环境信息\n- 可以自定义健康检查\n- 集成Prometheus等监控系统\n\n## 注意事项\n\n- 生产环境限制端点暴露\n- 保护敏感端点\n- 合理配置暴露端点",
+    "tags": ["Actuator", "监控"],
+    "source": "高频"
+  }
+]

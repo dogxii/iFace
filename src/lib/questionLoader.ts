@@ -66,13 +66,52 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
       'ai-agent/rag.json',
       'ai-agent/tools.json',
       'ai-agent/evaluation.json',
+      'ai-agent/engineering.json',
+      'ai-agent/application.json',
+    ],
+  },
+  {
+    category: 'Java',
+    files: [
+      'java/basics.json',
+      'java/oop.json',
+      'java/concurrency.json',
+      'java/jvm.json',
+      'java/spring.json',
+    ],
+  },
+  {
+    category: '计算机网络',
+    files: [
+      'network/basics.json',
+      'network/tcp.json',
+      'network/http.json',
+      'network/security.json',
+    ],
+  },
+  {
+    category: 'Redis',
+    files: [
+      'redis/basics.json',
+      'redis/data-structures.json',
+      'redis/persistence.json',
+      'redis/cluster.json',
+    ],
+  },
+  {
+    category: 'MySQL',
+    files: [
+      'mysql/basics.json',
+      'mysql/index.json',
+      'mysql/transaction.json',
+      'mysql/optimization.json',
     ],
   },
 ] as const
 
 /** Flat list of every built-in file path across all categories (for legacy compat). */
 export const BUILTIN_MODULE_FILES: readonly string[] = BUILTIN_CATEGORIES.flatMap((c) => c.files)
-export const BUILTIN_QUESTIONS_VERSION = '0.12.0'
+export const BUILTIN_QUESTIONS_VERSION = '0.13.0'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

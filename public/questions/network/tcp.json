@@ -1,0 +1,574 @@
+[
+  {
+    "id": "net-tcp-001",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "请详细描述TCP三次握手的过程",
+    "answer": "## 核心概念\n\nTCP三次握手（Three-Way Handshake）是TCP建立连接的过程，通过三个步骤确认双方的发送和接收能力正常，协商初始序列号，为可靠传输奠定基础。\n\n## 三次握手流程\n\n```text\n客户端                                服务器\n   |                                     |\n   |--- SYN=1, seq=x ----------------→  |  第1次握手\n   |    (客户端进入SYN_SENT状态)         |\n   |                                     |\n   |←-- SYN=1, ACK=1, seq=y, ack=x+1 --|  第2次握手\n   |    (服务器进入SYN_RCVD状态)         |\n   |                                     |\n   |--- ACK=1, seq=x+1, ack=y+1 -----→  |  第3次握手\n   |    (双方进入ESTABLISHED状态)        |\n   |                                     |\n```\n\n## 各次握手详解\n\n| 步骤 | 发送内容 | 状态变化 | 目的 |\n|------|----------|----------|------|\n| 第1次 | SYN=1, seq=x | 客户端: SYN_SENT | 请求建立连接，告知初始序列号 |\n| 第2次 | SYN=1, ACK=1, seq=y, ack=x+1 | 服务器: SYN_RCVD | 确认客户端请求，告知服务器序列号 |\n| 第3次 | ACK=1, seq=x+1, ack=y+1 | 双方: ESTABLISHED | 确认服务器响应，连接建立 |\n\n## 关键要点\n\n- **序列号（seq）**：用于数据排序和去重\n- **确认号（ack）**：期望收到的下一个字节序号\n- 三次握手确保双方的**发送和接收能力**都正常\n- 第三次握手可以携带数据，前两次不行\n\n## 面试高频追问\n\n1. 为什么是三次握手而不是两次？\n2. 如果第三次握手丢失会怎样？\n3. SYN洪泛攻击是什么？如何防御？",
+    "tags": [
+      "三次握手",
+      "TCP连接",
+      "SYN"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-002",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "为什么TCP建立连接需要三次握手而不是两次？",
+    "answer": "## 核心概念\n\n三次握手的核心目的是**确认双方的发送和接收能力都正常**，并**同步初始序列号**。两次握手无法满足这两个要求。\n\n## 两次握手的问题\n\n```text\n场景: 网络中存在延迟的旧SYN报文\n\n客户端                                服务器\n   |                                     |\n   |--- SYN(seq=100) ----------------→  | (正常请求)\n   |←-- SYN+ACK(seq=200, ack=101) ---- |\n   |--- ACK(seq=101, ack=201) --------→ |\n   |     正常通信...                     |\n   |                                     |\n   |--- SYN(seq=300) ----------------→  | (新的请求，但被延迟)\n   |     网络延迟，该报文很久后到达      |\n   |                                     |\n   ... 很久之后 ...\n   |                                     |\n   |--- 旧的SYN(seq=100) ------------→  | (延迟到达)\n   |←-- SYN+ACK(seq=400, ack=101) ---- | 服务器以为是新连接\n   |     服务器等待数据...               |\n   |     但客户端从未发起此请求!         |\n   |     服务器资源被白白占用!           |\n```\n\n## 三次握手如何解决\n\n```text\n旧SYN到达时:\n1. 服务器收到旧SYN，发送SYN+ACK\n2. 客户端发现ACK确认号不对（不是自己期望的）\n3. 客户端发送RST（复位）报文，拒绝连接\n4. 服务器释放资源\n\n第三次握手让客户端有机会验证这是合法的连接请求\n```\n\n## 核心原因总结\n\n| 原因 | 说明 |\n|------|------|\n| **防止旧连接初始化** | 三次握手让客户端能拒绝过期的连接请求 |\n| **同步序列号** | 双方交换初始序列号，确保数据有序可靠 |\n| **确认双方能力** | 验证双方都能正常发送和接收 |\n\n## 面试高频追问\n\n1. 三次握手每次握手可以携带数据吗？\n2. 如果第三次ACK丢失会怎样？\n3. ISN（初始序列号）是如何生成的？",
+    "tags": [
+      "三次握手",
+      "为什么",
+      "防旧连接"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-003",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "请详细描述TCP四次挥手的过程",
+    "answer": "## 核心概念\n\nTCP四次挥手（Four-Way Handshake）是TCP断开连接的过程。由于TCP是全双工的，每个方向的连接需要单独关闭，因此需要四个步骤。\n\n## 四次挥手流程\n\n```text\n客户端                                服务器\n   |                                     |\n   |--- FIN=1, seq=u ----------------→  |  第1次挥手\n   |    客户端进入FIN_WAIT_1状态         |\n   |                                     |\n   |←-- ACK=1, ack=u+1 --------------- |  第2次挥手\n   |    服务器进入CLOSE_WAIT状态         |\n   |    客户端进入FIN_WAIT_2状态         |\n   |                                     |\n   |    服务器可能继续发送数据...         |\n   |                                     |\n   |←-- FIN=1, seq=w ----------------- |  第3次挥手\n   |    服务器进入LAST_ACK状态           |\n   |                                     |\n   |--- ACK=1, ack=w+1 --------------→  |  第4次挥手\n   |    客户端进入TIME_WAIT状态          |\n   |    服务器收到后进入CLOSED状态       |\n   |                                     |\n   | 等待2MSL后                          |\n   | 客户端进入CLOSED状态                |\n```\n\n## 各次挥手详解\n\n| 步骤 | 发送内容 | 状态变化 | 含义 |\n|------|----------|----------|------|\n| 第1次 | FIN=1, seq=u | 客户端→FIN_WAIT_1 | 客户端请求关闭发送通道 |\n| 第2次 | ACK=1, ack=u+1 | 服务器→CLOSE_WAIT | 服务器确认收到关闭请求 |\n| 第3次 | FIN=1, seq=w | 服务器→LAST_ACK | 服务器也请求关闭 |\n| 第4次 | ACK=1, ack=w+1 | 客户端→TIME_WAIT | 客户端确认服务器关闭 |\n\n## 关键要点\n\n- 第2次和第3次挥手之间，服务器可能还有数据要发送\n- **TIME_WAIT**状态持续2MSL（约60秒），确保最后的ACK到达\n- 如果服务器收到FIN后没有数据要发送，第2、3次可以合并为一次\n\n## 面试高频追问\n\n1. 为什么是四次挥手而不是三次？\n2. TIME_WAIT状态有什么作用？\n3. 为什么客户端需要等待2MSL？",
+    "tags": [
+      "四次挥手",
+      "TCP关闭",
+      "FIN"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-004",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的TIME_WAIT状态是什么？为什么需要等待2MSL？",
+    "answer": "## 核心概念\n\nTIME_WAIT是TCP连接关闭过程中客户端在发送最后一个ACK后进入的状态，持续时间为2MSL（Maximum Segment Lifetime，报文最大生存时间，通常为60秒）。\n\n## TIME_WAIT存在的原因\n\n```text\n原因1: 确保最后的ACK能到达服务器\n\n客户端                    服务器\n   |--- ACK(第4次) ----→  |\n   |    如果丢失...        |\n   |←-- FIN(重传) --------|  服务器没收到ACK，重传FIN\n   |--- ACK(重发) ------→  |\n   |                       |\n   如果没有TIME_WAIT，客户端已经关闭\n   → 收不到重传的FIN → 服务器无法正常关闭\n\n原因2: 确保旧连接的报文在网络中消失\n\n2MSL足够让网络中残留的报文过期\n→ 防止旧连接的数据被新连接误收\n```\n\n## 2MSL的设计\n\n```text\nMSL (Maximum Segment Lifetime):\n- Linux默认: 60秒\n- 2MSL = 120秒 (实际常设为60秒)\n\n为什么是2倍:\n- 1MSL: 等待最后一个ACK到达服务器\n- 1MSL: 等待服务器可能重传的FIN到达\n```\n\n## TIME_WAIT过多的问题\n\n| 问题 | 说明 |\n|------|------|\n| 端口耗尽 | 大量TIME_WAIT占用了可用端口 |\n| 内存占用 | 每个连接需要维护TCB（传输控制块） |\n| 连接建立慢 | 该端口在TIME_WAIT期间不能重用 |\n\n## 解决方案\n\n```bash\n# 启用TIME_WAIT快速回收\nnet.ipv4.tcp_tw_reuse = 1  # 允许重用TIME_WAIT连接\nnet.ipv4.tcp_tw_recycle = 1  # 快速回收（NAT环境慎用）\nnet.ipv4.tcp_max_tw_buckets = 10000  # 限制TIME_WAIT数量\n```\n\n## 面试高频追问\n\n1. TIME_WAIT过多会导致什么问题？如何解决？\n2. 服务器出现大量CLOSE_WAIT是什么原因？\n3. tcp_tw_reuse和tcp_tw_recycle有什么区别？",
+    "tags": [
+      "TIME_WAIT",
+      "2MSL",
+      "连接关闭"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-005",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "服务器出现大量CLOSE_WAIT状态的连接是什么原因？如何解决？",
+    "answer": "## 核心概念\n\nCLOSE_WAIT是TCP四次挥手过程中，被动关闭方（通常是服务器）在收到FIN后进入的状态。大量CLOSE_WAIT通常意味着应用程序没有正确关闭连接。\n\n## 正常流程回顾\n\n```text\n正常情况:\n客户端FIN → 服务器收到FIN → 服务器ACK → 服务器FIN → 客户端ACK\n                                    ↑\n                            应用程序调用close()\n```\n\n## CLOSE_WAIT堆积的原因\n\n```text\n最常见的原因: 应用程序没有调用close()\n\n客户端FIN → 服务器收到FIN → 服务器ACK → 进入CLOSE_WAIT\n                                          ↓\n                                  应用程序忘记关闭socket!\n                                          ↓\n                                  一直停留在CLOSE_WAIT状态\n\n代码示例(Java):\ntry {\n    socket = new Socket(host, port);\n    // 使用socket...\n} catch (Exception e) {\n    // 处理异常但忘记关闭socket!\n    // 应该在finally中调用socket.close()\n}\n```\n\n## 常见原因排查\n\n| 原因 | 排查方法 |\n|------|----------|\n| 代码未关闭连接 | 检查代码中是否有close()调用 |\n| 异常处理遗漏 | 检查finally/with是否正确使用 |\n| 连接池配置问题 | 检查连接池的maxIdle等参数 |\n| 响应太慢 | 检查应用处理时间 |\n\n## 解决方案\n\n```bash\n# 查看CLOSE_WAIT数量\nnetstat -n | grep CLOSE_WAIT | wc -l\n\n# 查看具体进程\nnetstat -nlp | grep CLOSE_WAIT\n\n# 临时解决: 找到进程重启\n# 根本解决: 修复代码，确保连接正确关闭\n```\n\n## 面试高频追问\n\n1. CLOSE_WAIT和TIME_WAIT有什么区别？\n2. 如何在代码中避免CLOSE_WAIT堆积？\n3. 大量CLOSE_WAIT会对系统造成什么影响？",
+    "tags": [
+      "CLOSE_WAIT",
+      "连接泄漏",
+      "故障排查"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-006",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "请画出TCP的状态机，列出主要状态及转换条件",
+    "answer": "## 核心概念\n\nTCP状态机描述了TCP连接从建立到关闭整个生命周期中经历的所有状态及状态之间的转换关系。\n\n## TCP主要状态\n\n| 状态 | 含义 |\n|------|------|\n| **CLOSED** | 初始/最终状态，无连接 |\n| **LISTEN** | 服务器等待客户端连接 |\n| **SYN_SENT** | 客户端已发送SYN，等待回复 |\n| **SYN_RCVD** | 服务器收到SYN，已回复SYN+ACK |\n| **ESTABLISHED** | 连接建立，可以传输数据 |\n| **FIN_WAIT_1** | 主动关闭方发送FIN |\n| **FIN_WAIT_2** | 收到对方对FIN的ACK |\n| **CLOSE_WAIT** | 被动关闭方收到FIN |\n| **LAST_ACK** | 被动关闭方发送FIN，等待最后ACK |\n| **TIME_WAIT** | 主动关闭方等待2MSL |\n| **CLOSING** | 双方同时关闭 |\n\n## 状态转换图\n\n```text\n三次握手:\nCLOSED → LISTEN (服务器)\nCLOSED → SYN_SENT (客户端)\nSYN_SENT → ESTABLISHED (收到SYN+ACK，发送ACK)\nLISTEN → SYN_RCVD (收到SYN，发送SYN+ACK)\nSYN_RCVD → ESTABLISHED (收到ACK)\n\n四次挥手:\nESTABLISHED → FIN_WAIT_1 (主动发送FIN)\nFIN_WAIT_1 → FIN_WAIT_2 (收到ACK)\nFIN_WAIT_2 → TIME_WAIT (收到FIN，发送ACK)\nTIME_WAIT → CLOSED (等待2MSL超时)\n\nESTABLISHED → CLOSE_WAIT (被动收到FIN，发送ACK)\nCLOSE_WAIT → LAST_ACK (发送FIN)\nLAST_ACK → CLOSED (收到ACK)\n```\n\n## 关键要点\n\n- **主动关闭方**会经历TIME_WAIT状态\n- **被动关闭方**会经历CLOSE_WAIT状态\n- **同时关闭**时双方都会进入CLOSING状态\n- ESTABLISHED是数据传输的主要状态\n\n## 面试高频追问\n\n1. 如果服务器处于SYN_RCVD状态会怎样？\n2. 什么情况下会出现CLOSING状态？\n3. 如何用netstat查看TCP连接状态？",
+    "tags": [
+      "TCP状态机",
+      "连接状态",
+      "ESTABLISHED"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-007",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "TCP和UDP有什么区别？各自的应用场景是什么？",
+    "answer": "## 核心概念\n\nTCP（Transmission Control Protocol）和UDP（User Datagram Protocol）是传输层的两个核心协议，TCP提供可靠传输，UDP提供高效传输。\n\n## 详细对比\n\n| 对比维度 | TCP | UDP |\n|----------|-----|-----|\n| 连接方式 | 面向连接（三次握手） | 无连接 |\n| 可靠性 | 可靠（确认、重传） | 不可靠（尽最大努力） |\n| 数据顺序 | 有序 | 无序 |\n| 流量控制 | 有（滑动窗口） | 无 |\n| 拥塞控制 | 有 | 无 |\n| 首部大小 | 20-60字节 | 8字节 |\n| 传输方式 | 面向字节流 | 面向报文 |\n| 连接模式 | 一对一 | 一对一、一对多、多对多 |\n| 效率 | 较低 | 较高 |\n\n## TCP适用场景\n\n- **Web浏览**（HTTP/HTTPS）\n- **文件传输**（FTP）\n- **电子邮件**（SMTP/POP3/IMAP）\n- **远程登录**（SSH）\n- **数据库连接**（MySQL）\n\n## UDP适用场景\n\n- **DNS查询**\n- **视频/音频流媒体**\n- **在线游戏**\n- **DHCP**\n- **VoIP电话**\n- **物联网数据采集**\n\n## 关键要点\n\n- TCP适合**对可靠性要求高**的场景\n- UDP适合**对实时性要求高、容忍少量丢失**的场景\n- 应用层可以在UDP上实现可靠传输（如QUIC协议）\n\n## 面试高频追问\n\n1. DNS为什么既使用TCP又使用UDP？\n2. 视频直播为什么用UDP而不是TCP？\n3. 如何在UDP上实现可靠传输？",
+    "tags": [
+      "TCP",
+      "UDP",
+      "对比"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-008",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP是如何保证可靠传输的？",
+    "answer": "## 核心概念\n\nTCP通过多种机制确保数据可靠、有序、不重复地传输，这是TCP最核心的特性。\n\n## 可靠传输机制\n\n### 1. 序列号与确认号\n```text\n发送方发送: seq=100, 数据长度=50\n接收方回复: ack=150 (期望下一个字节的序号)\n\n含义: 序号100-149的数据已正确接收\n```\n\n### 2. 超时重传\n```text\n发送数据 → 启动定时器 → 超时未收到ACK → 重传\n\nRTO (重传超时时间) 动态计算:\nRTO = SRTT + 4 × RTTVAR\n```\n\n### 3. 数据校验\n```text\nTCP首部有校验和字段:\n- 发送方计算校验和并填入\n- 接收方验证校验和\n- 校验失败则丢弃，等待重传\n```\n\n### 4. 数据排序\n```text\n接收方根据序列号重新排序:\n收到: seq=300, seq=100, seq=200\n排序后: 100 → 200 → 300\n```\n\n### 5. 去重\n```text\n接收方通过序列号检测重复数据:\n收到重复的seq → 丢弃，但仍回复ACK\n```\n\n### 6. 流量控制\n```text\n接收方通过窗口字段告知发送方:\n\"我的缓冲区还能接收多少数据\"\n发送方据此调整发送速率\n```\n\n### 7. 拥塞控制\n```text\n根据网络状况动态调整发送速率:\n慢启动 → 拥塞避免 → 快重传 → 快恢复\n```\n\n## 关键要点\n\n- TCP的可靠性是**端到端**的，不依赖中间网络\n- 可靠性机制带来了**性能开销**，这是TCP比UDP慢的原因\n- 某些场景下UDP+应用层可靠性可能比TCP更高效\n\n## 面试高频追问\n\n1. TCP的确认机制和停止等待协议有什么区别？\n2. 如果确认包本身丢失了怎么办？\n3. TCP如何处理重复数据？",
+    "tags": [
+      "可靠传输",
+      "序列号",
+      "重传"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-009",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的滑动窗口机制是什么？如何工作？",
+    "answer": "## 核心概念\n\n滑动窗口（Sliding Window）是TCP实现流量控制的核心机制。它允许发送方在等待确认的同时继续发送数据，大幅提高了传输效率。\n\n## 滑动窗口结构\n\n```text\n发送方的窗口:\n┌─────────┬─────────────┬───────────────┬──────────────┐\n│ 已发送  │ 可以发送    │  不能发送     │   不能发送   │\n│ 已确认  │ 未确认      │  (窗口内)     │  (窗口外)    │\n├─────────┼─────────────┼───────────────┼──────────────┤\n│  已完成 │  在途数据    │   等待发送     │   等待窗口   │\n│         │             │               │   扩大       │\n└─────────┴─────────────┴───────────────┴──────────────┘\n         ↑                           ↑\n       窗口左边界                  窗口右边界\n```\n\n## 工作过程\n\n```text\n初始状态: 窗口大小=4\n[1][2][3][4][5][6][7][8][9]...\n ↑\n 已发送且确认=1\n 可发送=2,3,4,5\n\n发送2,3,4,5 → 等待确认\n收到ACK=3 (确认2) → 窗口右移\n[1][2][3][4][5][6][7][8][9]...\n     ↑\n  已确认=1,2\n  可发送=3,4,5,6\n```\n\n## 窗口大小计算\n\n```text\n发送窗口 = min(拥塞窗口, 接收窗口)\n\n接收窗口(rwnd): 接收方缓冲区剩余空间\n拥塞窗口(cwnd): 根据网络拥塞程度动态调整\n```\n\n## 关键要点\n\n- 窗口大小是**动态变化**的\n- 窗口大小由**接收方控制**（流量控制）和**网络状况控制**（拥塞控制）共同决定\n- **累积确认**：收到ACK=N表示N之前的所有数据都已确认\n- **选择确认（SACK）**：可以确认不连续的数据段\n\n## 面试高频追问\n\n1. 如果窗口大小设为0会怎样？\n2. 什么是SACK？和累积确认有什么区别？\n3. 滑动窗口如何提高传输效率？",
+    "tags": [
+      "滑动窗口",
+      "流量控制",
+      "TCP"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-010",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的流量控制是如何实现的？",
+    "answer": "## 核心概念\n\n流量控制（Flow Control）是TCP防止发送方发送速度过快导致接收方缓冲区溢出的机制。接收方通过**窗口字段（rwnd）**告知发送方自己还能接收多少数据。\n\n## 流量控制机制\n\n```text\n发送方                          接收方\n   |                               |\n   |--- 数据(1-1000) ----------→  |\n   |    接收方缓冲区: 使用1000    |\n   |    剩余窗口: 3000            |\n   |←-- ACK, rwnd=3000 ---------|\n   |                               |\n   |--- 数据(1001-4000) -------→  |\n   |    接收方缓冲区: 使用4000    |\n   |    剩余窗口: 0               |\n   |←-- ACK, rwnd=0 ------------|\n   |    窗口为0! 停止发送!        |\n   |                               |\n   |    接收方处理数据，释放缓冲区 |\n   |                               |\n   |←-- ACK, rwnd=2000 ---------|\n   |    窗口恢复，继续发送         |\n```\n\n## 窗口探测机制\n\n```text\n问题: 如果窗口更新包丢失怎么办？\n→ 发送方不知道窗口已恢复\n→ 双方等待（死锁）\n\n解决: 窗口探测(Window Probe)\n- 发送方定时发送1字节探测数据\n- 接收方回复当前窗口大小\n- 防止死锁\n```\n\n## 关键要点\n\n- 流量控制是**端到端**的，只涉及发送方和接收方\n- 窗口大小为0时，发送方暂停发送，但不关闭连接\n- **持续定时器**（Persist Timer）负责窗口探测\n- 流量控制和拥塞控制是两个独立的机制\n\n## 面试高频追问\n\n1. 流量控制和拥塞控制有什么区别？\n2. 窗口为0时会发生什么？\n3. 什么是糊涂窗口综合征（Silly Window Syndrome）？",
+    "tags": [
+      "流量控制",
+      "rwnd",
+      "窗口"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-011",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "请详细解释TCP的拥塞控制算法（慢启动、拥塞避免、快重传、快恢复）",
+    "answer": "## 核心概念\n\nTCP拥塞控制是防止网络过载的机制，通过动态调整拥塞窗口（cwnd）来控制发送速率。标准算法包括慢启动、拥塞避免、快重传和快恢复。\n\n## 慢启动（Slow Start）\n\n```text\n初始: cwnd = 1 MSS\n\n每收到一个ACK: cwnd += 1 MSS\n→ 每个RTT后，cwnd翻倍（指数增长）\n\nRTT 1: cwnd = 1   → 发送1个段\nRTT 2: cwnd = 2   → 发送2个段\nRTT 3: cwnd = 4   → 发送4个段\nRTT 4: cwnd = 8   → 发送8个段\n...\n\n达到ssthresh后进入拥塞避免\n```\n\n## 拥塞避免（Congestion Avoidance）\n\n```text\ncwnd >= ssthresh时进入\n\n每收到一个ACK: cwnd += 1/cwnd MSS\n→ 每个RTT后，cwnd增加1 MSS（线性增长）\n\n目的: 缓慢探测可用带宽\n\n发生丢包时:\n- ssthresh = cwnd / 2\n- cwnd = 1 (超时) 或 cwnd = ssthresh (快恢复)\n```\n\n## 快重传（Fast Retransmit）\n\n```text\n收到3个重复ACK → 立即重传丢失的段\n\n发送: 1 2 3 4 5 6 7\n接收: 1 2 3 5 6 7 (4丢失)\n确认: 2 3 4 4 4 4 ← 3个重复ACK=4\n→ 立即重传段4（不等待超时）\n```\n\n## 快恢复（Fast Recovery）\n\n```text\n快重传触发后:\n1. ssthresh = cwnd / 2\n2. cwnd = ssthresh (不是1!)\n3. 直接进入拥塞避免阶段\n\n避免了慢启动的低效阶段\n```\n\n## 算法流程图\n\n```text\n         ┌──────────────┐\n         │   慢启动      │\n         │ cwnd指数增长  │\n         └──────┬───────┘\n                │ cwnd >= ssthresh\n         ┌──────▼───────┐\n         │  拥塞避免     │\n         │ cwnd线性增长  │\n         └──────┬───────┘\n                │ 超时\n         ┌──────▼───────┐\n         │ ssthresh=cwnd/2│\n         │ cwnd=1       │\n         │ 回到慢启动    │\n         └──────────────┘\n```\n\n## 关键要点\n\n- **ssthresh**（慢启动阈值）是区分慢启动和拥塞避免的阈值\n- 现代TCP使用**CUBIC**算法（Linux默认），比传统算法更高效\n- 拥塞控制的目标：**最大化吞吐量**的同时**避免网络拥塞**\n\n## 面试高频追问\n\n1. CUBIC算法和传统Reno算法有什么区别？\n2. 为什么慢启动不叫\"快启动\"？\n3. 如何优化高延迟网络的TCP性能？",
+    "tags": [
+      "拥塞控制",
+      "慢启动",
+      "快重传"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-012",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "什么是TCP的面向字节流？什么是UDP的面向报文？",
+    "answer": "## 核心概念\n\nTCP是面向字节流的协议，数据被视为无结构的字节序列；UDP是面向报文的协议，每个数据报是独立的消息单元。\n\n## 面向字节流（TCP）\n\n```text\n发送方写入: [Hello][World] (两次写入)\n\nTCP可能发送为:\n方式1: [Hello][World]     (保持原样)\n方式2: [HelloW][orld]     (合并)\n方式3: [He][llo][World]  (拆分)\n\n接收方收到的是连续的字节流，没有消息边界\n→ 这就是TCP粘包/拆包问题的根源\n```\n\n## 面向报文（UDP）\n\n```text\n发送方写入: [Hello] [World] (两次写入)\n\nUDP发送:\n报文1: [Hello] (独立的数据报)\n报文2: [World] (独立的数据报)\n\n接收方收到: [Hello] [World]\n→ 每次接收都是一个完整的消息，有明确边界\n```\n\n## 对比\n\n| 对比维度 | TCP（字节流） | UDP（报文） |\n|----------|--------------|------------|\n| 消息边界 | 无 | 有 |\n| 发送接收 | 可能粘包/拆包 | 一对一 |\n| 应用处理 | 需要应用层定义消息边界 | 天然有边界 |\n| 适用场景 | 连续数据流 | 离散消息 |\n\n## 关键要点\n\n- TCP的**粘包**问题是字节流特性的必然结果\n- 解决粘包：**定长消息**、**分隔符**、**消息头+长度**\n- UDP没有粘包问题，但有**数据报大小限制**（约65535字节）\n- UDP数据报过大（超过MTU）会在IP层分片\n\n## 面试高频追问\n\n1. TCP粘包问题如何解决？\n2. 为什么UDP没有粘包问题？\n3. 发送100字节的数据，TCP和UDP分别怎么处理？",
+    "tags": [
+      "字节流",
+      "报文",
+      "粘包"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-013",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP粘包和拆包？如何解决？",
+    "answer": "## 核心概念\n\nTCP粘包是指发送方的多个数据包被合并成一个包发送；拆包是指一个数据包被拆分成多个包发送。这是TCP面向字节流特性的必然结果。\n\n## 粘包/拆包示例\n\n```text\n发送方发送两个包:\n包1: Hello (5字节)\n包2: World (5字节)\n\n粘包: 接收方一次收到 HelloWorld (10字节)\n拆包: 接收方分两次收到 Hel 和 loWorld\n\n┌───────────────────────────────────────┐\n│ 发送缓冲区: [Hello][World]            │\n│              ↓                        │\n│ TCP发送: [HelloWorld] (粘包)          │\n│ 或: [He][lloWorld] (拆包+粘包)        │\n└───────────────────────────────────────┘\n```\n\n## 产生原因\n\n| 原因 | 说明 |\n|------|------|\n| Nagle算法 | TCP会合并小数据包以提高效率 |\n| 发送缓冲区 | 多次write的数据在缓冲区合并 |\n| MSS限制 | 数据超过MSS会被分片 |\n| 接收缓冲区 | 接收方可能一次读取多个数据 |\n\n## 解决方案\n\n### 方案1: 固定长度\n```text\n每个消息固定长度，不足补零\n[Hello     ] [World     ]\n每10字节读取一次\n```\n\n### 方案2: 分隔符\n```text\n消息末尾添加特殊字符（如\\n）\n[Hello\\n][World\\n]\n读到\\n表示消息结束\n```\n\n### 方案3: 消息头+长度（最常用）\n```text\n[消息长度][消息内容]\n[5][Hello][5][World]\n\n先读取消息长度，再读取对应长度的内容\n```\n\n## 关键要点\n\n- 粘包/拆包是**应用层**需要处理的问题\n- HTTP协议使用**Content-Length**或**Transfer-Encoding**解决\n- 自定义协议通常采用**消息头+长度**的方案\n\n## 面试高频追问\n\n1. HTTP是如何处理粘包/拆包的？\n2. Nagle算法是什么？如何关闭？\n3. WebSocket是如何处理消息边界的？",
+    "tags": [
+      "粘包",
+      "拆包",
+      "TCP"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-014",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的重传机制有哪些？",
+    "answer": "## 核心概念\n\nTCP的重传机制确保丢失的数据能够被重新发送，是TCP可靠传输的重要保障。主要的重传机制包括超时重传、快速重传和SACK。\n\n## 重传机制详解\n\n### 1. 超时重传（RTO）\n```text\n发送数据 → 启动重传定时器\n→ 超时未收到ACK → 重传该数据\n\nRTO计算:\nSRTT = SRTT × 0.875 + RTT × 0.125 (平滑RTT)\nRTTVAR = RTTVAR × 0.75 + |SRTT - RTT| × 0.25\nRTO = SRTT + 4 × RTTVAR\n\n问题: 等待时间长，效率低\n```\n\n### 2. 快速重传（Fast Retransmit）\n```text\n收到3个重复ACK → 立即重传\n\n发送: 1 2 3 4 5 6 7\n接收: 1 2 3 _ 5 6 7\nACK:  2 3 4 4 4 4\n      ↑ 3个重复ACK=4\n→ 立即重传段4\n\n优点: 不必等待超时\n```\n\n### 3. SACK（选择性确认）\n```text\n标准TCP只使用累积确认\nSACK允许确认不连续的数据段\n\n发送: 1 2 3 4 5 6 7 8\n接收: 1 2 3 _ 5 6 _ 8\nSACK: SACK=5-6, SACK=8\n→ 发送方知道5-6和8已收到\n→ 只需重传4和7\n```\n\n## RTO计算示例\n\n```text\n假设测量RTT = 100ms\n初始: SRTT = 100, RTTVAR = 50\nRTO = 100 + 4 × 50 = 300ms\n\n如果超时:\nRTO翻倍: 300 → 600 → 1200...\n（指数退避）\n```\n\n## 关键要点\n\n- 超时重传是**最后手段**，快速重传更高效\n- SACK减少了不必要的重传\n- RTO有上下限：通常1秒到60秒\n- 现代TCP使用**RACK**（Recent ACK）进一步优化重传\n\n## 面试高频追问\n\n1. 超时重传的时间是如何计算的？\n2. 如果重传的数据也丢失了怎么办？\n3. SACK是如何在TCP头部中编码的？",
+    "tags": [
+      "重传机制",
+      "超时重传",
+      "SACK"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-015",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是Nagle算法？Nagle算法和延迟确认有什么关系？",
+    "answer": "## 核心概念\n\nNagle算法是TCP的一个优化机制，通过合并小数据包来提高网络效率。延迟确认（Delayed ACK）是接收方的优化机制，延迟发送ACK以减少网络上的小包。\n\n## Nagle算法\n\n```text\n规则: 如果有未确认的数据，则缓冲小数据包\n\n发送\"H\" → 缓冲（等待ACK）\n发送\"e\" → 缓冲（合并）\n发送\"l\" → 缓冲（合并）\n收到ACK → 发送\"Hel\"...\n\n条件触发发送:\n1. 收到所有已发数据的ACK\n2. 缓冲区数据达到MSS大小\n3. 超时（通常200ms）\n```\n\n## 延迟确认\n\n```text\n接收方不立即发送ACK，而是等待:\n1. 有数据要发送时捎带ACK\n2. 延迟超时（通常200-500ms）\n3. 收到两个完整数据段\n\n目的: 减少纯ACK包，提高效率\n```\n\n## 两者组合的问题\n\n```text\n问题: Nagle + 延迟确认 = 延迟增加!\n\n发送方: 发送小包 → 等ACK (Nagle)\n接收方: 延迟200ms发送ACK (延迟确认)\n结果: 每个小包都延迟200ms!\n\n解决: 关闭Nagle算法\nTCP_NODELAY = 1\n```\n\n## 何时关闭Nagle\n\n| 场景 | 建议 |\n|------|------|\n| 游戏/实时交互 | 关闭Nagle |\n| SSH远程登录 | 关闭Nagle |\n| 大文件传输 | 保持Nagle |\n| HTTP请求 | 通常关闭 |\n\n## 关键要点\n\n- Nagle算法适合**大量小数据**的场景\n- **TCP_NODELAY**选项可以关闭Nagle算法\n- 延迟确认和Nagle同时开启会导致**额外延迟**\n- 现代应用通常关闭Nagle以获得更低的延迟\n\n## 面试高频追问\n\n1. Nagle算法是在哪一层实现的？\n2. 什么是TCP_NODELAY和TCP_CORK？\n3. 为什么游戏通常关闭Nagle算法？",
+    "tags": [
+      "Nagle算法",
+      "延迟确认",
+      "TCP_NODELAY"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-016",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "什么是TCP的校验和？校验和是如何计算的？",
+    "answer": "## 核心概念\n\nTCP校验和（Checksum）是TCP头部中的一个字段，用于检测数据在传输过程中是否发生错误。它是TCP可靠性的一个基本保障。\n\n## 校验和计算方法\n\n```text\n计算步骤:\n1. 将TCP伪首部、TCP首部、数据分为16位字\n2. 对所有16位字进行二进制反码求和\n3. 将结果取反码，填入校验和字段\n\n伪首部包含:\n- 源IP地址 (32位)\n- 目的IP地址 (32位)\n- 保留 (8位)\n- 协议号 (8位, TCP=6)\n- TCP长度 (16位)\n```\n\n## 校验和字段位置\n\n```text\nTCP首部:\n┌────────┬────────┬────────────────┐\n│源端口  │目的端口│序列号          │\n│16位    │16位    │32位            │\n├────────┴────────┼────────────────┤\n│确认号           │数据偏移│保留   │\n│32位             │4位     │6位    │\n├─────────────────┴────────┼──────┤\n│标志位│窗口               │校验和│ ← 这里\n│6位   │16位               │16位  │\n├──────────────────────────┴──────┤\n│紧急指针│选项（可选）│填充       │\n└─────────────────────────────────┘\n```\n\n## 关键要点\n\n- 校验和覆盖**伪首部+TCP首部+数据**\n- 伪首部的目的是验证IP地址和协议号\n- 如果校验失败，TCP会**丢弃该段**，等待重传\n- UDP校验和是可选的（IPv4），TCP校验和是必须的\n\n## 面试高频追问\n\n1. 为什么TCP校验和要包含伪首部？\n2. TCP校验和能检测所有错误吗？\n3. UDP的校验和为什么是可选的？",
+    "tags": [
+      "校验和",
+      "错误检测",
+      "TCP"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-017",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP KeepAlive？它的作用和工作原理是什么？",
+    "answer": "## 核心概念\n\nTCP KeepAlive是一种检测连接是否仍然有效的机制。通过定期发送探测报文，确认连接的对端是否仍然存活。\n\n## KeepAlive工作原理\n\n```text\n空闲连接检测过程:\n\n1. 连接建立后，如果一段时间没有数据传输\n   → 启动KeepAlive定时器\n\n2. 定时器超时（默认2小时）\n   → 发送探测报文（空数据+ACK）\n\n3. 收到响应:\n   - 正常ACK: 连接有效，重置定时器\n   - RST: 连接已关闭\n   - 无响应: 等待重试\n\n4. 超过最大重试次数（默认9次）\n   → 关闭连接\n```\n\n## KeepAlive参数配置\n\n| 参数 | 含义 | Linux默认值 |\n|------|------|------------|\n| tcp_keepalive_time | 空闲多久后开始探测 | 7200秒(2小时) |\n| tcp_keepalive_intvl | 探测间隔 | 75秒 |\n| tcp_keepalive_probes | 最大探测次数 | 9次 |\n\n## KeepAlive vs 应用层心跳\n\n| 对比维度 | TCP KeepAlive | 应用层心跳 |\n|----------|--------------|------------|\n| 层次 | 传输层 | 应用层 |\n| 灵活性 | 低（参数全局） | 高（可自定义） |\n| 检测内容 | 连接是否存活 | 应用是否正常 |\n| 带宽消耗 | 较少 | 较多 |\n| 实时性 | 低（默认2小时） | 高（可设几秒） |\n\n## 关键要点\n\n- KeepAlive默认是**关闭**的，需要应用显式开启\n- KeepAlive只能检测**连接级别**的问题，不能检测应用故障\n- 实际应用中通常使用**应用层心跳**来检测服务健康状态\n- KeepAlive可能会被NAT设备或防火墙干扰\n\n## 面试高频追问\n\n1. 为什么应用层心跳比KeepAlive更常用？\n2. 如何在Linux中配置KeepAlive参数？\n3. KeepAlive和HTTP Keep-Alive有什么区别？",
+    "tags": [
+      "KeepAlive",
+      "心跳检测",
+      "连接保活"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-018",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "什么是QUIC协议？QUIC相比TCP有哪些优势？",
+    "answer": "## 核心概念\n\nQUIC（Quick UDP Internet Connections）是Google开发的基于UDP的传输层协议，旨在解决TCP的性能问题。它是HTTP/3的底层协议。\n\n## QUIC vs TCP对比\n\n| 对比维度 | TCP | QUIC |\n|----------|-----|------|\n| 传输层 | TCP | UDP |\n| 连接建立 | TCP握手(1RTT) + TLS握手(2RTT) = 3RTT | 1RTT（首次）/ 0RTT（后续） |\n| 队头阻塞 | 有 | 无（多流独立） |\n| 连接迁移 | 基于四元组 | 基于Connection ID |\n| 拥塞控制 | 内核实现 | 用户态实现，可灵活调整 |\n| 加密 | TLS可选 | 强制加密（TLS 1.3内置） |\n\n## QUIC的核心优势\n\n### 1. 更快的连接建立\n```text\nTCP + TLS 1.2: 3个RTT\nTCP SYN ──────────────→\n←────────────── SYN+ACK\nTCP ACK ──────────────→\nTLS ClientHello ─────→\n←──────── ServerHello\n...\n\nQUIC: 首次1个RTT，后续0个RTT\nQUIC Initial ────────→\n←─────── Handshake\n(包含加密+传输握手)\n```\n\n### 2. 无队头阻塞\n```text\nTCP:\n流1: [包1][包2][包3]\n如果包2丢失 → 包3也要等待\n\nQUIC:\n流1: [包1][包2][包3] 独立\n流2: [包A][包B][包C] 独立\n流1的包2丢失 → 不影响流2\n```\n\n### 3. 连接迁移\n```text\nTCP: 基于四元组(源IP,源端口,目的IP,目的端口)\n     网络切换 → IP变化 → 连接断开\n\nQUIC: 基于Connection ID\n     网络切换 → IP变化 → 连接保持\n     适合移动设备\n```\n\n## 关键要点\n\n- QUIC是**应用层协议**，基于UDP实现可靠传输\n- HTTP/3使用QUIC作为底层传输协议\n- QUIC的**多路复用**避免了TCP的队头阻塞问题\n- 主流浏览器和CDN已广泛支持QUIC\n\n## 面试高频追问\n\n1. QUIC是如何在UDP上实现可靠传输的？\n2. 什么是队头阻塞？QUIC如何解决？\n3. HTTP/3和HTTP/2有什么区别？",
+    "tags": [
+      "QUIC",
+      "HTTP/3",
+      "UDP"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-019",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是SYN洪泛攻击（SYN Flood）？如何防御？",
+    "answer": "## 核心概念\n\nSYN Flood是一种常见的DDoS攻击方式。攻击者发送大量伪造源IP的SYN报文，消耗服务器的半连接队列资源，使服务器无法响应正常的连接请求。\n\n## 攻击原理\n\n```text\n正常三次握手:\n客户端SYN → 服务器SYN+ACK → 客户端ACK → 连接建立\n\nSYN Flood攻击:\n攻击者SYN(伪造IP) → 服务器SYN+ACK → 等待ACK...\n攻击者SYN(伪造IP) → 服务器SYN+ACK → 等待ACK...\n攻击者SYN(伪造IP) → 服务器SYN+ACK → 等待ACK...\n...(大量半连接)\n\n服务器半连接队列(SYN Queue)被占满\n→ 无法接受新的正常连接\n→ 服务拒绝\n```\n\n## 防御措施\n\n### 1. SYN Cookie\n```text\n不分配资源，将信息编码到SYN+ACK的序列号中\n客户端回复ACK时验证序列号\n→ 无状态，不占用队列空间\n```\n\n### 2. 增大半连接队列\n```text\nnet.ipv4.tcp_max_syn_backlog = 65535\n```\n\n### 3. 缩短SYN_RCVD超时\n```text\nnet.ipv4.tcp_synack_retries = 2\n```\n\n### 4. 防火墙/IPS\n```text\n- SYN速率限制\n- SYN代理\n- 源验证\n```\n\n## 关键要点\n\n- SYN Flood利用了TCP三次握手的**不对称性**\n- **SYN Cookie**是最有效的防御技术\n- 现代操作系统默认开启SYN Cookie\n- 结合防火墙和流量清洗可以更好地防御\n\n## 面试高频追问\n\n1. SYN Cookie的原理是什么？\n2. 还有哪些常见的DDoS攻击方式？\n3. 如何区分正常流量和攻击流量？",
+    "tags": [
+      "SYN Flood",
+      "DDoS",
+      "网络安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-020",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的MSS是什么？MSS和MTU有什么关系？",
+    "answer": "## 核心概念\n\nMSS（Maximum Segment Size，最大报文段长度）是TCP数据部分的最大长度，不包括TCP头部。MSS在TCP三次握手时协商确定。\n\n## MSS与MTU的关系\n\n```text\nMTU = IP头部 + TCP头部 + MSS\n\n以太网:\nMTU = 1500字节\nIP头部 = 20字节\nTCP头部 = 20字节\nMSS = 1500 - 20 - 20 = 1460字节\n\n┌──────────────────────────────────────┐\n│ IP头(20) │ TCP头(20) │ MSS(1460)    │\n│          │           │ 数据部分     │\n└──────────────────────────────────────┘\n←────────── MTU (1500) ──────────────→\n```\n\n## MSS协商过程\n\n```text\n三次握手时:\n客户端SYN: MSS=1460\n服务器SYN+ACK: MSS=1460\n\n取两者中较小值作为最终MSS\n\n如果路径MTU较小:\n- 使用Path MTU Discovery\n- 或使用较小的MSS\n```\n\n## 常见MSS值\n\n| 网络类型 | MTU | MSS |\n|----------|-----|-----|\n| 以太网 | 1500 | 1460 |\n| PPPoE | 1492 | 1452 |\n| IPv6最小 | 1280 | 1220 |\n\n## 关键要点\n\n- MSS避免了TCP分片，提高了传输效率\n- MSS在连接建立时**协商**，之后不再改变\n- MSS太小会增加头部开销，太大会导致IP分片\n- **Path MTU Discovery**可以发现路径上的最小MTU\n\n## 面试高频追问\n\n1. MSS是发送方还是接收方决定的？\n2. 为什么MSS默认是1460而不是其他值？\n3. 如果不设置MSS会怎样？",
+    "tags": [
+      "MSS",
+      "MTU",
+      "TCP参数"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-021",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的延迟确认（Delayed ACK）？",
+    "answer": "## 核心概念\n\n延迟确认是TCP接收方的一种优化机制，不立即发送ACK，而是等待一小段时间，看是否有数据可以捎带ACK，从而减少纯ACK包的数量。\n\n## 延迟确认机制\n\n```text\n接收方收到数据后:\n\n情况1: 有数据要发送\n→ 在数据包中捎带ACK\n→ 不需要额外ACK包\n\n情况2: 没有数据要发送\n→ 等待最多200ms\n→ 200ms内收到第二个数据段\n→ 发送一个ACK确认两个段\n\n情况3: 200ms超时\n→ 发送单独的ACK包\n```\n\n## 延迟确认的优缺点\n\n```text\n优点:\n- 减少网络上的ACK包数量\n- 可以捎带ACK，提高效率\n\n缺点:\n- 增加了延迟（最多200ms）\n- 与Nagle算法组合会导致额外延迟\n- 可能影响RTT测量精度\n```\n\n## 配置选项\n\n```bash\n# Linux下关闭延迟确认\n# 没有直接的内核参数，需要应用层处理\n# TCP_QUICKACK选项可以临时关闭\nsetsockopt(fd, IPPROTO_TCP, TCP_QUICKACK, &opt, sizeof(opt));\n```\n\n## 关键要点\n\n- 延迟确认在**接收方**实现\n- **RFC建议**延迟不超过500ms，实现中通常用200ms\n- 对于交互式应用，延迟确认可能影响用户体验\n- 与Nagle算法同时使用时要特别注意\n\n## 面试高频追问\n\n1. 延迟确认和Nagle算法同时使用会怎样？\n2. 如何在Linux中关闭延迟确认？\n3. 为什么延迟确认的时间通常设为200ms？",
+    "tags": [
+      "延迟确认",
+      "Delayed ACK",
+      "TCP优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-022",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "什么是TCP的CUBIC拥塞控制算法？它与传统算法有什么区别？",
+    "answer": "## 核心概念\n\nCUBIC是Linux内核默认的TCP拥塞控制算法，使用三次函数来控制窗口增长，相比传统的Reno算法，在高带宽延迟积网络中表现更优。\n\n## 传统算法的问题\n\n```text\nReno算法的窗口增长:\n- 拥塞避免阶段: 线性增长\n- 每个RTT增加1 MSS\n\n问题: 在高BDP网络中\n- 从丢包恢复到充分利用带宽需要很长时间\n- 频繁丢包导致窗口反复下降\n- 带宽利用率低\n```\n\n## CUBIC算法原理\n\n```text\nCUBIC使用三次函数:\nW(t) = C × (t - K)³ + W_max\n\n其中:\n- W(t): 时间t时的窗口大小\n- C: 调节常数\n- t: 距上次丢包的时间\n- K: 窗口恢复到W_max的时间\n- W_max: 丢包前的窗口大小\n\n窗口增长曲线:\n      │        /\n  窗口│      /   ← 快速恢复\n      │    /      然后缓慢探测\n      │  /         然后快速探测\n      │/\n      └──────────────→ 时间\n```\n\n## CUBIC vs Reno对比\n\n| 对比维度 | Reno | CUBIC |\n|----------|------|-------|\n| 窗口增长 | 线性 | 三次函数 |\n| 恢复速度 | 慢 | 快 |\n| 高BDP网络 | 差 | 好 |\n| 公平性 | 好 | 好 |\n| 实现复杂度 | 简单 | 较复杂 |\n\n## 关键要点\n\n- CUBIC在丢包后**快速恢复**到之前的窗口大小\n- 窗口增长是**时间的三次函数**，与RTT无关\n- CUBIC对**高带宽延迟积网络**（如跨洋链路）特别有效\n- Linux默认使用CUBIC，Windows使用CTCP\n\n## 面试高频追问\n\n1. CUBIC为什么使用三次函数而不是二次？\n2. BBR算法和CUBIC有什么区别？\n3. 如何选择合适的拥塞控制算法？",
+    "tags": [
+      "CUBIC",
+      "拥塞控制",
+      "Linux"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-023",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "什么是BBR拥塞控制算法？它与CUBIC有什么区别？",
+    "answer": "## 核心概念\n\nBBR（Bottleneck Bandwidth and Round-trip propagation time）是Google开发的拥塞控制算法，通过测量带宽和延迟来控制发送速率，而不是依赖丢包信号。\n\n## BBR vs CUBIC的核心区别\n\n```text\nCUBIC (基于丢包):\n- 丢包 → 减小窗口\n- 不丢包 → 增大窗口\n- 问题: 缓冲区膨胀(Bufferbloat)\n\nBBR (基于测量):\n- 持续测量带宽和RTT\n- 发送速率 = 带宽 × (BDP/当前窗口)\n- 主动避免拥塞，而非被动响应\n```\n\n## BBR的工作原理\n\n```text\nBBR持续测量两个关键指标:\n\n1. BtlBw (瓶颈带宽):\n   最近一段时间的最大交付速率\n\n2. RTprop (最小RTT):\n   最近一段时间的最小往返时间\n\n发送速率:\nRate = BtlBw × pacing_gain\n\n四个阶段周期:\n┌───────────────────────────────────┐\n│ Startup → Drain → ProbeBW → ProbeRTT │\n└───────────────────────────────────┘\n```\n\n## BBR的优势\n\n| 优势 | 说明 |\n|------|------|\n| 高吞吐量 | 充分利用带宽 |\n| 低延迟 | 避免缓冲区膨胀 |\n| 公平性 | 多流共享时表现良好 |\n| 适应性 | 适合不同网络环境 |\n\n## 关键要点\n\n- BBR**不依赖丢包**来判断拥塞，而是主动测量\n- BBR解决了**缓冲区膨胀**问题\n- BBRv2进一步改善了公平性和与CUBIC的共存\n- 适合**高延迟、高带宽**的网络环境\n\n## 面试高频追问\n\n1. 什么是缓冲区膨胀？BBR如何解决？\n2. BBR的四个阶段分别是什么？\n3. BBR和CUBIC在实际网络中如何选择？",
+    "tags": [
+      "BBR",
+      "拥塞控制",
+      "Google"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-024",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的窗口缩放选项（Window Scale）？",
+    "answer": "## 核心概念\n\nTCP窗口缩放选项允许TCP窗口大小超过65535字节（16位字段的最大值），通过在握手时协商一个缩放因子来实现。\n\n## 为什么需要窗口缩放\n\n```text\nTCP头部窗口字段: 16位 → 最大65535字节\n\n问题: 高带宽延迟积网络中\n例: 1Gbps × 100ms = 12.5MB\n65535字节远不够!\n\n需要窗口缩放选项来支持更大窗口\n```\n\n## 窗口缩放协商\n\n```text\n三次握手时:\n\n客户端SYN: Window Scale = 7\n服务器SYN+ACK: Window Scale = 8\n\n实际窗口 = 头部窗口值 × 2^Scale\n\n例:\n头部窗口值 = 65535\nScale = 7\n实际窗口 = 65535 × 2^7 = 8,388,480字节 ≈ 8MB\n```\n\n## Scale因子范围\n\n```text\nScale因子: 0-14\n最大窗口: 65535 × 2^14 = 1,073,725,440字节 ≈ 1GB\n\n通常:\n- 局域网: Scale = 0 (不需要缩放)\n- 广域网: Scale = 7-10\n```\n\n## 关键要点\n\n- 窗口缩放选项在**三次握手时协商**，之后不能改变\n- **SYN包中**的窗口缩放选项才有效\n- 窗口缩放是支持**长肥网络**的关键技术\n- 需要双方都支持才能启用\n\n## 面试高频追问\n\n1. 窗口缩放选项在什么时候协商？\n2. 为什么Scale因子最大是14而不是更大？\n3. 窗口缩放和SACK可以同时使用吗？",
+    "tags": [
+      "窗口缩放",
+      "Window Scale",
+      "TCP选项"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-025",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的RST（复位）报文是什么？什么时候会发送RST？",
+    "answer": "## 核心概念\n\nRST（Reset）是TCP的一个标志位，用于立即终止连接或拒绝连接请求。RST报文不需要确认，接收方收到后立即关闭连接。\n\n## 发送RST的场景\n\n| 场景 | 说明 |\n|------|------|\n| 连接被拒绝 | 服务器端口没有监听 |\n| 连接异常终止 | 应用程序强制关闭连接 |\n| 收到无效报文 | 序列号不在窗口内 |\n| 半开连接检测 | 向已关闭的连接发送数据 |\n| SYN报文到已建立连接 | 连接状态不匹配 |\n\n## RST报文格式\n\n```text\nRST报文:\n┌────────┬────────┬────────────────┐\n│源端口  │目的端口│序列号          │\n├────────┴────────┼────────────────┤\n│确认号           │RST标志位置1    │\n└─────────────────┴────────────────┘\n\nRST=1, 其他标志位=0\n序列号通常设为收到报文的确认号\n```\n\n## RST与FIN的区别\n\n| 对比维度 | FIN | RST |\n|----------|-----|-----|\n| 方式 | 优雅关闭 | 强制关闭 |\n| 确认 | 需要确认 | 不需要确认 |\n| 数据 | 允许发送剩余数据 | 立即终止 |\n| 四次挥手 | 完成挥手过程 | 跳过挥手 |\n\n## 关键要点\n\n- RST是**立即生效**的，不需要对方确认\n- 服务器端口未监听时会回复RST\n- 防火墙可能会伪造RST来阻断连接\n- 程序崩溃时操作系统会发送RST\n\n## 面试高频追问\n\n1. 为什么有时候连接会被RST？\n2. RST攻击是什么？\n3. 程序异常退出时TCP连接会怎样？",
+    "tags": [
+      "RST",
+      "复位",
+      "连接终止"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-027",
+    "module": "TCP/IP",
+    "difficulty": 1,
+    "question": "什么是TCP的确认号（ACK号）？ACK是如何工作的？",
+    "answer": "## 核心概念\n\nTCP确认号（ACK Number）是接收方告诉发送方\"我期望收到的下一个字节的序列号\"，用于确认数据已正确接收。\n\n## ACK工作原理\n\n```text\n发送方发送:\nseq=100, 数据长度=50 (字节100-149)\n\n接收方回复:\nack=150 (期望下一个字节的序号)\n含义: 序列号100-149的数据已正确接收\n\n累积确认:\n收到ack=150\n→ 序列号<150的所有数据都已确认\n→ 即使中间有包没收到确认，也表示之前的数据都OK\n```\n\n## 确认方式\n\n```text\n1. 累积确认 (Cumulative ACK):\n   只确认连续的数据\n   例: 收到1,2,3,5 → ACK=4 (只能确认1-3)\n\n2. 选择确认 (SACK):\n   可以确认不连续的数据\n   例: 收到1,2,3,5 → ACK=4, SACK=5-5\n```\n\n## ACK的延迟\n\n```text\n接收方可以延迟发送ACK:\n- 延迟ACK: 等待200ms\n- 一次确认多个数据段\n- 减少网络上的ACK包\n```\n\n## 关键要点\n\n- ACK是**累积的**：确认了后面的，前面的也自动确认\n- ACK号是**期望值**，不是已收到的最后一个字节\n- 每个TCP包都有ACK号（ACK标志位必须为1）\n- ACK丢失不需要重传，因为后续的ACK可以替代\n\n## 面试高频追问\n\n1. 如果ACK包丢失了怎么办？\n2. 累积确认和选择确认有什么区别？\n3. ACK延迟对性能有什么影响？",
+    "tags": [
+      "确认号",
+      "ACK",
+      "累积确认"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-028",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的序列号（Sequence Number）？ISN是如何生成的？",
+    "answer": "## 核心概念\n\nTCP序列号用于标识发送的数据字节，确保数据的有序性和完整性。初始序列号（ISN，Initial Sequence Number）在连接建立时生成，不应是可预测的。\n\n## 序列号的作用\n\n```text\n1. 数据排序:\n   收到乱序数据时根据序列号重新排列\n\n2. 去重:\n   检测并丢弃重复数据\n\n3. 确认机制:\n   ACK号基于序列号确认数据\n\n4. 流量控制:\n   窗口基于序列号计算\n```\n\n## ISN生成\n\n```text\nISN不应该从0开始!\n原因: 防止序列号预测攻击\n\nISN生成规则 (RFC 793):\nISN = 时间计数器 + 随机增量\n\nLinux实现:\nISN = s_clock + hash(源IP, 目的IP, 源端口, 目的端口)\n\n每4微秒时钟增加1\n→ 不同连接的ISN不同\n→ 难以预测\n```\n\n## 序列号回绕\n\n```text\n序列号是32位 → 最大约4GB\n高速网络中可能回绕:\n10Gbps网络: 约3.4秒回绕一次\n\n解决方案:\n- 使用时间戳选项\n- PAWS (防止序列号回绕)\n```\n\n## 关键要点\n\n- 序列号是**字节级别**的，不是包级别的\n- ISN的随机性对**安全性**很重要\n- 高速网络需要处理序列号回绕问题\n- 序列号在连接建立时**协商**\n\n## 面试高频追问\n\n1. 为什么ISN不从0开始？\n2. 序列号回绕会导致什么问题？\n3. TCP的序列号攻击有哪些？",
+    "tags": [
+      "序列号",
+      "ISN",
+      "安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-029",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP连接的四元组是什么？为什么需要四元组？",
+    "answer": "## 核心概念\n\nTCP连接由四元组（源IP, 源端口, 目的IP, 目的端口）唯一标识。这四个元素共同确定一个唯一的TCP连接。\n\n## 四元组的作用\n\n```text\n唯一标识连接:\n连接1: 192.168.1.100:5000 ↔ 10.0.0.1:80\n连接2: 192.168.1.100:5001 ↔ 10.0.0.1:80\n连接3: 192.168.1.101:5000 ↔ 10.0.0.1:80\n\n虽然目的IP和端口相同，但源不同\n→ 四元组不同 → 是不同的连接\n```\n\n## 理论连接数\n\n```text\n对于一个服务器(固定IP和端口):\n最大连接数 = 客户端IP数 × 客户端端口数\n= 2^32 × 2^16\n= 2^48 ≈ 281万亿\n\n实际限制:\n- 文件描述符限制\n- 内存限制\n- 端口范围限制\n```\n\n## 为什么不用二元组或三元组\n\n```text\n仅用目的IP+端口 (二元组):\n→ 同一客户端的多个连接无法区分\n\n加上源IP (三元组):\n→ 同一客户端的多个端口连接无法区分\n\n四元组才能唯一标识每个连接\n```\n\n## 关键要点\n\n- 服务器通常**一个端口**可以接受**多个客户端**连接\n- 客户端端口是**临时分配**的（49152-65535）\n- 四元组在数据包的IP头部和TCP头部中\n- NAT设备通过修改四元组实现地址转换\n\n## 面试高频追问\n\n1. 服务器一个端口最多能有多少连接？\n2. 客户端最多能建立多少连接？\n3. NAT是如何影响四元组的？",
+    "tags": [
+      "四元组",
+      "连接标识",
+      "端口"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-030",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的半连接队列和全连接队列？",
+    "answer": "## 核心概念\n\nTCP服务器维护两个队列：半连接队列（SYN Queue）存放完成第一次握手的连接，全连接队列（Accept Queue）存放完成三次握手的连接。\n\n## 队列结构\n\n```text\n客户端SYN → 服务器\n           ↓\n    ┌─────────────────┐\n    │  半连接队列       │\n    │  (SYN Queue)     │\n    │  SYN_RCVD状态    │\n    └────────┬────────┘\n             │ 三次握手完成\n    ┌────────▼────────┐\n    │  全连接队列       │\n    │  (Accept Queue)  │\n    │  ESTABLISHED状态 │\n    └────────┬────────┘\n             │ 应用程序accept()\n         应用程序处理\n```\n\n## 队列大小配置\n\n```text\n半连接队列:\nnet.ipv4.tcp_max_syn_backlog (默认1024)\n\n全连接队列:\nmin(somaxconn, backlog)\n- somaxconn: 系统级限制 (默认4096)\n- backlog: 应用程序设置的限制\n```\n\n## 队列满时的行为\n\n```text\n半连接队列满:\n- 直接丢弃SYN (默认)\n- 或返回SYN+ACK后丢弃\n- tcp_syncookies=1时使用SYN Cookie\n\n全连接队列满:\n- 直接丢弃 (默认)\n- 或返回RST\n- tcp_abort_on_overflow=1时返回RST\n```\n\n## 关键要点\n\n- 高并发服务器需要**调大队列**\n- SYN Flood攻击利用的是**半连接队列**\n- 全连接队列满会导致**连接建立失败**\n- **syncookies**机制可以绕过半连接队列限制\n\n## 面试高频追问\n\n1. 如何查看队列的使用情况？\n2. 全连接队列满了怎么办？\n3. listen()的backlog参数是什么意思？",
+    "tags": [
+      "半连接队列",
+      "全连接队列",
+      "SYN Queue"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-031",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的糊涂窗口综合征（Silly Window Syndrome）？如何解决？",
+    "answer": "## 核心概念\n\n糊涂窗口综合征（SWS）是指接收方窗口很小时，发送方发送大量小数据包的现象。这会导致效率低下，因为每个小包都有TCP/IP头部开销。\n\n## 问题场景\n\n```text\n接收方处理慢，窗口很小:\n接收方: \"我的窗口只有1字节\"\n发送方: 发送1字节数据 + 20字节TCP头 + 20字节IP头\n→ 效率极低 (1/41 ≈ 2.4%)\n\n接收方: \"窗口又变大了1字节\"\n发送方: 又发送1字节...\n→ 持续低效传输\n```\n\n## 解决方案\n\n### 发送方: Nagle算法\n```text\n规则: 如果有未确认的小数据包，等待\n→ 合并小数据包\n→ 减少小包数量\n```\n\n### 接收方: Clark方案\n```text\n规则: 窗口小于MSS时通告窗口为0\n→ 等到窗口可以容纳一个完整MSS再通告\n→ 避免发送方发送小包\n```\n\n### 接收方: 延迟确认\n```text\n延迟发送ACK\n→ 窗口有时间增长\n→ 累积确认减少小窗口通告\n```\n\n## 综合解决\n\n```text\nNagle + Clark + 延迟确认\n\n但要注意:\nNagle + 延迟确认 = 额外延迟\n交互式应用通常关闭Nagle\n```\n\n## 关键要点\n\n- SWS导致**带宽浪费**和**延迟增加**\n- Nagle算法解决**发送方**的SWS\n- Clark方案解决**接收方**的SWS\n- 现代TCP实现通常内置了这些解决方案\n\n## 面试高频追问\n\n1. Nagle算法和Clark方案分别解决什么问题？\n2. 什么时候应该关闭Nagle算法？\n3. 如何在程序中关闭Nagle算法？",
+    "tags": [
+      "糊涂窗口",
+      "SWS",
+      "Nagle"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-032",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "TCP连接建立失败的常见原因有哪些？如何排查？",
+    "answer": "## 核心概念\n\nTCP连接建立失败可能有多种原因，从网络不通到服务器配置问题。系统化的排查方法是解决问题的关键。\n\n## 常见失败原因\n\n### 1. 目标端口未监听\n```text\n现象: 收到RST响应\n\n排查:\nnetstat -tlnp | grep 端口\nss -tlnp | grep 端口\n```\n\n### 2. 网络不通\n```text\n现象: 超时，无响应\n\n排查:\nping 目标IP\ntraceroute 目标IP\n```\n\n### 3. 防火墙拦截\n```text\n现象: 连接超时或被拒绝\n\n排查:\niptables -L -n\ntcpdump -i eth0 port 端口\n```\n\n### 4. 半连接队列满\n```text\n现象: SYN无响应\n\n排查:\nnetstat -s | grep \"SYNs\"\ncat /proc/net/netstat | grep TcpExtListenOverflows\n```\n\n### 5. 全连接队列满\n```text\n现象: 三次握手完成但accept()不返回\n\n排查:\nss -lntp | grep 端口\nSend-Q列就是全连接队列大小\n```\n\n### 6. 服务器过载\n```text\n现象: 连接超时或被RST\n\n排查:\ntop, vmstat\ndmesg | grep -i \"out of memory\"\n```\n\n## 排查流程\n\n```text\n1. 检查网络连通性 (ping)\n2. 检查端口是否监听 (netstat/ss)\n3. 检查防火墙规则 (iptables)\n4. 抓包分析 (tcpdump/Wireshark)\n5. 检查系统日志 (dmesg/syslog)\n```\n\n## 关键要点\n\n- **tcpdump/Wireshark**是最有效的排查工具\n- 从**应用层→传输层→网络层→链路层**逐层排查\n- 连接超时通常是**网络或防火墙**问题\n- 连接被拒绝通常是**端口未监听**问题\n\n## 面试高频追问\n\n1. 如何用tcpdump排查连接问题？\n2. 服务器大量SYN_RCVD状态说明什么？\n3. 如何优化服务器的并发连接能力？",
+    "tags": [
+      "连接失败",
+      "故障排查",
+      "tcpdump"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-033",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的SO_REUSEADDR和SO_REUSEPORT选项？",
+    "answer": "## 核心概念\n\nSO_REUSEADDR和SO_REUSEPORT是socket选项，用于解决端口重用的问题，对于服务器重启和高并发场景非常重要。\n\n## SO_REUSEADDR\n\n```text\n作用: 允许重用处于TIME_WAIT状态的地址\n\n问题场景:\n服务器重启时，旧连接处于TIME_WAIT状态\n→ 新进程无法绑定同一端口\n→ \"Address already in use\"错误\n\n解决:\nsetsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));\n```\n\n## SO_REUSEPORT\n\n```text\n作用: 允许多个socket绑定同一端口\n\n使用场景:\n- 多进程/线程监听同一端口\n- 内核级负载均衡\n\n优势:\n- 避免accept()锁竞争\n- 提高多核并发性能\n\nsetsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));\n```\n\n## 两者对比\n\n| 对比维度 | SO_REUSEADDR | SO_REUSEPORT |\n|----------|--------------|--------------|\n| 解决问题 | TIME_WAIT端口重用 | 多进程同一端口 |\n| 内核支持 | 所有Unix系统 | Linux 3.9+ |\n| 负载均衡 | 无 | 内核级负载均衡 |\n| 典型用途 | 服务器快速重启 | 高并发服务器 |\n\n## 关键要点\n\n- SO_REUSEADDR只解决**TIME_WAIT**问题\n- SO_REUSEPORT可以实现**内核级负载均衡**\n- Go、Nginx等已广泛使用SO_REUSEPORT\n- SO_REUSEPORT可能导致**连接分配不均**\n\n## 面试高频追问\n\n1. 为什么服务器重启时会提示端口被占用？\n2. SO_REUSEPORT如何实现负载均衡？\n3. 什么情况下应该使用SO_REUSEPORT？",
+    "tags": [
+      "SO_REUSEADDR",
+      "SO_REUSEPORT",
+      "端口重用"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-034",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "如何优化TCP传输性能？有哪些常见的TCP调优参数？",
+    "answer": "## 核心概念\n\nTCP性能优化涉及多个层面，从内核参数到应用层配置，合理的调优可以显著提升网络传输效率。\n\n## 内核参数调优\n\n### 缓冲区优化\n```bash\n# TCP读写缓冲区\nnet.ipv4.tcp_rmem = 4096 87380 6291456  # 最小 默认 最大\nnet.ipv4.tcp_wmem = 4096 65536 6291456\nnet.core.rmem_max = 16777216  # 系统最大接收缓冲区\nnet.core.wmem_max = 16777216  # 系统最大发送缓冲区\n```\n\n### 连接优化\n```bash\n# 允许重用TIME_WAIT连接\nnet.ipv4.tcp_tw_reuse = 1\n\n# 增大队列大小\nnet.ipv4.tcp_max_syn_backlog = 65535\nnet.core.somaxconn = 65535\n\n# 开启窗口缩放\nnet.ipv4.tcp_window_scaling = 1\n\n# 开启SACK\nnet.ipv4.tcp_sack = 1\n```\n\n### 拥塞控制\n```bash\n# 选择拥塞控制算法\nnet.ipv4.tcp_congestion_control = bbr\n\n# 开启Fast Open\nnet.ipv4.tcp_fastopen = 3\n```\n\n## 应用层优化\n\n```text\n1. 使用连接池: 减少TCP握手开销\n2. 开启KeepAlive: 复用连接\n3. 合理设置缓冲区: 根据BDP调整\n4. 关闭Nagle: 交互式应用\n5. 使用epoll: 高并发IO\n```\n\n## 长肥网络优化\n\n```text\n高带宽延迟积网络:\nBDP = 1Gbps × 100ms = 12.5MB\n\n需要:\n- 大窗口 (窗口缩放)\n- 大缓冲区\n- BBR拥塞控制\n```\n\n## 关键要点\n\n- 缓冲区大小应**不小于BDP**\n- **BBR**适合高延迟网络\n- **连接池**是最有效的应用层优化\n- 不同场景需要不同的优化策略\n\n## 面试高频追问\n\n1. 如何计算合适的TCP缓冲区大小？\n2. BBR和CUBIC在什么场景下性能差异最大？\n3. 如何诊断TCP性能瓶颈？",
+    "tags": [
+      "TCP优化",
+      "内核参数",
+      "性能调优"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-035",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP Fast Open（TFO）？它如何加速连接建立？",
+    "answer": "## 核心概念\n\nTCP Fast Open（TFO）是TCP的扩展选项，允许在SYN报文中携带数据，将数据传输提前到握手阶段，减少一个RTT的延迟。\n\n## 传统TCP vs TFO\n\n```text\n传统TCP:\nSYN ──────────→\n←────────── SYN+ACK\nACK + 请求 ──→\n←────────── 响应\n总延迟: 2个RTT\n\nTFO (首次):\nSYN + TFO请求 ──→ (Cookie为空)\n←────────── SYN+ACK + Cookie\nACK ──────────→\n\nTFO (后续):\nSYN + 数据 + Cookie ──→\n←────────── SYN+ACK + 数据\nACK ──────────→\n总延迟: 1个RTT (省了1个RTT!)\n```\n\n## TFO工作流程\n\n```text\n1. 首次连接: 正常握手，服务器生成Cookie\n2. 连接关闭: 客户端保存Cookie\n3. 再次连接: SYN携带数据和Cookie\n4. 服务器验证Cookie: 有效则立即处理数据\n5. 无需等待第三次握手\n```\n\n## TFO的优缺点\n\n| 优点 | 缺点 |\n|------|------|\n| 减少1个RTT延迟 | 首次连接无优化 |\n| 适合短连接场景 | 可能被中间设备丢弃 |\n| 兼容传统TCP | 有安全隐患（SYN Flood变种） |\n\n## 关键要点\n\n- TFO对**短连接**（如HTTP请求）效果最明显\n- 需要客户端和服务器都支持\n- Linux 3.7+支持TFO\n- 应用层需要显式启用TFO\n\n## 面试高频追问\n\n1. TFO的Cookie是如何生成的？\n2. TFO和QUIC的0-RTT有什么区别？\n3. 为什么TFO没有被广泛部署？",
+    "tags": [
+      "TCP Fast Open",
+      "TFO",
+      "连接优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-036",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是同时打开和同时关闭？TCP状态如何变化？",
+    "answer": "## 核心概念\n\n同时打开（Simultaneous Open）和同时关闭（Simultaneous Close）是TCP连接建立和关闭的特殊情况，双方同时发起连接或关闭请求。\n\n## 同时打开\n\n```text\n双方同时发送SYN:\n\n客户端A                  客户端B\n   |--- SYN(seq=x) ----→  |\n   |←--- SYN(seq=y) -----|\n   |--- SYN+ACK -------→  |\n   |←--- SYN+ACK --------|\n   |                       |\n   双方进入ESTABLISHED状态\n\n状态变化:\nCLOSED → SYN_SENT → SYN_RCVD → ESTABLISHED\n```\n\n## 同时关闭\n\n```text\n双方同时发送FIN:\n\n客户端A                  客户端B\n   |--- FIN ───────────→  |\n   |←--- FIN ------------|\n   |--- ACK ───────────→  |\n   |←--- ACK ------------|\n   |                       |\n   双方进入CLOSING → TIME_WAIT → CLOSED\n\n状态变化:\nESTABLISHED → FIN_WAIT_1 → CLOSING → TIME_WAIT → CLOSED\n```\n\n## 状态转换对比\n\n| 场景 | 主动方状态变化 | 被动方状态变化 |\n|------|---------------|---------------|\n| 正常关闭 | FIN_WAIT_1→FIN_WAIT_2→TIME_WAIT | CLOSE_WAIT→LAST_ACK |\n| 同时关闭 | FIN_WAIT_1→CLOSING→TIME_WAIT | FIN_WAIT_1→CLOSING→TIME_WAIT |\n\n## 关键要点\n\n- 同时打开在实际中**很少见**，但协议设计上支持\n- 同时关闭时双方都经历**TIME_WAIT**状态\n- CLOSING状态表示双方都在等待对方的ACK\n- 这些特殊情况体现了TCP协议设计的**完备性**\n\n## 面试高频追问\n\n1. 同时打开在什么场景下会发生？\n2. CLOSING状态和CLOSE_WAIT状态有什么区别？\n3. 为什么同时关闭双方都需要TIME_WAIT？",
+    "tags": [
+      "同时打开",
+      "同时关闭",
+      "TCP状态"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-037",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "什么是TCP的Path MTU Discovery？它的工作原理是什么？",
+    "answer": "## 核心概念\n\nPath MTU Discovery（PMTUD）是TCP用来发现从源到目的路径上最小MTU的机制，避免在中间路由器上进行IP分片。\n\n## PMTUD工作原理\n\n```text\n1. 发送方设置IP头部的DF标志(Don't Fragment)\n2. 发送大小等于本机MTU的数据包\n3. 如果路径上有更小的MTU:\n   - 中间路由器丢弃数据包\n   - 返回ICMP \"需要分片\"错误\n   - 包含下一跳的MTU值\n4. 发送方减小数据包大小，重试\n5. 直到找到路径最小MTU\n\n示例:\n发送方MTU=1500 → 路由器MTU=1400\n发送1500字节 → 被拒绝 (MTU=1400)\n发送1400字节 → 通过\n→ Path MTU = 1400\n```\n\n## PMTUD的问题\n\n```text\n黑洞问题 (Black Hole):\n\n某些防火墙/路由器丢弃ICMP消息\n→ 发送方收不到\"需要分片\"错误\n→ 持续发送大数据包\n→ 持续被丢弃\n→ 连接\"卡住\"\n\n解决:\n- tcp_mtu_probing: 主动探测MTU\n- 使用较小的MSS\n```\n\n## 配置选项\n\n```bash\n# 启用MTU探测\nnet.ipv4.tcp_mtu_probing = 1\n\n# 最小MSS\nnet.ipv4.tcp_min_snd_mss = 536\n```\n\n## 关键要点\n\n- PMTUD避免了**IP分片**，提高传输效率\n- PMTUD依赖**ICMP消息**，可能被防火墙阻断\n- **黑洞问题**是PMTUD的主要挑战\n- IPv6要求路径最小MTU为1280字节\n\n## 面试高频追问\n\n1. 为什么IPv6禁止中间路由器分片？\n2. 什么是PMTUD黑洞问题？如何解决？\n3. MSS和Path MTU有什么关系？",
+    "tags": [
+      "PMTUD",
+      "MTU发现",
+      "IP分片"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-038",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是TCP的保活定时器（Keep-Alive Timer）？与其他定时器有什么区别？",
+    "answer": "## 核心概念\n\nTCP使用多种定时器来管理连接状态和数据传输。保活定时器用于检测空闲连接是否仍然有效。\n\n## TCP定时器类型\n\n| 定时器 | 作用 | 默认值 |\n|--------|------|--------|\n| **重传定时器** | 超时重传丢失的数据 | 动态计算(RTO) |\n| **保活定时器** | 检测空闲连接是否存活 | 2小时 |\n| **持续定时器** | 窗口为0时发送探测 | 5-60秒 |\n| **时间等待定时器** | TIME_WAIT状态持续时间 | 2MSL(60秒) |\n| **FIN_WAIT_2定时器** | 防止FIN_WAIT_2永久等待 | 60秒 |\n\n## 保活定时器工作流程\n\n```text\n空闲连接检测:\n1. 连接空闲超过keepalive_time\n2. 发送探测报文(空数据+ACK)\n3. 等待响应:\n   - 收到ACK: 连接有效，重置定时器\n   - 收到RST: 连接已关闭\n   - 无响应: 重试\n4. 超过keepalive_probes次无响应\n5. 关闭连接，通知应用层\n```\n\n## 配置参数\n\n```bash\n# 空闲多久后开始探测\nnet.ipv4.tcp_keepalive_time = 7200  # 秒\n\n# 探测间隔\nnet.ipv4.tcp_keepalive_intvl = 75   # 秒\n\n# 最大探测次数\nnet.ipv4.tcp_keepalive_probes = 9\n```\n\n## 关键要点\n\n- 保活定时器默认是**关闭**的\n- 保活只能检测**连接级别**的问题\n- 应用层心跳比TCP保活更灵活\n- 不同定时器各司其职，共同维护TCP连接\n\n## 面试高频追问\n\n1. TCP一共有多少种定时器？\n2. 持续定时器的作用是什么？\n3. 为什么保活定时器默认是关闭的？",
+    "tags": [
+      "TCP定时器",
+      "Keep-Alive",
+      "连接管理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-039",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "什么是TCP的SACK和DSACK？它们如何提高传输效率？",
+    "answer": "## 核心概念\n\nSACK（Selective Acknowledgment，选择性确认）允许接收方告知发送方哪些数据段已收到，哪些缺失。DSACK（Duplicate SACK）是SACK的扩展，用于通知发送方收到了重复的数据。\n\n## SACK机制\n\n```text\n标准TCP (累积确认):\n发送: 1 2 3 4 5 6 7 8\n接收: 1 2 3 _ 5 6 _ 8\nACK:  4 (只能确认1-3)\n→ 发送方不知道5-6和8已收到\n→ 必须重传4-8\n\nSACK:\n发送: 1 2 3 4 5 6 7 8\n接收: 1 2 3 _ 5 6 _ 8\nACK:  4, SACK=[5-6], SACK=[8-8]\n→ 发送方知道5-6和8已收到\n→ 只需重传4和7\n```\n\n## SACK在TCP头部中的编码\n\n```text\nTCP选项字段:\nKind=5 (SACK)\nLength=可变\nSACK Blocks: [左边界, 右边界] pairs\n\n每个SACK Block: 8字节\n最多4个Block (受TCP选项长度限制)\n```\n\n## DSACK机制\n\n```text\n作用: 报告收到重复数据\n\n场景:\n1. 网络重复包: 同一数据被网络复制\n2. 重传不必要: ACK丢失导致不必要重传\n\nDSACK示例:\nACK=4, SACK=[3-4]\n→ 表示收到了重复的3-4\n→ 发送方可以调整RTO\n```\n\n## 关键要点\n\n- SACK显著**减少不必要的重传**\n- SACK需要双方在握手时协商\n- DSACK帮助发送方**检测网络问题**\n- Linux默认开启SACK和DSACK\n\n## 面试高频追问\n\n1. SACK是如何在握手时协商的？\n2. DSACK可以用来检测什么问题？\n3. 为什么SACK最多只能有4个Block？",
+    "tags": [
+      "SACK",
+      "DSACK",
+      "选择性确认"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-040",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "什么是UDP协议？UDP的报文格式是什么？",
+    "answer": "## 核心概念\n\nUDP（User Datagram Protocol，用户数据报协议）是一种无连接、不可靠的传输层协议，提供简单高效的数据传输服务。\n\n## UDP报文格式\n\n```text\nUDP头部 (8字节):\n┌────────────────┬────────────────┐\n│ 源端口 (16位)  │ 目的端口(16位) │\n├────────────────┼────────────────┤\n│ UDP长度 (16位) │ UDP校验和(16位)│\n├────────────────┴────────────────┤\n│            数据                  │\n└─────────────────────────────────┘\n\n总长度: 8字节头部 + 数据\n最小: 8字节 (无数据)\n最大: 65535字节 (理论)\n实际: 通常不超过MTU\n```\n\n## UDP特点\n\n| 特点 | 说明 |\n|------|------|\n| 无连接 | 不需要握手，直接发送 |\n| 不可靠 | 不保证送达，不重传 |\n| 无序 | 不保证顺序 |\n| 无流量控制 | 发多快就多快 |\n| 轻量 | 头部仅8字节 |\n| 支持多播 | 可一对多发送 |\n\n## UDP适用场景\n\n```text\n1. DNS查询: 简单请求响应，不需要可靠性\n2. 视频直播: 实时性优先，丢几帧可以接受\n3. 游戏: 低延迟优先\n4. SNMP: 网络管理，简单高效\n5. DHCP: 广播场景\n```\n\n## 关键要点\n\n- UDP**不保证**数据送达、顺序和完整性\n- 应用层可以在UDP上实现可靠性（如QUIC）\n- UDP校验和在IPv4中是**可选**的，IPv6中是**必须**的\n- UDP适合**实时性要求高**的场景\n\n## 面试高频追问\n\n1. DNS为什么用UDP而不是TCP？\n2. 如何在UDP上实现可靠传输？\n3. UDP和TCP可以使用同一个端口吗？",
+    "tags": [
+      "UDP",
+      "数据报",
+      "无连接"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-041",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP和UDP的校验和有什么区别？",
+    "answer": "## 核心概念\n\nTCP和UDP都使用校验和来检测数据传输错误，但在计算范围、是否必须等方面存在差异。\n\n## 对比\n\n| 对比维度 | TCP校验和 | UDP校验和 |\n|----------|----------|----------|\n| 是否必须 | 必须 | IPv4可选，IPv6必须 |\n| 覆盖范围 | 伪首部+头部+数据 | 伪首部+头部+数据 |\n| 计算方法 | 16位反码求和 | 16位反码求和 |\n| 伪首部 | 包含 | 包含 |\n\n## 伪首部结构\n\n```text\nTCP/UDP伪首部 (12字节):\n┌──────────────────────────────────┐\n│ 源IP地址 (32位)                  │\n├──────────────────────────────────┤\n│ 目的IP地址 (32位)                │\n├─────────┬─────────┬──────────────┤\n│ 全零    │ 协议号  │ TCP/UDP长度  │\n│ (8位)   │ (8位)   │ (16位)       │\n└─────────┴─────────┴──────────────┘\n\n协议号: TCP=6, UDP=17\n```\n\n## UDP校验和的特殊情况\n\n```text\nIPv4:\n- 校验和可选\n- 如果不计算，设为0\n- 计算时包括伪首部\n\nIPv6:\n- 校验和必须\n- 因为IPv6没有头部校验和\n- UDP必须自己保证数据完整性\n```\n\n## 关键要点\n\n- 伪首部的目的是验证**IP层信息**的正确性\n- TCP校验和覆盖**伪首部+头部+数据**\n- UDP在IPv4中可以不计算校验和以**提高性能**\n- IPv6强制UDP校验和是因为**IPv6去掉了头部校验和**\n\n## 面试高频追问\n\n1. 为什么TCP和UDP的校验和都要包含伪首部？\n2. IPv6为什么要求UDP必须有校验和？\n3. 校验和能检测出所有错误吗？",
+    "tags": [
+      "校验和",
+      "TCP",
+      "UDP"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-042",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的头部格式是怎样的？各字段有什么作用？",
+    "answer": "## 核心概念\n\nTCP头部包含20字节固定部分和可变的选项部分，携带了TCP连接管理、数据传输和流量控制所需的所有信息。\n\n## TCP头部格式\n\n```text\n 0                   1                   2                   3\n 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1\n├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤\n│          源端口 (16位)          │        目的端口 (16位)         │\n├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤\n│                       序列号 (32位)                             │\n├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤\n│                     确认号 (32位)                               │\n├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤\n│数据│保 │U│A│P│R│S│F│           窗口大小 (16位)                  │\n│偏移│留 │R│C│S│S│Y│I│                                            │\n│(4) │(6)│G│K│H│T│N│N│                                            │\n├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤\n│         校验和 (16位)          │      紧急指针 (16位)           │\n├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤\n│                    选项 (可变)                                  │\n└─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘\n```\n\n## 字段说明\n\n| 字段 | 大小 | 作用 |\n|------|------|------|\n| 源端口 | 16位 | 发送方端口号 |\n| 目的端口 | 16位 | 接收方端口号 |\n| 序列号 | 32位 | 数据字节的序号 |\n| 确认号 | 32位 | 期望收到的下一个序号 |\n| 数据偏移 | 4位 | 头部长度(以4字节为单位) |\n| 标志位 | 6位 | URG/ACK/PSH/RST/SYN/FIN |\n| 窗口大小 | 16位 | 接收窗口大小 |\n| 校验和 | 16位 | 错误检测 |\n| 紧急指针 | 16位 | 紧急数据位置 |\n\n## 关键要点\n\n- TCP头部**最小20字节**，最大60字节（含选项）\n- **6个标志位**控制连接状态和数据传输\n- 序列号和确认号是TCP可靠传输的基础\n- 窗口大小用于流量控制\n\n## 面试高频追问\n\n1. TCP头部最大是多少字节？为什么？\n2. 6个标志位分别在什么场景下使用？\n3. 数据偏移字段有什么作用？",
+    "tags": [
+      "TCP头部",
+      "报文格式",
+      "标志位"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-043",
+    "module": "TCP/IP",
+    "difficulty": 2,
+    "question": "TCP的URG和PSH标志位有什么区别？",
+    "answer": "## 核心概念\n\nURG（Urgent）和PSH（Push）是TCP头部的两个标志位，都与数据的优先处理有关，但机制和用途不同。\n\n## URG标志位\n\n```text\n作用: 标识紧急数据\n\n当URG=1时:\n- 紧急指针字段有效\n- 指出紧急数据的结束位置\n- 接收方应优先处理紧急数据\n\n典型场景:\n- Telnet中断命令 (Ctrl+C)\n- 远程登录的信号传递\n\n特点:\n- 很少使用\n- 实现不一致\n```\n\n## PSH标志位\n\n```text\n作用: 要求接收方立即将数据交给应用层\n\n当PSH=1时:\n- 接收方不缓冲数据\n- 立即将数据推送给应用程序\n- 同时清空发送缓冲区\n\n典型场景:\n- 交互式应用 (SSH, Telnet)\n- 需要立即响应的请求\n\n特点:\n- 更常用\n- 实现比较一致\n```\n\n## 对比\n\n| 对比维度 | URG | PSH |\n|----------|-----|-----|\n| 作用 | 标识紧急数据 | 要求立即推送 |\n| 数据位置 | 部分数据是紧急的 | 所有数据都推送 |\n| 使用频率 | 很少 | 较常见 |\n| 实现一致性 | 差 | 好 |\n| 现代应用 | 基本不用 | 仍在使用 |\n\n## 关键要点\n\n- URG和PSH都与**数据优先处理**有关\n- URG是针对**部分数据**，PSH是针对**所有数据**\n- 现代应用中URG几乎不用，PSH仍在使用\n- PSH通常由发送方的应用层自动设置\n\n## 面试高频追问\n\n1. 为什么URG在现代应用中很少使用？\n2. PSH是由应用程序设置的还是协议栈自动设置的？\n3. 如果同时设置了URG和PSH会怎样？",
+    "tags": [
+      "URG",
+      "PSH",
+      "标志位"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-044",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "在高并发场景下，TCP连接数过多会导致什么问题？如何优化？",
+    "answer": "## 核心概念\n\n高并发场景下，大量TCP连接会消耗系统资源（内存、文件描述符、CPU），导致性能下降甚至服务不可用。\n\n## 问题分析\n\n### 资源消耗\n```text\n每个TCP连接占用:\n- 文件描述符: 1个\n- 内存: 约3-10KB (内核TCB结构)\n- CPU: 连接管理、数据拷贝\n\n100万连接:\n- 文件描述符: 100万\n- 内存: 3-10GB\n- CPU: 连接管理开销巨大\n```\n\n### 典型问题\n| 问题 | 原因 | 表现 |\n|------|------|------|\n| 文件描述符耗尽 | 默认限制1024 | Too many open files |\n| 内存不足 | 每连接开销 | OOM Kill |\n| 端口耗尽 | TIME_WAIT过多 | Cannot assign address |\n| CPU过载 | 上下文切换频繁 | 响应延迟 |\n\n## 优化方案\n\n### 1. 系统参数调优\n```bash\n# 文件描述符限制\nulimit -n 1000000\nfs.file-max = 1000000\n\n# 端口范围\nnet.ipv4.ip_local_port_range = 1024 65535\n\n# TIME_WAIT重用\nnet.ipv4.tcp_tw_reuse = 1\n```\n\n### 2. 架构优化\n```text\n1. 连接池: 复用连接，减少新建\n2. 负载均衡: 分散连接到多台服务器\n3. 长连接: 减少握手开销\n4. 异步IO: epoll/kqueue减少线程数\n5. 协议优化: HTTP/2多路复用\n```\n\n### 3. 应用层优化\n```text\n1. 减少每个连接的内存占用\n2. 使用更高效的序列化格式\n3. 合理设置超时时间\n4. 及时关闭不活跃连接\n```\n\n## 关键要点\n\n- **文件描述符**是第一个瓶颈\n- **内存**是最大的资源消耗\n- **连接池**是最有效的优化手段\n- 架构上**减少连接数**比优化单连接更重要\n\n## 面试高频追问\n\n1. 单机百万连接需要哪些优化？\n2. 如何监控TCP连接状态？\n3. C10K和C10M问题是什么？",
+    "tags": [
+      "高并发",
+      "TCP连接",
+      "性能优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "net-tcp-045",
+    "module": "TCP/IP",
+    "difficulty": 3,
+    "question": "什么是TCP的拥塞控制中的公平性问题？不同算法如何保证公平性？",
+    "answer": "## 核心概念\n\nTCP拥塞控制的公平性是指多个TCP流共享同一瓶颈链路时，应该获得大致相等的带宽份额。\n\n## 公平性问题\n\n```text\n理想情况:\n10个流共享100Mbps链路\n→ 每个流获得10Mbps\n\n不公平的情况:\n- 新加入的流可能抢占更多带宽\n- 不同算法的流可能不公平\n- RTT不同的流获得不同带宽\n```\n\n## RTT公平性问题\n\n```text\nTCP Reno/Cubic的窗口增长与RTT相关:\n\n流A: RTT=10ms, 每秒增长100个窗口\n流B: RTT=100ms, 每秒增长10个窗口\n\n结果: 流A获得的带宽远大于流B\n→ RTT小的流\"不公平\"地获得更多带宽\n```\n\n## BBR如何改善公平性\n\n```text\nBBR基于测量而非丢包:\n- 发送速率 = BtlBw × pacing_gain\n- 与RTT无关\n→ 不同RTT的流获得相似带宽\n→ 更公平\n```\n\n## 算法共存问题\n\n```text\nCubic vs BBR共存:\n- BBR更激进，可能抢占Cubic的带宽\n- BBRv2改善了与Cubic的公平性\n\n不同算法共存:\n- 应该使用相同算法\n- 混合部署可能导致不公平\n```\n\n## 关键要点\n\n- 传统算法（Reno/Cubic）存在**RTT不公平**问题\n- BBR通过**基于测量**而非丢包来改善公平性\n- 不同算法**共存**时可能不公平\n- 公平性是拥塞控制算法设计的重要考量\n\n## 面试高频追问\n\n1. 为什么RTT小的流会获得更多带宽？\n2. BBR和Cubic共存时谁会占优势？\n3. 如何在网络层面保证公平性？",
+    "tags": [
+      "公平性",
+      "拥塞控制",
+      "RTT"
+    ],
+    "source": "高频"
+  }
+]

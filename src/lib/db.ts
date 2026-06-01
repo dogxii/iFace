@@ -446,9 +446,35 @@ export const DEFAULT_CATEGORY_MAP: CategoryMap = {
       'RAG与知识库',
       '工具调用与工作流',
       '评测与线上优化',
+      'AI工程化',
+      'AI应用实践',
     ],
     builtin: true,
     order: 2,
+  },
+  Java: {
+    name: 'Java',
+    modules: ['Java基础', 'Java面向对象', 'Java并发', 'JVM', 'Spring框架'],
+    builtin: true,
+    order: 3,
+  },
+  计算机网络: {
+    name: '计算机网络',
+    modules: ['网络基础', 'TCP/IP', 'HTTP', '网络安全'],
+    builtin: true,
+    order: 4,
+  },
+  Redis: {
+    name: 'Redis',
+    modules: ['Redis基础', 'Redis数据结构', 'Redis持久化', 'Redis集群'],
+    builtin: true,
+    order: 5,
+  },
+  MySQL: {
+    name: 'MySQL',
+    modules: ['MySQL基础', 'MySQL索引', 'MySQL事务', 'MySQL优化'],
+    builtin: true,
+    order: 6,
   },
 }
 

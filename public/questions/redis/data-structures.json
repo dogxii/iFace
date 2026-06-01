@@ -1,0 +1,563 @@
+[
+  {
+    "id": "redis-ds-001",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis String类型的SET和GET命令有哪些常用参数？如何设置过期时间和条件写入？",
+    "answer": "## 核心概念\n\nString是Redis最基本的数据类型，最大容量为512MB。SET和GET是最常用的命令，SET命令支持多种可选参数来实现条件写入和过期设置。\n\n## 命令示例\n\n```redis\n# 基础读写\nSET mykey \"hello world\"\nGET mykey\n\n# 设置过期时间\nSET session:abc \"user1001\" EX 3600      # 3600秒后过期\nSET session:abc \"user1001\" PX 60000     # 60000毫秒后过期\nSET session:abc \"user1001\" EXAT 1706745600  # Unix时间戳过期\n\n# 条件写入\nSET lock:order:1001 \"owner1\" NX          # 仅当key不存在时设置\nSET lock:order:1001 \"owner2\" XX          # 仅当key存在时设置\n\n# 设置并返回旧值\nSET mykey \"new_value\" GET               # 原子设置并返回旧值(Redis 6.2+)\n```\n\n## 关键要点\n\n- **EX**：设置过期秒数，**PX**：设置过期毫秒数\n- **NX**：不存在才设置（可用于分布式锁），**XX**：存在才设置（可用于更新）\n- **GET**参数：Redis 6.2+支持原子返回旧值，避免先GET再SET的竞态条件\n- SET是原子操作，在并发环境下安全\n\n## 注意事项\n\n- NX配合EX可以实现带过期时间的分布式锁\n- SET会覆盖key原有的值和TTL，如需保留TTL应使用SETGET后手动EXPIRE\n- GET参数返回nil表示key之前不存在",
+    "tags": [
+      "String",
+      "SET",
+      "GET",
+      "过期时间"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-ds-002",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis的INCR、DECR、INCRBY命令如何使用？它们的原子性如何保证？",
+    "answer": "## 核心概念\n\nINCR系列命令对String类型的整数值进行原子递增/递减操作，无需加锁即可在并发环境下安全使用。Redis单线程执行命令，天然保证原子性。\n\n## 命令示例\n\n```redis\n# 基础递增递减\nSET counter 100\nINCR counter              # 结果: 101\nDECR counter              # 结果: 100\n\n# 指定步长\nINCRBY counter 10         # 结果: 110\nDECRBY counter 5          # 结果: 105\n\n# 浮点数递增\nSET price 99.9\nINCRBYFLOAT price 0.5     # 结果: 100.4\nINCRBYFLOAT price -1.5    # 结果: 98.9\n\n# key不存在时自动初始化为0\nINCR new_counter          # 结果: 1\n```\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 返回值 | 说明 |\n|------|-----------|--------|------|\n| INCR | O(1) | 新值 | +1 |\n| DECR | O(1) | 新值 | -1 |\n| INCRBY | O(1) | 新值 | +N |\n| DECRBY | O(1) | 新值 | -N |\n| INCRBYFLOAT | O(1) | 新值 | 浮点数 |\n\n- key不存在时自动初始化为0再操作\n- 值不是整数类型时返回错误\n- INCRBYFLOAT对浮点数可能有精度问题\n\n## 注意事项\n\n- INCR的原子性基于Redis单线程模型，不需要额外加锁\n- 常用于计数器、限流、全局ID生成等场景\n- 如果值超出64位有符号整数范围会报错",
+    "tags": [
+      "String",
+      "INCR",
+      "原子操作",
+      "计数器"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-ds-003",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "如何使用Redis SETNX实现分布式锁？SETNX和SET NX有什么区别？",
+    "tags": [
+      "String",
+      "SETNX",
+      "分布式锁",
+      "NX"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nSETNX（SET if Not eXists）在key不存在时设置值，可用于实现分布式锁。但推荐使用SET key value NX EX组合命令，因为SETNX无法同时设置过期时间。\n\n## 命令示例\n\n```redis\n# SETNX方式（不推荐，无法设置过期时间）\nSETNX lock:order:1001 \"owner_id\"\nEXPIRE lock:order:1001 30\n\n# SET NX EX方式（推荐，原子操作）\nSET lock:order:1001 \"owner_id\" NX EX 30\n\n# 释放锁（Lua脚本保证原子性）\nEVAL \"if redis.call('get',KEYS[1])==ARGV[1] then return redis.call('del',KEYS[1]) else return 0 end\" 1 lock:order:1001 \"owner_id\"\n```\n\n## SETNX vs SET NX对比\n\n| 特性 | SETNX + EXPIRE | SET NX EX |\n|------|---------------|----------|\n| 原子性 | 不原子（两步操作） | 原子（一步完成） |\n| 过期时间 | 需要单独设置 | 直接设置 |\n| 死锁风险 | 有（EXPIRE可能失败） | 无 |\n| 推荐程度 | 不推荐 | 推荐 |\n\n## 关键要点\n\n- SET key value NX EX是实现分布式锁的标准方式\n- NX保证互斥，EX防止死锁\n- value应使用唯一标识（如UUID），释放时需验证\n- 释放锁必须用Lua脚本保证原子性\n\n## 注意事项\n\n- SETNX是Redis 1.0的命令，SET NX EX是Redis 2.6.12引入的扩展参数\n- 分布式锁还需要考虑锁续期（watchdog机制）和可重入性\n- 对可靠性要求高的场景应使用Redlock算法"
+  },
+  {
+    "id": "redis-ds-004",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis的MSET和MGET命令如何使用？批量操作相比多次SET/GET有什么优势？",
+    "tags": [
+      "String",
+      "MSET",
+      "MGET",
+      "批量操作"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nMSET和MGET用于批量设置和获取多个String类型的key-value对，相比多次调用SET/GET可以显著减少网络往返次数。\n\n## 命令示例\n\n```redis\n# 批量设置\nMSET user:1:name \"张三\" user:1:age \"25\" user:1:city \"北京\"\n\n# 批量获取\nMGET user:1:name user:1:age user:1:city\n# 1) \"张三\"\n# 2) \"25\"\n# 3) \"北京\"\n\n# 不存在时批量设置（原子操作）\nMSETNX key1 \"val1\" key2 \"val2\" key3 \"val3\"\n# 只有当所有key都不存在时才设置成功\n\n# MSETNX的特性\nMSETNX existing_key \"new\" new_key \"value\"\n# 如果existing_key已存在，则全部不设置\n```\n\n## 性能对比\n\n| 方式 | 网络往返 | 原子性 | 适用场景 |\n|------|---------|--------|----------|\n| N次SET | N次 | 每次原子 | key分散在不同业务 |\n| MSET 1次 | 1次 | 全部原子 | 批量初始化、缓存预热 |\n| Pipeline | 1次 | 不原子 | 大量key的批量操作 |\n\n## 关键要点\n\n- MSET是原子操作，要么全部成功要么全部失败\n- MGET返回数组，顺序与请求key顺序一致，不存在的key返回nil\n- MSETNX所有key必须都不存在才成功\n- 单次MSET不宜过多key，避免阻塞\n\n## 注意事项\n\n- MSET会覆盖已存在的key\n- MGET在集群模式下会按slot分组发送，对客户端透明\n- 如果key数量极大（超过10000），建议使用Pipeline分批处理"
+  },
+  {
+    "id": "redis-ds-005",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis如何设置key的过期时间？EXPIRE、PEXPIRE、TTL命令如何使用？",
+    "tags": [
+      "String",
+      "EXPIRE",
+      "TTL",
+      "过期时间"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nRedis支持为key设置过期时间，到期后key会被自动删除。过期时间可以使用秒或毫秒精度，也可以指定Unix时间戳。\n\n## 命令示例\n\n```redis\n# 设置过期时间\nSET session:abc \"data\"\nEXPIRE session:abc 3600         # 3600秒后过期\nPEXPIRE session:abc 60000       # 60000毫秒后过期\n\n# 设置过期时间戳\nEXPIREAT session:abc 1706745600 # Unix时间戳(秒)\nPEXPIREAT session:abc 1706745600000 # Unix时间戳(毫秒)\n\n# 设置值时直接指定过期\nSET token \"abc123\" EX 3600\nSET token \"abc123\" PX 60000\n\n# 查看剩余过期时间\nTTL session:abc     # 返回剩余秒数，-1表示永不过期，-2表示已过期/不存在\nPTTL session:abc    # 返回剩余毫秒数\n\n# 移除过期时间\nPERSIST session:abc # 设为永不过期\n```\n\n## 关键要点\n\n| 命令 | 精度 | 说明 |\n|------|------|------|\n| EXPIRE | 秒 | 设置秒数过期 |\n| PEXPIRE | 毫秒 | 设置毫秒数过期 |\n| EXPIREAT | 秒 | 设置Unix时间戳过期 |\n| PEXPIREAT | 毫秒 | 设置Unix时间戳过期 |\n| TTL | 秒 | 查看剩余秒数 |\n| PTTL | 毫秒 | 查看剩余毫秒数 |\n\n## 注意事项\n\n- EXPIRE对已过期的key设置无效，返回0\n- 修改key值不会清除过期时间（SET命令除外）\n- RENAME操作会保留目标key的过期时间，源key的过期时间被清除\n- Redis使用惰性删除和定期删除两种策略处理过期key"
+  },
+  {
+    "id": "redis-ds-006",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis Hash类型的HSET和HGET命令如何使用？Hash适合存储什么数据？",
+    "tags": [
+      "Hash",
+      "HSET",
+      "HGET",
+      "对象存储"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nHash是键值对的集合，适合存储对象类型数据。一个Hash可以存储多个field-value对，相比String存储JSON更灵活，支持单个字段的读写操作。\n\n## 命令示例\n\n```redis\n# 设置单个字段\nHSET user:1001 name \"张三\"\nHSET user:1001 age 25\n\n# 获取单个字段\nHGET user:1001 name     # \"张三\"\n\n# 判断字段是否存在\nHEXISTS user:1001 email  # 0\n\n# 删除字段\nHDEL user:1001 age       # 1\n\n# 获取所有字段名\nHKEYS user:1001          # [\"name\"]\n\n# 获取所有值\nHVALS user:1001          # [\"张三\"]\n\n# 获取字段数量\nHLEN user:1001           # 1\n\n# 获取所有字段和值\nHGETALL user:1001\n```\n\n## 关键要点\n\n- Hash适合存储对象，如用户信息、商品详情、配置项等\n- HSET在Redis 4.0+支持同时设置多个字段（替代HMSET）\n- HGETALL在字段较多时应谨慎使用，可能阻塞Redis\n- 单个Hash最大支持2^32-1个字段\n\n## Hash vs String存储对象对比\n\n| 特性 | Hash | String+JSON |\n|------|------|------------|\n| 读取单字段 | O(1)，直接获取 | 需解析整个JSON |\n| 更新单字段 | 原子更新 | 需读改写整个JSON |\n| 内存占用 | 紧凑（ziplist编码） | 较大（JSON字符串） |\n| 网络传输 | 按需获取字段 | 传输整个JSON |\n\n## 注意事项\n\n- Hash在字段少时使用ziplist/listpack编码，内存非常紧凑\n- 字段多时会自动转换为hashtable编码\n- HGETALL在大数据量时可能阻塞，建议使用HSCAN迭代"
+  },
+  {
+    "id": "redis-ds-007",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis Hash的HMSET和HMGET命令如何使用？HSET在新版本中有什么改进？",
+    "tags": [
+      "Hash",
+      "HMSET",
+      "HMGET",
+      "批量操作"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nHMSET和HMGET用于批量设置和获取Hash的多个字段。Redis 4.0起HSET也支持多字段操作，HMSET被标记为已废弃但仍可用。\n\n## 命令示例\n\n```redis\n# HMSET批量设置（Redis 4.0前的标准方式）\nHMSET user:1001 name \"张三\" age 25 city \"北京\" email \"zs@test.com\"\n\n# HMGET批量获取\nHMGET user:1001 name age city\n# 1) \"张三\"\n# 2) \"25\"\n# 3) \"北京\"\n\n# HSET多字段设置（Redis 4.0+推荐方式）\nHSET user:1002 name \"李四\" age 30 city \"上海\"\n\n# HSET单字段（传统用法）\nHSET user:1001 phone \"13800138000\"\n```\n\n## HSET vs HMSET\n\n| 特性 | HSET | HMSET |\n|------|------|-------|\n| 单字段 | 支持 | 不支持（需要至少1对） |\n| 多字段 | Redis 4.0+支持 | 始终支持 |\n| 推荐程度 | 推荐 | 已废弃 |\n| 返回值 | 新增字段数(整数) | OK(字符串) |\n\n## 关键要点\n\n- HMGET返回数组，顺序与请求字段顺序一致\n- 不存在的字段返回nil\n- HSET返回值是新增的字段数量（不包括更新的已有字段）\n- 批量操作比逐个HSET/HGET更高效，减少网络往返\n\n## 注意事项\n\n- HMSET在Redis 4.0+已废弃，但为了向后兼容仍然可用\n- HSET在Redis 4.0+支持多字段后，完全替代了HMSET\n- 批量获取大量字段时注意返回数据的大小"
+  },
+  {
+    "id": "redis-ds-008",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Hash的HINCRBY命令如何使用？它与INCR有什么区别？",
+    "tags": [
+      "Hash",
+      "HINCRBY",
+      "原子操作",
+      "计数器"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nHINCRBY对Hash中指定字段的整数值进行原子递增操作。与INCR类似，它是原子操作，但作用于Hash类型的字段而非独立的String key。\n\n## 命令示例\n\n```redis\n# 基础用法\nHSET user:1001 score 100 login_count 0\n\nHINCRBY user:1001 score 10          # score: 100 -> 110\nHINCRBY user:1001 score -5          # score: 110 -> 105\nHINCRBY user:1001 login_count 1     # login_count: 0 -> 1\n\n# 浮点数递增\nHSET product:1001 price 99.9\nHINCRBYFLOAT product:1001 price 0.5 # price: 99.9 -> 100.4\n\n# 字段不存在时自动初始化为0\nHINCRBY user:1002 views 1           # views: 0 -> 1\n```\n\n## HINCRBY vs INCR\n\n| 特性 | HINCRBY | INCR |\n|------|---------|------|\n| 数据类型 | Hash字段 | String key |\n| 原子性 | 是 | 是 |\n| 时间复杂度 | O(1) | O(1) |\n| 适用场景 | 对象属性计数 | 独立计数器 |\n| 存储方式 | Hash内字段 | 独立key |\n\n## 关键要点\n\n- HINCRBY是原子操作，多线程/多进程并发安全\n- 字段不存在时自动初始化为0再执行递增\n- 字段值必须是整数，否则返回错误\n- 递增值可以是负数，实现递减功能\n\n## 适用场景\n\n- 用户积分、经验值管理\n- 文章阅读量、点赞数统计\n- 购物车商品数量更新\n- 库存扣减\n\n## 注意事项\n\n- HINCRBY只支持整数，HINCRBYFLOAT支持浮点数\n- 如果Hash的编码不是hashtable而是ziplist/listpack，递增操作可能会触发编码转换\n- 递增操作超出64位有符号整数范围会报错"
+  },
+  {
+    "id": "redis-ds-009",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Hash的HSCAN命令如何使用？它解决了什么问题？",
+    "tags": [
+      "Hash",
+      "HSCAN",
+      "迭代",
+      "遍历"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nHSCAN是增量式迭代命令，用于遍历Hash中的所有字段，不会阻塞Redis。它解决了HGETALL在大数据量Hash上可能阻塞服务器的问题。\n\n## 命令示例\n\n```redis\n# 基本用法\nHSCAN user:1001 0 MATCH name* COUNT 10\n# 返回: [next_cursor, [field1, value1, field2, value2, ...]]\n\n# 遍历所有字段\nHSCAN myhash 0 COUNT 100     # 第一次，游标0\nHSCAN myhash 17 COUNT 100    # 使用返回的游标继续\n# 直到游标返回0表示遍历完成\n\n# 使用MATCH过滤\nHSCAN user:1001 0 MATCH \"*name*\" COUNT 50\n\n# Python示例\n# cursor = 0\n# while True:\n#     cursor, data = redis.hscan('user:1001', cursor, match='*', count=100)\n#     process(data)\n#     if cursor == 0:\n#         break\n```\n\n## HSCAN vs HGETALL\n\n| 特性 | HSCAN | HGETALL |\n|------|-------|--------|\n| 阻塞 | 不阻塞 | 阻塞 |\n| 时间复杂度 | O(1)/次调用 | O(N) |\n| 返回数据 | 分批返回 | 一次全部返回 |\n| 重复返回 | 可能 | 不会 |\n| 生产环境 | 推荐 | 慎用 |\n\n## 关键要点\n\n- COUNT参数是提示值，不是精确限制每次返回的数量\n- MATCH在每次调用后过滤，可能导致单次返回结果少于COUNT\n- 游标不是递增的，不能用于分页\n- 遍历过程中可能返回重复字段，客户端需要去重\n\n## 注意事项\n\n- Hash字段数量少于阈值（默认512）时使用ziplist/listpack编码，HSCAN退化为全量扫描\n- 在集群模式下，HSCAN只能扫描当前节点的数据\n- 生产环境应避免HGETALL大型Hash，使用HSCAN替代"
+  },
+  {
+    "id": "redis-ds-010",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis List的LPUSH和RPOP命令如何使用？如何用List实现队列和栈？",
+    "tags": [
+      "List",
+      "LPUSH",
+      "RPOP",
+      "队列",
+      "栈"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nList是有序的字符串列表，支持从两端插入和弹出。LPUSH从左端插入，RPOP从右端弹出，组合实现FIFO队列；LPUSH+LPOP实现LIFO栈。\n\n## 命令示例\n\n```redis\n# 两端插入\nLPUSH mylist \"a\" \"b\" \"c\"    # 结果: c -> b -> a\nRPUSH mylist \"d\" \"e\" \"f\"    # 结果: c -> b -> a -> d -> e -> f\n\n# 两端弹出\nLPOP mylist                   # 弹出c\nRPOP mylist                   # 弹出f\n\n# 实现队列（FIFO: 左进右出）\nLPUSH queue:tasks \"task1\"\nLPUSH queue:tasks \"task2\"\nRPOP queue:tasks              # 取出task1\n\n# 实现栈（LIFO: 左进左出）\nLPUSH stack:history \"page1\"\nLPUSH stack:history \"page2\"\nLPOP stack:history            # 取出page2\n\n# 获取长度\nLLEN mylist\n```\n\n## 队列 vs 栈\n\n| 数据结构 | 插入 | 弹出 | 命令组合 |\n|---------|------|------|----------|\n| 队列(FIFO) | 左插入 | 右弹出 | LPUSH + RPOP |\n| 栈(LIFO) | 左插入 | 左弹出 | LPUSH + LPOP |\n\n## 关键要点\n\n- LPUSH/RPUSH支持一次插入多个元素\n- LPOP/RPOP对空列表返回nil\n- LLEN获取列表长度，O(1)复杂度\n- List最大长度为2^32-1个元素\n\n## 注意事项\n\n- LPUSH+RPOP实现队列时，如果列表为空RPOP返回nil，客户端需要轮询\n- 生产环境推荐使用BRPOP阻塞弹出替代轮询\n- Redis List底层使用quicklist实现，兼具内存效率和操作灵活性"
+  },
+  {
+    "id": "redis-ds-011",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis List的LRANGE命令如何使用？如何实现分页查询？",
+    "tags": [
+      "List",
+      "LRANGE",
+      "分页",
+      "范围查询"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nLRANGE用于获取List中指定范围的元素，支持负数索引（-1表示最后一个元素）。它是实现列表分页查询的基础命令。\n\n## 命令示例\n\n```redis\n# 准备数据\nRPUSH mylist \"a\" \"b\" \"c\" \"d\" \"e\" \"f\" \"g\" \"h\" \"i\" \"j\"\n\n# 获取所有元素\nLRANGE mylist 0 -1\n\n# 获取前3个元素\nLRANGE mylist 0 2\n\n# 获取最后3个元素\nLRANGE mylist -3 -1\n\n# 分页查询（每页3条）\nLRANGE mylist 0 2     # 第1页: a b c\nLRANGE mylist 3 5     # 第2页: d e f\nLRANGE mylist 6 8     # 第3页: g h i\nLRANGE mylist 9 11    # 第4页: j\n\n# 使用LLEN配合分页\nLLEN mylist            # 总数: 10\n```\n\n## 索引规则\n\n| 索引 | 含义 |\n|------|------|\n| 0 | 第一个元素 |\n| -1 | 最后一个元素 |\n| -2 | 倒数第二个元素 |\n| 0 -1 | 所有元素 |\n\n## 分页计算\n\n```\nstart = (page - 1) * pageSize\nend = start + pageSize - 1\nLRANGE list start end\n```\n\n## 关键要点\n\n- LRANGE时间复杂度O(S+N)，S为偏移量，N为返回数量\n- 超出范围的索引不会报错，自动调整到有效范围\n- LRANGE 0 -1 获取所有元素，大数据量时慎用\n- 负数索引从末尾开始计数\n\n## 注意事项\n\n- 大数据量的List使用LRANGE分页性能较好，因为List底层quicklist支持索引访问\n- 如果需要反向分页，可以使用LPOS或从右端操作\n- LRANGE返回空数组表示没有更多数据"
+  },
+  {
+    "id": "redis-ds-012",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis List的BLPOP和BRPOP命令如何使用？阻塞弹出的超时机制是怎样的？",
+    "tags": [
+      "List",
+      "BLPOP",
+      "阻塞",
+      "消息队列"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nBLPOP和BRPOP是List的阻塞弹出命令，当列表为空时客户端会阻塞等待，直到有元素可用或超时。它们是实现可靠消息队列的基础。\n\n## 命令示例\n\n```redis\n# 阻塞弹出（最多等待30秒）\nBLPOP queue:tasks 30\nBRPOP queue:tasks 30\n\n# 阻塞多个列表（返回第一个有数据的）\nBLPOP queue:orders queue:messages 30\n\n# 无限阻塞（timeout=0）\nBLPOP queue:tasks 0\n\n# 生产者端\nLPUSH queue:tasks \"order:1001\"\n```\n\n## 超时机制\n\n```\ntimeout > 0: 等待指定秒数后返回nil\ntimeout = 0: 永久阻塞，直到有数据\n\n返回值: [key, value] 或 nil(超时)\n```\n\n## 多客户端分配\n\n```\n客户端A: BLPOP queue 0  (先阻塞)\n客户端B: BLPOP queue 0  (后阻塞)\n\nLPUSH queue \"task1\"  -> 客户端A获得task1\nLPUSH queue \"task2\"  -> 客户端B获得task2\n\n# 按阻塞先后顺序分配（FIFO）\n```\n\n## 关键要点\n\n- BLPOP/BRPOP是原子操作\n- 支持同时监听多个key，返回第一个有数据的key和值\n- 阻塞期间客户端不消耗CPU\n- 多个客户端按阻塞先后顺序排队\n\n## 注意事项\n\n- timeout=0时客户端会永久阻塞，需确保有生产者推入数据\n- 在集群模式下，BLPOP只能监听同一个slot的key\n- 如果需要更可靠的消息队列，建议使用Redis Stream"
+  },
+  {
+    "id": "redis-ds-013",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis List的LREM命令如何使用？如何删除List中的指定元素？",
+    "tags": [
+      "List",
+      "LREM",
+      "删除",
+      "修改"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nLREM用于从List中删除指定值的元素，支持按数量限制删除个数和指定删除方向（从头或从尾）。\n\n## 命令示例\n\n```redis\n# 准备数据\nRPUSH mylist \"a\" \"b\" \"a\" \"c\" \"a\" \"d\" \"a\"\n# 结果: a b a c a d a\n\n# 从头开始删除2个\"a\"\nLREM mylist 2 \"a\"       # 返回2，剩余: b c a d a\n\n# 从尾开始删除1个\"a\"\nLREM mylist -1 \"a\"      # 返回1，剩余: b c a d\n\n# 删除所有\"a\"\nLREM mylist 0 \"a\"       # 删除所有匹配的\n\n# count参数说明\n# count > 0: 从头到尾删除count个\n# count < 0: 从尾到头删除|count|个\n# count = 0: 删除所有匹配的\n```\n\n## LREM参数详解\n\n| count | 方向 | 说明 |\n|-------|------|------|\n| N > 0 | 从头到尾 | 删除前N个匹配元素 |\n| N < 0 | 从尾到头 | 删除后|N|个匹配元素 |\n| N = 0 | 全部 | 删除所有匹配元素 |\n\n## 关键要点\n\n- LREM返回实际删除的元素数量\n- 删除不存在的元素返回0\n- LREM时间复杂度O(N)，N为列表长度\n- 只能按值删除，不支持按索引删除\n\n## List其他修改命令\n\n```redis\n# 按索引设置\nLSET mylist 0 \"new_value\"\n\n# 在指定元素前/后插入\nLINSERT mylist BEFORE \"b\" \"x\"\nLINSERT mylist AFTER \"b\" \"y\"\n\n# 裁剪列表\nLTRIM mylist 0 4       # 只保留前5个元素\n```\n\n## 注意事项\n\n- LREM在大数据量的List上可能较慢\n- 如果需要频繁删除中间元素，List不是最佳选择，考虑使用Set或ZSet\n- LINSERT需要先遍历找到参考元素，时间复杂度O(N)"
+  },
+  {
+    "id": "redis-ds-014",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis Set的SADD和SMEMBERS命令如何使用？Set有什么特性？",
+    "tags": [
+      "Set",
+      "SADD",
+      "SMEMBERS",
+      "基础"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nSet是无序不重复的字符串集合，支持添加、删除、判断存在等操作。Set的元素具有唯一性，自动去重。\n\n## 命令示例\n\n```redis\n# 添加元素\nSADD myset \"a\" \"b\" \"c\" \"d\"\nSADD myset \"a\" \"e\"      # a已存在，只添加e，返回1\n\n# 获取所有元素\nSMEMBERS myset            # 返回所有元素（无序）\n\n# 判断元素是否存在\nSISMEMBER myset \"a\"      # 1\nSISMEMBER myset \"x\"      # 0\n\n# 获取元素数量\nSCARD myset               # 5\n\n# 删除元素\nSREM myset \"a\"            # 1\nSREM myset \"x\"            # 0（不存在）\n\n# 随机获取元素\nSRANDMEMBER myset 2       # 随机获取2个不重复元素\nSPOP myset                # 随机弹出1个元素\n```\n\n## Set特性\n\n| 特性 | 说明 |\n|------|------|\n| 无序 | 元素没有固定顺序 |\n| 唯一 | 自动去重 |\n| 成员类型 | 只能是字符串 |\n| 最大元素数 | 2^32-1个 |\n\n## 关键要点\n\n- SADD返回成功添加的元素数量（已存在的不算）\n- SMEMBERS在大数据量时可能阻塞，建议使用SSCAN\n- SISMEMBER时间复杂度O(1)\n- Set底层使用intset或hashtable编码\n\n## 适用场景\n\n- 标签系统（文章标签、用户标签）\n- 好友关系（共同好友、推荐好友）\n- 去重统计（UV、独立IP）\n- 抽奖系统（随机获取）\n\n## 注意事项\n\n- SMEMBERS返回的元素顺序不确定，不应依赖顺序\n- 全部元素都是整数且数量少于阈值时，Set使用intset编码更省内存\n- 大数据量的Set遍历应使用SSCAN替代SMEMBERS"
+  },
+  {
+    "id": "redis-ds-015",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Set的SINTER和SINTERSTORE命令如何使用？集合交集运算有什么应用场景？",
+    "tags": [
+      "Set",
+      "SINTER",
+      "交集",
+      "集合运算"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nSINTER计算多个Set的交集，返回同时存在于所有集合中的元素。SINTERSTORE将交集结果存储到新key中。\n\n## 命令示例\n\n```redis\n# 准备数据\nSADD user:1001:tags \"python\" \"redis\" \"linux\" \"docker\"\nSADD user:1002:tags \"java\" \"redis\" \"mysql\" \"docker\"\nSADD user:1003:tags \"python\" \"redis\" \"k8s\" \"docker\"\n\n# 计算交集\nSINTER user:1001:tags user:1002:tags\n# 结果: \"redis\" \"docker\"\n\n# 存储交集结果\nSINTERSTORE common:tags user:1001:tags user:1002:tags\nSMEMBERS common:tags\n\n# 多个集合交集\nSINTER user:1001:tags user:1002:tags user:1003:tags\n# 结果: \"redis\" \"docker\"\n```\n\n## 时间复杂度\n\n| 命令 | 复杂度 | 说明 |\n|------|--------|------|\n| SINTER | O(N*M) | N为最小集合大小，M为集合数量 |\n| SINTERSTORE | O(N*M) | 同上，加上存储操作 |\n\n## 应用场景\n\n- **共同好友**：计算两个用户的好友集合交集\n- **兴趣匹配**：找拥有相同标签的用户\n- **推荐系统**：基于共同兴趣推荐\n- **数据筛选**：多个条件的交叉筛选\n\n## 关键要点\n\n- SINTER对不存在的key视为空集合，结果为空集\n- 交集运算在大数据量时可能较慢\n- SINTERSTORE可以将结果持久化，避免重复计算\n- 集合数量越多，计算越慢\n\n## 注意事项\n\n- 大数据量的集合交集建议在从库执行或使用SINTERSTORE存储结果\n- 在集群模式下，参与交集的key必须在同一个slot\n- 可以使用hashtag确保key在同一slot：{user}:1001:tags"
+  },
+  {
+    "id": "redis-ds-016",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Set的SUNION和SDIFF命令如何使用？并集和差集有什么区别？",
+    "tags": [
+      "Set",
+      "SUNION",
+      "SDIFF",
+      "集合运算"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nSUNION计算多个Set的并集（所有元素），SDIFF计算差集（在第一个集合中但不在其他集合中的元素）。\n\n## 命令示例\n\n```redis\n# 准备数据\nSADD set1 \"a\" \"b\" \"c\" \"d\"\nSADD set2 \"c\" \"d\" \"e\" \"f\"\nSADD set3 \"e\" \"f\" \"g\" \"h\"\n\n# 并集（所有元素）\nSUNION set1 set2 set3\n# 结果: a b c d e f g h\n\n# 差集（set1独有，不在set2和set3中）\nSDIFF set1 set2 set3\n# 结果: a b\n\n# 存储结果\nSUNIONSTORE union:result set1 set2 set3\nSDIFFSTORE diff:result set1 set2\n```\n\n## 集合运算对比\n\n| 运算 | 命令 | 结果 | 数学符号 |\n|------|------|------|----------|\n| 交集 | SINTER | 共同元素 | A ∩ B |\n| 并集 | SUNION | 所有元素 | A ∪ B |\n| 差集 | SDIFF | A独有 | A - B |\n\n## 关键要点\n\n- SDIFF只计算第一个集合对后续集合的差集，不支持双向差集\n- SDIFF结果与集合参数顺序有关：SDIFF A B != SDIFF B A\n- SUNION结果元素唯一，自动去重\n- 对不存在的key视为空集合\n\n## 应用场景\n\n- **SUNION**：合并多个标签集合、合并用户列表\n- **SDIFF**：排除已读消息、查找新增用户、A/B测试分组\n- **SINTER**：共同好友、兴趣匹配\n\n## 注意事项\n\n- SDIFF的顺序很重要：SDIFF A B返回的是在A中但不在B中的元素\n- 如果需要对称差集（只在其中一个集合中的元素），需要组合使用：SUNION(SDIFF(A,B), SDIFF(B,A))\n- 大数据量的集合运算建议在从库执行"
+  },
+  {
+    "id": "redis-ds-017",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Set的SRANDMEMBER和SPOP命令有什么区别？如何实现随机抽奖？",
+    "tags": [
+      "Set",
+      "SRANDMEMBER",
+      "SPOP",
+      "随机"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nSRANDMEMBER随机获取Set中的元素但不删除，SPOP随机弹出元素并删除。两者都支持指定返回数量。\n\n## 命令示例\n\n```redis\n# 准备数据\nSADD lottery \"user1\" \"user2\" \"user3\" \"user4\" \"user5\"\n\n# SRANDMEMBER - 随机获取（不删除）\nSRANDMEMBER lottery         # 随机1个\nSRANDMEMBER lottery 3       # 随机3个（不重复）\nSRANDMEMBER lottery -3      # 随机3个（可能重复）\n\n# SPOP - 随机弹出（删除）\nSPOP lottery                # 弹出1个\nSPOP lottery 2              # 弹出2个\n```\n\n## SRANDMEMBER vs SPOP\n\n| 特性 | SRANDMEMBER | SPOP |\n|------|-------------|------|\n| 删除元素 | 否 | 是 |\n| 重复调用 | 集合不变 | 集合减小 |\n| count>0 | 不重复 | 不重复 |\n| count<0 | 可重复 | 不适用 |\n| 适用场景 | 抽奖展示、推荐 | 任务分配、消费 |\n\n## 随机抽奖实现\n\n```redis\n# 方案1：SRANDMEMBER展示 + SPOP开奖\nSRANDMEMBER lottery 5       # 展示5个候选\nSPOP lottery 1              # 抽取1个中奖者\n\n# 方案2：直接SPOP抽取\nSPOP lottery 3              # 直接抽取3个中奖者\n```\n\n## 关键要点\n\n- SRANDMEMBER count>0时不重复，count<0时可重复\n- SPOP弹出后元素从集合中删除\n- 两者在intset编码时为O(1)，hashtable编码时为O(N)\n- 空集合时返回nil或空数组\n\n## 注意事项\n\n- 使用SPOP抽奖后参与者减少，适合一次性抽奖\n- 使用SRANDMEMBER抽奖不减少参与者，适合可重复参与的抽奖\n- 大数据量时两者性能都可能下降，可以考虑使用List + LINDEX替代"
+  },
+  {
+    "id": "redis-ds-018",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis ZSet的ZADD命令如何使用？ZSet的分数(score)有什么规则？",
+    "tags": [
+      "ZSet",
+      "ZADD",
+      "分数",
+      "有序集合"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nZSet（有序集合）是带分数的集合，每个元素关联一个double类型的score，按score排序。ZADD用于添加元素并指定分数。\n\n## 命令示例\n\n```redis\n# 添加单个元素\nZADD rank 100 \"player1\"\n\n# 添加多个元素\nZADD rank 90 \"player2\" 95 \"player3\" 85 \"player4\"\n\n# NX: 只添加不存在的元素\nZADD rank NX 110 \"player1\"    # player1已存在，不更新\n\n# XX: 只更新已存在的元素\nZADD rank XX 110 \"player1\"    # player1已存在，更新分数\n\n# CH: 返回发生变化的元素数量\nZADD rank CH 110 \"player1\" 88 \"player2\"  # 返回2\n\n# INCR: 原子递增（返回新分数）\nZADD rank INCR 10 \"player1\"   # 等同于ZINCRBY\n\n# GT/LT: 只在新分数更大/更小时更新(Redis 6.2+)\nZADD rank GT 120 \"player1\"    # 只有新分数>旧分数时更新\nZADD rank LT 50 \"player1\"     # 只有新分数<旧分数时更新\n```\n\n## ZADD选项\n\n| 选项 | 说明 |\n|------|------|\n| NX | 只添加新元素，不更新已有 |\n| XX | 只更新已有，不添加新元素 |\n| CH | 返回变化的元素数（包括更新） |\n| INCR | 原子递增，返回新分数 |\n| GT | Redis 6.2+，新分数>旧分数时更新 |\n| LT | Redis 6.2+，新分数<旧分数时更新 |\n\n## 关键要点\n\n- score是双精度浮点数，精度约15-16位\n- 分数相同时按member的字典序排序\n- ZADD返回成功新增的元素数量（不含更新）\n- 单个ZSet最大支持2^32-1个元素\n\n## 注意事项\n\n- NX和XX互斥，不能同时使用\n- CH选项可以知道有多少元素发生了变化\n- INCR模式下只能操作一个元素"
+  },
+  {
+    "id": "redis-ds-019",
+    "module": "Redis数据结构",
+    "difficulty": 1,
+    "question": "Redis ZSet的ZRANGE和ZREVRANGE命令如何使用？如何获取排行榜Top N？",
+    "tags": [
+      "ZSet",
+      "ZRANGE",
+      "排行榜",
+      "TopN"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nZRANGE按分数升序返回指定排名范围的元素，ZREVRANGE按降序返回。两者是获取排行榜数据的基础命令。\n\n## 命令示例\n\n```redis\n# 准备数据\nZADD leaderboard 95 \"Alice\" 87 \"Bob\" 92 \"Charlie\" 78 \"David\" 88 \"Eve\"\n\n# 升序（分数从小到大）\nZRANGE leaderboard 0 -1 WITHSCORES\n# David(78) Bob(87) Eve(88) Charlie(92) Alice(95)\n\n# 降序Top 3（排行榜）\nZREVRANGE leaderboard 0 2 WITHSCORES\n# Alice(95) Charlie(92) Eve(88)\n\n# 获取排名\nZRANK leaderboard \"Alice\"       # 4（升序排名，0-based）\nZREVRANK leaderboard \"Alice\"    # 0（降序排名，Top 1）\n\n# 获取分数\nZSCORE leaderboard \"Alice\"      # 95\n```\n\n## Redis 6.2+ 新语法\n\n```redis\n# 旧语法（已废弃）\nZRANGEBYSCORE leaderboard 80 100\nZREVRANGEBYSCORE leaderboard 100 80\n\n# 新语法（推荐）\nZRANGE leaderboard 80 100 BYSCORE WITHSCORES\nZRANGE leaderboard 100 80 BYSCORE REV WITHSCORES\n```\n\n## 关键要点\n\n| 命令 | 排序 | 用途 |\n|------|------|------|\n| ZRANGE | 升序 | 最小N个 |\n| ZREVRANGE | 降序 | Top N排行榜 |\n| ZRANK | 升序排名 | 获取排名 |\n| ZREVRANK | 降序排名 | 获取排名 |\n\n- 索引是0-based，0表示排名最高（ZREVRANGE）或最低（ZRANGE）\n- WITHSCORES同时返回分数\n- 负数索引从末尾开始\n\n## 注意事项\n\n- ZRANGEBYSCORE和ZREVRANGEBYSCORE在Redis 6.2+已废弃\n- 推荐使用ZRANGE的BYSCORE/REV选项替代\n- 大数据量时分页获取，避免一次获取过多数据"
+  },
+  {
+    "id": "redis-ds-020",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis ZSet的ZRANGEBYSCORE命令如何使用？如何实现分数范围查询？",
+    "tags": [
+      "ZSet",
+      "ZRANGEBYSCORE",
+      "范围查询",
+      "分页"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nZRANGEBYSCORE返回分数在指定范围内的元素，支持开闭区间和分页。是实现范围查询的核心命令（Redis 6.2+建议使用ZRANGE BYSCORE替代）。\n\n## 命令示例\n\n```redis\n# 准备数据\nZADD salary 5000 \"Alice\" 8000 \"Bob\" 12000 \"Charlie\" 15000 \"David\" 20000 \"Eve\"\n\n# 闭区间查询\nZRANGEBYSCORE salary 5000 12000 WITHSCORES\n# Alice(5000) Bob(8000) Charlie(12000)\n\n# 开区间查询（使用(前缀）\nZRANGEBYSCORE salary (5000 (12000 WITHSCORES\n# Bob(8000)（不包含5000和12000）\n\n# 无穷大/小\nZRANGEBYSCORE salary -inf 10000 WITHSCORES    # 分数<=10000\nZRANGEBYSCORE salary 10000 +inf WITHSCORES    # 分数>=10000\n\n# 分页（LIMIT offset count）\nZRANGEBYSCORE salary -inf +inf LIMIT 0 2     # 第1页，每页2条\nZRANGEBYSCORE salary -inf +inf LIMIT 2 2     # 第2页\n\n# 只返回成员（不返回分数）\nZRANGEBYSCORE salary 5000 12000\n```\n\n## 区间表示法\n\n| 表示 | 含义 |\n|------|------|\n| 5000 | 闭区间，包含5000 |\n| (5000 | 开区间，不包含5000 |\n| -inf | 负无穷 |\n| +inf | 正无穷 |\n\n## 关键要点\n\n- ZRANGEBYSCORE时间复杂度O(logN+M)，N为元素总数，M为返回数量\n- LIMIT实现服务端分页，减少数据传输\n- 开区间(不能与-inf或+inf一起使用\n- Redis 6.2+推荐使用ZRANGE BYSCORE语法\n\n## 注意事项\n\n- 降序范围查询应使用ZREVRANGEBYSCORE（注意min/max位置相反）\n- 分页时LIMIT的offset越大越慢，因为需要跳过更多元素\n- 大数据量分页建议使用游标方式而非offset"
+  },
+  {
+    "id": "redis-ds-021",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis ZSet的ZREVRANK命令如何使用？升序排名和降序排名有什么区别？",
+    "tags": [
+      "ZSet",
+      "ZREVRANK",
+      "排名",
+      "排行榜"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nZREVRANK返回元素在ZSet中的降序排名（分数最高排名0）。与ZRANK（升序排名）配合，可以获取元素在不同排序方式下的位置。\n\n## 命令示例\n\n```redis\n# 准备数据\nZADD scores 95 \"Alice\" 87 \"Bob\" 92 \"Charlie\" 78 \"David\"\n\n# 升序排名（分数最低排第0）\nZRANK scores \"David\"      # 0（分数78最低）\nZRANK scores \"Alice\"      # 3（分数95最高）\n\n# 降序排名（分数最高排第0，即排行榜排名）\nZREVRANK scores \"Alice\"   # 0（Top 1）\nZREVRANK scores \"Charlie\" # 1（Top 2）\nZREVRANK scores \"Bob\"     # 2（Top 3）\nZREVRANK scores \"David\"   # 3（Top 4）\n\n# 元素不存在返回nil\nZREVRANK scores \"Unknown\" # nil\n```\n\n## ZRANK vs ZREVRANK\n\n| 命令 | 排名方向 | 排名0含义 |\n|------|---------|----------|\n| ZRANK | 升序 | 分数最低 |\n| ZREVRANK | 降序 | 分数最高（Top 1） |\n\n## 排名转换\n\n```\n降序排名 + 升序排名 = 集合大小 - 1\n\n例如：集合有4个元素\nAlice降序排名 = 0\nAlice升序排名 = 3\n0 + 3 = 4 - 1 = 3\n```\n\n## 关键要点\n\n- 排名都是0-based索引\n- ZREVRANK适合排行榜场景（分数最高为第1名）\n- ZRANK和ZREVRANK时间复杂度都是O(logN)\n- 分数相同时按member字典序排序\n\n## 注意事项\n\n- 分数相同时的排序取决于member的字典序，这对于排行榜可能不符合预期\n- 解决方案：将时间戳编码到score中，如score = 原始分数 * 10^10 + (MAX_TIME - 时间戳)\n- ZRANK/ZREVRANK在元素不存在时返回nil"
+  },
+  {
+    "id": "redis-ds-022",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis ZSet的ZREM和ZREMRANGEBYRANK命令如何使用？如何删除ZSet中的元素？",
+    "tags": [
+      "ZSet",
+      "ZREM",
+      "删除",
+      "清理"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nZREM按成员名删除ZSet元素，ZREMRANGEBYRANK按排名范围删除，ZREMRANGEBYSCORE按分数范围删除。它们是管理ZSet数据的重要命令。\n\n## 命令示例\n\n```redis\n# 准备数据\nZADD rank 100 \"A\" 90 \"B\" 85 \"C\" 80 \"D\" 75 \"E\" 70 \"F\"\n\n# 按成员名删除\nZREM rank \"A\" \"B\"       # 返回2，删除A和B\n\n# 按排名范围删除（升序）\nZREMRANGEBYRANK rank 0 1 # 删除排名0-1的元素（最低分的2个）\n\n# 按分数范围删除\nZREMRANGEBYSCORE rank 0 75  # 删除分数<=75的元素\n\n# 按字典序删除（仅当分数相同时有意义）\nZADD lexset 0 \"a\" 0 \"b\" 0 \"c\" 0 \"d\" 0 \"e\"\nZREMRANGEBYLEX lexset \"[b\" \"[d\"  # 删除b到d的元素\n```\n\n## 删除命令对比\n\n| 命令 | 删除依据 | 复杂度 |\n|------|---------|--------|\n| ZREM | 成员名 | O(M*logN) |\n| ZREMRANGEBYRANK | 排名范围 | O(logN+M) |\n| ZREMRANGEBYSCORE | 分数范围 | O(logN+M) |\n| ZREMRANGEBYLEX | 字典序范围 | O(logN+M) |\n\n## 关键要点\n\n- ZREM返回成功删除的元素数量\n- ZREMRANGEBYRANK的排名是0-based\n- ZREMRANGEBYSCORE支持-inf和+inf\n- 删除不存在的元素不报错\n\n## 适用场景\n\n- ZREM：删除特定成员（如用户退出排行榜）\n- ZREMRANGEBYRANK：保留Top N，删除其余\n- ZREMRANGEBYSCORE：清理过期数据（score为时间戳时）\n\n## 注意事项\n\n- 删除操作不可逆，生产环境谨慎使用\n- 大范围删除可能阻塞Redis，建议分批执行\n- 延迟队列场景中常用ZREMRANGEBYSCORE清理已处理的任务"
+  },
+  {
+    "id": "redis-ds-023",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Bitmap的SETBIT和GETBIT命令如何使用？Bitmap适合什么场景？",
+    "tags": [
+      "Bitmap",
+      "SETBIT",
+      "GETBIT",
+      "位操作"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nBitmap不是独立数据类型，而是基于String类型的一组位操作命令。每个key可以存储2^32个bit位，非常适合布尔值的紧凑存储。\n\n## 命令示例\n\n```redis\n# 设置位\nSETBIT user:online 1001 1    # 用户1001上线\nSETBIT user:online 1002 1    # 用户1002上线\nSETBIT user:online 1003 0    # 用户1003下线\n\n# 获取位\nGETBIT user:online 1001      # 1（在线）\nGETBIT user:online 9999      # 0（默认不存在为0）\n\n# 用户签到\nSETBIT sign:2024-01:user1001 14 1  # 1月15日签到（offset从0开始）\nGETBIT sign:2024-01:user1001 14    # 查询是否签到\n```\n\n## 内存计算\n\n```\n1亿用户状态: 1亿 bits = 12.5 MB\n1亿用户30天签到: 1亿 * 30 bits = 375 MB\n\n对比Set存储1亿用户ID: 约 4-8 GB\n```\n\n## 关键要点\n\n| 命令 | 复杂度 | 说明 |\n|------|--------|------|\n| SETBIT | O(1) | 设置指定位 |\n| GETBIT | O(1) | 获取指定位 |\n\n- offset从0开始，最大2^32-1\n- 未设置的位默认为0\n- Bitmap底层是String，自动扩容\n- 非常适合布尔值的密集存储\n\n## 适用场景\n\n- **用户在线状态**：用户ID作为offset\n- **每日签到**：日期作为offset\n- **特征标记**：用户特征的布尔标记\n- **布隆过滤器**：基于Bitmap实现\n\n## 注意事项\n\n- offset过大会自动创建大String，消耗内存\n- 稀疏数据（大部分为0）时Bitmap不如Set高效\n- Bitmap的偏移量不能为负数"
+  },
+  {
+    "id": "redis-ds-024",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Bitmap的BITCOUNT命令如何使用？如何统计活跃用户数？",
+    "tags": [
+      "Bitmap",
+      "BITCOUNT",
+      "统计",
+      "活跃用户"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nBITCOUNT统计Bitmap中值为1的位数量，可以指定字节范围。它是统计活跃用户、签到人数等场景的核心命令。\n\n## 命令示例\n\n```redis\n# 记录用户活跃\nSETBIT active:2024-01-15 1001 1\nSETBIT active:2024-01-15 1002 1\nSETBIT active:2024-01-15 1003 1\nSETBIT active:2024-01-15 9999 1\n\n# 统计活跃用户数\nBITCOUNT active:2024-01-15         # 4\n\n# 统计指定字节范围\nBITCOUNT active:2024-01-15 0 0     # 第一个字节中1的个数\nBITCOUNT active:2024-01-15 0 131071 # 前128KB范围\n\n# 统计用户签到天数\nSETBIT sign:2024-01:user1001 0 1   # 第1天\nSETBIT sign:2024-01:user1001 1 1   # 第2天\nSETBIT sign:2024-01:user1001 5 1   # 第6天\nBITCOUNT sign:2024-01:user1001     # 3天\n```\n\n## BITCOUNT范围参数\n\n```\nBITCOUNT key [start end]\n\nstart和end是字节索引（不是bit索引）\n支持负数：-1表示最后一个字节\n```\n\n## 关键要点\n\n- BITCOUNT时间复杂度O(N)，N为被统计的字节数\n- start/end是字节偏移量，不是bit偏移量\n- 不指定范围时统计整个key\n- Redis使用优化的查表法加速统计\n\n## 应用场景\n\n- **日活跃用户统计**：每天一个Bitmap\n- **连续签到统计**：BITCOUNT + 范围查询\n- **留存率分析**：对比多天的Bitmap\n- **在线用户统计**：实时统计在线人数\n\n## 注意事项\n\n- BITCOUNT在大数据量时可能较慢，建议使用BITCOUNT key 0 0的形式分段统计\n- 1亿用户的Bitmap约12.5MB，BITCOUNT全量统计可能耗时几毫秒\n- 需要频繁统计的场景可以考虑预计算结果"
+  },
+  {
+    "id": "redis-ds-025",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Bitmap的BITOP命令如何使用？如何实现多天活跃用户统计？",
+    "tags": [
+      "Bitmap",
+      "BITOP",
+      "位运算",
+      "活跃用户"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nBITOP对一个或多个Bitmap执行位运算（AND、OR、XOR、NOT），结果存储到目标key。常用于多条件的交叉分析。\n\n## 命令示例\n\n```redis\n# 准备数据\nSETBIT active:day1 1001 1\nSETBIT active:day1 1002 1\nSETBIT active:day1 1003 1\n\nSETBIT active:day2 1001 1\nSETBIT active:day2 1004 1\n\nSETBIT active:day3 1001 1\nSETBIT active:day2 1002 1\n\n# AND: 三天都活跃的用户\nBITOP AND active:all3 active:day1 active:day2 active:day3\nBITCOUNT active:all3             # 1（只有user1001）\n\n# OR: 任意一天活跃的用户\nBITOP OR active:any active:day1 active:day2 active:day3\nBITCOUNT active:any              # 4（user1001-1004）\n\n# XOR: 只在某一天活跃的用户\nBITOP XOR active:diff active:day1 active:day2\n\n# NOT: 取反\nBITOP NOT active:inverse active:day1\n```\n\n## 位运算类型\n\n| 运算 | 命令 | 说明 |\n|------|------|------|\n| AND | BITOP AND | 全部为1才是1 |\n| OR | BITOP OR | 任一为1就是1 |\n| XOR | BITOP XOR | 不同为1 |\n| NOT | BITOP NOT | 取反 |\n\n## 关键要点\n\n- BITOP时间复杂度O(N)，N为最长Bitmap的字节数\n- 结果Bitmap长度等于最长输入Bitmap\n- AND可用于留存分析、交叉用户统计\n- OR可用于合并活跃用户\n\n## 应用场景\n\n- **连续N天活跃用户**：AND运算\n- **总活跃用户**：OR运算\n- **留存率计算**：AND后统计 / 第一天统计\n- **流失用户**：第一天有但第二天没有\n\n## 注意事项\n\n- BITOP在大数据量时可能阻塞，建议在从库执行\n- NOT操作只接受一个输入key\n- 结果key会覆盖已有数据"
+  },
+  {
+    "id": "redis-ds-026",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis HyperLogLog的PFADD和PFCOUNT命令如何使用？它有什么特点？",
+    "tags": [
+      "HyperLogLog",
+      "PFADD",
+      "PFCOUNT",
+      "基数统计"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nHyperLogLog是Redis提供的概率数据结构，用于估算集合的基数（不重复元素数量）。标准误差为0.81%，但只需固定12KB内存。\n\n## 命令示例\n\n```redis\n# 添加元素\nPFADD uv:page:homepage \"user1\" \"user2\" \"user3\" \"user4\" \"user5\"\n\n# 估算基数\nPFCOUNT uv:page:homepage          # 约5\n\n# 添加更多元素\nPFADD uv:page:homepage \"user6\" \"user7\"\nPFCOUNT uv:page:homepage          # 约7\n\n# 重复添加不增加计数\nPFADD uv:page:homepage \"user1\" \"user2\"\nPFCOUNT uv:page:homepage          # 仍然是约7\n\n# 合并多个HyperLogLog\nPFMERGE uv:total uv:page:homepage uv:page:detail\nPFCOUNT uv:total                  # 合并后的估算基数\n```\n\n## HyperLogLog特点\n\n| 特性 | 说明 |\n|------|------|\n| 内存占用 | 固定12KB |\n| 误差率 | 0.81% |\n| 最大基数 | 2^64个元素 |\n| 可获取元素 | 否（只能估算数量） |\n\n## 关键要点\n\n- PFADD返回1表示HLL有变化，0表示无变化\n- PFCOUNT对多个key时返回合并后的估算值\n- 即使添加大量元素，内存始终只占12KB\n- 不能获取具体的元素列表\n\n## 适用场景\n\n- **UV统计**：页面独立访客数\n- **基数估算**：大集合的去重计数\n- **在线用户数**：估算当前在线用户\n- **广告曝光数**：估算独立曝光次数\n\n## 注意事项\n\n- HyperLogLog是概率算法，结果有0.81%的误差\n- 不适合需要精确计数的场景\n- PFMERGE是永久合并，结果存储在目标key中\n- HyperLogLog底层使用String类型存储"
+  },
+  {
+    "id": "redis-ds-027",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis HyperLogLog的PFMERGE命令如何使用？如何合并多天的UV统计？",
+    "tags": [
+      "HyperLogLog",
+      "PFMERGE",
+      "合并",
+      "UV统计"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nPFMERGE将多个HyperLogLog合并为一个，合并后的基数等于所有源HLL的并集基数。常用于统计多天、多页面的汇总数据。\n\n## 命令示例\n\n```redis\n# 每天的UV统计\nPFADD uv:2024-01-15 \"user1\" \"user2\" \"user3\"\nPFADD uv:2024-01-16 \"user2\" \"user3\" \"user4\"\nPFADD uv:2024-01-17 \"user1\" \"user4\" \"user5\"\n\n# 合并三天的UV\nPFMERGE uv:3days uv:2024-01-15 uv:2024-01-16 uv:2024-01-17\nPFCOUNT uv:3days              # 约5（去重后的独立用户）\n\n# 增量合并\nPFMERGE uv:week uv:3days uv:2024-01-18 uv:2024-01-19\n\n# 合并多个页面的UV\nPFMERGE site:total uv:homepage uv:detail uv:search\nPFCOUNT site:total            # 全站独立访客数\n```\n\n## 合并特性\n\n```\nPFMERGE dest src1 src2 src3...\n\ndest = src1 ∪ src2 ∪ src3 ∪ ...\n\nPFCOUNT(dest) ≈ |src1 ∪ src2 ∪ src3|\n```\n\n## 关键要点\n\n- PFMERGE将结果存储到目标key，目标key可以是已有的HLL\n- 合并操作是永久的，结果存储在dest中\n- PFCOUNT多key时自动先合并再返回基数\n- 合并后源HLL不受影响\n\n## 应用场景\n\n- **周/月UV汇总**：合并每日UV\n- **多维度统计**：合并多个页面/频道的UV\n- **实时+历史合并**：增量合并新数据到历史统计\n\n## 注意事项\n\n- PFMERGE的源key和目标key类型必须都是HyperLogLog\n- 如果源key不存在，视为空HLL\n- PFCOUNT对多个key的行为等价于PFMERGE + PFCOUNT\n- 合并操作本身非常高效，O(N)时间复杂度"
+  },
+  {
+    "id": "redis-ds-028",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis GeoSpatial的GEOADD命令如何使用？底层是如何存储地理位置的？",
+    "tags": [
+      "GeoSpatial",
+      "GEOADD",
+      "地理位置",
+      "经纬度"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nGeoSpatial是Redis 3.2引入的地理位置数据类型，底层使用ZSet实现。GEOADD将经纬度编码为geohash作为ZSet的score存储。\n\n## 命令示例\n\n```redis\n# 添加地理位置\nGEOADD locations 116.397128 39.916527 \"天安门\"\nGEOADD locations 121.473701 31.230416 \"东方明珠\"\n\n# 批量添加\nGEOADD locations \\\n    116.397128 39.916527 \"天安门\" \\\n    116.407395 39.904211 \"故宫\" \\\n    121.473701 31.230416 \"东方明珠\"\n\n# 获取经纬度\nGEOPOS locations \"天安门\"\n\n# 获取geohash\nGEOHASH locations \"天安门\"    # \"wx4g0b7xgr0\"\n```\n\n## 底层存储\n\n```\nGeoSpatial底层 = ZSet\n\nmember → geohash(52位整数) → score\n\n例如：\"天安门\" 的ZSet score = geohash(116.397128, 39.916527)\n```\n\n## 关键要点\n\n- 经度范围：-180 到 180\n- 纬度范围：-85.05112878 到 85.05112878\n- geohash精度：约0.5米\n- 底层是ZSet，可以用ZREM删除，ZSCORE获取score\n- 最大元素数：2^32-1\n\n## 适用场景\n\n- 附近的人/店铺\n- 距离计算\n- 区域搜索\n- 打卡签到\n\n## 注意事项\n\n- GEOADD会覆盖已有成员的坐标\n- 经纬度顺序是经度在前、纬度在后\n- 超出范围的坐标会报错\n- 不能直接更新坐标，需要重新GEOADD"
+  },
+  {
+    "id": "redis-ds-029",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis GeoSpatial的GEODIST和GEORADIUS命令如何使用？如何实现附近搜索？",
+    "tags": [
+      "GeoSpatial",
+      "GEODIST",
+      "GEORADIUS",
+      "附近搜索"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nGEODIST计算两个地理位置之间的距离，GEORADIUS以坐标为中心搜索指定半径内的位置（Redis 6.2+推荐使用GEOSEARCH替代）。\n\n## 命令示例\n\n```redis\n# 准备数据\nGEOADD pois 116.397128 39.916527 \"天安门\"\nGEOADD pois 116.407395 39.904211 \"故宫\"\nGEOADD pois 116.310003 39.991957 \"颐和园\"\n\n# 计算两点距离\nGEODIST pois \"天安门\" \"故宫\" km       # 约1.5km\nGEODIST pois \"天安门\" \"颐和园\" km     # 约15km\n\n# 以坐标为中心搜索附近\nGEORADIUS pois 116.40 39.91 5 km WITHCOORD WITHDIST COUNT 10\n\n# 以成员为中心搜索\nGEORADIUSBYMEMBER pois \"天安门\" 5 km WITHCOORD WITHDIST\n\n# Redis 6.2+推荐方式\nGEOSEARCH pois FROMLONLAT 116.40 39.91 BYRADIUS 5 km \\\n    ASC COUNT 10 WITHCOORD WITHDIST\nGEOSEARCH pois FROMMEMBER \"天安门\" BYRADIUS 5 km ASC\n```\n\n## 距离单位\n\n| 单位 | 说明 |\n|------|------|\n| m | 米（默认） |\n| km | 千米 |\n| mi | 英里 |\n| ft | 英尺 |\n\n## 关键要点\n\n- GEODIST时间复杂度O(1)\n- GEORADIUS时间复杂度O(N+logN)\n- COUNT限制返回数量\n- ASC/DESC控制排序方向\n- WITHCOORD返回坐标，WITHDIST返回距离\n\n## 注意事项\n\n- GEORADIUS在Redis 6.2+已废弃，推荐GEOSEARCH + GEOSEARCHSTORE\n- 搜索结果按距离排序，ASC为从近到远\n- GEOSEARCHSTORE可以将结果存储到新的ZSet中"
+  },
+  {
+    "id": "redis-ds-030",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Stream的XADD命令如何使用？Stream的消息ID有什么规则？",
+    "tags": [
+      "Stream",
+      "XADD",
+      "消息队列",
+      "消息ID"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nXADD向Stream追加消息，每个消息自动生成唯一ID。Stream是Redis 5.0引入的消息队列数据类型，支持持久化和消费者组。\n\n## 命令示例\n\n```redis\n# 自动生成ID\nXADD mystream * name \"张三\" action \"login\"\n# 返回: \"1706745600000-0\"\n\n# 指定ID（必须大于当前最大ID）\nXADD mystream 1706745600000-0 name \"李四\" action \"logout\"\n\n# 限制Stream最大长度\nXADD mystream MAXLEN 1000 * name \"王五\" action \"buy\"\nXADD mystream MAXLEN ~ 1000 * name \"赵六\" action \"sell\"  # ~表示近似裁剪\n\n# MINID: 删除小于指定ID的消息(Redis 6.2+)\nXADD mystream MINID 1706745600000 * name \"test\" action \"test\"\n```\n\n## 消息ID格式\n\n```\nID = <毫秒时间戳>-<序列号>\n\n例如: 1706745600000-0\n      1706745600000-1\n      1706745600001-0\n\n规则：\n- 时间戳必须 >= 最后一条消息\n- 序列号在同一毫秒内递增\n- * 表示自动生成\n```\n\n## 关键要点\n\n- XADD返回消息ID\n- *表示由Redis自动生成ID\n- MAXLEN限制Stream长度，防止内存无限增长\n- ~表示近似裁剪，性能更好\n- 消息内容是field-value对\n\n## 注意事项\n\n- Stream消息持久化到RDB/AOF中\n- MAXLEN设置过小可能丢失未消费的消息\n- MINID是Redis 6.2+引入的更精确的裁剪方式\n- 每条消息的field-value对数量没有限制"
+  },
+  {
+    "id": "redis-ds-031",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis Stream的XREAD命令如何使用？如何实现阻塞读取？",
+    "tags": [
+      "Stream",
+      "XREAD",
+      "阻塞读取",
+      "消费"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nXREAD从Stream读取消息，支持阻塞模式和非阻塞模式。它可以监听多个Stream，返回指定ID之后的消息。\n\n## 命令示例\n\n```redis\n# 非阻塞读取（从头开始）\nXREAD COUNT 10 STREAMS mystream 0\n\n# 读取新消息（从指定ID之后）\nXREAD COUNT 10 STREAMS mystream 1706745600000-0\n\n# 只读取最新消息\nXREAD COUNT 10 STREAMS mystream $\n\n# 阻塞读取（最多等待5秒）\nXREAD COUNT 10 BLOCK 5000 STREAMS mystream $\n\n# 无限阻塞\nXREAD COUNT 1 BLOCK 0 STREAMS mystream $\n\n# 监听多个Stream\nXREAD COUNT 10 STREAMS stream1 stream2 0 0\n```\n\n## 阻塞 vs 非阻塞\n\n| 模式 | 命令 | 说明 |\n|------|------|------|\n| 非阻塞 | XREAD COUNT N STREAMS key id | 立即返回 |\n| 阻塞 | XREAD BLOCK ms STREAMS key $ | 等待新消息 |\n\n## ID参数说明\n\n| ID | 含义 |\n|------|------|\n| 0 | 从头开始读取所有消息 |\n| $ | 只读取执行命令后的新消息 |\n| 具体ID | 从该ID之后开始读取 |\n\n## 关键要点\n\n- BLOCK 0表示永久阻塞，直到有新消息\n- XREAD不会确认消息（需要XACK）\n- 返回消息后不会从Stream中删除\n- 支持同时监听多个Stream\n\n## 注意事项\n\n- XREAD的$只在阻塞模式下有意义，非阻塞模式下$可能返回空\n- 多Stream监听时，ID参数的数量必须与Stream数量一致\n- 阻塞模式下客户端连接会保持，注意连接超时设置"
+  },
+  {
+    "id": "redis-ds-032",
+    "module": "Redis数据结构",
+    "difficulty": 3,
+    "question": "Redis Stream的消费者组（XGROUP）和消息确认（XACK）如何使用？",
+    "tags": [
+      "Stream",
+      "XGROUP",
+      "XACK",
+      "消费者组"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\n消费者组允许多个消费者协同消费Stream消息，每条消息只被组内一个消费者处理。XACK用于确认消息已被成功处理。\n\n## 命令示例\n\n```redis\n# 创建消费者组\nXGROUP CREATE mystream mygroup $ MKSTREAM\n\n# 生产消息\nXADD mystream * event \"order\" amount 100\nXADD mystream * event \"payment\" amount 200\n\n# 消费消息（>表示新消息）\nXREADGROUP GROUP mygroup consumer1 COUNT 10 BLOCK 5000 STREAMS mystream >\n\n# 确认消息\nXACK mystream mygroup 1706745600000-0\n\n# 查看待确认消息（PEL）\nXPENDING mystream mygroup\nXPENDING mystream mygroup - + 10 consumer1\n\n# 转移超时消息给其他消费者\nXCLAIM mystream mygroup consumer2 3600000 1706745600000-0\n\n# 查看消费者组信息\nXINFO GROUPS mystream\nXINFO CONSUMERS mystream mygroup\n```\n\n## 消费者组工作流程\n\n```\n1. XGROUP CREATE 创建组\n2. XREADGROUP GROUP name consumer > 读取新消息\n3. 处理消息\n4. XACK 确认消息\n5. 超时未确认 → XCLAIM 转移给其他消费者\n```\n\n## 关键要点\n\n| ID参数 | 含义 |\n|--------|------|\n| > | 只获取未分配的新消息 |\n| 0 | 获取该消费者待确认的消息 |\n\n- PEL（Pending Entry List）记录未确认消息\n- XCLAIM认领超时消息，设置新的拥有者\n- 每条消息只会被组内一个消费者获取\n\n## 注意事项\n\n- 消费者组中的消息不会自动删除，需要XACK确认\n- 消费者崩溃时未确认的消息可通过XCLAIM转移\n- MAXLEN裁剪可能删除未消费的消息\n- 建议为每个消费者使用唯一标识"
+  },
+  {
+    "id": "redis-ds-033",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis的SDS（Simple Dynamic String）是什么？与C字符串相比有什么优势？",
+    "tags": [
+      "SDS",
+      "底层结构",
+      "动态字符串",
+      "内存优化"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nSDS是Redis自定义的动态字符串结构，用于替代C语言原生字符串。它在C字符串基础上增加了长度记录、空间预分配等优化。\n\n## SDS结构\n\n```c\nstruct sdshdr {\n    int len;      // 已使用长度\n    int free;     // 剩余可用空间\n    char buf[];   // 字符数组（以\\0结尾）\n};\n```\n\n## SDS vs C字符串\n\n| 特性 | SDS | C字符串 |\n|------|-----|--------|\n| 获取长度 | O(1)，len字段 | O(1)，strlen（实际O(N)遍历） |\n| 缓冲区溢出 | 自动检查扩容 | 需手动管理 |\n| 二进制安全 | 是 | 否（依赖\\0） |\n| 内存重分配 | 预分配+惰性释放 | 每次重新分配 |\n| 兼容C函数 | 是（保留\\0） | 是 |\n\n## 空间预分配策略\n\n```\nlen < 1MB:  分配 2 * len 的空间（翻倍）\nlen >= 1MB: 分配 len + 1MB 的空间\n\n例如：\n- len=100 → free=100 → 总共200\n- len=1MB → free=1MB → 总共2MB\n```\n\n## 关键要点\n\n- SDS获取长度是O(1)操作，C字符串是O(N)\n- 二进制安全：可以存储任意二进制数据\n- 惰性释放：缩短字符串时不立即回收空间\n- SDS兼容C字符串函数，buf末尾保留\\0\n\n## 适用场景\n\n- String类型的值\n- Hash/Set/ZSet的成员值\n- AOF缓冲区\n- 客户端输入缓冲区\n\n## 注意事项\n\n- Redis 3.2+根据字符串长度使用不同大小的sdshdr结构（sdshdr5/8/16/32/64）进一步节省内存\n- SDS的二进制安全特性使其可以存储图片、序列化数据等"
+  },
+  {
+    "id": "redis-ds-034",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis的ziplist（压缩列表）是什么？它的内存布局和连锁更新问题是怎样的？",
+    "tags": [
+      "ziplist",
+      "压缩列表",
+      "底层结构",
+      "连锁更新"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nziplist是Redis设计的紧凑型顺序存储结构，使用连续内存块存储数据，非常节省内存。但它存在连锁更新（cascade update）问题。\n\n## ziplist内存布局\n\n```\n| zlbytes | zltail | zllen | entry1 | entry2 | ... | zlend |\n\nzlbytes: 4字节，整个ziplist的字节数\nzltail:  4字节，最后一个entry的偏移量\nzllen:   2字节，entry数量\nentry:   不定长，数据节点\nzlend:   1字节，结束标记0xFF\n```\n\n## entry结构\n\n```\n| prevlen | encoding | data |\n\nprevlen: 前一个节点长度\n         - < 254字节: 占1字节\n         - >= 254字节: 占5字节\nencoding: 编码类型和数据长度\ndata: 实际数据\n```\n\n## 连锁更新问题\n\n```\n假设entry1长度从253变为254：\n1. entry1的prevlen从1字节扩展到5字节\n2. entry1总长度增加4字节\n3. entry2的prevlen可能从1字节扩展到5字节\n4. 逐个影响后续所有entry...\n最坏情况: O(N^2)时间复杂度\n```\n\n## 关键要点\n\n- ziplist是连续内存，CPU缓存友好\n- 查询时间复杂度O(N)\n- 适合小数据量（元素少、值短）\n- Redis 7.0+使用listpack替代ziplist\n\n## 注意事项\n\n- 连锁更新虽然最坏O(N^2)，但实际触发概率很低\n- Redis通过设置阈值（如hash-max-ziplist-entries）控制ziplist使用范围\n- 超过阈值会自动转换为hashtable等高效结构"
+  },
+  {
+    "id": "redis-ds-035",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis的quicklist是什么？它如何结合ziplist和链表的优势？",
+    "tags": [
+      "quicklist",
+      "底层结构",
+      "链表",
+      "List"
+    ],
+    "source": "高频",
+    "answer": "## 核心概念\n\nquicklist是Redis 3.2引入的List底层结构，它是ziplist和双向链表的结合体。每个节点是一个ziplist，节点之间用双向链表连接。\n\n## quicklist结构\n\n```\nquicklist\n├── head\n│   └── node1: [ziplist: entry1, entry2, entry3]\n├── node2: [ziplist: entry4, entry5]\n├── node3: [ziplist: entry6, entry7, entry8]\n└── tail\n```\n\n## 配置参数\n\n```redis\n# 每个ziplist节点的最大大小\nlist-max-ziplist-size -2\n# -1: 4KB, -2: 8KB(默认), -3: 16KB, -4: 32KB, -5: 64KB\n# 正数: 最大元素数量\n\n# 压缩深度\nlist-compress-depth 1\n# 0: 不压缩\n# 1: 首尾各1个节点不压缩，中间压缩\n# 2: 首尾各2个节点不压缩\n```\n\n## 优势对比\n\n| 结构 | 内存 | 插入/删除 | 访问 |\n|------|------|----------|------|\n| ziplist | 最紧凑 | O(N)可能连锁更新 | O(N) |\n| linkedlist | 较大 | O(1) | O(N) |\n| quicklist | 较紧凑 | O(1)均摊 | O(N) |\n\n## 关键要点\n\n- quicklist兼顾内存效率和操作性能\n- 中间节点可以使用LZF压缩，节省内存\n- 两端操作（LPUSH/RPOP）是O(1)\n- 索引访问需要遍历节点，O(N)\n\n## 适用场景\n\n- List类型数据\n- 消息队列\n- 最近访问记录\n- 任务队列\n\n## 注意事项\n\n- list-max-ziplist-size设置过大会导致ziplist操作变慢\n- list-compress-depth设置过大增加CPU消耗\n- OBJECT ENCODING key可以查看实际编码类型"
+  },
+  {
+    "id": "redis-ds-036",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis的hashtable实现有什么特点？什么是渐进式rehash？",
+    "answer": "## 核心概念\n\nRedis的hashtable使用字典（dict）结构实现，采用链地址法解决冲突。通过渐进式rehash避免一次性扩容导致的阻塞。\n\n## 字典结构\n\n```c\ntypedef struct dict {\n    dictht ht[2];       // 两个哈希表\n    long rehashidx;     // rehash进度，-1表示未在rehash\n    // ...\n} dict;\n\ntypedef struct dictht {\n    dictEntry **table;  // 哈希桶数组\n    unsigned long size;  // 桶数量\n    unsigned long used;  // 已使用数量\n} dictht;\n```\n\n## 渐进式rehash过程\n\n```\n1. 分配ht[1]，大小为第一个>=ht[0].used*2的2^n\n2. rehashidx = 0，开始rehash\n3. 每次CRUD操作时，顺带将ht[0]的一个桶迁移到ht[1]\n4. 查询时先查ht[0]再查ht[1]\n5. 全部迁移完成，释放ht[0]，ht[1]变为ht[0]\n```\n\n## 扩容/缩容条件\n\n| 条件 | 触发 |\n|------|------|\n| 负载因子 >= 1 且无BGSAVE | 扩容 |\n| 负载因子 >= 5 | 强制扩容 |\n| 负载因子 < 0.1 | 缩容 |\n\n负载因子 = used / size\n\n## 关键要点\n\n- 渐进式rehash避免一次性迁移所有数据\n- rehash期间两个表同时提供服务\n- 每次操作迁移一个桶，分摊到多次操作中\n- CRUD操作在rehash期间可能操作两个表\n\n## 注意事项\n\n- rehash期间的查找操作需要查两个表\n- BGSAVE期间为了减少内存使用，会提高扩容阈值到5\n- 扩容大小总是2的幂次方",
+    "tags": [
+      "hashtable",
+      "字典",
+      "渐进式rehash",
+      "底层结构"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-ds-037",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis的skiplist（跳表）是什么？为什么Redis选择跳表而不是红黑树？",
+    "answer": "## 核心概念\n\nskiplist是一种多层级有序链表，通过随机化层级实现O(logN)的查找效率。Redis ZSet的底层使用跳表+hashtable双结构。\n\n## 跳表结构\n\n```\nLevel 3: HEAD ───────────────────→ 9 → NULL\nLevel 2: HEAD ──────→ 5 ──────────→ 9 → NULL\nLevel 1: HEAD ──→ 3 ──→ 5 ──→ 7 ──→ 9 → NULL\n```\n\n每层都是有序链表，高层是低层的\"快速通道\"。\n\n## 时间复杂度\n\n| 操作 | 平均 | 最坏 |\n|------|------|------|\n| 查找 | O(logN) | O(N) |\n| 插入 | O(logN) | O(N) |\n| 删除 | O(logN) | O(N) |\n| 范围查询 | O(logN+M) | - |\n\n## 为什么选择跳表而非红黑树\n\n| 对比项 | 跳表 | 红黑树 |\n|--------|------|--------|\n| 实现复杂度 | 简单 | 复杂 |\n| 范围查询 | O(logN)顺序遍历 | 需要中序遍历 |\n| 并发支持 | 加锁粒度细 | 旋转操作影响大 |\n| 内存占用 | 可控（概率参数） | 固定指针开销 |\n| 代码量 | 少 | 多 |\n\n## 关键要点\n\n- 跳表通过随机层数实现平衡\n- 每层晋升概率一般为0.25（Redis使用）\n- 层数上限通常为32层\n- 约75%的节点只有1层\n\n## 注意事项\n\n- ZSet同时使用跳表和hashtable\n- 跳表支持有序遍历和范围查询\n- hashtable支持O(1)精确查找score\n- Redis作者选择跳表的主要原因是实现简单",
+    "tags": [
+      "skiplist",
+      "跳表",
+      "底层结构",
+      "ZSet"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-ds-038",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis各数据结构的编码转换阈值是什么？如何查看和优化编码？",
+    "answer": "## 核心概念\n\nRedis对不同数据结构设置了编码转换阈值，数据量超过阈值会从紧凑编码转换为高效编码。合理设置阈值可以平衡内存和性能。\n\n## 编码转换阈值\n\n| 数据结构 | 配置项 | 默认值 | 紧凑编码 → 高效编码 |\n|---------|--------|--------|-------------------|\n| Hash | hash-max-ziplist-entries | 512 | listpack → hashtable |\n| Hash | hash-max-ziplist-value | 64 | 同上（字段值长度） |\n| Set | set-max-intset-entries | 512 | intset → hashtable |\n| ZSet | zset-max-ziplist-entries | 128 | listpack → skiplist |\n| ZSet | zset-max-ziplist-value | 64 | 同上（元素值长度） |\n| List | list-max-ziplist-size | -2 | listpack节点大小(8KB) |\n\n## 查看和修改配置\n\n```redis\n# 查看配置\nCONFIG GET hash-max-ziplist-entries\nCONFIG GET set-max-intset-entries\n\n# 临时修改\nCONFIG SET hash-max-ziplist-entries 1024\n\n# 永久修改（redis.conf）\nhash-max-ziplist-entries 1024\nhash-max-ziplist-value 128\n```\n\n## 查看key编码\n\n```redis\nOBJECT ENCODING mykey    # 查看底层编码类型\nDEBUG OBJECT mykey       # 查看详细信息\n```\n\n## 关键要点\n\n- 编码转换是不可逆的\n- 紧凑编码节省内存但操作较慢\n- 高效编码占用内存多但操作快\n- 小数据量使用紧凑编码，大数据量使用高效编码\n\n## 优化建议\n\n- 如果内存紧张，适当增大阈值\n- 如果CPU紧张，适当减小阈值\n- 修改配置后只对新key或触发转换的key生效\n- 已存在的key需要手动重建才能应用新编码",
+    "tags": [
+      "编码转换",
+      "配置",
+      "阈值",
+      "内存优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-ds-039",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis有哪些内存优化策略？如何减少Redis的内存占用？",
+    "answer": "## 核心概念\n\nRedis内存优化可以从数据结构选择、编码配置、key设计、过期策略等多个维度入手。\n\n## 优化策略\n\n**1. 选择合适的数据结构**\n```redis\n# 使用Hash代替多个String\n# 差: 1000个String key\nSET user:1001:name \"张三\"\nSET user:1001:age \"25\"\n\n# 优: 1个Hash key（ziplist编码更省内存）\nHSET user:1001 name \"张三\" age \"25\"\n```\n\n**2. 调整编码阈值**\n```redis\nCONFIG SET hash-max-ziplist-entries 1024\nCONFIG SET hash-max-ziplist-value 128\nCONFIG SET set-max-intset-entries 1024\nCONFIG SET zset-max-ziplist-entries 256\n```\n\n**3. 使用Hash存小对象**\n```redis\n# 小Hash使用ziplist/listpack编码，内存非常紧凑\nHSET config:app theme \"dark\" lang \"zh\" version \"1.0\"\n```\n\n**4. 短key名**\n```redis\n# 差: very_long_user_name:1001\n# 优: u:1001\n```\n\n**5. 使用整数编码**\n```redis\nSET counter 12345      # int编码，不占用额外SDS内存\nSET counter \"12345\"    # embstr/raw编码，占用SDS内存\n```\n\n## 内存分析工具\n\n```redis\nINFO memory                    # 内存概览\nMEMORY USAGE key [SAMPLES N]   # 单个key内存\nMEMORY DOCTOR                  # 内存诊断\nredis-cli --bigkeys            # 查找大key\nredis-cli --memkeys            # 按内存排序\n```\n\n## 关键要点\n\n- 紧凑编码（listpack/intset）比高效编码节省大量内存\n- 使用Hash代替多个String可以利用ziplist编码\n- 短key名在大数据量时节省可观内存\n- 设置合理的过期时间自动清理数据\n\n## 注意事项\n\n- 内存碎片率(mem_fragmentation_ratio) > 1.5时考虑优化\n- 使用MEMORY PURGE手动释放碎片内存\n- maxmemory设置合理上限防止OOM",
+    "tags": [
+      "内存优化",
+      "内存分析",
+      "编码",
+      "性能优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-ds-040",
+    "module": "Redis数据结构",
+    "difficulty": 2,
+    "question": "Redis的intset（整数集合）是什么？什么时候会发生编码升级？",
+    "answer": "## 核心概念\n\nintset是Redis Set类型在特定条件下使用的底层结构，是一个有序的、支持自动升级的整数数组。当所有元素都是整数且数量不超过阈值时使用intset。\n\n## intset结构\n\n```c\ntypedef struct intset {\n    uint32_t encoding;  // 编码类型\n    uint32_t length;    // 元素数量\n    int8_t contents[];  // 有序整数数组\n} intset;\n```\n\n## 编码类型\n\n| 编码 | 字节 | 值范围 |\n|------|------|--------|\n| INT16 | 2字节 | -32768 ~ 32767 |\n| INT32 | 4字节 | -2^31 ~ 2^31-1 |\n| INT64 | 8字节 | -2^63 ~ 2^63-1 |\n\n## 升级过程\n\n```redis\nSADD myset 1 2 3           # INT16编码\nSADD myset 100000          # 触发升级到INT32\nSADD myset 9999999999      # 触发升级到INT64\n```\n\n升级步骤：\n1. 扩展contents数组空间\n2. 将现有元素转换为新编码\n3. 将新元素插入正确位置（保持有序）\n\n## 关键要点\n\n- 升级是不可逆的，只能升不能降\n- 升级保证了类型安全和内存效率\n- intset使用二分查找，O(logN)\n- 只有当全部元素都是整数时才使用intset\n\n## 与hashtable的转换\n\n| 条件 | 编码 |\n|------|------|\n| 全部是整数 且 数量 <= set-max-intset-entries | intset |\n| 有非整数元素 或 数量超过阈值 | hashtable |\n\n## 注意事项\n\n- intset不支持降级，即使元素减少也不会回退到更小编码\n- 添加非整数元素会立即转换为hashtable，且不可逆\n- set-max-intset-entries默认512，可根据实际数据调整\n- intset的有序特性使得SINTER等集合运算更高效",
+    "tags": [
+      "intset",
+      "整数集合",
+      "底层结构",
+      "Set"
+    ],
+    "source": "高频"
+  }
+]

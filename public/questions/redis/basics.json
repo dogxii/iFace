@@ -1,0 +1,509 @@
+[
+  {
+    "id": "redis-basics-001",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "什么是Redis？它有哪些主要特点？",
+    "answer": "## 核心概念\n\nRedis（Remote Dictionary Server）是一个开源的、基于内存的键值对数据库，支持多种数据结构。它由Salvatore Sanfilippo开发，最初用于解决网站的性能问题。\n\n## 主要特点\n\n- **基于内存**：数据存储在内存中，读写速度极快\n- **丰富的数据结构**：支持String、Hash、List、Set、ZSet等\n- **持久化**：支持RDB和AOF两种持久化方式\n- **高可用**：支持主从复制、哨兵模式、Cluster集群\n- **原子性操作**：所有操作都是原子性的，支持事务\n\n## 应用场景\n\n```redis\n# 缓存\nSET user:1001 '{\"name\":\"张三\",\"age\":25}'\nEXPIRE user:1001 3600\n\n# 计数器\nINCR article:1001:views\n\n# 分布式锁\nSETNX lock:order:123 1\n```\n\n## 关键要点\n\n| 特性 | 说明 |\n|------|------|\n| 性能 | 10万+ QPS（单机） |\n| 数据结构 | String、Hash、List、Set、ZSet等 |\n| 持久化 | RDB快照 + AOF日志 |\n| 高可用 | 主从 + 哨兵 + Cluster |\n\n## 注意事项\n\n- Redis是单线程模型，避免执行耗时命令\n- 合理设置内存上限，防止OOM\n- 生产环境必须开启持久化",
+    "tags": [
+      "Redis简介",
+      "内存数据库",
+      "键值存储"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-002",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis为什么这么快？请从多个角度分析。",
+    "answer": "## 核心概念\n\nRedis的高性能来源于多个方面的优化设计，包括内存存储、单线程模型、IO多路复用等。\n\n## 性能优势分析\n\n### 1. 基于内存操作\n- 数据存储在内存中，读写速度比磁盘快10万倍\n- 内存访问延迟约100ns，磁盘约10ms\n\n### 2. 单线程模型\n- 避免了多线程的上下文切换和竞态条件\n- 无需加锁，减少锁竞争开销\n- 代码执行效率高\n\n### 3. IO多路复用\n- 使用epoll/kqueue实现高效的网络IO\n- 单线程可以处理大量并发连接\n\n### 4. 高效的数据结构\n- SDS（简单动态字符串）\n- 跳表（SkipList）\n- 压缩列表（ziplist）\n\n## 命令示例\n\n```redis\n# 基准测试\nredis-benchmark -h 127.0.0.1 -p 6379 -c 50 -n 10000\n\n# 查看服务器信息\nredis-cli info server\nredis-cli info stats\n```\n\n## 关键要点\n\n| 因素 | 影响 |\n|------|------|\n| 内存存储 | 消除磁盘IO瓶颈 |\n| 单线程 | 避免上下文切换和锁 |\n| IO多路复用 | 高效处理并发连接 |\n| 数据结构 | 优化的底层实现 |\n\n## 注意事项\n\n- 单线程不意味着不能利用多核，可通过多实例部署\n- 避免使用KEYS、SMEMBERS等O(n)命令\n- 大Key会阻塞其他请求",
+    "tags": [
+      "性能优化",
+      "单线程",
+      "IO多路复用"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-003",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis和Memcached有什么区别？各自适用于什么场景？",
+    "answer": "## 核心概念\n\nRedis和Memcached都是流行的内存缓存系统，但它们在数据结构、持久化、功能等方面有显著差异。\n\n## 对比分析\n\n| 特性 | Redis | Memcached |\n|------|-------|----------|\n| 数据结构 | String、Hash、List、Set、ZSet等 | 仅String |\n| 持久化 | 支持RDB和AOF | 不支持 |\n| 集群 | 原生支持Cluster | 客户端分片 |\n| 事务 | 支持 | 不支持 |\n| 内存管理 | 多种淘汰策略 | LRU |\n| 线程模型 | 单线程（6.0后IO多线程） | 多线程 |\n\n## 适用场景\n\n### Redis适用场景\n- 需要丰富的数据结构\n- 需要持久化功能\n- 需要发布订阅、Lua脚本\n- 需要原子性操作\n\n### Memcached适用场景\n- 简单的键值缓存\n- 多线程高并发\n- 不需要持久化\n- 内存效率要求高\n\n## 命令示例\n\n```redis\n# Redis支持丰富的数据结构\nHSET user:1 name \"张三\" age 25\nLPUSH queue task1 task2 task3\nZADD rank 100 player1 90 player2\n\n# Memcached只支持简单的键值\nset key 0 3600 5\nhello\n```\n\n## 关键要点\n\n- Redis功能更丰富，Memcached更轻量\n- Redis单线程避免锁竞争，Memcached多线程利用多核\n- 选择时考虑数据结构需求和持久化需求",
+    "tags": [
+      "Redis对比",
+      "Memcached",
+      "缓存选型"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-004",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何安装和配置Redis？",
+    "answer": "## 核心概念\n\nRedis的安装方式包括源码编译、包管理器安装、Docker部署等。配置涉及内存、持久化、安全等方面。\n\n## 安装方式\n\n### 源码编译安装\n```bash\n# 下载解压\nwget http://download.redis.io/releases/redis-7.0.0.tar.gz\ntar xzf redis-7.0.0.tar.gz\ncd redis-7.0.0\n\n# 编译安装\nmake\nmake install PREFIX=/usr/local/redis\n```\n\n### Docker安装\n```bash\ndocker run -d --name redis \\\n  -p 6379:6379 \\\n  -v /data/redis:/data \\\n  redis:7.0 redis-server --appendonly yes\n```\n\n## 配置文件\n\n```conf\n# redis.conf 主要配置\n\n# 网络\nbind 0.0.0.0\nport 6379\nprotected-mode yes\n\n# 内存\nmaxmemory 4gb\nmaxmemory-policy allkeys-lru\n\n# 持久化\nsave 900 1\nsave 300 10\nsave 60 10000\nappendonly yes\nappendfsync everysec\n\n# 安全\nrequirepass your_password\n```\n\n## 关键要点\n\n- 生产环境必须设置密码\n- 合理配置maxmemory防止OOM\n- 根据业务需求选择持久化策略\n- 建议开启protected-mode\n\n## 最佳实践\n\n- 使用systemd管理Redis服务\n- 配置日志文件便于排查问题\n- 定期备份数据文件",
+    "tags": [
+      "安装配置",
+      "部署",
+      "redis.conf"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-005",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis有哪些基本命令？请分类介绍。",
+    "answer": "## 核心概念\n\nRedis命令按照功能可以分为：字符串操作、哈希操作、列表操作、集合操作、有序集合操作、键管理等。\n\n## 字符串命令\n\n```redis\nSET key value [EX seconds] [PX ms] [NX|XX]\nGET key\nMSET key1 value1 key2 value2\nMGET key1 key2\nINCR key\nDECR key\nINCRBY key increment\nAPPEND key value\nSTRLEN key\n```\n\n## 哈希命令\n\n```redis\nHSET key field value\nHGET key field\nHMSET key field1 value1 field2 value2\nHMGET key field1 field2\nHGETALL key\nHDEL key field\nHKEYS key\nHVALS key\nHLEN key\n```\n\n## 列表命令\n\n```redis\nLPUSH key value [value ...]\nRPUSH key value [value ...]\nLPOP key\nRPOP key\nLRANGE key start stop\nLLEN key\nLINDEX key index\n```\n\n## 集合命令\n\n```redis\nSADD key member [member ...]\nSMEMBERS key\nSISMEMBER key member\nSINTER key1 [key2 ...]\nSUNION key1 [key2 ...]\nSDIFF key1 [key2 ...]\nSCARD key\n```\n\n## 有序集合命令\n\n```redis\nZADD key score member [score member ...]\nZRANGE key start stop [WITHSCORES]\nZREVRANGE key start stop [WITHSCORES]\nZRANGEBYSCORE key min max\nZSCORE key member\nZCARD key\nZREM key member\n```\n\n## 关键要点\n\n- 命令不区分大小写，但约定大写\n- 使用help命令查看帮助：`help @string`\n- 生产环境避免使用KEYS命令",
+    "tags": [
+      "基本命令",
+      "CRUD",
+      "命令分类"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-006",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何管理Redis的键（Key）？有哪些常用命令？",
+    "answer": "## 核心概念\n\nRedis的键管理涉及键的创建、查询、删除、过期设置等操作。合理的键命名和管理对性能和可维护性至关重要。\n\n## 键管理命令\n\n### 查询键\n```redis\n# 查找键（生产环境慎用）\nKEYS user:*\nSCAN 0 MATCH user:* COUNT 100\n\n# 检查键是否存在\nEXISTS key\n\n# 获取键的类型\nTYPE key\n\n# 获取键的过期时间（秒）\nTTL key\n\n# 获取键的过期时间（毫秒）\nPTTL key\n```\n\n### 设置过期时间\n```redis\n# 设置过期时间（秒）\nEXPIRE key 3600\n\n# 设置过期时间（毫秒）\nPEXPIRE key 3600000\n\n# 设置过期时间戳（秒）\nEXPIREAT key 1609459200\n\n# 取消过期时间\nPERSIST key\n```\n\n### 删除键\n```redis\n# 删除键\nDEL key [key ...]\n\n# 异步删除（不阻塞）\nUNLINK key [key ...]\n```\n\n### 键重命名\n```redis\nRENAME key newkey\nRENAMENX key newkey  # 仅当newkey不存在时\n```\n\n## 键命名规范\n\n```\n业务名:对象名:ID:属性\n\n例如：\nuser:1001:name\norder:2023001:status\ncache:article:1001\n```\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| KEYS O(n) | 生产禁用，阻塞主线程 |\n| SCAN O(1) | 游标迭代，不阻塞 |\n| EXISTS O(1) | 检查键是否存在 |\n| DEL O(n) | 删除键，n为元素数 |\n| UNLINK O(1) | 异步删除，不阻塞 |\n\n## 最佳实践\n\n- 使用SCAN替代KEYS\n- 合理设置过期时间，避免内存泄漏\n- 使用统一的键命名规范\n- 大Key使用UNLINK异步删除",
+    "tags": [
+      "键管理",
+      "过期时间",
+      "SCAN"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-007",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的过期策略有哪些？惰性删除和定期删除是什么？",
+    "answer": "## 核心概念\n\nRedis的过期策略用于处理设置了过期时间的键。当键过期后，Redis通过惰性删除和定期删除两种策略来清理过期键。\n\n## 过期策略\n\n### 1. 惰性删除（Lazy Expiration）\n\n当访问一个键时，检查该键是否过期，如果过期则删除。\n\n```python\n# 伪代码实现\ndef get(key):\n    if is_expired(key):\n        delete(key)\n        return None\n    return value\n```\n\n**优点**：\n- 只在访问时检查，CPU友好\n- 不会浪费CPU时间在不常访问的键上\n\n**缺点**：\n- 过期键可能长期占用内存\n- 内存浪费\n\n### 2. 定期删除（Periodic Deletion）\n\nRedis每隔一段时间（默认100ms）随机检查一部分键，删除其中的过期键。\n\n```conf\n# redis.conf 配置\nhz 10  # 每秒执行10次，即每100ms一次\n```\n\n**实现原理**：\n1. 每次随机抽取20个键（默认）\n2. 删除其中过期的键\n3. 如果过期比例超过25%，重复步骤1\n4. 单次执行时间限制在25ms以内\n\n## 命令示例\n\n```redis\n# 设置过期时间\nSET session:abc123 \"user_data\"\nEXPIRE session:abc123 1800\n\n# 查看剩余过期时间\nTTL session:abc123\n\n# 取消过期\nPERSIST session:abc123\n```\n\n## 关键要点\n\n| 策略 | 触发时机 | 优点 | 缺点 |\n|------|---------|------|------|\n| 惰性删除 | 访问键时 | CPU友好 | 内存浪费 |\n| 定期删除 | 定时任务 | 平衡CPU和内存 | 可能漏删 |\n\n## 注意事项\n\n- 两种策略配合使用，不是二选一\n- 定期删除的频率和采样数可配置\n- 过期键不会立即删除，存在延迟\n- 内存满时会触发淘汰策略",
+    "tags": [
+      "过期策略",
+      "惰性删除",
+      "定期删除"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-008",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的内存淘汰策略有哪些？如何选择？",
+    "answer": "## 核心概念\n\n当Redis内存使用达到maxmemory限制时，需要淘汰一些键来释放内存。Redis提供了8种淘汰策略。\n\n## 淘汰策略分类\n\n### 不淘汰（默认）\n- **noeviction**：内存满时拒绝写入，返回错误\n\n### 针对所有键\n- **allkeys-lru**：使用LRU算法淘汰最近最少使用的键\n- **allkeys-lfu**：使用LFU算法淘汰最不经常使用的键\n- **allkeys-random**：随机淘汰\n\n### 针对设置了过期时间的键\n- **volatile-lru**：在设置了过期时间的键中，使用LRU算法淘汰\n- **volatile-lfu**：在设置了过期时间的键中，使用LFU算法淘汰\n- **volatile-random**：在设置了过期时间的键中，随机淘汰\n- **volatile-ttl**：淘汰TTL最小的键\n\n## 命令示例\n\n```redis\n# 查看当前淘汰策略\nCONFIG GET maxmemory-policy\n\n# 设置淘汰策略\nCONFIG SET maxmemory-policy allkeys-lru\n\n# 设置最大内存\nCONFIG SET maxmemory 4gb\n\n# 查看内存使用\nINFO memory\n```\n\n## LRU vs LFU\n\n| 算法 | 原理 | 适用场景 |\n|------|------|----------|\n| LRU | 最近最少使用 | 访问模式相对均匀 |\n| LFU | 最不经常使用 | 有热点数据 |\n\n## 选择建议\n\n- **缓存场景**：allkeys-lru 或 allkeys-lfu\n- **持久化场景**：volatile-lru 或 volatile-ttl\n- **无明确场景**：allkeys-lru（最常用）\n- **不能丢数据**：noeviction\n\n## 最佳实践\n\n```redis\n# 推荐配置\nmaxmemory 4gb\nmaxmemory-policy allkeys-lru\nmaxmemory-samples 10  # LRU采样数，越大越精确\n```\n\n## 注意事项\n\n- LRU是近似LRU，不是精确LRU\n- LFU在Redis 4.0后引入\n- 淘汰策略会影响性能\n- 监控内存使用，避免频繁淘汰",
+    "tags": [
+      "内存淘汰",
+      "LRU",
+      "LFU"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-009",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis事务是什么？如何使用？有什么局限性？",
+    "answer": "## 核心概念\n\nRedis事务是一组命令的集合，事务中的命令会按顺序执行，不会被其他命令打断。但Redis事务不支持回滚，这与传统数据库事务不同。\n\n## 事务命令\n\n```redis\n# 开始事务\nMULTI\n\n# 命令入队\nSET user:1:name \"张三\"\nSET user:1:age 25\nINCR user:1:login_count\n\n# 执行事务\nEXEC\n\n# 取消事务\nDISCARD\n```\n\n## 事务特性\n\n### 原子性\n- 事务中的命令要么全部执行，要么全部不执行\n- 但不支持回滚（与关系型数据库不同）\n\n### 隔离性\n- 事务中的命令按顺序执行\n- 事务执行期间不会被其他客户端命令打断\n\n## 命令示例\n\n```redis\n# 乐观锁（WATCH）\nWATCH account:1001\n\nMULTI\nDEBIT account:1001 100\nCREDIT account:1002 100\nEXEC\n\n# 如果account:1001在WATCH后被修改，EXEC返回nil\n```\n\n## 局限性\n\n- **不支持回滚**：命令执行失败不会回滚已执行的命令\n- **不支持ACID**：只保证原子性和隔离性\n- **命令错误**：语法错误会导致事务取消，运行时错误不会\n\n## 与Lua脚本对比\n\n```redis\n# Lua脚本更强大\nEVAL \"\n  local val = redis.call('GET', KEYS[1])\n  if val == ARGV[1] then\n    redis.call('SET', KEYS[1], ARGV[2])\n    return 1\n  end\n  return 0\n\" 1 mykey oldval newval\n```\n\n## 最佳实践\n\n- 简单场景使用MULTI/EXEC\n- 需要条件判断使用Lua脚本\n- 使用WATCH实现乐观锁\n- 避免在事务中执行耗时命令",
+    "tags": [
+      "事务",
+      "MULTI",
+      "乐观锁"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-010",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的Lua脚本有什么作用？如何使用？",
+    "answer": "## 核心概念\n\nRedis支持在服务器端执行Lua脚本，可以将多个命令组合成一个原子操作，减少网络往返，实现复杂的业务逻辑。\n\n## 主要优势\n\n- **原子性**：脚本中的所有命令作为一个整体执行\n- **减少网络开销**：多个命令合并为一次请求\n- **复用性**：脚本可以缓存并重复执行\n- **灵活性**：支持条件判断、循环等逻辑\n\n## 命令示例\n\n### EVAL命令\n```redis\n# 执行Lua脚本\nEVAL \"return redis.call('SET', KEYS[1], ARGV[1])\" 1 mykey myvalue\n\n# 参数说明：\n# KEYS[1] - 第一个键参数\n# ARGV[1] - 第一个值参数\n# 1 - 键的数量\n```\n\n### 脚本缓存\n```redis\n# 加载脚本，返回SHA1摘要\nSCRIPT LOAD \"return redis.call('GET', KEYS[1])\"\n# 返回：\"abc123...\"\n\n# 通过SHA1执行脚本\nEVALSHA \"abc123...\" 1 mykey\n\n# 检查脚本是否存在\nSCRIPT EXISTS \"abc123...\"\n\n# 清除所有脚本缓存\nSCRIPT FLUSH\n```\n\n## 实际应用\n\n### 分布式锁\n```lua\n-- 加锁脚本\nif redis.call('SET', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then\n    return 1\nend\nreturn 0\n\n-- 解锁脚本\nif redis.call('GET', KEYS[1]) == ARGV[1] then\n    return redis.call('DEL', KEYS[1])\nend\nreturn 0\n```\n\n### 限流器\n```lua\nlocal key = KEYS[1]\nlocal limit = tonumber(ARGV[1])\nlocal current = tonumber(redis.call('GET', key) or \"0\")\n\nif current + 1 > limit then\n    return 0\nelse\n    redis.call('INCR', key)\n    redis.call('EXPIRE', key, ARGV[2])\n    return 1\nend\n```\n\n## 关键要点\n\n| 特性 | 说明 |\n|------|------|\n| 原子性 | 脚本中的命令作为一个整体执行 |\n| 性能 | 减少网络往返，提高效率 |\n| 复杂度 | 支持条件、循环、变量等 |\n| 缓存 | 使用EVALSHA避免重复传输 |\n\n## 注意事项\n\n- 脚本执行期间会阻塞其他命令\n- 避免编写耗时的脚本\n- 使用KEYS和ARGV传递参数，不要硬编码\n- 生产环境使用EVALSHA替代EVAL",
+    "tags": [
+      "Lua脚本",
+      "EVAL",
+      "原子操作"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-011",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "什么是Redis Pipeline？如何使用？",
+    "answer": "## 核心概念\n\nPipeline是Redis的批量操作技术，允许客户端一次发送多个命令，减少网络往返次数，显著提高性能。\n\n## 工作原理\n\n### 普通模式\n```\n客户端 -> 命令1 -> 服务器\n客户端 <- 响应1 <- 服务器\n客户端 -> 命令2 -> 服务器\n客户端 <- 响应2 <- 服务器\n```\n\n### Pipeline模式\n```\n客户端 -> [命令1, 命令2, 命令3] -> 服务器\n客户端 <- [响应1, 响应2, 响应3] <- 服务器\n```\n\n## 代码示例\n\n### Python\n```python\nimport redis\n\nr = redis.Redis(host='localhost', port=6379)\n\n# 使用pipeline\npipe = r.pipeline(transaction=False)\n\nfor i in range(10000):\n    pipe.set(f'key:{i}', f'value:{i}')\n\n# 批量执行\npipe.execute()\n```\n\n### Java (Jedis)\n```java\nJedis jedis = new Jedis(\"localhost\", 6379);\n\nPipeline pipeline = jedis.pipelined();\n\nfor (int i = 0; i < 10000; i++) {\n    pipeline.set(\"key:\" + i, \"value:\" + i);\n}\n\n// 批量执行\npipeline.sync();\n```\n\n### Redis命令行\n```redis\n# 使用redis-cli的pipeline模式\necho -e \"SET key1 value1\\nSET key2 value2\\nGET key1\\nGET key2\" | redis-cli --pipe\n```\n\n## 性能对比\n\n| 方式 | 10000次操作耗时 |\n|------|----------------|\n| 普通模式 | ~5000ms |\n| Pipeline | ~50ms |\n\n## 关键要点\n\n- **非原子性**：Pipeline中的命令不保证原子性\n- **批量大小**：建议每批1000-10000条命令\n- **内存占用**：大批量可能占用较多内存\n- **错误处理**：单个命令失败不影响其他命令\n\n## 最佳实践\n\n```python\n# 分批处理，避免内存过大\nbatch_size = 1000\nfor i in range(0, len(keys), batch_size):\n    pipe = r.pipeline()\n    for key in keys[i:i+batch_size]:\n        pipe.get(key)\n    results = pipe.execute()\n```\n\n## 注意事项\n\n- Pipeline不是事务，不保证原子性\n- 所有命令在同一连接中执行\n- 响应顺序与命令顺序一致\n- 生产环境建议设置合理的批量大小",
+    "tags": [
+      "Pipeline",
+      "批量操作",
+      "性能优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-012",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的发布订阅（Pub/Sub）是什么？如何使用？",
+    "answer": "## 核心概念\n\nRedis的发布订阅是一种消息通信模式，允许消息发送者（发布者）将消息发送到频道，消息接收者（订阅者）订阅频道接收消息。\n\n## 工作原理\n\n```\n发布者 -> 频道 -> 订阅者1\n                 -> 订阅者2\n                 -> 订阅者3\n```\n\n## 命令示例\n\n### 订阅频道\n```redis\n# 订阅单个频道\nSUBSCRIBE channel1\n\n# 订阅多个频道\nSUBSCRIBE channel1 channel2 channel3\n\n# 模式订阅（支持通配符）\nPSUBSCRIBE news.*\n```\n\n### 发布消息\n```redis\n# 发布消息\nPUBLISH channel1 \"Hello World\"\n\n# 返回接收到消息的订阅者数量\n```\n\n### 取消订阅\n```redis\n# 取消订阅\nUNSUBSCRIBE channel1\n\n# 取消模式订阅\nPUNSUBSCRIBE news.*\n```\n\n## 代码示例\n\n### Python - 订阅者\n```python\nimport redis\n\nr = redis.Redis(host='localhost', port=6379)\npubsub = r.pubsub()\n\n# 订阅频道\npubsub.subscribe('channel1')\n\n# 监听消息\nfor message in pubsub.listen():\n    if message['type'] == 'message':\n        print(f\"收到消息: {message['data'].decode()}\")\n```\n\n### Python - 发布者\n```python\nimport redis\n\nr = redis.Redis(host='localhost', port=6379)\n\n# 发布消息\nr.publish('channel1', 'Hello World')\n```\n\n## 消息类型\n\n| 类型 | 说明 |\n|------|------|\n| subscribe | 订阅确认 |\n| unsubscribe | 取消订阅确认 |\n| message | 接收到的消息 |\n| pmessage | 模式匹配的消息 |\n\n## 局限性\n\n- **消息不持久化**：订阅者离线期间的消息会丢失\n- **无确认机制**：不保证消息送达\n- **无消息堆积**：不支持消息队列功能\n\n## 适用场景\n\n- 实时通知\n- 聊天室\n- 配置更新广播\n- 简单的消息推送\n\n## 替代方案\n\n对于需要可靠消息传递的场景，建议使用：\n- Redis Stream（5.0+）\n- 专业的消息队列（RabbitMQ、Kafka）",
+    "tags": [
+      "发布订阅",
+      "Pub/Sub",
+      "消息通信"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-013",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的单线程模型是如何工作的？为什么不用多线程？",
+    "answer": "## 核心概念\n\nRedis采用单线程模型处理命令，通过IO多路复用技术实现高并发。这种设计避免了多线程带来的复杂性和性能问题。\n\n## 单线程工作流程\n\n```\n1. 客户端连接\n2. IO多路复用监听事件\n3. 事件循环处理命令\n4. 执行命令并返回结果\n```\n\n## IO多路复用\n\nRedis使用epoll（Linux）/ kqueue（macOS）实现IO多路复用：\n\n```c\n// 伪代码\nwhile (true) {\n    // 等待事件\n    events = epoll_wait(epfd, events, max_events, timeout);\n    \n    for (event in events) {\n        if (event is readable) {\n            // 读取并执行命令\n            process_command(event.fd);\n        }\n    }\n}\n```\n\n## 为什么不用多线程\n\n### 1. 避免上下文切换\n- 多线程需要频繁切换上下文\n- 切换开销包括寄存器保存、缓存失效等\n\n### 2. 避免锁竞争\n- 单线程无需加锁\n- 避免死锁、活锁等问题\n- 简化代码逻辑\n\n### 3. 内存操作快\n- 命令执行瓶颈在内存，不在CPU\n- 单线程已足够快\n\n### 4. 网络IO是瓶颈\n- 网络延迟远大于命令执行时间\n- 多线程对网络IO帮助不大\n\n## 性能数据\n\n| 操作 | 单线程性能 |\n|------|-----------|\n| SET | 10万+ QPS |\n| GET | 10万+ QPS |\n| 简单计算 | 微秒级 |\n\n## 关键要点\n\n- 单线程避免了多线程的复杂性\n- IO多路复用实现高并发\n- 命令执行是内存操作，非常快\n- 网络IO是真正的瓶颈\n\n## 注意事项\n\n- 单线程不意味着不能利用多核\n- 可以通过多实例部署利用多核\n- 避免执行耗时命令（如KEYS）\n- 大Key会阻塞其他请求",
+    "tags": [
+      "单线程模型",
+      "IO多路复用",
+      "事件循环"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-014",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis 6.0的多线程是什么？与单线程有什么区别？",
+    "answer": "## 核心概念\n\nRedis 6.0引入了多线程IO，但命令执行仍然是单线程。多线程仅用于处理网络IO（读写数据），不涉及命令执行。\n\n## 架构变化\n\n### Redis 6.0之前\n```\n单线程：网络IO + 命令执行\n```\n\n### Redis 6.0之后\n```\n多线程：网络IO（读写）\n单线程：命令执行\n```\n\n## 工作原理\n\n```\n1. 主线程接收连接\n2. 将连接分配给IO线程\n3. IO线程并行读取请求数据\n4. 主线程串行执行命令\n5. IO线程并行写入响应数据\n```\n\n## 配置方法\n\n```conf\n# redis.conf\n\n# 开启多线程IO\nio-threads-do-reads yes\n\n# IO线程数（建议4-8个）\nio-threads 4\n```\n\n```redis\n# 运行时配置\nCONFIG SET io-threads-do-reads yes\nCONFIG SET io-threads 4\n```\n\n## 性能对比\n\n| 场景 | 单线程 | 多线程（4线程） |\n|------|--------|----------------|\n| GET | 10万 QPS | 18万 QPS |\n| SET | 10万 QPS | 17万 QPS |\n\n## 关键要点\n\n- **命令执行仍为单线程**：保证原子性\n- **网络IO多线程**：提高网络处理能力\n- **性能提升**：约40-80%（取决于场景）\n\n## 适用场景\n\n- 多核CPU服务器\n- 高并发网络IO\n- 命令执行较快的场景\n\n## 注意事项\n\n- 线程数不宜过多（建议4-8）\n- 单核性能不足时效果有限\n- 命令执行瓶颈仍然存在\n- 生产环境需要压测验证",
+    "tags": [
+      "Redis 6.0",
+      "多线程IO",
+      "性能优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-015",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis支持哪些数据类型？各自有什么特点？",
+    "answer": "## 核心概念\n\nRedis支持5种基本数据类型和3种特殊数据类型，每种类型都有其特定的应用场景。\n\n## 基本数据类型\n\n### 1. String（字符串）\n- 最基本的类型\n- 可以存储字符串、整数、浮点数\n- 最大512MB\n\n```redis\nSET key \"value\"\nGET key\nINCR counter\n```\n\n### 2. Hash（哈希）\n- 键值对集合\n- 适合存储对象\n- 节省内存（小数据时）\n\n```redis\nHSET user:1 name \"张三\" age 25\nHGET user:1 name\nHGETALL user:1\n```\n\n### 3. List（列表）\n- 有序的字符串列表\n- 支持头尾操作\n- 可作为队列或栈\n\n```redis\nLPUSH queue task1 task2\nRPOP queue\nLRANGE queue 0 -1\n```\n\n### 4. Set（集合）\n- 无序的字符串集合\n- 元素唯一\n- 支持交并差运算\n\n```redis\nSADD tags \"python\" \"redis\"\nSMEMBERS tags\nSINTER tags1 tags2\n```\n\n### 5. ZSet（有序集合）\n- 有序的字符串集合\n- 每个元素关联一个分数\n- 按分数排序\n\n```redis\nZADD rank 100 \"player1\" 90 \"player2\"\nZRANGE rank 0 -1 WITHSCORES\nZREVRANGE rank 0 9\n```\n\n## 特殊数据类型\n\n### Bitmap（位图）\n```redis\nSETBIT login:2023-01-01 1001 1\nGETBIT login:2023-01-01 1001\nBITCOUNT login:2023-01-01\n```\n\n### HyperLogLog（基数统计）\n```redis\nPFADD uv:2023-01-01 \"user1\" \"user2\"\nPFCOUNT uv:2023-01-01\n```\n\n### GeoSpatial（地理位置）\n```redis\nGEOADD locations 116.40 39.90 \"Beijing\"\nGEODIST locations \"Beijing\" \"Shanghai\" km\n```\n\n## 应用场景对比\n\n| 类型 | 典型场景 |\n|------|----------|\n| String | 缓存、计数器、分布式锁 |\n| Hash | 用户信息、商品详情 |\n| List | 消息队列、最新列表 |\n| Set | 标签、共同好友 |\n| ZSet | 排行榜、延迟队列 |\n\n## 关键要点\n\n- 选择合适的数据类型可以提高性能\n- 不同类型有不同的底层实现\n- 根据业务需求选择数据类型",
+    "tags": [
+      "数据类型",
+      "基本类型",
+      "特殊类型"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-016",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何使用Redis的字符串（String）类型？有哪些常用操作？",
+    "answer": "## 核心概念\n\nString是Redis最基本的数据类型，可以存储字符串、整数、浮点数等。它是二进制安全的，可以存储任何数据。\n\n## 基本操作\n\n### 设置和获取\n```redis\n# 设置值\nSET key value\nSET key value EX 3600  # 设置过期时间（秒）\nSET key value PX 3600000  # 设置过期时间（毫秒）\nSET key value NX  # 仅当key不存在时设置\nSET key value XX  # 仅当key存在时设置\n\n# 获取值\nGET key\n\n# 批量操作\nMSET key1 value1 key2 value2\nMGET key1 key2\n```\n\n### 数值操作\n```redis\n# 自增\nINCR counter\nINCRBY counter 10\nINCRBYFLOAT counter 1.5\n\n# 自减\nDECR counter\nDECRBY counter 5\n```\n\n### 字符串操作\n```redis\n# 追加\nAPPEND key \"world\"\n\n# 获取长度\nSTRLEN key\n\n# 截取\nGETRANGE key 0 4\n\n# 替换\nSETRANGE key 6 \"world\"\n```\n\n## 应用场景\n\n### 1. 缓存\n```redis\nSET user:1001 '{\"name\":\"张三\",\"age\":25}' EX 3600\nGET user:1001\n```\n\n### 2. 计数器\n```redis\nINCR article:1001:views\nGET article:1001:views\n```\n\n### 3. 分布式锁\n```redis\nSETNX lock:order:123 1\nEXPIRE lock:order:123 10\n\n# 或使用复合命令\nSET lock:order:123 1 NX EX 10\n```\n\n### 4. 限流\n```redis\nINCR rate:limit:ip:192.168.1.1\nEXPIRE rate:limit:ip:192.168.1.1 60\n```\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| SET O(1) | 设置值 |\n| GET O(1) | 获取值 |\n| INCR O(1) | 自增 |\n| MSET O(n) | 批量设置 |\n| APPEND O(1) | 追加字符串 |\n\n## 注意事项\n\n- String最大512MB\n- INCR是原子操作，适合计数器\n- 使用NX实现分布式锁\n- 合理设置过期时间",
+    "tags": [
+      "String",
+      "SET",
+      "INCR"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-017",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何使用Redis的哈希（Hash）类型？有哪些常用操作？",
+    "answer": "## 核心概念\n\nHash是键值对的集合，适合存储对象。每个Hash可以存储2^32-1个键值对。\n\n## 基本操作\n\n### 设置和获取\n```redis\n# 设置单个字段\nHSET user:1001 name \"张三\"\nHSET user:1001 age 25\n\n# 设置多个字段\nHMSET user:1001 name \"张三\" age 25 email \"zhangsan@example.com\"\n\n# 获取单个字段\nHGET user:1001 name\n\n# 获取多个字段\nHMGET user:1001 name age email\n\n# 获取所有字段和值\nHGETALL user:1001\n```\n\n### 字段操作\n```redis\n# 检查字段是否存在\nHEXISTS user:1001 name\n\n# 删除字段\nHDEL user:1001 email\n\n# 获取所有字段\nHKEYS user:1001\n\n# 获取所有值\nHVALS user:1001\n\n# 获取字段数量\nHLEN user:1001\n```\n\n### 数值操作\n```redis\n# 自增\nHINCRBY user:1001 age 1\nHINCRBYFLOAT user:1001 score 0.5\n```\n\n## 应用场景\n\n### 1. 存储用户信息\n```redis\nHMSET user:1001 \\\n  name \"张三\" \\\n  age 25 \\\n  email \"zhangsan@example.com\" \\\n  phone \"13800138000\"\n\nHGET user:1001 name\nHGETALL user:1001\n```\n\n### 2. 存储商品信息\n```redis\nHMSET product:2001 \\\n  name \"iPhone 14\" \\\n  price 6999 \\\n  stock 100 \\\n  category \"手机\"\n\nHINCRBY product:2001 stock -1\n```\n\n### 3. 存储配置\n```redis\nHMSET config:app \\\n  max_connections 1000 \\\n  timeout 30 \\\n  debug_mode false\n\nHGET config:app timeout\n```\n\n## 内存优化\n\n| 元素数量 | 编码方式 | 内存占用 |\n|----------|----------|----------|\n| < 128个 | ziplist | 更小 |\n| >= 128个 | hashtable | 更大 |\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| HSET O(1) | 设置字段 |\n| HGET O(1) | 获取字段 |\n| HMSET O(n) | 设置多个字段 |\n| HGETALL O(n) | 获取所有字段 |\n| HINCRBY O(1) | 字段自增 |\n\n## 注意事项\n\n- 小对象使用Hash比String更省内存\n- 避免使用HGETALL获取大Hash\n- 合理设计字段名\n- 可以使用HSCAN遍历大Hash",
+    "tags": [
+      "Hash",
+      "HSET",
+      "对象存储"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-018",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何使用Redis的列表（List）类型？有哪些常用操作？",
+    "answer": "## 核心概念\n\nList是有序的字符串列表，支持在头部和尾部插入元素。可以作为队列（FIFO）或栈（LIFO）使用。\n\n## 基本操作\n\n### 插入和弹出\n```redis\n# 左端插入\nLPUSH queue task1 task2 task3\n\n# 右端插入\nRPUSH queue task4 task5\n\n# 左端弹出\nLPOP queue\n\n# 右端弹出\nRPOP queue\n\n# 阻塞弹出\nBLPOP queue 30  # 等待30秒\nBRPOP queue 30\n```\n\n### 查询操作\n```redis\n# 获取范围\nLRANGE queue 0 -1  # 获取所有\nLRANGE queue 0 9   # 获取前10个\n\n# 获取长度\nLLEN queue\n\n# 获取指定索引\nLINDEX queue 0\n\n# 设置指定索引\nLSET queue 0 \"new_value\"\n```\n\n### 其他操作\n```redis\n# 裁剪\nLTRIM queue 0 99  # 只保留前100个\n\n# 插入\nLINSERT queue BEFORE \"task1\" \"new_task\"\nLINSERT queue AFTER \"task1\" \"new_task\"\n\n# 移除\nLREM queue 1 \"task1\"  # 移除1个\nLREM queue 0 \"task1\"  # 移除所有\n```\n\n## 应用场景\n\n### 1. 消息队列\n```redis\n# 生产者\nLPUSH queue:messages \"message1\"\n\n# 消费者\nBRPOP queue:messages 30\n```\n\n### 2. 最新列表\n```redis\n# 保存最新10篇文章\nLPUSH latest:articles \"article:1001\"\nLTRIM latest:articles 0 9\n\n# 获取最新文章\nLRANGE latest:articles 0 -1\n```\n\n### 3. 栈\n```redis\n# 后进先出\nLPUSH stack \"item1\"\nLPUSH stack \"item2\"\nLPOP stack  # 返回item2\n```\n\n## 底层实现\n\n| 元素数量 | 编码方式 |\n|----------|----------|\n| < 128个且每个<64字节 | ziplist |\n| 其他情况 | quicklist |\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| LPUSH O(1) | 左端插入 |\n| RPUSH O(1) | 右端插入 |\n| LPOP O(1) | 左端弹出 |\n| RPOP O(1) | 右端弹出 |\n| LRANGE O(n) | 获取范围 |\n| LINDEX O(n) | 获取索引 |\n\n## 注意事项\n\n- List有长度限制（2^32-1个元素）\n- 大List的LRANGE可能阻塞\n- 使用LTRIM限制List长度\n- 生产环境考虑使用Redis Stream替代",
+    "tags": [
+      "List",
+      "LPUSH",
+      "消息队列"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-019",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何使用Redis的集合（Set）类型？有哪些常用操作？",
+    "answer": "## 核心概念\n\nSet是无序的字符串集合，元素唯一。支持交集、并集、差集等集合运算。\n\n## 基本操作\n\n### 添加和删除\n```redis\n# 添加元素\nSADD tags \"python\" \"redis\" \"database\"\n\n# 删除元素\nSREM tags \"database\"\n\n# 随机删除\nSPOP tags\n```\n\n### 查询操作\n```redis\n# 获取所有元素\nSMEMBERS tags\n\n# 检查元素是否存在\nSISMEMBER tags \"python\"\n\n# 获取集合大小\nSCARD tags\n\n# 随机获取元素\nSRANDMEMBER tags 2  # 随机获取2个\n```\n\n### 集合运算\n```redis\n# 交集\nSINTER tags1 tags2\nSINTERSTORE result tags1 tags2  # 存储结果\n\n# 并集\nSUNION tags1 tags2\nSUNIONSTORE result tags1 tags2\n\n# 差集\nSDIFF tags1 tags2\nSDIFFSTORE result tags1 tags2\n```\n\n## 应用场景\n\n### 1. 标签系统\n```redis\n# 给文章添加标签\nSADD article:1001:tags \"python\" \"redis\" \"tutorial\"\n\n# 获取文章标签\nSMEMBERS article:1001:tags\n\n# 获取有共同标签的文章\nSINTER article:1001:tags article:1002:tags\n```\n\n### 2. 共同好友\n```redis\n# 用户的好友\nSADD user:1001:friends \"user:1002\" \"user:1003\" \"user:1004\"\nSADD user:1002:friends \"user:1001\" \"user:1003\" \"user:1005\"\n\n# 共同好友\nSINTER user:1001:friends user:1002:friends\n\n# 可能认识的人\nSDIFF user:1002:friends user:1001:friends\n```\n\n### 3. 抽奖系统\n```redis\n# 参与者\nSADD lottery:2023 \"user1\" \"user2\" \"user3\" \"user4\"\n\n# 随机抽取中奖者\nSRANDMEMBER lottery:2023 1\n\n# 或者抽取后移除（不可重复中奖）\nSPOP lottery:2023\n```\n\n### 4. 去重\n```redis\n# 每日活跃用户\nSADD active:2023-01-01 \"user1\" \"user2\" \"user3\"\n\n# 统计活跃用户数\nSCARD active:2023-01-01\n```\n\n## 底层实现\n\n| 元素类型 | 编码方式 |\n|----------|----------|\n| 整数且数量<128 | intset |\n| 其他 | hashtable |\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| SADD O(1) | 添加元素 |\n| SREM O(1) | 删除元素 |\n| SMEMBERS O(n) | 获取所有元素 |\n| SINTER O(n*m) | 交集运算 |\n| SUNION O(n) | 并集运算 |\n| SDIFF O(n) | 差集运算 |\n\n## 注意事项\n\n- 大Set的SMEMBERS可能阻塞\n- 使用SSCAN遍历大Set\n- 集合运算可能消耗较多CPU\n- 注意内存占用",
+    "tags": [
+      "Set",
+      "SADD",
+      "集合运算"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-020",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "如何使用Redis的有序集合（ZSet）类型？有哪些常用操作？",
+    "answer": "## 核心概念\n\nZSet（Sorted Set）是有序的字符串集合，每个元素关联一个分数（score），按分数排序。元素唯一，分数可以重复。\n\n## 基本操作\n\n### 添加和删除\n```redis\n# 添加元素\nZADD rank 100 \"player1\" 90 \"player2\" 85 \"player3\"\n\n# 删除元素\nZREM rank \"player3\"\n\n# 自增分数\nZINCRBY rank 5 \"player1\"\n```\n\n### 查询操作\n```redis\n# 按排名范围获取\nZRANGE rank 0 -1 WITHSCORES  # 从低到高\nZREVRANGE rank 0 -1 WITHSCORES  # 从高到低\n\n# 按分数范围获取\nZRANGEBYSCORE rank 80 100\nZREVRANGEBYSCORE rank 100 80\n\n# 获取排名\nZRANK rank \"player1\"  # 从低到高\nZREVRANK rank \"player1\"  # 从高到低\n\n# 获取分数\nZSCORE rank \"player1\"\n\n# 获取集合大小\nZCARD rank\n\n# 统计分数范围内的元素数\nZCOUNT rank 80 100\n```\n\n### 集合运算\n```redis\n# 并集\nZUNIONSTORE result 2 rank1 rank2\n\n# 交集\nZINTERSTORE result 2 rank1 rank2\n```\n\n## 应用场景\n\n### 1. 排行榜\n```redis\n# 更新玩家分数\nZADD game:rank 1500 \"player1\" 1450 \"player2\" 1600 \"player3\"\n\n# 获取排行榜前10\nZREVRANGE game:rank 0 9 WITHSCORES\n\n# 获取玩家排名\nZREVRANK game:rank \"player1\"\n\n# 获取玩家分数\nZSCORE game:rank \"player1\"\n```\n\n### 2. 延迟队列\n```redis\n# 添加延迟任务（score为执行时间戳）\nZADD delay:queue 1609459200 \"task1\"\nZADD delay:queue 1609459260 \"task2\"\n\n# 获取到期任务\nZRANGEBYSCORE delay:queue 0 1609459200\n\n# 删除已处理任务\nZREM delay:queue \"task1\"\n```\n\n### 3. 带权重的标签\n```redis\n# 按热度排序\nZADD hot:tags 1000 \"python\" 800 \"redis\" 600 \"database\"\n\n# 获取热门标签\nZREVRANGE hot:tags 0 9\n```\n\n## 底层实现\n\n| 元素数量 | 编码方式 |\n|----------|----------|\n| < 128个且每个<64字节 | ziplist |\n| 其他情况 | skiplist + hashtable |\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| ZADD O(logN) | 添加元素 |\n| ZREM O(logN) | 删除元素 |\n| ZSCORE O(1) | 获取分数 |\n| ZRANK O(logN) | 获取排名 |\n| ZRANGE O(logN+m) | 范围查询 |\n| ZRANGEBYSCORE O(logN+m) | 分数范围查询 |\n\n## 注意事项\n\n- 分数范围：-inf 到 +inf\n- 元素唯一，分数可以重复\n- 大ZSet使用ZRANGEBYSCORE而非ZRANGE\n- 使用ZSCAN遍历大ZSet",
+    "tags": [
+      "ZSet",
+      "ZADD",
+      "排行榜"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-021",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的Bitmap是什么？有哪些应用场景？",
+    "answer": "## 核心概念\n\nBitmap是基于String类型的位操作，可以对字符串的每一位进行操作。适合存储布尔值或状态信息，非常节省内存。\n\n## 基本操作\n\n```redis\n# 设置位\nSETBIT key offset value\n\n# 获取位\nGETBIT key offset\n\n# 统计位\nBITCOUNT key [start end]\n\n# 位运算\nBITOP AND dest key1 key2\nBITOP OR dest key1 key2\nBITOP XOR dest key1 key2\nBITOP NOT dest key\n```\n\n## 应用场景\n\n### 1. 用户签到\n```redis\n# 用户1001在2023年第1天签到\nSETBIT sign:1001:2023 0 1\n\n# 用户1001在2023年第31天签到\nSETBIT sign:1001:2023 30 1\n\n# 检查某天是否签到\nGETBIT sign:1001:2023 0\n\n# 统计签到天数\nBITCOUNT sign:1001:2023\n\n# 获取连续签到天数\nBITFIELD sign:1001:2023 GET u32 0\n```\n\n### 2. 在线用户统计\n```redis\n# 用户上线\nSETBIT online:2023-01-01 1001 1\nSETBIT online:2023-01-01 1002 1\n\n# 统计在线用户数\nBITCOUNT online:2023-01-01\n\n# 统计两天都在线的用户\nBITOP AND online:both online:2023-01-01 online:2023-01-02\nBITCOUNT online:both\n```\n\n### 3. 布隆过滤器（简单版）\n```redis\n# 添加元素\nSETBIT bloom:users 100 1\nSETBIT bloom:users 200 1\n\n# 检查元素是否存在\nGETBIT bloom:users 100\n```\n\n## 内存计算\n\n| 用户数 | 内存占用 |\n|--------|----------|\n| 1亿 | 12.5MB |\n| 10亿 | 125MB |\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| SETBIT O(1) | 设置位 |\n| GETBIT O(1) | 获取位 |\n| BITCOUNT O(N) | 统计1的个数 |\n| BITOP O(N) | 位运算 |\n\n## 注意事项\n\n- Bitmap适合大量布尔值场景\n- offset最大2^32-1\n- BITCOUNT可能较慢（大数据时）\n- 使用BITFIELD支持更复杂的操作",
+    "tags": [
+      "Bitmap",
+      "位操作",
+      "签到"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-022",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的HyperLogLog是什么？有哪些应用场景？",
+    "answer": "## 核心概念\n\nHyperLogLog是一种概率数据结构，用于估算集合的基数（不重复元素的数量）。它使用固定的12KB内存，可以估算2^64个不同元素的基数。\n\n## 基本操作\n\n```redis\n# 添加元素\nPFADD key element [element ...]\n\n# 估算基数\nPFCOUNT key [key ...]\n\n# 合并HyperLogLog\nPFMERGE destkey sourcekey [sourcekey ...]\n```\n\n## 应用场景\n\n### 1. UV统计\n```redis\n# 统计页面UV\nPFADD page:1001:uv:2023-01-01 \"user1\" \"user2\" \"user3\"\n\n# 获取UV\nPFCOUNT page:1001:uv:2023-01-01\n\n# 统计一周UV\nPFMERGE page:1001:uv:week \\\n  page:1001:uv:2023-01-01 \\\n  page:1001:uv:2023-01-02 \\\n  page:1001:uv:2023-01-03\n\nPFCOUNT page:1001:uv:week\n```\n\n### 2. 日活用户统计\n```redis\n# 统计每日活跃用户\nPFADD dau:2023-01-01 \"user1\" \"user2\" \"user3\"\nPFADD dau:2023-01-02 \"user2\" \"user3\" \"user4\"\n\n# 获取日活\nPFCOUNT dau:2023-01-01\n\n# 统计两天的活跃用户（去重）\nPFMERGE dau:2days dau:2023-01-01 dau:2023-01-02\nPFCOUNT dau:2days\n```\n\n## 与Set对比\n\n| 特性 | HyperLogLog | Set |\n|------|-------------|-----|\n| 内存占用 | 固定12KB | 随数据增长 |\n| 精度 | 0.81%误差 | 100%精确 |\n| 速度 | O(1) | O(N) |\n| 适用场景 | 大量数据估算 | 精确统计 |\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| PFADD O(1) | 添加元素 |\n| PFCOUNT O(1) | 估算基数 |\n| PFMERGE O(N) | 合并 |\n\n## 注意事项\n\n- HyperLogLog是概率性的，有0.81%的误差\n- 不存储元素本身，只存储基数\n- 适合大量数据的去重统计\n- 内存占用固定，不会随数据增长",
+    "tags": [
+      "HyperLogLog",
+      "基数统计",
+      "UV"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-023",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的GeoSpatial是什么？有哪些应用场景？",
+    "answer": "## 核心概念\n\nGeoSpatial是Redis 3.2引入的地理位置功能，支持存储、查询和计算地理位置信息。底层使用Sorted Set实现。\n\n## 基本操作\n\n### 添加和查询\n```redis\n# 添加地理位置\nGEOADD locations 116.40 39.90 \"Beijing\"\nGEOADD locations 121.47 31.23 \"Shanghai\"\nGEOADD locations 113.26 23.13 \"Guangzhou\"\n\n# 获取经纬度\nGEOPOS locations \"Beijing\"\n\n# 计算距离\nGEODIST locations \"Beijing\" \"Shanghai\" km\n\n# 根据范围查询\nGEORADIUS locations 116.40 39.90 500 km\nGEORADIUSBYMEMBER locations \"Beijing\" 500 km\n```\n\n### 高级查询\n```redis\n# 带距离和坐标的查询\nGEORADIUS locations 116.40 39.90 500 km WITHDIST WITHCOORD ASC\n\n# 获取geohash\nGEOHASH locations \"Beijing\"\n```\n\n## 应用场景\n\n### 1. 附近的人\n```redis\n# 用户位置\nGEOADD user:locations 116.40 39.90 \"user1\"\nGEOADD user:locations 116.41 39.91 \"user2\"\nGEOADD user:locations 116.39 39.89 \"user3\"\n\n# 查找附近5km内的用户\nGEORADIUS user:locations 116.40 39.90 5 km\n```\n\n### 2. 附近的店铺\n```redis\n# 店铺位置\nGEOADD shops:food 116.40 39.90 \"shop1\"\nGEOADD shops:food 116.41 39.91 \"shop2\"\n\n# 查找附近3km的店铺\nGEORADIUS shops:food 116.40 39.90 3 km WITHDIST\n```\n\n### 3. 打车软件\n```redis\n# 司机位置\nGEOADD drivers:available 116.40 39.90 \"driver1\"\nGEOADD drivers:available 116.41 39.91 \"driver2\"\n\n# 查找附近司机\nGEORADIUS drivers:available 116.40 39.90 5 km\n```\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| GEOADD O(logN) | 添加位置 |\n| GEOPOS O(logN) | 获取坐标 |\n| GEODIST O(1) | 计算距离 |\n| GEORADIUS O(N+logN) | 范围查询 |\n\n## 注意事项\n\n- 经度范围：-180到180\n- 纬度范围：-85.05112878到85.05112878\n- 距离单位：m、km、mi、ft\n- 底层使用Sorted Set，支持ZREM等命令",
+    "tags": [
+      "GeoSpatial",
+      "地理位置",
+      "附近的人"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-024",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis Stream是什么？有哪些应用场景？",
+    "answer": "## 核心概念\n\nRedis Stream是Redis 5.0引入的消息队列数据结构，支持消息持久化、消费者组、消息确认等特性。\n\n## 基本操作\n\n### 添加和读取消息\n```redis\n# 添加消息\nXADD mystream * name \"张三\" action \"login\"\n# 返回消息ID：1609459200000-0\n\n# 读取消息\nXREAD COUNT 10 STREAMS mystream 0\n\n# 从指定ID读取\nXREAD COUNT 10 STREAMS mystream 1609459200000-0\n\n# 阻塞读取\nXREAD BLOCK 5000 STREAMS mystream $\n```\n\n### 消费者组\n```redis\n# 创建消费者组\nXGROUP CREATE mystream mygroup $ MKSTREAM\n\n# 消费者读取\nXREADGROUP GROUP mygroup consumer1 COUNT 10 STREAMS mystream >\n\n# 确认消息\nXACK mystream mygroup 1609459200000-0\n```\n\n### 流管理\n```redis\n# 获取流信息\nXINFO STREAM mystream\n\n# 获取消费者组信息\nXINFO GROUPS mystream\n\n# 获取消费者信息\nXINFO CONSUMERS mystream mygroup\n\n# 修剪流\nXTRIM mystream MAXLEN 1000\nXTRIM mystream MINID 1609459200000-0\n```\n\n## 应用场景\n\n### 1. 消息队列\n```redis\n# 生产者\nXADD orders * order_id \"1001\" product \"iPhone\" quantity 1\n\n# 消费者\nXREADGROUP GROUP order_group worker1 COUNT 1 STREAMS orders >\n\n# 处理完成后确认\nXACK orders order_group 1609459200000-0\n```\n\n### 2. 事件日志\n```redis\n# 记录事件\nXADD events:login * user_id \"1001\" ip \"192.168.1.1\" time \"2023-01-01\"\n\n# 查询事件\nXRANGE events:login 1609459200000 1609459260000\n```\n\n### 3. 实时数据管道\n```redis\n# 数据源\nXADD metrics:cpu * server \"web1\" value \"85.5\" timestamp \"1609459200\"\n\n# 消费者处理\nXREADGROUP GROUP metric_group processor1 COUNT 100 STREAMS metrics:cpu >\n```\n\n## 与List对比\n\n| 特性 | Stream | List |\n|------|--------|------|\n| 持久化 | 支持 | 不支持 |\n| 消费者组 | 支持 | 不支持 |\n| 消息确认 | 支持 | 不支持 |\n| 消息回溯 | 支持 | 不支持 |\n\n## 关键要点\n\n| 命令 | 说明 |\n|------|------|\n| XADD | 添加消息 |\n| XREAD | 读取消息 |\n| XREADGROUP | 消费者组读取 |\n| XACK | 确认消息 |\n| XGROUP | 管理消费者组 |\n| XRANGE | 范围查询 |\n\n## 注意事项\n\n- Stream消息会持久化\n- 消费者组保证消息只被消费一次\n- 使用XACK确认消息，否则会被重复消费\n- 使用XTRIM控制流大小",
+    "tags": [
+      "Stream",
+      "消息队列",
+      "消费者组"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-025",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis的info命令有哪些常用选项？如何查看Redis状态？",
+    "answer": "## 核心概念\n\nRedis的info命令用于查看服务器的各种信息和统计数据，是监控和调试的重要工具。\n\n## 常用选项\n\n```redis\n# 查看所有信息\nINFO\n\n# 查看服务器信息\nINFO server\n\n# 查看客户端信息\nINFO clients\n\n# 查看内存信息\nINFO memory\n\n# 查看持久化信息\nINFO persistence\n\n# 查看统计信息\nINFO stats\n\n# 查看主从复制信息\nINFO replication\n\n# 查看CPU信息\nINFO cpu\n\n# 查看集群信息\nINFO cluster\n\n# 查看键空间信息\nINFO keyspace\n```\n\n## 重要指标\n\n### 服务器信息\n```\nredis_version:7.0.0\nredis_mode:standalone\nos:Linux 5.4.0-100-generic\nuptime_in_seconds:86400\n```\n\n### 内存信息\n```\nused_memory:1073741824\nused_memory_human:1.00G\nmem_fragmentation_ratio:1.5\nmem_allocator:jemalloc-5.2.1\n```\n\n### 统计信息\n```\ntotal_connections_received:1000\ntotal_commands_processed:5000000\ninstantaneous_ops_per_sec:10000\nkeyspace_hits:4500000\nkeyspace_misses:500000\n```\n\n### 键空间信息\n```\ndb0:keys=1000000,expires=500000,avg_ttl=3600000\n```\n\n## 监控命令\n\n```redis\n# 实时监控命令\nMONITOR\n\n# 查看慢查询\nSLOWLOG GET 10\nSLOWLOG LEN\nSLOWLOG RESET\n\n# 查看客户端列表\nCLIENT LIST\n\n# 查看当前数据库键数\nDBSIZE\n```\n\n## 关键要点\n\n| 指标 | 说明 |\n|------|------|\n| used_memory | 已使用内存 |\n| mem_fragmentation_ratio | 内存碎片率 |\n| instantaneous_ops_per_sec | 每秒操作数 |\n| keyspace_hits | 命中次数 |\n| keyspace_misses | 未命中次数 |\n\n## 注意事项\n\n- 定期监控内存使用\n- 关注内存碎片率（>1.5需要关注）\n- 监控命中率（<90%需要优化）\n- 使用SLOWLOG分析慢查询",
+    "tags": [
+      "INFO",
+      "监控",
+      "状态查看"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-026",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的慢查询日志如何配置和使用？",
+    "answer": "## 核心概念\n\nRedis的慢查询日志记录执行时间超过指定阈值的命令，用于性能分析和问题排查。\n\n## 配置方法\n\n```conf\n# redis.conf\n\n# 慢查询阈值（微秒）\nslowlog-log-slower-than 10000  # 10ms\n\n# 慢查询日志最大长度\nslowlog-max-len 128\n```\n\n```redis\n# 运行时配置\nCONFIG SET slowlog-log-slower-than 10000\nCONFIG SET slowlog-max-len 128\n```\n\n## 使用命令\n\n```redis\n# 获取慢查询日志\nSLOWLOG GET 10\n\n# 获取慢查询日志长度\nSLOWLOG LEN\n\n# 清空慢查询日志\nSLOWLOG RESET\n```\n\n## 日志格式\n\n```\n1) 1) (integer) 1  # 日志ID\n   2) (integer) 1609459200  # 时间戳\n   3) (integer) 15000  # 执行时间（微秒）\n   4) 1) \"KEYS\"  # 命令\n      2) \"*\"\n   5) \"127.0.0.1:12345\"  # 客户端地址\n   6) \"\"  # 客户端名称\n```\n\n## 分析慢查询\n\n### 常见慢命令\n- KEYS：O(n)复杂度，生产禁用\n- SMEMBERS：O(n)复杂度\n- HGETALL：O(n)复杂度\n- SORT：O(n+logn)复杂度\n- 大Key操作\n\n### 优化建议\n```redis\n# 使用SCAN替代KEYS\nSCAN 0 MATCH user:* COUNT 100\n\n# 使用HSCAN替代HGETALL\nHSCAN user:1001 0 MATCH * COUNT 10\n\n# 使用SSCAN替代SMEMBERS\nSSCAN tags 0 MATCH * COUNT 10\n```\n\n## 关键要点\n\n| 配置 | 说明 |\n|------|------|\n| slowlog-log-slower-than | 慢查询阈值（微秒） |\n| slowlog-max-len | 日志最大长度 |\n\n## 最佳实践\n\n- 生产环境设置10ms阈值\n- 定期分析慢查询日志\n- 使用SCAN替代KEYS\n- 避免大Key操作\n- 使用Pipeline减少网络往返\n\n## 注意事项\n\n- 慢查询日志存储在内存中\n- 重启后日志会丢失\n- 日志过多会影响性能\n- 使用SLOWLOG RESET定期清理",
+    "tags": [
+      "慢查询",
+      "性能分析",
+      "SLOWLOG"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-027",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis的安全配置有哪些？如何保护Redis？",
+    "answer": "## 核心概念\n\nRedis的安全配置包括密码认证、网络绑定、命令重命名等，用于防止未授权访问和恶意操作。\n\n## 安全配置\n\n### 1. 密码认证\n```conf\n# redis.conf\nrequirepass your_strong_password\n```\n\n```redis\n# 运行时设置\nCONFIG SET requirepass \"your_strong_password\"\n\n# 客户端认证\nAUTH your_strong_password\n```\n\n### 2. 网络绑定\n```conf\n# redis.conf\n\n# 绑定特定IP\nbind 127.0.0.1 192.168.1.100\n\n# 保护模式（无密码时只允许本地连接）\nprotected-mode yes\n\n# 修改端口\nport 6380\n```\n\n### 3. 命令重命名/禁用\n```conf\n# redis.conf\n\n# 重命名危险命令\nrename-command FLUSHDB \"\"\nrename-command FLUSHALL \"\"\nrename-command KEYS \"\"\nrename-command CONFIG \"CONFIG_b92d1a3c\"\n```\n\n### 4. TLS/SSL加密\n```conf\n# redis.conf\ntls-port 6379\ntls-cert-file /path/to/redis.crt\ntls-key-file /path/to/redis.key\ntls-ca-cert-file /path/to/ca.crt\n```\n\n## 访问控制（Redis 6.0+）\n\n```redis\n# 创建用户\nACL SETUSER alice on >password ~* &* +@all\n\n# 限制用户权限\nACL SETUSER bob on >password ~user:* &* +get +set\n\n# 查看用户\nACL LIST\nACL GETUSER alice\n```\n\n## 安全检查清单\n\n| 检查项 | 配置 |\n|--------|------|\n| 密码认证 | requirepass |\n| 网络绑定 | bind |\n| 保护模式 | protected-mode yes |\n| 危险命令 | rename-command |\n| TLS加密 | tls-port |\n| 访问控制 | ACL |\n\n## 最佳实践\n\n- 必须设置强密码\n- 只绑定必要的IP\n- 禁用或重命名危险命令\n- 生产环境使用TLS加密\n- 使用ACL进行细粒度权限控制\n- 定期更新密码\n\n## 注意事项\n\n- 不要将Redis暴露在公网\n- 使用防火墙限制访问\n- 监控异常访问\n- 定期审计用户权限",
+    "tags": [
+      "安全配置",
+      "密码认证",
+      "ACL"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-028",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的内存优化有哪些技巧？",
+    "answer": "## 核心概念\n\nRedis的内存优化涉及数据结构选择、编码优化、过期策略等多个方面。\n\n## 优化技巧\n\n### 1. 选择合适的数据结构\n```redis\n# 使用Hash代替多个String\n# 不推荐\nSET user:1001:name \"张三\"\nSET user:1001:age 25\nSET user:1001:email \"zhangsan@example.com\"\n\n# 推荐\nHMSET user:1001 name \"张三\" age 25 email \"zhangsan@example.com\"\n```\n\n### 2. 使用紧凑的数据结构\n```redis\n# 使用ziplist编码的Hash\nhash-max-ziplist-entries 128\nhash-max-ziplist-value 64\n\n# 使用ziplist编码的List\nlist-max-ziplist-size -2\n\n# 使用intset编码的Set\nset-max-intset-entries 512\n\n# 使用ziplist编码的ZSet\nzset-max-ziplist-entries 128\nzset-max-ziplist-value 64\n```\n\n### 3. 压缩列表优化\n```redis\n# 配置压缩列表\nlist-compress-depth 0\n```\n\n### 4. 使用整数集合\n```redis\n# 当Set只包含整数且数量<512时，使用intset\nSADD myset 1 2 3 4 5\n```\n\n### 5. 共享整数对象池\n```redis\n# Redis预分配0-9999的整数对象\n# 使用这些整数时不额外分配内存\n```\n\n## 内存分析工具\n\n```redis\n# 查看内存使用\nINFO memory\n\n# 分析键的内存使用\nMEMORY USAGE key\n\n# 内存统计\nMEMORY STATS\n\n# 内存碎片整理\nCONFIG SET activedefrag yes\n```\n\n## 关键要点\n\n| 优化方式 | 效果 |\n|----------|------|\n| 合理数据结构 | 减少对象数量 |\n| 紧凑编码 | 减少内存占用 |\n| 整数共享池 | 减少整数对象内存 |\n| 内存碎片整理 | 减少碎片 |\n\n## 最佳实践\n\n- 使用Hash存储对象\n- 合理设置编码阈值\n- 开启内存碎片整理\n- 定期分析内存使用\n- 设置maxmemory防止OOM\n\n## 注意事项\n\n- 过度优化可能影响性能\n- 监控内存碎片率\n- 使用UNLINK异步删除大Key\n- 考虑使用jemalloc内存分配器",
+    "tags": [
+      "内存优化",
+      "数据结构",
+      "编码"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-029",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的连接池如何配置和使用？",
+    "answer": "## 核心概念\n\nRedis连接池用于管理Redis连接，避免频繁创建和销毁连接，提高性能和资源利用率。\n\n## 连接池配置\n\n### Python (redis-py)\n```python\nimport redis\n\n# 创建连接池\npool = redis.ConnectionPool(\n    host='localhost',\n    port=6379,\n    db=0,\n    password='your_password',\n    max_connections=100,\n    socket_timeout=5,\n    socket_connect_timeout=5,\n    decode_responses=True\n)\n\n# 创建Redis客户端\nr = redis.Redis(connection_pool=pool)\n\n# 使用连接\nr.set('key', 'value')\nvalue = r.get('key')\n```\n\n### Java (Jedis)\n```java\nJedisPoolConfig config = new JedisPoolConfig();\nconfig.setMaxTotal(100);\nconfig.setMaxIdle(50);\nconfig.setMinIdle(10);\nconfig.setMaxWaitMillis(3000);\nconfig.setTestOnBorrow(true);\nconfig.setTestOnReturn(true);\n\nJedisPool pool = new JedisPool(config, \"localhost\", 6379);\n\n// 使用连接\ntry (Jedis jedis = pool.getResource()) {\n    jedis.set(\"key\", \"value\");\n    String value = jedis.get(\"key\");\n}\n```\n\n### Node.js (ioredis)\n```javascript\nconst Redis = require('ioredis');\n\nconst cluster = new Redis.Cluster([\n  { port: 6379, host: 'localhost' }\n], {\n  redisOptions: {\n    password: 'your_password',\n    db: 0\n  },\n  scaleReads: 'slave',\n  maxRedirections: 16\n});\n```\n\n## 连接池参数\n\n| 参数 | 说明 | 推荐值 |\n|------|------|--------|\n| max_connections | 最大连接数 | 100-200 |\n| min_idle | 最小空闲连接 | 10-20 |\n| max_idle | 最大空闲连接 | 50-100 |\n| socket_timeout | socket超时 | 5s |\n| socket_connect_timeout | 连接超时 | 5s |\n| test_on_borrow | 借用时测试 | true |\n\n## 关键要点\n\n- 连接池避免频繁创建连接\n- 合理设置连接池大小\n- 使用完连接及时归还\n- 监控连接池使用情况\n\n## 最佳实践\n\n```python\n# 使用with语句自动管理连接\nwith r.pipeline() as pipe:\n    pipe.set('key1', 'value1')\n    pipe.set('key2', 'value2')\n    pipe.execute()\n```\n\n## 注意事项\n\n- 连接池大小不是越大越好\n- 监控连接池使用率\n- 设置合理的超时时间\n- 使用完连接及时关闭\n- 生产环境开启连接测试",
+    "tags": [
+      "连接池",
+      "性能优化",
+      "资源管理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-030",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的监控工具有哪些？如何选择？",
+    "answer": "## 核心概念\n\nRedis监控工具用于实时查看Redis的运行状态、性能指标和健康状况。\n\n## 常用监控工具\n\n### 1. redis-cli\n```redis\n# 实时监控\nredis-cli monitor\n\n# 查看慢查询\nredis-cli slowlog get 10\n\n# 查看客户端\nredis-cli client list\n\n# 查看内存\nredis-cli info memory\n```\n\n### 2. Redis Insight\n- 官方可视化工具\n- 支持键浏览、命令执行\n- 性能分析和监控\n\n### 3. Prometheus + Grafana\n```yaml\n# prometheus.yml\nscrape_configs:\n  - job_name: 'redis'\n    static_configs:\n      - targets: ['localhost:9121']\n```\n\n### 4. redis-stat\n```bash\n# 安装\ngem install redis-stat\n\n# 使用\nredis-stat localhost:6379\n```\n\n### 5. Redis Live\n```bash\n# 安装\npip install redis-live\n\n# 启动\nredis-live --server localhost:6379\n```\n\n## 关键指标\n\n| 指标 | 说明 | 告警阈值 |\n|------|------|----------|\n| used_memory | 已使用内存 | >80% maxmemory |\n| mem_fragmentation_ratio | 内存碎片率 | >1.5 |\n| instantaneous_ops_per_sec | 每秒操作数 | 根据业务 |\n| connected_clients | 连接数 | >maxclients*0.8 |\n| keyspace_hits | 命中次数 | - |\n| keyspace_misses | 未命中次数 | 命中率<90% |\n\n## 监控方案选择\n\n| 工具 | 优点 | 缺点 |\n|------|------|------|\n| redis-cli | 简单直接 | 功能有限 |\n| Redis Insight | 功能强大 | 需要安装 |\n| Prometheus | 可扩展 | 配置复杂 |\n| redis-stat | 轻量级 | 功能简单 |\n\n## 最佳实践\n\n- 生产环境使用Prometheus + Grafana\n- 配置告警规则\n- 定期检查慢查询\n- 监控内存使用\n- 监控连接数\n\n## 注意事项\n\n- 监控工具本身也会消耗资源\n- 避免过于频繁的监控请求\n- 合理设置告警阈值\n- 定期备份监控数据",
+    "tags": [
+      "监控工具",
+      "Prometheus",
+      "Grafana"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-031",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis的客户端有哪些？如何选择？",
+    "answer": "## 核心概念\n\nRedis支持多种编程语言的客户端，选择合适的客户端可以提高开发效率和性能。\n\n## 常用客户端\n\n### Python\n```python\n# redis-py\nimport redis\nr = redis.Redis(host='localhost', port=6379, db=0)\nr.set('key', 'value')\nprint(r.get('key'))\n```\n\n### Java\n```java\n// Jedis\nJedis jedis = new Jedis(\"localhost\", 6379);\njedis.set(\"key\", \"value\");\nSystem.out.println(jedis.get(\"key\"));\n\n// Lettuce\nRedisClient client = RedisClient.create(\"redis://localhost\");\nStatefulRedisConnection<String, String> connection = client.connect();\nRedisCommands<String, String> commands = connection.sync();\ncommands.set(\"key\", \"value\");\n```\n\n### Node.js\n```javascript\n// ioredis\nconst Redis = require('ioredis');\nconst redis = new Redis();\nredis.set('key', 'value');\nredis.get('key').then(console.log);\n```\n\n### Go\n```go\n// go-redis\nrdb := redis.NewClient(&redis.Options{\n    Addr: \"localhost:6379\",\n    Password: \"\",\n    DB: 0,\n})\nrdb.Set(ctx, \"key\", \"value\", 0)\nval, err := rdb.Get(ctx, \"key\").Result()\n```\n\n## 客户端对比\n\n| 客户端 | 语言 | 特点 |\n|--------|------|------|\n| redis-py | Python | 简单易用 |\n| Jedis | Java | 同步阻塞 |\n| Lettuce | Java | 异步非阻塞 |\n| ioredis | Node.js | 功能强大 |\n| go-redis | Go | 高性能 |\n\n## 选择建议\n\n| 场景 | 推荐客户端 |\n|------|------------|\n| Python项目 | redis-py |\n| Java项目 | Lettuce（推荐）或 Jedis |\n| Node.js项目 | ioredis |\n| Go项目 | go-redis |\n\n## 关键要点\n\n- 选择活跃维护的客户端\n- 考虑连接池支持\n- 考虑集群支持\n- 考虑性能和稳定性\n\n## 注意事项\n\n- 使用连接池管理连接\n- 设置合理的超时时间\n- 处理连接异常\n- 定期更新客户端版本",
+    "tags": [
+      "客户端",
+      "语言支持",
+      "SDK"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-032",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的MULTI/EXEC和Lua脚本有什么区别？",
+    "answer": "## 核心概念\n\nRedis的MULTI/EXEC和Lua脚本都可以实现原子操作，但它们在实现方式、功能和使用场景上有显著差异。\n\n## 对比分析\n\n### MULTI/EXEC\n```redis\nMULTI\nSET key1 value1\nSET key2 value2\nEXEC\n```\n\n**特点**：\n- 命令入队，最后统一执行\n- 不支持条件判断\n- 不支持变量\n- 错误处理有限\n\n### Lua脚本\n```redis\nEVAL \"\n  local val = redis.call('GET', KEYS[1])\n  if val == ARGV[1] then\n    redis.call('SET', KEYS[1], ARGV[2])\n    return 1\n  end\n  return 0\n\" 1 mykey oldval newval\n```\n\n**特点**：\n- 支持条件判断和循环\n- 支持变量\n- 更强大的错误处理\n- 可以缓存脚本\n\n## 功能对比\n\n| 特性 | MULTI/EXEC | Lua脚本 |\n|------|------------|----------|\n| 原子性 | 是 | 是 |\n| 条件判断 | 不支持 | 支持 |\n| 循环 | 不支持 | 支持 |\n| 变量 | 不支持 | 支持 |\n| 错误处理 | 有限 | 强大 |\n| 性能 | 一般 | 更好 |\n| 复杂度 | 简单 | 复杂 |\n\n## 使用场景\n\n### MULTI/EXEC适用场景\n- 简单的批量操作\n- 不需要条件判断\n- 快速实现\n\n```redis\n# 批量更新\nMULTI\nSET user:1:name \"张三\"\nSET user:1:age 25\nSET user:1:email \"zhangsan@example.com\"\nEXEC\n```\n\n### Lua脚本适用场景\n- 需要条件判断\n- 需要复杂逻辑\n- 需要高性能\n\n```redis\n# 分布式锁\nEVAL \"\n  if redis.call('SET', KEYS[1], ARGV[1], 'NX', 'PX', ARGV[2]) then\n    return 1\n  end\n  return 0\n\" 1 lock:order:123 1 10000\n```\n\n## 关键要点\n\n- MULTI/EXEC适合简单场景\n- Lua脚本适合复杂场景\n- Lua脚本性能更好（减少网络往返）\n- Lua脚本可以缓存（EVALSHA）\n\n## 最佳实践\n\n- 简单场景使用MULTI/EXEC\n- 复杂场景使用Lua脚本\n- 生产环境使用EVALSHA\n- 避免编写耗时的Lua脚本\n\n## 注意事项\n\n- 两者都不支持回滚\n- MULTI/EXEC中的命令在EXEC时才执行\n- Lua脚本执行期间会阻塞其他命令\n- 合理设计脚本逻辑",
+    "tags": [
+      "事务",
+      "Lua脚本",
+      "原子操作"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-033",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的WATCH命令是什么？如何实现乐观锁？",
+    "answer": "## 核心概念\n\nRedis的WATCH命令用于实现乐观锁，监视一个或多个键，如果在事务执行前这些键被修改，事务将被打断。\n\n## 工作原理\n\n```\n1. WATCH key\n2. 读取key的值\n3. 计算新值\n4. MULTI\n5. 执行命令\n6. EXEC\n\n如果在WATCH后、EXEC前key被修改，EXEC返回nil\n```\n\n## 命令示例\n\n### 基本用法\n```redis\n# 监视键\nWATCH account:1001\n\n# 读取值\nGET account:1001\n\n# 事务\nMULTI\nSET account:1001 900\nEXEC\n\n# 如果account:1001在WATCH后被修改，EXEC返回nil\n```\n\n### 乐观锁实现\n```python\nimport redis\n\ndef transfer(r, from_account, to_account, amount):\n    while True:\n        try:\n            # 监视账户\n            r.watch(from_account, to_account)\n            \n            # 读取余额\n            from_balance = int(r.get(from_account) or 0)\n            to_balance = int(r.get(to_account) or 0)\n            \n            # 检查余额\n            if from_balance < amount:\n                r.unwatch()\n                return False\n            \n            # 事务\n            pipe = r.pipeline()\n            pipe.set(from_account, from_balance - amount)\n            pipe.set(to_account, to_balance + amount)\n            pipe.execute()\n            \n            return True\n        except redis.WatchError:\n            # 键被修改，重试\n            continue\n```\n\n## 与数据库乐观锁对比\n\n| 特性 | Redis WATCH | 数据库乐观锁 |\n|------|-------------|--------------|\n| 实现方式 | WATCH + MULTI/EXEC | WHERE version = old_version |\n| 冲突处理 | 重试 | 重试 |\n| 性能 | 高 | 一般 |\n| 复杂度 | 简单 | 复杂 |\n\n## 关键要点\n\n- WATCH实现乐观锁\n- 键被修改时事务失败\n- 需要重试机制\n- 适合读多写少场景\n\n## 最佳实践\n\n```python\n# 带重试的乐观锁\ndef optimistic_lock(r, key, max_retries=3):\n    for i in range(max_retries):\n        try:\n            r.watch(key)\n            # 业务逻辑\n            pipe = r.pipeline()\n            pipe.set(key, \"new_value\")\n            pipe.execute()\n            return True\n        except redis.WatchError:\n            if i == max_retries - 1:\n                return False\n            continue\n```\n\n## 注意事项\n\n- WATCH只在当前连接有效\n- UNWATCH取消所有监视\n- EXEC后自动取消监视\n- 高并发时可能频繁重试\n- 考虑使用Lua脚本替代",
+    "tags": [
+      "乐观锁",
+      "WATCH",
+      "并发控制"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-034",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的OBJECT命令有哪些用途？",
+    "answer": "## 核心概念\n\nRedis的OBJECT命令用于查看键的内部信息，包括编码方式、引用计数、空闲时间等。\n\n## 命令用法\n\n### 1. 查看编码方式\n```redis\n# 查看键的编码\nOBJECT ENCODING mykey\n\n# 示例\nSET mystring \"hello\"\nOBJECT ENCODING mystring  # 返回 \"embstr\" 或 \"raw\"\n\nHSET myhash field \"value\"\nOBJECT ENCODING myhash  # 返回 \"ziplist\" 或 \"hashtable\"\n```\n\n### 2. 查看引用计数\n```redis\n# 查看引用计数\nOBJECT REFCOUNT mykey\n```\n\n### 3. 查看空闲时间\n```redis\n# 查看空闲时间（10秒为单位）\nOBJECT IDLETIME mykey\n```\n\n### 4. 查看访问频率（LFU）\n```redis\n# 查看访问频率\nOBJECT FREQ mykey\n```\n\n### 5. 帮助信息\n```redis\n# 查看OBJECT命令帮助\nOBJECT HELP\n```\n\n## 编码类型\n\n| 数据类型 | 编码方式 | 条件 |\n|----------|----------|------|\n| String | int | 整数值 |\n| String | embstr | <=44字节字符串 |\n| String | raw | >44字节字符串 |\n| Hash | ziplist | 元素<128且值<64字节 |\n| Hash | hashtable | 其他情况 |\n| List | ziplist | 元素<128且值<64字节 |\n| List | quicklist | 其他情况 |\n| Set | intset | 整数且元素<512 |\n| Set | hashtable | 其他情况 |\n| ZSet | ziplist | 元素<128且值<64字节 |\n| ZSet | skiplist | 其他情况 |\n\n## 应用场景\n\n### 1. 内存优化\n```redis\n# 检查键的编码\nOBJECT ENCODING mykey\n\n# 如果是hashtable，考虑优化\n# 可以通过调整阈值使用ziplist\n```\n\n### 2. 性能分析\n```redis\n# 查看键的空闲时间\nOBJECT IDLETIME mykey\n\n# 结合内存淘汰策略\n# allkeys-lru会优先淘汰空闲时间长的键\n```\n\n### 3. 调试\n```redis\n# 查看引用计数\nOBJECT REFCOUNT mykey\n\n# 正常情况下应该为1\n```\n\n## 关键要点\n\n| 命令 | 说明 |\n|------|------|\n| OBJECT ENCODING | 查看编码 |\n| OBJECT REFCOUNT | 查看引用计数 |\n| OBJECT IDLETIME | 查看空闲时间 |\n| OBJECT FREQ | 查看访问频率 |\n\n## 最佳实践\n\n- 使用OBJECT ENCODING检查编码\n- 优化编码方式减少内存\n- 监控空闲时间辅助淘汰决策\n- 使用OBJECT FREQ分析访问模式\n\n## 注意事项\n\n- OBJECT命令是调试工具，不要频繁使用\n- 编码转换是自动的\n- 可以通过配置调整编码阈值\n- 引用计数主要用于内部管理",
+    "tags": [
+      "OBJECT",
+      "编码",
+      "调试"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-035",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis的CONFIG命令有哪些常用操作？",
+    "answer": "## 核心概念\n\nRedis的CONFIG命令用于运行时查看和修改Redis配置，无需重启服务。\n\n## 常用操作\n\n### 1. 获取配置\n```redis\n# 获取单个配置\nCONFIG GET maxmemory\nCONFIG GET maxmemory-policy\n\n# 获取所有配置\nCONFIG GET *\n\n# 使用模式匹配\nCONFIG GET max*\n```\n\n### 2. 设置配置\n```redis\n# 设置单个配置\nCONFIG SET maxmemory 4gb\nCONFIG SET maxmemory-policy allkeys-lru\n\n# 设置多个配置\nCONFIG SET maxmemory 4gb maxmemory-policy allkeys-lru\n```\n\n### 3. 重写配置文件\n```redis\n# 将当前配置写入配置文件\nCONFIG REWRITE\n```\n\n### 4. 重置统计\n```redis\n# 重置统计信息\nCONFIG RESETSTAT\n```\n\n## 常用配置项\n\n### 内存配置\n```redis\n# 最大内存\nCONFIG SET maxmemory 4gb\n\n# 内存淘汰策略\nCONFIG SET maxmemory-policy allkeys-lru\n\n# 内存碎片整理\nCONFIG SET activedefrag yes\n```\n\n### 持久化配置\n```redis\n# RDB保存条件\nCONFIG SET save \"900 1 300 10 60 10000\"\n\n# AOF配置\nCONFIG SET appendonly yes\nCONFIG SET appendfsync everysec\n```\n\n### 网络配置\n```redis\n# 超时时间\nCONFIG SET timeout 300\n\n# 最大连接数\nCONFIG SET maxclients 10000\n\n# TCP backlog\nCONFIG SET tcp-backlog 511\n```\n\n### 慢查询配置\n```redis\n# 慢查询阈值\nCONFIG SET slowlog-log-slower-than 10000\n\n# 慢查询日志长度\nCONFIG SET slowlog-max-len 128\n```\n\n## 配置分类\n\n| 分类 | 常用配置 |\n|------|----------|\n| 内存 | maxmemory, maxmemory-policy |\n| 持久化 | save, appendonly, appendfsync |\n| 网络 | timeout, maxclients |\n| 安全 | requirepass, bind |\n| 慢查询 | slowlog-log-slower-than |\n\n## 关键要点\n\n- CONFIG SET立即生效\n- CONFIG REWRITE持久化配置\n- 部分配置需要重启生效\n- 使用CONFIG GET *查看所有配置\n\n## 最佳实践\n\n- 使用CONFIG SET调整配置\n- 使用CONFIG REWRITE保存配置\n- 记录配置变更\n- 测试环境验证配置\n\n## 注意事项\n\n- 某些配置需要重启才能生效\n- CONFIG命令可能被禁用（安全考虑）\n- 生产环境谨慎修改配置\n- 备份原始配置文件",
+    "tags": [
+      "CONFIG",
+      "配置管理",
+      "运行时配置"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-036",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的DEBUG命令有哪些用途？",
+    "answer": "## 核心概念\n\nRedis的DEBUG命令用于调试和诊断，提供内部状态信息和测试功能。\n\n## 常用命令\n\n### 1. 查看键信息\n```redis\n# 查看键的内部信息\nDEBUG OBJECT mykey\n\n# 输出示例\n# Value at:0x7f8b8c0d0e0f refcount:1 encoding:raw serializedlength:5 lru:12345 lru_seconds_idle:100\n```\n\n### 2. 查看内存\n```redis\n# 查看内存使用\nDEBUG MEMORY\n\n# 查看内存统计\nDEBUG MALLSTAT\n```\n\n### 3. 模拟故障\n```redis\n# 模拟段错误（危险！）\nDEBUG SEGFAULT\n\n# 模拟OOM\nDEBUG OOM\n```\n\n### 4. 休眠\n```redis\n# 休眠指定秒数\nDEBUG SLEEP 1\n```\n\n### 5. 重新加载\n```redis\n# 重新加载RDB文件\nDEBUG RELOAD\n\n# 重新加载AOF文件\nDEBUG LOADAOF\n```\n\n### 6. 查看编码\n```redis\n# 查看键的编码\nDEBUG ENCODING mykey\n```\n\n## 应用场景\n\n### 1. 性能分析\n```redis\n# 查看键的内存使用\nDEBUG OBJECT mykey\n\n# 分析内存占用\n```\n\n### 2. 故障诊断\n```redis\n# 模拟故障\nDEBUG SEGFAULT\n\n# 测试故障恢复\n```\n\n### 3. 调试测试\n```redis\n# 模拟延迟\nDEBUG SLEEP 0.1\n\n# 测试超时处理\n```\n\n## 关键要点\n\n| 命令 | 说明 |\n|------|------|\n| DEBUG OBJECT | 查看键信息 |\n| DEBUG MEMORY | 查看内存 |\n| DEBUG SEGFAULT | 模拟段错误 |\n| DEBUG SLEEP | 休眠 |\n| DEBUG RELOAD | 重新加载 |\n\n## 最佳实践\n\n- 仅在开发环境使用DEBUG命令\n- 生产环境禁用DEBUG命令\n- 使用DEBUG OBJECT分析键\n- 使用DEBUG MEMORY分析内存\n\n## 注意事项\n\n- DEBUG SEGFAULT会导致Redis崩溃\n- DEBUG OOM会导致Redis拒绝写入\n- 生产环境应该禁用DEBUG命令\n- 使用rename-command禁用DEBUG\n\n```conf\n# redis.conf\nrename-command DEBUG \"\"\n```",
+    "tags": [
+      "DEBUG",
+      "调试",
+      "故障诊断"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-037",
+    "module": "Redis基础",
+    "difficulty": 1,
+    "question": "Redis的SWAPDB命令是什么？如何使用？",
+    "answer": "## 核心概念\n\nRedis的SWAPDB命令用于原子性地交换两个数据库的内容，无需重启服务。\n\n## 基本用法\n\n```redis\n# 交换数据库0和1\nSWAPDB 0 1\n\n# 交换数据库0和2\nSWAPDB 0 2\n```\n\n## 应用场景\n\n### 1. 快速切换数据库\n```redis\n# 当前使用db0\nSELECT 0\nSET key1 \"value1\"\n\n# 交换db0和db1\nSWAPDB 0 1\n\n# 现在db1包含原来db0的数据\nSELECT 1\nGET key1  # 返回 \"value1\"\n```\n\n### 2. 数据迁移\n```redis\n# 准备新数据\nSELECT 1\nSET new_key1 \"new_value1\"\nSET new_key2 \"new_value2\"\n\n# 原子性切换\nSWAPDB 0 1\n\n# 现在db0使用新数据\nSELECT 0\nGET new_key1  # 返回 \"new_value1\"\n```\n\n### 3. 测试环境\n```redis\n# 准备测试数据\nSELECT 1\nSETUP test data...\n\n# 切换到测试数据\nSWAPDB 0 1\n\n# 测试完成后切换回来\nSWAPDB 0 1\n```\n\n## 工作原理\n\n```\n1. 原子性操作\n2. 交换两个数据库的键空间\n3. 客户端连接立即生效\n4. 无需重启服务\n```\n\n## 关键要点\n\n- SWAPDB是原子操作\n- 不会阻塞其他客户端\n- 立即生效\n- 无需重启服务\n\n## 与SELECT对比\n\n| 特性 | SWAPDB | SELECT |\n|------|--------|--------|\n| 作用 | 交换两个数据库 | 切换当前数据库 |\n| 影响范围 | 所有客户端 | 当前客户端 |\n| 原子性 | 是 | 是 |\n| 使用场景 | 快速切换 | 普通切换 |\n\n## 最佳实践\n\n- 使用SWAPDB实现零停机切换\n- 配合备份策略使用\n- 测试环境快速切换数据\n\n## 注意事项\n\n- SWAPDB会影响所有客户端\n- 生产环境谨慎使用\n- 考虑使用多实例替代多数据库\n- Redis集群模式不支持多数据库",
+    "tags": [
+      "SWAPDB",
+      "数据库切换",
+      "原子操作"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-038",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的WAIT命令是什么？如何使用？",
+    "answer": "## 核心概念\n\nRedis的WAIT命令用于阻塞当前客户端，直到之前的写命令被指定数量的副本确认。\n\n## 基本用法\n\n```redis\n# 等待至少1个副本确认\nWAIT 1 5000\n\n# 参数说明：\n# 1 - 需要确认的副本数量\n# 5000 - 超时时间（毫秒）\n```\n\n## 工作原理\n\n```\n1. 客户端发送写命令\n2. 客户端发送WAIT命令\n3. 主服务器等待副本确认\n4. 返回确认的副本数量\n```\n\n## 应用场景\n\n### 1. 数据安全\n```redis\n# 写入数据\nSET important_data \"value\"\n\n# 等待至少1个副本确认\nWAIT 1 5000\n\n# 确保数据已复制到副本\n```\n\n### 2. 读写分离\n```redis\n# 写入主节点\nSET key \"value\"\n\n# 等待复制\nWAIT 1 1000\n\n# 从副本读取（保证数据一致性）\nGET key\n```\n\n### 3. 故障转移\n```redis\n# 在故障转移前确保数据复制\nSET key \"value\"\nWAIT 1 5000\n\n# 执行故障转移\n```\n\n## 返回值\n\n- 成功：返回确认的副本数量\n- 超时：返回已确认的副本数量（可能小于请求数）\n\n## 关键要点\n\n| 参数 | 说明 |\n|------|------|\n| numreplicas | 需要确认的副本数量 |\n| timeout | 超时时间（毫秒） |\n| 返回值 | 实际确认的副本数量 |\n\n## 与复制对比\n\n| 特性 | WAIT | 异步复制 |\n|------|------|----------|\n| 同步性 | 同步等待 | 异步 |\n| 性能 | 较低 | 较高 |\n| 数据安全 | 高 | 一般 |\n| 使用场景 | 关键数据 | 普通数据 |\n\n## 最佳实践\n\n- 关键数据使用WAIT命令\n- 设置合理的超时时间\n- 监控WAIT返回值\n- 配合复制使用\n\n## 注意事项\n\n- WAIT会阻塞客户端\n- 超时时间不宜过长\n- 副本数量不能超过实际副本数\n- WAIT不保证数据持久化\n- 仅在主从复制模式下有效",
+    "tags": [
+      "WAIT",
+      "数据复制",
+      "同步"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-basics-040",
+    "module": "Redis基础",
+    "difficulty": 2,
+    "question": "Redis的UNLINK命令和DEL命令有什么区别？",
+    "answer": "## 核心概念\n\nRedis的UNLINK命令和DEL命令都用于删除键，但UNLINK是异步删除，不会阻塞服务器。\n\n## 对比分析\n\n### DEL命令\n```redis\nDEL key1 key2 key3\n```\n\n**特点**：\n- 同步删除\n- 会阻塞服务器\n- 立即释放内存\n- 返回删除的键数量\n\n### UNLINK命令\n```redis\nUNLINK key1 key2 key3\n```\n\n**特点**：\n- 异步删除\n- 不会阻塞服务器\n- 后台释放内存\n- 返回删除的键数量\n\n## 性能对比\n\n| 特性 | DEL | UNLINK |\n|------|-----|--------|\n| 同步性 | 同步 | 异步 |\n| 阻塞 | 是 | 否 |\n| 内存释放 | 立即 | 后台 |\n| 性能 | O(N) | O(1) |\n| 适用场景 | 小Key | 大Key |\n\n## 使用场景\n\n### DEL适用场景\n```redis\n# 删除小Key\nDEL small_key\n\n# 删除少量键\nDEL key1 key2 key3\n```\n\n### UNLINK适用场景\n```redis\n# 删除大Key\nUNLINK large_list\nUNLINK large_set\nUNLINK large_hash\n\n# 删除大量键\nUNLINK key1 key2 key3 ... key1000\n```\n\n## 大Key删除\n\n```redis\n# 不推荐（阻塞）\nDEL large_list\n\n# 推荐（异步）\nUNLINK large_list\n\n# 或者分批删除\nLTRIM large_list 0 999  # 保留前1000个\n```\n\n## 关键要点\n\n| 命令 | 时间复杂度 | 说明 |\n|------|-----------|------|\n| DEL O(N) | 同步删除，N为元素数 |\n| UNLINK O(1) | 异步删除，不阻塞 |\n\n## 最佳实践\n\n- 小Key使用DEL\n- 大Key使用UNLINK\n- 批量删除使用UNLINK\n- 生产环境优先使用UNLINK\n\n## 注意事项\n\n- UNLINK在Redis 4.0引入\n- UNLINK不会立即释放内存\n- 后台线程负责释放内存\n- UNLINK和DEL返回值相同\n- 大Key删除推荐使用UNLINK",
+    "tags": [
+      "UNLINK",
+      "DEL",
+      "异步删除"
+    ],
+    "source": "高频"
+  }
+]

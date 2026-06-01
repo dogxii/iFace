@@ -1,0 +1,549 @@
+[
+  {
+    "id": "redis-persist-001",
+    "module": "Redis持久化",
+    "difficulty": 1,
+    "question": "Redis有哪几种持久化方式？RDB和AOF分别是什么？",
+    "answer": "## 核心概念\n\nRedis提供两种持久化方式：**RDB（Redis Database）**和**AOF（Append Only File）**。Redis 4.0+还支持混合持久化。\n\n## RDB持久化\n\nRDB将某一时刻的内存数据快照写入磁盘，生成`.rdb`二进制文件。\n\n```redis\n# 手动触发RDB\nSAVE          # 阻塞主线程\nBGSAVE        # 后台fork子进程\n```\n\n## AOF持久化\n\nAOF以日志追加的方式记录每一条写命令，重启时重放命令恢复数据。\n\n```redis\n# redis.conf配置\nappendonly yes\nappendfilename \"appendonly.aof\"\n```\n\n## 对比总结\n\n| 特性 | RDB | AOF |\n|------|-----|-----|\n| 持久化方式 | 定时快照 | 追加命令 |\n| 文件大小 | 小（二进制压缩） | 大（文本命令） |\n| 恢复速度 | 快 | 慢 |\n| 数据安全 | 可能丢失数据 | 丢失少 |\n| fork开销 | 有 | 有（重写时） |\n\n## 关键要点\n\n- RDB适合备份和灾难恢复\n- AOF适合数据安全要求高的场景\n- 两者可以同时开启，Redis会优先使用AOF恢复\n\n## 注意事项\n\n生产环境建议同时开启RDB和AOF，利用RDB的快速恢复和AOF的数据安全性优势。",
+    "tags": [
+      "RDB",
+      "AOF",
+      "持久化",
+      "基础"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-002",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis RDB持久化的触发条件有哪些？SAVE和BGSAVE有什么区别？",
+    "answer": "## 核心概念\n\nRDB可以通过手动命令或自动配置触发，SAVE会阻塞主线程，BGSAVE会fork子进程后台执行。\n\n## 触发条件\n\n**1. 手动触发**\n```redis\nSAVE              # 同步阻塞，生产环境禁用\nBGSAVE            # 异步非阻塞，推荐\n```\n\n**2. 自动触发（redis.conf配置）**\n```redis\n# 满足任一条件时自动触发BGSAVE\nsave 900 1        # 900秒内至少1个key变化\nsave 300 10       # 300秒内至少10个key变化\nsave 60 10000     # 60秒内至少10000个key变化\n\n# 关闭RDB\nsave \"\"\n```\n\n**3. 其他触发场景**\n- 主从复制时，主节点生成RDB发送给从节点\n- 执行DEBUG RELOAD命令\n- 执行SHUTDOWN SAVE命令\n\n## SAVE vs BGSAVE\n\n| 特性 | SAVE | BGSAVE |\n|------|------|--------|\n| 执行方式 | 同步 | 异步 |\n| 阻塞主线程 | 是 | 否 |\n| fork子进程 | 否 | 是 |\n| 生产环境 | 禁止 | 推荐 |\n\n## BGSAVE执行流程\n\n```\n1. 主进程调用fork()创建子进程\n2. 子进程将内存数据写入临时RDB文件\n3. 写入完成后替换旧的RDB文件\n4. 子进程退出，主进程继续服务\n```\n\n## 关键要点\n\n- BGSAVE期间Redis仍可正常处理命令\n- fork()操作使用Copy-On-Write技术\n- RDB文件是紧凑的二进制格式\n\n## 注意事项\n\nBGSAVE会消耗额外内存（fork时的页表复制），在内存紧张时需要谨慎。",
+    "tags": [
+      "RDB",
+      "BGSAVE",
+      "SAVE",
+      "触发条件"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-003",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis RDB持久化中fork子进程的原理是什么？Copy-On-Write机制如何工作？",
+    "answer": "## 核心概念\n\nBGSAVE通过fork()创建子进程，利用操作系统的**Copy-On-Write（写时复制）**机制，在不阻塞主进程的情况下完成持久化。\n\n## fork()原理\n\n```\n主进程（Redis Server）\n    │\n    ├── fork() ──→ 子进程（BGSAVE）\n    │                │\n    │                ├── 共享内存页表\n    │                └── 写入RDB文件\n    │\n    └── 继续处理客户端命令\n```\n\n## Copy-On-Write机制\n\n```\nfork后（共享内存）：\n主进程页表 ──→ [Page A] [Page B] [Page C]\n子进程页表 ──→ [Page A] [Page B] [Page C]\n\n主进程修改Page B后（触发COW）：\n主进程页表 ──→ [Page A] [Page B'] [Page C]  (新副本)\n子进程页表 ──→ [Page A] [Page B ] [Page C]  (原数据)\n```\n\n## 内存开销\n\n```\n最坏情况：fork时内存翻倍\n实际情况：COW只复制修改的页，通常远小于全量复制\n\n# 查看fork耗时\nINFO persistence\nlatest_fork_usec:1234  # 最近一次fork耗时（微秒）\n```\n\n## 关键要点\n\n- fork()是O(1)操作，只复制页表不复制数据\n- COW在写入时才复制内存页（通常4KB/页）\n- 修改越多，额外内存占用越大\n- fork耗时与内存大小成正比\n\n## 注意事项\n\n- Linux系统需要设置vm.overcommit_memory=1，避免fork失败\n- fork期间主进程会短暂阻塞（通常几毫秒到几十毫秒）\n- 内存使用率高时fork可能导致OOM",
+    "tags": [
+      "fork",
+      "COW",
+      "写时复制",
+      "BGSAVE"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-004",
+    "module": "Redis持久化",
+    "difficulty": 1,
+    "question": "Redis RDB文件的格式是什么？如何手动触发和检查RDB文件？",
+    "answer": "## 核心概念\n\nRDB文件是二进制格式的内存快照，包含数据库状态、键值对数据和校验信息。\n\n## RDB文件格式\n\n```\n┌─────────────┐\n│ REDIS版本号   │\n├─────────────┤\n│ db_version   │\n├─────────────┤\n│ SELECTDB     │ ← 数据库选择\n├─────────────┤\n│ 键值对数据    │ ← 实际数据\n├─────────────┤\n│ EOF          │\n├─────────────┤\n│ 校验和(checksum)│\n└─────────────┘\n```\n\n## 手动触发\n\n```redis\n# 同步阻塞触发\nSAVE\n\n# 异步触发（推荐）\nBGSAVE\n\n# 查看RDB文件路径\nCONFIG GET dir\nCONFIG GET dbfilename\n```\n\n## 检查RDB文件\n\n```bash\n# 使用redis-check-rdb工具\nredis-check-rdb /var/lib/redis/dump.rdb\n\n# 输出示例：\n# [offset 0] checking RDB file dump.rdb\n# [offset 26] AUX FIELD redis-ver = '7.0.0'\n# [offset 100] SELECT DB 0\n# [offset 150] db:0 expires:3 avg_ttl:3600000\n# [offset 200] Checksum OK\n```\n\n## 关键要点\n\n- RDB文件是二进制格式，不能直接查看\n- 文件包含压缩算法（LZF/Snappy）\n- checksum用于校验文件完整性\n- 可以配置压缩算法和压缩级别\n\n## 配置项\n\n```redis\n# redis.conf\ndbfilename dump.rdb\nrdbcompression yes          # 启用LZF压缩\nrdbchecksum yes             # 启用校验和\nrdb-del-sync-files no       # 主从复制的RDB是否删除\n```\n\n## 注意事项\n\nRDB文件过大会导致fork耗时增加，建议单个实例内存不超过10GB。定期检查RDB文件完整性，避免数据损坏。",
+    "tags": [
+      "RDB",
+      "文件格式",
+      "redis-check-rdb",
+      "备份"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-005",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis AOF持久化的appendfsync有哪几种模式？各自有什么特点？",
+    "answer": "## 核心概念\n\nAOF的appendfsync配置决定何时将写命令同步到磁盘，影响数据安全性和性能。\n\n## 三种同步模式\n\n```redis\n# redis.conf\nappendfsync always      # 每次写命令都同步\nappendfsync everysec    # 每秒同步（默认推荐）\nappendfsync no          # 由操作系统决定\n```\n\n## 模式对比\n\n| 模式 | 数据安全 | 性能 | 丢失数据量 |\n|------|---------|------|----------|\n| always | 最高 | 最差 | 最多丢失1个命令 |\n| everysec | 较高 | 较好 | 最多丢失1秒数据 |\n| no | 最低 | 最好 | 取决于OS，可能丢失较多 |\n\n## always模式\n\n```\n客户端写命令 → 追加AOF缓冲区 → 写入OS缓冲区 → 同步到磁盘 → 返回OK\n                        ↑\n                   每次都执行fsync()\n```\n\n## everysec模式\n\n```\n客户端写命令 → 追加AOF缓冲区 → 写入OS缓冲区\n                                    ↓\n                             每秒执行fsync()\n```\n\n## no模式\n\n```\n客户端写命令 → 追加AOF缓冲区 → 写入OS缓冲区\n                                    ↓\n                         由OS决定何时写入磁盘\n                         （通常30秒左右）\n```\n\n## 关键要点\n\n- always：最安全但最慢，适合金融等场景\n- everysec：平衡选择，推荐使用\n- no：最快但不安全，不推荐生产环境\n\n## 注意事项\n\neverysec模式下，如果后台线程fsync阻塞超过1秒，Redis会暂停写入直到同步完成。这是为了防止AOF缓冲区无限增长。",
+    "tags": [
+      "AOF",
+      "appendfsync",
+      "同步模式",
+      "fsync"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-006",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis AOF重写（Rewrite）是什么？为什么需要AOF重写？",
+    "answer": "## 核心概念\n\nAOF重写是将AOF文件中的冗余命令压缩合并，生成一个更小的新AOF文件，减少文件体积和恢复时间。\n\n## 为什么需要AOF重写\n\n```redis\n# 假设执行以下命令\nSET counter 1\nINCR counter\nINCR counter\nINCR counter\n# AOF记录4条命令，但最终值是3\n# 重写后只需1条命令：SET counter 3\n```\n\n## AOF重写触发条件\n\n```redis\n# redis.conf自动触发配置\nauto-aof-rewrite-percentage 100   # AOF文件增长100%\nauto-aof-rewrite-min-size 64mb    # 最小64MB才触发\n\n# 手动触发\nBGREWRITEAOF\n```\n\n## AOF重写流程\n\n```\n1. 主进程fork子进程\n2. 子进程读取内存数据，生成新AOF\n3. 主进程继续处理命令，写入AOF重写缓冲区\n4. 子进程完成，主进程将重写缓冲区追加到新AOF\n5. 替换旧AOF文件\n```\n\n## 关键要点\n\n- AOF重写不会读取旧AOF文件，而是直接读取内存数据\n- 重写期间的新命令写入重写缓冲区，保证数据不丢失\n- 使用fork+COW机制，不阻塞主进程\n- 重写后AOF文件更小，恢复更快\n\n## 注意事项\n\nAOF重写会消耗额外内存和CPU，建议在业务低峰期触发。如果AOF文件持续增长，需要检查重写配置是否合理。",
+    "tags": [
+      "AOF",
+      "重写",
+      "BGREWRITEAOF",
+      "压缩"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-007",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis 4.0引入的混合持久化是什么？它如何结合RDB和AOF的优势？",
+    "answer": "## 核心概念\n\n混合持久化（Hybrid Persistence）在AOF重写时，将RDB快照和增量AOF命令写入同一个AOF文件，兼具RDB的快速恢复和AOF的数据安全性。\n\n## 混合持久化格式\n\n```\nAOF文件结构：\n┌─────────────────────┐\n│ RDB格式的全量数据     │ ← 重写时的内存快照\n├─────────────────────┤\n│ AOF格式的增量命令     │ ← 重写期间的新命令\n├─────────────────────┤\n│ EOF和校验和          │\n└─────────────────────┘\n```\n\n## 开启混合持久化\n\n```redis\n# redis.conf（Redis 4.0+）\naof-use-rdb-preamble yes\n\n# Redis 5.0+默认开启\n```\n\n## 恢复流程\n\n```\n1. 加载AOF文件\n2. 识别文件开头的RDB格式部分\n3. 加载RDB快照数据（快速）\n4. 重放后面的AOF增量命令\n5. 数据恢复完成\n```\n\n## 对比纯AOF重写\n\n| 特性 | 纯AOF重写 | 混合持久化 |\n|------|----------|----------|\n| 文件格式 | 纯AOF命令 | RDB+AOF |\n| 恢复速度 | 慢 | 快 |\n| 文件大小 | 较大 | 较小 |\n| 数据安全 | 高 | 高 |\n\n## 关键要点\n\n- 混合持久化结合了RDB和AOF的优势\n- 恢复时先加载RDB部分，再重放AOF部分\n- 文件扩展名仍为.aof\n- 不影响AOF的增量写入机制\n\n## 注意事项\n\n混合持久化只在AOF重写时生效，日常的AOF追加仍然是纯AOF格式。如果需要最快速的恢复，建议开启混合持久化。",
+    "tags": [
+      "混合持久化",
+      "RDB+AOF",
+      "Redis 4.0",
+      "恢复优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-008",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "RDB和AOF持久化应该如何选择？各自的优缺点是什么？",
+    "answer": "## 核心概念\n\n选择RDB还是AOF取决于业务对数据安全性和性能的要求，生产环境通常建议两者同时开启。\n\n## RDB优缺点\n\n**优点：**\n- 文件紧凑，适合备份和灾难恢复\n- 恢复速度快（二进制加载）\n- fork子进程不影响主进程性能\n- 文件格式版本兼容性好\n\n**缺点：**\n- 可能丢失最后一次快照后的数据\n- 大内存fork耗时较长\n- 不适合实时备份\n\n## AOF优缺点\n\n**优点：**\n- 数据安全性高（最多丢1秒）\n- 文件可读，便于问题排查\n- 可以误操作恢复（删除命令）\n\n**缺点：**\n- 文件体积大\n- 恢复速度慢\n- always模式影响性能\n\n## 推荐配置\n\n```redis\n# 同时开启RDB和AOF\nsave 900 1\nsave 300 10\nsave 60 10000\nappendonly yes\nappendfsync everysec\naof-use-rdb-preamble yes\n```\n\n## 场景选择\n\n| 场景 | 推荐方式 | 说明 |\n|------|---------|------|\n| 数据安全优先 | AOF+RDB | 混合持久化 |\n| 性能优先 | RDB | 轻量级 |\n| 灾难恢复 | RDB | 文件小，恢复快 |\n| 误操作恢复 | AOF | 可编辑删除命令 |\n\n## 关键要点\n\n- Redis重启时优先使用AOF恢复（数据更完整）\n- 两者可以同时开启，互不影响\n- 混合持久化是最佳实践\n\n## 注意事项\n\n如果只开启RDB，要注意快照间隔可能导致数据丢失。如果只开启AOF，要注意文件膨胀和恢复速度。",
+    "tags": [
+      "RDB",
+      "AOF",
+      "选型",
+      "最佳实践"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-009",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis主从复制的全量同步过程是怎样的？",
+    "answer": "## 核心概念\n\n主从复制首次建立连接时会进行**全量同步（Full Resynchronization）**，主节点生成RDB发送给从节点。\n\n## 全量同步流程\n\n```\n从节点                    主节点\n  │                         │\n  ├── PSYNC ? -1 ─────────→│  发起同步请求\n  │                         │\n  │←── +FULLRESYNC runid offset ──┤  返回全量同步响应\n  │                         │\n  │                         ├── BGSAVE生成RDB\n  │                         │\n  │←── RDB文件 ────────────┤  发送RDB文件\n  │                         │\n  ├── 加载RDB ────────────→│  从节点加载数据\n  │                         │\n  │←── 缓冲区中的命令 ─────┤  发送缓冲区中的增量命令\n  │                         │\n  └── 同步完成 ────────────→│\n```\n\n## 详细步骤\n\n1. 从节点发送`PSYNC ? -1`（首次同步不知道runid）\n2. 主节点返回`+FULLRESYNC {runid} {offset}`\n3. 主节点执行BGSAVE生成RDB文件\n4. 主节点将RDB文件发送给从节点\n5. 主节点将发送RDB期间的写命令缓存在`repl_backlog`中\n6. 从节点加载RDB文件\n7. 主节点将缓冲区中的命令发送给从节点\n8. 同步完成，进入增量同步阶段\n\n## 关键要点\n\n- 全量同步会触发BGSAVE，可能影响主节点性能\n- 同步期间的写命令会缓存在repl_backlog中\n- 从节点加载RDB期间会阻塞服务\n\n## 注意事项\n\n避免频繁全量同步，可以通过调大repl_backlog来减少全量同步的概率。",
+    "tags": [
+      "主从复制",
+      "全量同步",
+      "RDB",
+      "PSYNC"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-010",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis主从复制的增量同步过程是怎样的？repl_backlog有什么作用？",
+    "answer": "## 核心概念\n\n增量同步（Partial Resynchronization）是在主从断线重连后，只同步断线期间的增量数据，避免全量同步的开销。\n\n## 增量同步流程\n\n```\n从节点                    主节点\n  │                         │\n  ├── PSYNC runid offset ──→│  发起增量同步\n  │                         │\n  │  主节点检查：            │\n  │  1. runid是否匹配       │\n  │  2. offset是否在backlog中│\n  │                         │\n  │←── +CONTINUE ──────────┤  确认增量同步\n  │                         │\n  │←── 增量命令 ───────────┤  发送offset后的命令\n  │                         │\n  └── 同步完成 ────────────→│\n```\n\n## repl_backlog结构\n\n```\nrepl_backlog:\n┌────────────────────────────────────────────┐\n│  ...  cmd1  cmd2  cmd3  cmd4  cmd5  ...     │\n│       ↑                    ↑               │\n│     起始位置              当前位置          │\n│                                            │\n│  如果从节点的offset在范围内，可以增量同步   │\n└────────────────────────────────────────────┘\n```\n\n## 配置参数\n\n```redis\n# repl_backlog大小（默认1MB）\nrepl-backlog-size 256mb\n\n# 无连接时backlog保留时间（默认3600秒）\nrepl-backlog-ttl 3600\n```\n\n## 关键要点\n\n- repl_backlog是环形缓冲区\n- 默认1MB太小，建议调大到256MB或更大\n- 增量同步需要runid匹配和offset在backlog范围内\n- offset不在范围内时会降级为全量同步\n\n## 注意事项\n\nrepl_backlog大小 = 写入速率 × 平均断线时间。如果主节点写入速率很高，需要相应调大repl_backlog。",
+    "tags": [
+      "主从复制",
+      "增量同步",
+      "repl_backlog",
+      "PSYNC"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-011",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis哨兵模式（Sentinel）是什么？它有哪些功能？",
+    "answer": "## 核心概念\n\nRedis Sentinel是Redis的高可用方案，提供**监控、通知、自动故障转移、配置提供者**四大功能。\n\n## 哨兵架构\n\n```\n         ┌─────────────┐\n         │  Sentinel 1  │\n         └──────┬───────┘\n                │\n    ┌───────────┼───────────┐\n    │           │           │\n┌───┴───┐  ┌───┴───┐  ┌───┴───┐\n│ 从1   │  │ 主    │  │ 从2   │\n└───────┘  └───────┘  └───────┘\n    │           │           │\n    └───────────┼───────────┘\n                │\n         ┌──────┴───────┐\n         │  Sentinel 2  │\n         └──────┬───────┘\n                │\n         ┌──────┴───────┐\n         │  Sentinel 3  │\n         └──────────────┘\n```\n\n## 四大功能\n\n**1. 监控（Monitoring）**\n- 定期检查主从节点是否正常工作\n- 通过PING命令检测存活性\n\n**2. 通知（Notification）**\n- 主节点故障时通知管理员\n- 通过API发送告警\n\n**3. 自动故障转移（Automatic Failover）**\n- 主节点不可用时自动选举新主节点\n- 从节点自动切换主节点\n\n**4. 配置提供者（Configuration Provider）**\n- 客户端连接哨兵获取当前主节点地址\n- 主节点变更时自动通知客户端\n\n## 关键要点\n\n- 哨兵是独立的进程，需要至少3个实例\n- 故障判定需要多数哨兵同意（quorum）\n- 哨兵之间通过发布订阅通信\n\n## 注意事项\n\n哨兵模式只能实现主从高可用，不支持数据分片。如果需要水平扩展，应该使用Redis Cluster。",
+    "tags": [
+      "Sentinel",
+      "哨兵",
+      "高可用",
+      "自动故障转移"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-012",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis哨兵模式的故障检测过程是怎样的？主观下线和客观下线有什么区别？",
+    "answer": "## 核心概念\n\n哨兵通过**主观下线（SDOWN）**和**客观下线（ODOWN）**两阶段判断节点是否真正故障，避免误判。\n\n## 故障检测流程\n\n```\n哨兵定期PING主节点\n        │\n        ├── 响应正常 → 在线\n        │\n        └── 超时无响应\n                │\n                ├── 标记为主观下线（SDOWN）\n                │\n                └── 询问其他哨兵\n                        │\n                        ├── 多数同意 → 客观下线（ODOWN）\n                        │\n                        └── 开始故障转移\n```\n\n## 主观下线（SDOWN）\\n\n```redis\n# 配置\nsentinel down-after-milliseconds mymaster 5000\n\n# 判断条件：\n- 单个哨兵在down-after-milliseconds时间内\n- 持续收到无效响应（超时、PING无响应、返回错误）\n- 标记为主观下线\n```\n\n## 客观下线（ODOWN）\n\n```redis\n# 配置\nsentinel monitor mymaster 127.0.0.1 6379 2\n\n# 判断条件：\n- 一个哨兵判断SDOWN后，向其他哨兵询问\n- 至少quorum个哨兵同意（包括自己）\n- 标记为客观下线\n- 触发故障转移流程\n```\n\n## 关键要点\n\n| 类型 | 判断者 | 条件 | 说明 |\n|------|--------|------|------|\n| SDOWN | 单个哨兵 | 超时无响应 | 主观判断 |\n| ODOWN | 多数哨兵 | quorum同意 | 客观判断 |\n\n## 注意事项\n\n- quorum建议设置为哨兵总数/2+1\n- 从节点故障不会触发故障转移\n- 网络分区可能导致脑裂，需要配合min-replicas-to-write配置",
+    "tags": [
+      "Sentinel",
+      "SDOWN",
+      "ODOWN",
+      "故障检测"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-013",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis哨兵模式的领导选举过程是怎样的？如何选择执行故障转移的哨兵？",
+    "answer": "## 核心概念\n\n当主节点客观下线后，需要从多个哨兵中选出一个**领导者（Leader）**来执行故障转移操作。\n\n## 领导选举流程\n\n```\n1. 发现主节点ODOWN的哨兵发起选举\n2. 向其他哨兵发送SENTINEL is-master-down-by-addr\n3. 其他哨兵投票（每个纪元只能投一票）\n4. 获得多数票的哨兵成为Leader\n5. Leader执行故障转移\n```\n\n## 选举细节\n\n```python\n# 选举请求\nSENTINEL is-master-down-by-addr <ip> <port> <current-epoch> <runid>\n\n# runid = * 表示投票请求\n# runid = 具体值 表示确认Leader\n\n# 投票规则：\n# 1. 先到先得，每个纪元只投一票\n# 2. 候选者的epoch必须 >= 自己的epoch\n# 3. 获得多数票（N/2+1）的成为Leader\n```\n\n## 选举算法（Raft变种）\n\n```\n哨兵1（发起选举）          哨兵2          哨兵3\n    │                      │              │\n    ├── 选举请求(epoch=1)→│              │\n    ├── 选举请求(epoch=1)──────────────→│\n    │                      │              │\n    │←── 投票(epoch=1) ───┤              │\n    │←── 投票(epoch=1) ─────────────────┤\n    │                      │              │\n    ├── 成为Leader ────────→ 通知         │\n```\n\n## 关键要点\n\n- 使用Raft一致性算法的变种\n- 每个epoch只能投一票，避免重复投票\n- 需要多数票才能成为Leader\n- 选举超时后会自动重试\n\n## 注意事项\n\n- 哨兵数量建议为奇数（3、5、7）\n- 避免哨兵部署在同一台机器\n- 网络分区可能导致选举失败，需要人工介入",
+    "tags": [
+      "Sentinel",
+      "领导选举",
+      "Raft",
+      "故障转移"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-014",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis Cluster集群的架构是怎样的？16384个哈希槽是如何分配的？",
+    "answer": "## 核心概念\n\nRedis Cluster采用去中心化架构，通过**16384个哈希槽（Hash Slot）**将数据分布到多个节点。\n\n## 集群架构\n\n```\n┌─────────────┐  ┌─────────────┐  ┌─────────────┐\n│  Master 1   │  │  Master 2   │  │  Master 3   │\n│ Slot 0-5460 │  │Slot 5461-10922│ │Slot10923-16383│\n└──────┬──────┘  └──────┬──────┘  └──────┬──────┘\n       │                │                │\n┌──────┴──────┐  ┌──────┴──────┐  ┌──────┴──────┐\n│  Slave 1    │  │  Slave 2    │  │  Slave 3    │\n└─────────────┘  └─────────────┘  └─────────────┘\n```\n\n## 哈希槽分配\n\n```\n槽位计算：CRC16(key) % 16384\n\n例：\nSET user:1001 \"张三\"\nCRC16(\"user:1001\") % 16384 = 8975\n→ 路由到 Master 2（slot 5461-10922）\n```\n\n## 创建集群\n\n```bash\nredis-cli --cluster create \\\n  127.0.0.1:7001 \\\n  127.0.0.1:7002 \\\n  127.0.0.1:7003 \\\n  127.0.0.1:7004 \\\n  127.0.0.1:7005 \\\n  127.0.0.1:7006 \\\n  --cluster-replicas 1\n```\n\n## 关键要点\n\n- 16384个槽位，平均分配到各主节点\n- 每个主节点负责一部分槽位\n- 从节点是主节点的复制\n- 客户端可以向任意节点发送命令\n\n## 注意事项\n\n- 槽位数量固定为16384，不能修改\n- 扩缩容需要手动迁移槽位\n- 不是所有命令都支持集群模式（如跨slot的MGET）",
+    "tags": [
+      "Redis Cluster",
+      "哈希槽",
+      "16384",
+      "分片"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-015",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "什么是缓存穿透？如何使用布隆过滤器和空值缓存解决？",
+    "answer": "## 核心概念\n\n缓存穿透是指查询一个**一定不存在**的数据，由于缓存不会命中，请求直接打到数据库，可能造成数据库压力过大。\n\n## 问题场景\n\n```\n恶意请求：GET /user?id=-1\n\n缓存 → 未命中\n数据库 → 未找到（SELECT * FROM users WHERE id=-1）\n缓存 → 未写入（因为数据不存在）\n\n每次请求都穿透到数据库！\n```\n\n## 解决方案一：空值缓存\n\n```redis\n# 查询数据库未找到数据时，缓存空值\nSET user:-1 \"\" EX 60\n\n# 设置较短的过期时间，避免占用内存\n```\n\n```python\ndef get_user(user_id):\n    # 先查缓存\n    cache_val = redis.get(f'user:{user_id}')\n    if cache_val is not None:\n        if cache_val == '':\n            return None  # 空值缓存\n        return cache_val\n    \n    # 查数据库\n    user = db.query(f'SELECT * FROM users WHERE id={user_id}')\n    if user:\n        redis.set(f'user:{user_id}', user, ex=3600)\n    else:\n        redis.set(f'user:{user_id}', '', ex=60)  # 空值缓存\n    return user\n```\n\n## 解决方案二：布隆过滤器\n\n```redis\n# 使用Redis Bloom模块\nBF.ADD user_filter \"1\"\nBF.ADD user_filter \"2\"\nBF.ADD user_filter \"3\"\n\n# 查询前先检查布隆过滤器\nBF.EXISTS user_filter \"-1\"  # 返回0，一定不存在\n```\n\n```python\ndef get_user_with_bloom(user_id):\n    # 布隆过滤器判断\n    if not redis.execute_command('BF.EXISTS', 'user_filter', str(user_id)):\n        return None  # 一定不存在，直接返回\n    \n    # 可能存在，查询缓存和数据库\n    return get_user(user_id)\n```\n\n## 关键要点\n\n| 方案 | 优点 | 缺点 |\n|------|------|------|\n| 空值缓存 | 实现简单 | 占用内存 |\n| 布隆过滤器 | 不占内存 | 有误判率 |\n\n## 注意事项\n\n布隆过滤器有一定误判率（假阳性），但没有假阴性。如果布隆过滤器判断不存在，则一定不存在。",
+    "tags": [
+      "缓存穿透",
+      "布隆过滤器",
+      "空值缓存",
+      "Redis Bloom"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-017",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "什么是缓存雪崩？如何使用随机过期时间和熔断降级解决？",
+    "answer": "## 核心概念\n\n缓存雪崩是指**大量key同时过期**或**Redis服务宕机**，导致大量请求直接打到数据库，可能造成数据库崩溃。\n\n## 问题场景\nn\n**场景一：大量key同时过期**\n```\n设置key时使用相同过期时间\n    │\n    └── 大量key同时过期\n            │\n            └── 请求全部打到数据库\n```\n\n**场景二：Redis服务宕机**\n```\nRedis集群故障\n    │\n    └── 所有请求穿透到数据库\n            │\n            └── 数据库压力过大\n```\n\n## 解决方案一：随机过期时间\n\n```python\nimport random\n\ndef set_cache_with_random_expire(key, value, base_ttl=3600):\n    # 添加随机过期时间，避免同时过期\n    random_offset = random.randint(0, 300)  # 0-5分钟随机\n    ttl = base_ttl + random_offset\n    redis.set(key, value, ex=ttl)\n```\n\n## 解决方案二：熔断降级\n\n```python\nfrom circuit_breaker import CircuitBreaker\n\ncb = CircuitBreaker(failure_threshold=5, recovery_timeout=30)\n\n@cb\ndef get_from_db(product_id):\n    return db.query(f'SELECT * FROM products WHERE id={product_id}')\n\ndef get_product(product_id):\n    cache_val = redis.get(f'product:{product_id}')\n    if cache_val:\n        return cache_val\n    \n    try:\n        product = get_from_db(product_id)\n        redis.set(f'product:{product_id}', product, ex=3600)\n        return product\n    except Exception:\n        # 降级返回默认值或错误提示\n        return get_default_product()\n```\n\n## 解决方案三：多级缓存\n\n```\n请求 → 本地缓存 → Redis → 数据库\n                ↓\n            未命中时\n```\n\n## 关键要点\n\n| 方案 | 作用 | 实现复杂度 |\n|------|------|----------|\n| 随机过期 | 避免同时过期 | 低 |\n| 熔断降级 | 保护数据库 | 中 |\n| 多级缓存 | 分散压力 | 高 |\n\n## 注意事项\n\nRedis集群部署时，可以将不同节点的过期时间错开。使用Sentinel或Cluster模式提高Redis可用性。",
+    "tags": [
+      "缓存雪崩",
+      "随机过期",
+      "熔断降级",
+      "多级缓存"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-018",
+    "module": "Redis持久化",
+    "difficulty": 1,
+    "question": "什么是缓存预热？为什么需要缓存预热？",
+    "answer": "## 核心概念\n\n缓存预热是指系统上线前或重启后，**提前将热点数据加载到缓存**中，避免首次请求穿透到数据库。\n\n## 为什么需要缓存预热\n\n```\n系统启动时缓存为空\n    │\n    ├── 请求1 → 缓存未命中 → 查询数据库\n    ├── 请求2 → 缓存未命中 → 查询数据库\n    └── ...  → 缓存未命中 → 查询数据库\n\n数据库瞬时压力过大，可能崩溃！\n```\n\n## 缓存预热方案\n\n**方案一：启动时加载**\n```python\ndef on_startup():\n    # 加载热点商品\n    hot_products = db.query('SELECT * FROM products WHERE is_hot=1')\n    for product in hot_products:\n        redis.set(f'product:{product.id}', product, ex=3600)\n    \n    # 加载配置信息\n    configs = db.query('SELECT * FROM configs')\n    for config in configs:\n        redis.set(f'config:{config.key}', config.value)\n```\n\n**方案二：定时任务预热**\n```python\n# 每天凌晨预热次日热点数据\ndef daily_preheat():\n    tomorrow = datetime.now() + timedelta(days=1)\n    hot_items = db.query(f'SELECT * FROM promotions WHERE date={tomorrow}')\n    for item in hot_items:\n        redis.set(f'promo:{item.id}', item, ex=86400)\n```\n\n**方案三：手动触发预热**\n```redis\n# 通过管理接口触发\nPOST /admin/cache/preheat\n```\n\n## 关键要点\n\n- 预热数据应该是热点数据，不是全部数据\n- 预热时机：系统启动、定时任务、手动触发\n- 预热数据量要控制，避免Redis内存溢出\n\n## 注意事项\n\n预热期间要注意数据库压力，可以分批加载。预热数据的过期时间要合理设置，避免缓存雪崩。",
+    "tags": [
+      "缓存预热",
+      "启动加载",
+      "热点数据",
+      "数据库保护"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-019",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "什么是缓存降级？在什么场景下需要缓存降级？",
+    "answer": "## 核心概念\n\n缓存降级是指当缓存服务出现问题或系统压力过大时，**牺牲部分功能或数据新鲜度**来保证核心服务可用。\n\n## 降级场景\n\n**1. 缓存服务故障**\n```\nRedis集群宕机\n    │\n    └── 启用本地缓存或默认值\n```\n\n**2. 系统压力过大**\n```\nQPS超过阈值\n    │\n    └── 降级非核心功能\n```\n\n**3. 数据一致性要求降低**\n```\n网络延迟高\n    │\n    └── 使用旧数据或默认值\n```\n\n## 降级策略\n\n**策略一：返回默认值**\n```python\ndef get_product_with_fallback(product_id):\n    try:\n        product = redis.get(f'product:{product_id}')\n        if product:\n            return product\n        product = db.query(f'SELECT * FROM products WHERE id={product_id}')\n        redis.set(f'product:{product_id}', product, ex=3600)\n        return product\n    except Exception:\n        # 降级返回默认值\n        return {'id': product_id, 'name': '商品信息暂不可用', 'status': 'degraded'}\n```\n\n**策略二：使用本地缓存**\n```python\nfrom cachetools import TTLCache\n\nlocal_cache = TTLCache(maxsize=1000, ttl=300)\n\ndef get_with_local_cache(key):\n    # 先查本地缓存\n    if key in local_cache:\n        return local_cache[key]\n    \n    try:\n        value = redis.get(key)\n        local_cache[key] = value\n        return value\n    except Exception:\n        # Redis故障，使用本地缓存\n        return local_cache.get(key)\n```\n\n**策略三：功能降级**\n```python\ndef get_product_page(product_id):\n    try:\n        # 正常获取推荐商品\n        recommendations = get_recommendations(product_id)\n    except Exception:\n        # 降级：不展示推荐\n        recommendations = []\n    \n    return {'product': get_product(product_id), 'recommendations': recommendations}\n```\n\n## 关键要点\n\n- 降级要区分核心功能和非核心功能\n- 降级策略要提前设计并测试\n- 降级后要有恢复机制\n\n## 注意事项\n\n缓存降级应该是临时措施，不是长期方案。要监控降级状态，及时恢复服务。",
+    "tags": [
+      "缓存降级",
+      "本地缓存",
+      "默认值",
+      "服务降级"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-020",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis Cluster的gossip协议是什么？节点之间如何通信？",
+    "answer": "## 核心概念\n\nRedis Cluster使用**gossip协议**进行节点间通信，交换集群状态、故障检测等信息。\n\n## gossip协议原理\n\n```\n节点A                    节点B\n  │                        │\n  ├── PING ──────────────→│  发送自己的状态\n  │                        │\n  │←── PONG ──────────────┤  返回自己的状态\n  │                        │\n  ├── MEET ──────────────→│  新节点加入\n  │                        │\n  └── FAIL ──────────────→│  广播故障节点\n```\n\n## 消息类型\n\n| 消息类型 | 作用 | 发送频率 |\n|---------|------|----------|\n| PING | 心跳检测，交换信息 | 每秒 |\n| PONG | 响应PING | 收到PING时 |\n| MEET | 新节点加入 | 手动触发 |\n| FAIL | 广播故障 | 故障时 |\n| PUBLISH | 发布订阅 | 需要时 |\n\n## 节点通信过程\n\n```\n1. 每个节点随机选择几个节点发送PING\n2. PING包含：发送者信息、部分已知节点信息\n3. 接收者返回PONG，包含自己的信息\n4. 通过多次通信，集群状态逐渐一致\n```\n\n## 关键要点\n\n- gossip协议是去中心化的\n- 信息传播最终一致\n- 每个节点知道所有节点的信息\n- 通信开销与节点数成正比\n\n## 配置参数\n\n```redis\n# 集群超时时间\ncluster-node-timeout 15000\n\n# 每秒PING次数\ncluster-announce-port 6379\n```\n\n## 注意事项\n\ngossip协议不适合大规模集群（建议不超过1000个节点）。节点数过多会导致通信开销过大，影响性能。",
+    "tags": [
+      "gossip协议",
+      "节点通信",
+      "PING/PONG",
+      "Redis Cluster"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-021",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis Cluster的扩缩容过程是怎样的？如何进行resharding？",
+    "answer": "## 核心概念\n\nRedis Cluster扩缩容需要**迁移哈希槽**，将槽位从源节点迁移到目标节点。\n\n## 扩容流程\n\n```bash\n# 1. 启动新节点\nredis-server --port 7007 --cluster-enabled yes\n\n# 2. 添加节点到集群\nredis-cli --cluster add-node 127.0.0.1:7007 127.0.0.1:7001\n\n# 3. 分配槽位（resharding）\nredis-cli --cluster reshard 127.0.0.1:7001 \\\n  --cluster-from <源节点ID> \\\n  --cluster-to <目标节点ID> \\\n  --cluster-slots 4096 \\\n  --cluster-yes\n```\n\n## 缩容流程\n\n```bash\n# 1. 迁移槽位到其他节点\nredis-cli --cluster reshard 127.0.0.1:7001 \\\n  --cluster-from <待删除节点ID> \\\n  --cluster-to <目标节点ID> \\\n  --cluster-slots 4096\n\n# 2. 删除节点\nredis-cli --cluster del-node 127.0.0.1:7001 <节点ID>\n```\n\n## Resharding过程\n\n```\n源节点                    目标节点\n  │                         │\n  ├── MIGRATE key → ────────┤  逐个迁移key\n  │                         │\n  ├── 更新槽位映射          ├── 更新槽位映射\n  │                         │\n  └── 释放槽位 ────────────→└── 接管槽位\n```\n\n## 迁移的原子性\n\n```redis\n# MIGRATE命令保证原子性\nMIGRATE target_host target_port key db timeout [COPY] [REPLACE]\n\n# 迁移期间：\n# 1. 源节点阻塞该key\n# 2. 序列化key并发送\n# 3. 目标节点加载并返回OK\n# 4. 源节点删除key\n```\n\n## 关键要点\n\n- 迁移是逐key进行的，不影响其他key\n- 迁移期间key被阻塞\n- 客户端会收到ASK重定向\n- 迁移完成后更新槽位映射\n\n## 注意事项\n\n大规模resharding可能影响性能，建议在业务低峰期进行。迁移过程中要监控集群状态，避免超时。",
+    "tags": [
+      "扩缩容",
+      "resharding",
+      "MIGRATE",
+      "槽位迁移"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-022",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis Cluster的客户端路由机制是怎样的？MOVED和ASK重定向有什么区别？",
+    "answer": "## 核心概念\n\nRedis Cluster客户端发送命令时，如果目标节点不是该key的正确节点，会返回**MOVED**或**ASK**重定向响应。\n\n## MOVED重定向\n\n```redis\n# 客户端发送命令到错误节点\n127.0.0.1:7001> SET user:1001 \"张三\"\n(error) MOVED 8975 127.0.0.1:7002\n\n# 客户端应该：\n# 1. 重定向到127.0.0.1:7002\n# 2. 更新本地槽位映射缓存\n```\n\n## ASK重定向\n\n```redis\n# 槽位正在迁移中\n127.0.0.1:7001> SET user:1001 \"张三\"\n(error) ASK 8975 127.0.0.1:7002\n\n# 客户端应该：\n# 1. 发送ASKING命令到目标节点\n# 2. 再发送原命令\n# 3. 不更新本地缓存（临时重定向）\n```\n\n## MOVED vs ASK\n\n| 特性 | MOVED | ASK |\n|------|-------|-----|\n| 含义 | 槽位永久转移 | 槽位正在迁移 |\n| 更新缓存 | 是 | 否 |\n| 后续请求 | 直接发新节点 | 需要ASKING |\n| 场景 | 槽位分配完成 | 槽位迁移中 |\n\n## 客户端处理逻辑\n\n```python\ndef send_command(command, key):\n    slot = crc16(key) % 16384\n    node = get_node_for_slot(slot)\n    \n    try:\n        return node.execute(command)\n    except MovedError as e:\n        # 更新本地槽位映射\n        update_slot_cache(e.slot, e.node)\n        return e.node.execute(command)\n    except AskError as e:\n        # 临时重定向\n        e.node.execute('ASKING')\n        return e.node.execute(command)\n```\n\n## 关键要点\n\n- MOVED是永久重定向，更新本地缓存\n- ASK是临时重定向，只重定向一次\n- 客户端需要维护槽位映射缓存\n- 智能客户端可以自动处理重定向\n\n## 注意事项\n\nJedis、Lettuce等客户端库已经内置了Cluster路由逻辑，不需要手动处理MOVED和ASK。",
+    "tags": [
+      "MOVED",
+      "ASK",
+      "客户端路由",
+      "重定向"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-023",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis如何实现分布式锁？SETNX实现分布式锁有什么问题？",
+    "answer": "## 核心概念\n\nRedis分布式锁通过SETNX（SET if Not eXists）实现互斥访问，保证分布式环境下的资源独占。\n\n## 基本实现\n\n```redis\n# 加锁（设置过期时间避免死锁）\nSET lock:order:1001 \"owner_id\" NX EX 10\n\n# 释放锁（Lua脚本保证原子性）\nEVAL \"\n  if redis.call('GET', KEYS[1]) == ARGV[1] then\n    return redis.call('DEL', KEYS[1])\n  else\n    return 0\n  end\n\" 1 lock:order:1001 \"owner_id\"\n```\n\n## SETNX的问题\n\n**1. 锁过期但业务未完成**\n```\n加锁 → 业务执行超时 → 锁自动过期 → 其他客户端获取锁\n                                    ↓\n                           两个客户端同时持有锁\n```\n\n**2. 误删其他客户端的锁**\n```\n客户端A加锁 → 客户端A超时 → 客户端B加锁 → 客户端A完成释放锁\n                                                    ↓\n                                           客户端A删除了B的锁\n```\n\n**3. 不可重入**\n```\n同一线程再次获取锁时失败\n```\n\n## 解决方案\n\n**1. 唯一标识+Lua释放**\n```python\nimport uuid\n\nlock_id = str(uuid.uuid4())\n\n# 加锁\nredis.set('lock:resource', lock_id, nx=True, ex=10)\n\n# 释放锁（Lua脚本）\nlua_script = \"\"\"\nif redis.call('GET', KEYS[1]) == ARGV[1] then\n    return redis.call('DEL', KEYS[1])\nelse\n    return 0\nend\n\"\"\"\nredis.eval(lua_script, 1, 'lock:resource', lock_id)\n```\n\n**2. 锁续期（Watch Dog）**\n```python\nimport threading\n\ndef renew_lock(key, lock_id, interval=3):\n    while True:\n        time.sleep(interval)\n        lua_script = \"\"\"\n        if redis.call('GET', KEYS[1]) == ARGV[1] then\n            return redis.call('EXPIRE', KEYS[1], ARGV[2])\n        else\n            return 0\n        end\n        \"\"\"\n        result = redis.eval(lua_script, 1, key, lock_id, 10)\n        if not result:\n            break\n```\n\n## 关键要点\n\n- 使用唯一标识防止误删\n- 使用Lua脚本保证释放的原子性\n- 锁续期防止业务未完成锁过期\n\n## 注意事项\n\nRedis分布式锁在主从切换时可能失效，需要使用Redlock算法或Zookeeper等方案。",
+    "tags": [
+      "分布式锁",
+      "SETNX",
+      "Lua",
+      "锁续期"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-024",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "什么是Redlock算法？它解决了什么问题？有哪些争议？",
+    "answer": "## 核心概念\n\nRedlock是Redis作者Antirez提出的**分布式锁算法**，通过在多个独立Redis实例上加锁，解决单点Redis锁的可靠性问题。\n\n## Redlock算法流程\n\n```\n客户端获取当前时间T1\n        │\n        ├── 依次向N个Redis实例加锁（相同key、唯一值、短超时）\n        │\n        ├── 计算加锁耗时 = T2 - T1\n        │\n        ├── 如果在N/2+1个以上实例加锁成功，且耗时 < 锁超时时间\n        │\n        └── 加锁成功，锁有效时间 = 超时时间 - 耗时\n```\n\n## 代码示例\n\n```python\nimport time\nimport uuid\nimport redis\n\nclass Redlock:\n    def __init__(self, nodes):\n        self.nodes = nodes\n        self.quorum = len(nodes) // 2 + 1\n    \n    def acquire(self, resource, ttl=10000):\n        lock_id = str(uuid.uuid4())\n        start = time.time() * 1000\n        \n        acquired = 0\n        for node in self.nodes:\n            try:\n                if node.set(resource, lock_id, nx=True, px=ttl):\n                    acquired += 1\n            except redis.RedisError:\n                pass\n        \n        elapsed = time.time() * 1000 - start\n        validity = ttl - elapsed - 100  # 减去时钟漂移\n        \n        if acquired >= self.quorum and validity > 0:\n            return {'resource': resource, 'lock_id': lock_id, 'validity': validity}\n        else:\n            # 加锁失败，释放所有已获取的锁\n            self.release(resource, lock_id)\n            return None\n```\n\n## Martin Kleppmann的争议\n\n**1. 时钟跳跃问题**\n```\n节点A加锁成功 → 系统时钟跳跃 → 锁提前过期 → 节点B也加锁成功\n```\n\n**2. GC暂停问题**\n```\n客户端A加锁 → GC暂停 → 锁过期 → 客户端B加锁 → 客户端A恢复\n                                                    ↓\n                                           两个客户端都认为持有锁\n```\n\n**3. 替代方案**\n- 使用Fencing Token（ fencing token）\n- 使用Zookeeper等强一致性系统\n- 使用Chubby等分布式锁服务\n\n## 关键要点\n\n- Redlock需要至少3个独立Redis实例\n- 解决了单点Redis锁的可靠性问题\n- 但存在时钟依赖和GC暂停问题\n\n## 注意事项\n\n对于强一致性要求的场景，建议使用Zookeeper或etcd。对于一般场景，单点Redis锁+唯一标识已经足够。",
+    "tags": [
+      "Redlock",
+      "分布式锁",
+      "Martin Kleppmann",
+      "争议"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-025",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "如何使用Redis实现分布式限流？令牌桶算法和滑动窗口算法有什么区别？",
+    "answer": "## 核心概念\n\n分布式限流用于控制分布式系统中的请求速率，保护后端服务不被过载。\n\n## 令牌桶算法\n\n```\n令牌桶（固定速率生成令牌）\n    │\n    ├── 桶满时丢弃令牌\n    │\n    └── 请求到来时消耗令牌\n            │\n            ├── 有令牌 → 允许\n            └── 无令牌 → 拒绝\n```\n\n```redis\n# Lua脚本实现令牌桶\nlocal key = KEYS[1]\nlocal rate = tonumber(ARGV[1])      # 令牌生成速率\nlocal capacity = tonumber(ARGV[2])  # 桶容量\nlocal now = tonumber(ARGV[3])       # 当前时间\nlocal requested = tonumber(ARGV[4]) # 请求令牌数\n\nlocal last_time = tonumber(redis.call('HGET', key, 'last_time') or now)\nlocal tokens = tonumber(redis.call('HGET', key, 'tokens') or capacity)\n\n-- 计算新生成的令牌数\nlocal elapsed = now - last_time\nlocal new_tokens = math.min(capacity, tokens + elapsed * rate)\n\nif new_tokens >= requested then\n    new_tokens = new_tokens - requested\n    redis.call('HSET', key, 'tokens', new_tokens, 'last_time', now)\n    redis.call('EXPIRE', key, capacity / rate * 2)\n    return 1  -- 允许\nelse\n    redis.call('HSET', key, 'tokens', new_tokens, 'last_time', now)\n    return 0  -- 拒绝\nend\n```\n\n## 滑动窗口算法\n\n```python\n# 使用ZSet实现滑动窗口\nimport time\n\ndef is_allowed(user_id, limit=100, window=60):\n    key = f'rate:{user_id}'\n    now = time.time()\n    \n    # 删除窗口外的记录\n    redis.zremrangebyscore(key, 0, now - window)\n    \n    # 统计当前窗口请求数\n    count = redis.zcard(key)\n    \n    if count < limit:\n        redis.zadd(key, {str(now): now})\n        redis.expire(key, window)\n        return True\n    return False\n```\n\n## 对比分析\n\n| 特性 | 令牌桶 | 滑动窗口 |\n|------|--------|----------|\n| 实现复杂度 | 中 | 低 |\n| 内存占用 | 固定 | 随请求增长 |\n| 突发流量 | 允许（桶中有令牌） | 严格限制 |\n| 精确度 | 较高 | 高 |\n| 适用场景 | 允许突发流量 | 严格限流 |\n\n## 关键要点\n\n- 令牌桶允许一定的突发流量\n- 滑动窗口限流更严格\n- 都需要Lua脚本保证原子性\n\n## 注意事项\n\n高并发场景下，Redis限流可能成为瓶颈。可以结合本地限流（如Guava RateLimiter）实现多级限流。",
+    "tags": [
+      "分布式限流",
+      "令牌桶",
+      "滑动窗口",
+      "Lua"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-026",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "如何使用Redis ZSet实现延迟队列？与List实现的消息队列有什么区别？",
+    "answer": "## 核心概念\n\n延迟队列允许消息在指定时间后被消费，ZSet通过score存储执行时间戳实现延迟功能。\n\n## ZSet延迟队列实现\n\n**生产者**\n```redis\n# 添加延迟任务（score为执行时间戳）\nZADD delay:queue 1706745600000 \"task:order:1001:cancel\"\nZADD delay:queue 1706745660000 \"task:order:1002:remind\"\n```\n\n**消费者**\n```python\nimport time\n\ndef consume_delay_queue():\n    while True:\n        now = int(time.time() * 1000)\n        \n        # Lua脚本：原子获取并删除到期任务\n        lua_script = \"\"\"\n        local tasks = redis.call('ZRANGEBYSCORE', KEYS[1], 0, ARGV[1], 'LIMIT', 0, 10)\n        for i, task in ipairs(tasks) do\n            redis.call('ZREM', KEYS[1], task)\n        end\n        return tasks\n        \"\"\"\n        \n        tasks = redis.eval(lua_script, 1, 'delay:queue', now)\n        \n        for task in tasks:\n            process_task(task)\n        \n        time.sleep(0.1)\n```\n\n## ZSet vs List消息队列\n\n| 特性 | ZSet延迟队列 | List消息队列 |\n|------|-------------|-------------|\n| 延迟功能 | 支持（score为时间戳） | 不支持 |\n| 消息顺序 | 按score排序 | FIFO |\n| 消息确认 | 需手动实现 | BRPOP自动删除 |\n| 重复消费 | 需要Lua脚本保证 | 自动去重 |\n| 消息回溯 | 支持（ZRANGE） | 不支持 |\n| 适用场景 | 定时任务、延迟处理 | 即时消息队列 |\n\n## 关键要点\n\n- ZSet按score排序，天然支持按时间排序\n- 使用Lua脚本保证获取和删除的原子性\n- score使用毫秒时间戳提高精度\n\n## 注意事项\nn\n- 轮询间隔影响延迟精度和CPU消耗\n- 建议结合Stream使用更完善的延迟队列\n- 大量延迟任务时考虑分片存储",
+    "tags": [
+      "ZSet",
+      "延迟队列",
+      "定时任务",
+      "Lua"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-027",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "如何使用Redis实现排行榜？需要考虑哪些性能优化问题？",
+    "answer": "## 核心概念\n\n使用ZSet实现排行榜，score存储排名依据，member存储用户标识，支持实时排名更新。\n\n## 基本实现\n\n```redis\n# 更新用户分数\nZINCRBY leaderboard 100 \"user:1001\"\nZINCRBY leaderboard 85 \"user:1002\"\n\n# 获取Top N（降序）\nZREVRANGE leaderboard 0 9 WITHSCORES\n\n# 获取用户排名\nZREVRANK leaderboard \"user:1001\"  # 0-based排名\n\n# 获取用户分数\nZSCORE leaderboard \"user:1001\"\n```\n\n## 性能优化\n\n**1. 避免一次获取过多数据**\n```redis\n# 分页获取\nZREVRANGE leaderboard 0 99 WITHSCORES      # 第1页\nZREVRANGE leaderboard 100 199 WITHSCORES   # 第2页\n```\n\n**2. 使用Pipeline减少网络开销**\n```python\npipe = redis.pipeline()\nfor user_id in user_ids:\n    pipe.zincrby('leaderboard', score[user_id], user_id)\nresults = pipe.execute()\n```\n\n**3. 缓存Top N结果**\n```python\n# 定时任务更新Top N缓存\ndef update_top_n_cache():\n    top_n = redis.zrevrange('leaderboard', 0, 99, withscores=True)\n    redis.set('cache:top_n', json.dumps(top_n), ex=60)\n```\n\n**4. 多维度排行榜**\n```redis\n# 不同维度使用不同key\nZADD rank:score 100 \"user:1001\"     # 分数排行\nZADD rank:level 50 \"user:1001\"      # 等级排行\nZADD rank:exp 5000 \"user:1001\"      # 经验排行\n```\n\n**5. 分数相同处理**\n```redis\n# 使用复合分数：分数 * 10000000000 + (MAX_TIME - 时间戳)\nZINCRBY leaderboard 10000000092 \"user:1001\"  # 分数100，时间较新\n```\n\n## 关键要点\n\n- ZINCRBY原子更新分数\n- ZREVRANK获取排名O(logN)\n- 分页获取避免内存溢出\n- Pipeline批量操作减少网络开销\n\n## 注意事项\n\n大数据量排行榜要定期清理历史数据。分数是浮点数，要注意精度问题。",
+    "tags": [
+      "ZSet",
+      "排行榜",
+      "ZINCRBY",
+      "性能优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-028",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "缓存与数据库的一致性如何保证？旁路缓存、读写穿透、写回策略有什么区别？",
+    "answer": "## 核心概念\n\n缓存与数据库的一致性是分布式系统的核心问题，不同缓存策略有不同的更新顺序和一致性保证。\n\n## 旁路缓存（Cache-Aside）\n\n```\n读流程：\n1. 读缓存 → 命中则返回\n2. 未命中 → 读数据库\n3. 写入缓存\n\n写流程：\n1. 更新数据库\n2. 删除缓存（而不是更新）\n```\n\n```python\n# 旁路缓存实现\ndef get_user(user_id):\n    cache = redis.get(f'user:{user_id}')\n    if cache:\n        return cache\n    user = db.query(f'SELECT * FROM users WHERE id={user_id}')\n    redis.set(f'user:{user_id}', user, ex=3600)\n    return user\n\ndef update_user(user_id, data):\n    db.execute(f'UPDATE users SET ... WHERE id={user_id}')\n    redis.delete(f'user:{user_id}')  # 删除缓存\n```\n\n## 读写穿透（Read/Write-Through）\n\n```\n读流程：\n1. 读缓存 → 命中则返回\n2. 未命中 → 缓存层自动从数据库加载\n\n写流程：\n1. 写缓存 → 缓存层自动同步到数据库\n```\n\n## 写回（Write-Back）\n\n```\n写流程：\n1. 只写缓存\n2. 异步批量写入数据库\n\n优点：写入性能高\n缺点：数据可能丢失\n```\n\n## 延迟双删策略\n\n```python\nimport time\nimport threading\n\ndef update_user_delay_double_delete(user_id, data):\n    # 1. 先删除缓存\n    redis.delete(f'user:{user_id}')\n    \n    # 2. 更新数据库\n    db.execute(f'UPDATE users SET ... WHERE id={user_id}')\n    \n    # 3. 延迟再删除缓存\n    threading.Timer(0.5, lambda: redis.delete(f'user:{user_id}')).start()\n```\n\n## 对比分析\n\n| 策略 | 一致性 | 复杂度 | 适用场景 |\n|------|--------|--------|----------|\n| 旁路缓存 | 最终一致 | 低 | 通用场景 |\n| 读写穿透 | 强一致 | 高 | 对一致性要求高 |\n| 写回 | 弱一致 | 中 | 写入密集型 |\n| 延迟双删 | 最终一致 | 中 | 读多写少 |\n\n## 关键要点\n\n- 旁路缓存是最常用的策略\n- 删除缓存比更新缓存更安全\n- 延迟双删可以减少不一致时间窗口\n\n## 注意事项\n\n没有完美的方案，需要根据业务场景选择。对于强一致性要求的场景，考虑使用分布式事务或消息队列。",
+    "tags": [
+      "缓存一致性",
+      "旁路缓存",
+      "延迟双删",
+      "Cache-Aside"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-029",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "什么是热点Key问题？如何检测和解决热点Key？",
+    "answer": "## 核心概念\n\n热点Key是指被频繁访问的Key，可能导致单个Redis节点压力过大，影响系统性能。\n\n## 热点Key产生原因\n\n- 热点商品、热门新闻等业务热点\n- 大V用户的数据被频繁访问\n- 缓存雪崩后的缓存重建\n- 促销活动的秒杀商品\n\n## 检测热点Key\n\n**1. 使用redis-cli --hotkeys**\n```bash\nredis-cli --hotkeys\n# 需要开启LFU淘汰策略\n```\n\n**2. 使用MONITOR命令**\n```bash\nredis-cli monitor | head -n 10000 | awk '{print $4}' | sort | uniq -c | sort -rn\n```\n\n**3. 客户端代理统计**\n```python\nclass HotKeyDetector:\n    def __init__(self, threshold=1000, interval=60):\n        self.counter = {}\n        self.threshold = threshold\n    \n    def record(self, key):\n        self.counter[key] = self.counter.get(key, 0) + 1\n    \n    def get_hot_keys(self):\n        return [k for k, v in self.counter.items() if v > self.threshold]\n```\n\n## 解决方案\n\n**1. 本地缓存**\n```python\nfrom cachetools import TTLCache\n\nlocal_cache = TTLCache(maxsize=1000, ttl=10)\n\ndef get_with_local_cache(key):\n    if key in local_cache:\n        return local_cache[key]\n    value = redis.get(key)\n    local_cache[key] = value\n    return value\n```\n\n**2. Key拆分**\n```python\nimport random\n\ndef get_hot_product(product_id):\n    # 将热点Key拆分到多个slot\n    suffix = random.randint(0, 9)\n    key = f'product:{product_id}:{suffix}'\n    return redis.get(key)\n```\n\n**3. 读写分离**\n```python\n# 读请求发送到从节点\nslave_redis.get(f'product:{product_id}')\n```\n\n## 关键要点\n\n- 本地缓存是解决热点Key最有效的方式\n- Key拆分可以分散压力\n- 读写分离可以扩展读能力\n\n## 注意事项\n\n热点Key检测需要开启LFU淘汰策略。本地缓存要注意与Redis缓存的一致性。",
+    "tags": [
+      "热点Key",
+      "本地缓存",
+      "Key拆分",
+      "性能优化"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-030",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "什么是大Key问题？如何检测和删除大Key？",
+    "answer": "## 核心概念\n\n大Key是指Value占用内存较大的Key，可能导致Redis阻塞、网络带宽压力和内存不均衡。\n\n## 大Key定义\n\n- String类型：Value > 10KB\n- Hash/Set/ZSet/List类型：元素数量 > 10000个\n\n## 检测大Key\n\n**1. 使用redis-cli --bigkeys**\n```bash\nredis-cli --bigkeys\n# 扫描并统计每种类型的最大Key\n```\n\n**2. 使用MEMORY USAGE**\n```redis\nMEMORY USAGE mykey\n# 返回Key占用的字节数\n```\n\n**3. 使用DEBUG OBJECT**\n```redis\nDEBUG OBJECT mykey\n# 查看serializedlength字段\n```\n\n**4. 使用SCAN + MEMORY USAGE**\n```python\ndef scan_big_keys(threshold=10240):  # 10KB\n    cursor = 0\n    big_keys = []\n    while True:\n        cursor, keys = redis.scan(cursor, count=100)\n        for key in keys:\n            size = redis.memory_usage(key)\n            if size and size > threshold:\n                big_keys.append((key, size))\n        if cursor == 0:\n            break\n    return big_keys\n```\n\n## 删除大Key\n\n**1. 异步删除（Redis 4.0+）**\n```redis\nUNLINK mykey    # 非阻塞删除\nDEL mykey       # 阻塞删除\n```\n\n**2. 渐进式删除Hash**\n```python\ndef delete_hash_gradually(key, batch_size=100):\n    while True:\n        cursor, fields = redis.hscan(key, count=batch_size)\n        if fields:\n            redis.hdel(key, *fields.keys())\n        if cursor == 0:\n            break\n    redis.delete(key)\n```\n\n**3. 渐进式删除Set**\n```python\ndef delete_set_gradually(key, batch_size=100):\n    while True:\n        members = redis.spop(key, batch_size)\n        if not members:\n            break\n```\n\n**4. 渐进式删除ZSet**\n```python\ndef delete_zset_gradually(key, batch_size=100):\n    while True:\n        members = redis.zrange(key, 0, batch_size - 1)\n        if not members:\n            break\n        redis.zrem(key, *members)\n```\n\n## 关键要点\n\n- 使用UNLINK代替DEL删除大Key\n- 渐进式删除避免阻塞\n- 扫描时不要使用KEYS命令\n\n## 注意事项\n\n大Key删除会影响性能，建议在业务低峰期进行。删除前最好先备份数据。",
+    "tags": [
+      "大Key",
+      "UNLINK",
+      "渐进删除",
+      "redis-cli --bigkeys"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-031",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的内存优化有哪些常用策略？",
+    "answer": "## 核心概念\n\nRedis内存优化可以从数据结构选择、编码配置、过期策略等多个方面入手。\n\n## 优化策略\n\n**1. 选择合适的数据结构**\n```redis\n# 使用Hash存储对象（ziplist编码更省内存）\nHSET user:1001 name \"张三\" age 25\n# 而不是\nSET user:1001 '{\"name\":\"张三\",\"age\":25}'\n```\n\n**2. 调整编码阈值**\n```redis\n# 增加ziplist阈值，使用更紧凑的编码\nhash-max-ziplist-entries 512\nhash-max-ziplist-value 64\nset-max-intset-entries 512\nzset-max-ziplist-entries 128\nzset-max-ziplist-value 64\n```\n\n**3. 使用整数集合**\n```redis\n# 当Set只包含整数时，使用intset编码\nSADD myset 1 2 3 4 5\n```\n\n**4. 压缩字符串**\n```python\nimport zlib\n\ndef set_compressed(key, value):\n    compressed = zlib.compress(value.encode())\n    redis.set(key, compressed)\n\ndef get_compressed(key):\n    compressed = redis.get(key)\n    return zlib.decompress(compressed).decode()\n```\n\n**5. 使用Hash代替多个String**\n```redis\n# 多个String（每个都有对象开销）\nSET user:1001:name \"张三\"\nSET user:1001:age 25\n\n# 单个Hash（共享对象开销）\nHSET user:1001 name \"张三\" age 25\n```\n\n**6. 设置合理的过期时间**\n```redis\n# 避免大量Key同时过期\nEXPIRE key 3600 + random(300)\n```\n\n**7. 使用UNLINK代替DEL**\n```redis\nUNLINK mykey    # 异步删除，不阻塞\n```\n\n**8. 关闭持久化（如果不需要）**\n```redis\n# redis.conf\nsave \"\"\nappendonly no\n```\n\n## 关键要点\n\n- ziplist/listpack编码更省内存\n- Hash比多个String更省内存\n- 合理设置过期时间避免内存泄漏\n- 使用UNLINK异步删除大Key\n\n## 注意事项\n\n优化前要先分析内存使用情况（redis-cli --bigkeys、MEMORY USAGE），找到瓶颈点再优化。",
+    "tags": [
+      "内存优化",
+      "数据结构",
+      "编码配置",
+      "过期策略"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-032",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的INFO命令可以查看哪些信息？如何监控Redis性能？",
+    "answer": "## 核心概念\n\nINFO命令是Redis最重要的监控命令，返回服务器的各种信息和统计数据。\n\n## INFO命令分区\n\n```redis\n# 查看所有信息\nINFO\n\n# 查看特定分区\nINFO server         # 服务器信息\nINFO clients        # 客户端信息\nINFO memory         # 内存信息\nINFO persistence    # 持久化信息\nINFO stats          # 统计信息\nINFO replication    # 复制信息\nINFO cpu            # CPU信息\nINFO commandstats   # 命令统计\nINFO cluster        # 集群信息\nINFO keyspace       # 数据库键空间\n```\n\n## 关键指标\n\n**内存指标**\n```redis\nINFO memory\nused_memory: 1073741824           # 已用内存\nused_memory_rss: 1207959552       # RSS内存\nmem_fragmentation_ratio: 1.12     # 碎片率\nused_memory_peak: 2147483648      # 内存峰值\n```\n\n**性能指标**\n```redis\nINFO stats\ntotal_connections_received: 1000  # 总连接数\ntotal_commands_processed: 50000   # 总命令数\ninstantaneous_ops_per_sec: 1000   # QPS\nlatency_percentiles: 0.001        # 延迟\n```\n\n**持久化指标**\n```redis\nINFO persistence\nrdb_last_bgsave_status: ok        # 最后一次BGSAVE状态\naof_last_bgrewrite_status: ok     # 最后一次AOF重写状态\naof_current_size: 1048576         # 当前AOF大小\n```\n\n## 监控工具\n\n```bash\n# redis-cli监控\nredis-cli info all\nredis-cli --stat\nredis-cli --latency\nredis-cli --latency-history\n\n# Prometheus + Grafana\nredis_exporter --redis.addr localhost:6379\n```\n\n## 关键要点\n\n- used_memory是实际使用的内存\n- mem_fragmentation_ratio > 1.5表示碎片严重\n- instantaneous_ops_per_sec是当前QPS\n- latency_percentiles是延迟百分位\n\n## 注意事项\n\n建议使用Prometheus + Grafana构建Redis监控体系，设置告警规则。定期检查慢查询日志（SLOWLOG）。",
+    "tags": [
+      "INFO",
+      "监控",
+      "性能指标",
+      "Prometheus"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-033",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的慢查询日志是什么？如何配置和使用SLOWLOG？",
+    "answer": "## 核心概念\n\n慢查询日志记录执行时间超过阈值的命令，用于发现和优化慢命令。\n\n## 配置慢查询\n\n```redis\n# redis.conf\nslowlog-log-slower-than 10000    # 超过10毫秒记录（微秒）\nslowlog-max-len 128               # 最多保存128条\n\n# 动态配置\nCONFIG SET slowlog-log-slower-than 10000\nCONFIG SET slowlog-max-len 128\n```\n\n## 使用SLOWLOG\n\n```redis\n# 获取慢查询日志\nSLOWLOG GET 10                    # 获取最近10条\nSLOWLOG GET                       # 获取所有\n\n# 获取慢查询数量\nSLOWLOG LEN\n\n# 清空慢查询日志\nSLOWLOG RESET\n```\n\n## 慢查询日志格式\n\n```redis\nSLOWLOG GET 1\n# 1) 1) (integer) 1           # 日志ID\n#    2) (integer) 1706745600   # 时间戳\n#    3) (integer) 15000        # 执行时间（微秒）\n#    4) 1) \"KEYS\"             # 命令\n#       2) \"*\"\n#    5) \"127.0.0.1:54321\"     # 客户端地址\n#    6) \"\"                    # 客户端名称\n```\n\n## 常见慢命令\n\n| 命令 | 原因 | 替代方案 |\n|------|------|----------|\n| KEYS | O(N)全表扫描 | SCAN |\n| SMEMBERS | O(N)全量返回 | SSCAN |\n| HGETALL | O(N)全量返回 | HSCAN |\n| DEL大Key | O(N)阻塞 | UNLINK |\n| SAVE | 阻塞主线程 | BGSAVE |\n\n## 关键要点\n\n- slowlog-log-slower-than=0记录所有命令\n- slowlog-log-slower-than<0关闭慢查询\n- 慢查询日志存储在内存中，重启后丢失\n\n## 注意事项\n\n生产环境建议设置slowlog-log-slower-than为10000（10ms）。定期检查慢查询，优化或避免使用慢命令。",
+    "tags": [
+      "SLOWLOG",
+      "慢查询",
+      "性能优化",
+      "监控"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-034",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的LATENCY命令有什么作用？如何诊断延迟问题？",
+    "answer": "## 核心概念\n\nRedis LATENCY命令用于监控和诊断Redis的延迟问题，帮助发现性能瓶颈。\n\n## LATENCY子命令\n\n```redis\n# 查看延迟事件\nLATENCY LATEST                    # 最新的延迟事件\nLATENCY HISTORY event_name        # 特定事件的历史\nLATENCY RESET event_name          # 重置延迟数据\nLATENCY GRAPH event_name          # 图形化展示\n\n# 延迟监控\nCONFIG SET latency-monitor-threshold 5  # 设置阈值（毫秒）\n```\n\n## 延迟事件类型\n\n| 事件类型 | 说明 | 常见原因 |\n|---------|------|----------|\n| command | 命令执行延迟 | 慢命令、大Key |\n| fast-command | 快命令延迟 | 内存分配、fork |\n| fork | fork延迟 | 内存大 |\n| rdb-unlink-temp-file | RDB删除延迟 | IO阻塞 |\n| aof-write | AOF写延迟 | 磁盘IO |\n| aof-fsync-always | always同步延迟 | fsync阻塞 |\n| aof-rewrite-perform | AOF重写延迟 | fork、IO |\n| expire-cycle | 过期删除延迟 | 大量Key过期 |\n| eviction-cycle | 淘汰延迟 | 内存不足 |\n\n## 诊断延迟问题\n\n```bash\n# 使用redis-cli延迟测试\nredis-cli --latency              # 持续测试延迟\nredis-cli --latency-history      # 延迟历史\nredis-cli --latency-dist         # 延迟分布图\n\n# 使用redis-cli --intrinsic-latency测试系统延迟\nredis-cli --intrinsic-latency 5  # 测试5秒\n```\n\n## 常见延迟原因\n\n```python\n# 1. 慢命令\nSLOWLOG GET\n\n# 2. 大Key\nredis-cli --bigkeys\n\n# 3. fork延迟\nINFO persistence\nlatest_fork_usec: 10000\n\n# 4. 内存交换\nINFO memory\nmem_allocator: jemalloc\n```\n\n## 关键要点\n\n- LATENCY LATEST查看最新延迟事件\n- latency-monitor-threshold设置监控阈值\n- --latency系列命令用于客户端延迟测试\n\n## 注意事项\n\n延迟诊断需要结合多个工具：LATENCY、SLOWLOG、INFO、redis-cli --latency。系统层面的延迟（如网络、磁盘）需要系统工具辅助分析。",
+    "tags": [
+      "LATENCY",
+      "延迟诊断",
+      "性能优化",
+      "监控"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-035",
+    "module": "Redis持久化",
+    "difficulty": 3,
+    "question": "Redis的内存淘汰策略有哪些？LRU和LFU有什么区别？",
+    "answer": "## 核心概念\n\n当Redis内存达到maxmemory限制时，需要根据淘汰策略删除一些Key来腾出空间。\n\n## 淘汰策略\n\n```redis\n# redis.conf\nmaxmemory-policy allkeys-lru\n```\n\n| 策略 | 说明 | 适用场景 |\n|------|------|----------|\n| noeviction | 不淘汰，写入报错 | 数据不能丢失 |\n| allkeys-lru | 所有Key，LRU淘汰 | 通用缓存 |\n| allkeys-lfu | 所有Key，LFU淘汰 | 热点数据 |\n| allkeys-random | 所有Key，随机淘汰 | 无明确热点 |\n| volatile-lru | 有过期时间的Key，LRU淘汰 | 混合场景 |\n| volatile-lfu | 有过期时间的Key，LFU淘汰 | 混合场景 |\n| volatile-random | 有过期时间的Key，随机淘汰 | 混合场景 |\n| volatile-ttl | 有过期时间的Key，TTL最小淘汰 | 临时数据 |\n\n## LRU vs LFU\n\n**LRU（Least Recently Used）**\n```\n最近最少使用\n基于访问时间，淘汰最久未访问的Key\n\n问题：偶尔访问的Key可能长期保留\n```\n\n**LFU（Least Frequently Used）**\n```\n最不经常使用\n基于访问频率，淘汰访问次数最少的Key\n\n优势：更准确地淘汰冷数据\n```\n\n## LFU实现细节\n\n```redis\n# LFU使用Morris计数器\n# 每个Key维护：ldt(16位) + lfu(8位)\n\n# ldt: 最后访问时间（分钟精度）\n# lfu: 访问频率（对数计数器）\n\n# 频率衰减：\n# 每分钟衰减一次，长期不访问的Key频率会下降\n```\n\n## 配置参数\n\n```redis\n# LFU参数\nlfu-log-factor 10              # 计数器增长因子\nlfu-decay-time 1              # 衰减时间（分钟）\n\n# LRU采样数量\nmaxmemory-samples 5            # 采样5个Key，选择最久未访问的淘汰\n```\n\n## 关键要点\n\n- allkeys-lru是最常用的策略\n- allkeys-lfu适合有明显热点数据的场景\n- volatile-*只淘汰有TTL的Key\n- maxmemory-samples影响LRU/LFU的精确度\n\n## 注意事项\n\nnoeviction策略下，写入操作会报OOM错误。生产环境建议使用allkeys-lru或allkeys-lfu。",
+    "tags": [
+      "内存淘汰",
+      "LRU",
+      "LFU",
+      "maxmemory-policy"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-036",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的maxmemory配置有什么作用？如何合理设置？",
+    "answer": "## 核心概念\n\nmaxmemory设置Redis最大内存使用量，当达到限制时会根据淘汰策略处理新写入的数据。\n\n## 配置方式\n\n```redis\n# redis.conf\nmaxmemory 4gb\n\n# 动态配置\nCONFIG SET maxmemory 4gb\n\n# 查看当前配置\nCONFIG GET maxmemory\n```\n\n## 内存计算\n\n```bash\n# 查看当前内存使用\nINFO memory\nused_memory: 1073741824\nused_memory_human: 1.00G\n\n# 查看Key数量\nINFO keyspace\ndb0:keys=100000,expires=50000\n```\n\n## 合理设置建议\n\n**1. 物理内存的70-80%**\n```\n物理内存: 8GB\nmaxmemory: 6GB (75%)\n\n预留2GB给：\n- fork子进程（BGSAVE、AOF重写）\n- 客户端缓冲区\n- 内存碎片\n```\n\n**2. 根据数据量估算**\n```python\n# 估算公式\n# 总内存 = Key数量 × 平均Key大小 × (1 + 碎片率)\n\navg_key_size = 1000  # 1KB\nkey_count = 1000000  # 100万\nfragmentation_ratio = 1.2\n\ntotal_memory = key_count * avg_key_size * fragmentation_ratio  # 1.2GB\n```\n\n**3. 监控内存使用**\n```redis\n# 设置内存告警\nCONFIG SET maxmemory 6gb\n\n# 监控内存使用率\n# used_memory / maxmemory > 80% 时告警\n```\n\n## 关键要点\n\n- maxmemory不包括fork子进程的内存\n- used_memory_rss可能大于used_memory（碎片）\n- 物理内存不足时会使用swap，影响性能\n- 主从复制时主节点maxmemory要大于从节点\n\n## 注意事项\n\nmaxmemory设置过小会导致频繁淘汰数据，设置过大可能导致OOM。建议预留足够内存给fork和客户端缓冲区。",
+    "tags": [
+      "maxmemory",
+      "内存管理",
+      "配置",
+      "OOM"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-037",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的CLIENT命令有哪些常用子命令？如何管理客户端连接？",
+    "answer": "## 核心概念\n\nCLIENT命令用于管理Redis客户端连接，包括查看、设置、断开连接等操作。\n\n## 常用子命令\n\n```redis\n# 查看客户端列表\nCLIENT LIST\n\n# 获取当前连接ID\nCLIENT ID\n\n# 获取客户端名称\nCLIENT GETNAME\n\n# 设置客户端名称\nCLIENT SETNAME myclient\n\n# 断开指定连接\nCLIENT KILL ip:port\n\n# 断开指定类型的连接\nCLIENT KILL ID 123\nCLIENT KILL USER username\nCLIENT KILL ADDR 127.0.0.1:12345\n\n# 暂停客户端\nCLIENT PAUSE 5000        # 暂停5秒\nCLIENT UNPAUSE           # 恢复\n\n# 关闭客户端输出缓冲区\nCLIENT NO-EVICT on       # 禁止淘汰该客户端\n```\n\n## CLIENT LIST输出格式\n\n```redis\nCLIENT LIST\n# id=1 addr=127.0.0.1:54321 fd=5 name=myclient \n# db=0 sub=0 psub=0 multi=-1 \n# qbuf=0 qbuf-free=32768 \n# obl=0 oll=0 omem=0 \n# events=r cmd=client \n# user=default\n```\n\n| 字段 | 说明 |\n|------|------|\n| id | 客户端ID |\n| addr | 客户端地址 |\n| name | 客户端名称 |\n| db | 当前数据库 |\n| sub | 订阅频道数 |\n| cmd | 最后执行的命令 |\n| qbuf | 查询缓冲区大小 |\n| omem | 输出缓冲区大小 |\n\n## 客户端缓冲区配置\n\n```redis\n# 普通客户端\nclient-output-buffer-limit normal 0 0 0\n\n# 从节点客户端\nclient-output-buffer-limit replica 256mb 64mb 60\n\n# 发布订阅客户端\nclient-output-buffer-limit pubsub 32mb 8mb 60\n```\n\n## 关键要点\n\n- CLIENT LIST查看所有连接\n- CLIENT KILL断开指定连接\n- 客户端名称有助于调试\n- 客户端缓冲区过大会占用内存\n\n## 注意事项\n\n不要轻易KILL客户端连接，可能影响业务。PAUSE命令在集群迁移时有用，可以暂停写入。",
+    "tags": [
+      "CLIENT",
+      "连接管理",
+      "CLIENT LIST",
+      "缓冲区"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-038",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的CONFIG命令有哪些常用操作？如何动态修改配置？",
+    "answer": "## 核心概念\n\nCONFIG命令用于运行时查看和修改Redis配置，无需重启服务。\n\n## 常用操作\n\n```redis\n# 获取配置\nCONFIG GET maxmemory\nCONFIG GET maxmemory-*\nCONFIG GET *                   # 获取所有配置\n\n# 设置配置\nCONFIG SET maxmemory 4gb\nCONFIG SET maxmemory-policy allkeys-lru\n\n# 重置统计\nCONFIG RESETSTAT\n\n# 重写配置文件\nCONFIG REWRITE\n```\n\n## 常用配置项\n\n```redis\n# 内存相关\nCONFIG SET maxmemory 4gb\nCONFIG SET maxmemory-policy allkeys-lru\nCONFIG SET maxmemory-samples 5\n\n# 持久化相关\nCONFIG SET save \"900 1 300 10 60 10000\"\nCONFIG SET appendonly yes\nCONFIG SET appendfsync everysec\n\n# 网络相关\nCONFIG SET timeout 300\nCONFIG SET tcp-keepalive 300\nCONFIG SET tcp-backlog 511\n\n# 安全相关\nCONFIG SET requirepass \"mypassword\"\nCONFIG SET rename-command FLUSHDB \"\"\nCONFIG SET rename-command FLUSHALL \"\"\n```\n\n## 动态配置注意事项\n\n```redis\n# 某些配置只能在启动时设置\nbind 127.0.0.1                  # 不能动态修改\nport 6379                       # 不能动态修改\ndaemonize yes                   # 不能动态修改\n\n# 某些配置修改后需要特殊处理\nmaxmemory 4gb                   # 立即生效\nmaxmemory-policy allkeys-lru    # 立即生效\nsave \"900 1\"                    # 立即生效\nappendonly yes                  # 立即生效\n```\n\n## CONFIG REWRITE\n\n```redis\n# 将当前配置写入配置文件\nCONFIG REWRITE\n\n# 会保留原配置文件的注释和格式\n# 只修改被动态修改过的配置项\n```\n\n## 关键要点\n\n- CONFIG GET支持通配符查询\n- CONFIG SET立即生效，无需重启\n- CONFIG REWRITE持久化配置修改\n- 部分配置只能启动时设置\n\n## 注意事项\n\nCONFIG SET修改的配置在重启后会丢失，需要CONFIG REWRITE写入配置文件。生产环境修改配置前建议先备份配置文件。",
+    "tags": [
+      "CONFIG",
+      "动态配置",
+      "CONFIG SET",
+      "CONFIG REWRITE"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-039",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的PUB/SUB（发布订阅）是什么？如何使用？有什么局限性？",
+    "answer": "## 核心概念\n\nPUB/SUB是Redis的消息发布订阅模式，发布者发送消息到频道，订阅者接收消息。\n\n## 基本使用\n\n```redis\n# 订阅频道\nSUBSCRIBE channel:news\n\n# 订阅多个频道\nSUBSCRIBE channel:news channel:sports\n\n# 模式订阅\nPSUBSCRIBE channel:*            # 订阅所有channel:开头的频道\n\n# 发布消息\nPUBLISH channel:news \"今日头条新闻\"\n\n# 取消订阅\nUNSUBSCRIBE channel:news\nPUNSUBSCRIBE channel:*\n```\n\n## 使用示例\n\n**订阅者**\n```python\nimport redis\n\ndef subscribe():\n    r = redis.Redis()\n    pubsub = r.pubsub()\n    pubsub.subscribe('channel:news')\n    \n    for message in pubsub.listen():\n        if message['type'] == 'message':\n            print(f\"Received: {message['data']}\")\n```\n\n**发布者**\n```python\ndef publish():\n    r = redis.Redis()\n    r.publish('channel:news', '今日头条新闻')\n```\n\n## PUB/SUB vs List vs Stream\n\n| 特性 | PUB/SUB | List | Stream |\n|------|---------|------|--------|\n| 消息持久化 | 否 | 是 | 是 |\n| 消息确认 | 否 | 否 | 是 |\n| 消费者组 | 否 | 否 | 是 |\n| 历史消息 | 否 | 否 | 是 |\n| 广播模式 | 是 | 否 | 否 |\n| 离线消息 | 丢失 | 保留 | 保留 |\n\n## 局限性\n\n- 消息不持久化，离线客户端无法接收\n- 没有消息确认机制\n- 不支持消息回溯\n- 不支持消费者组\n- Redis重启后订阅关系丢失\n\n## 关键要点\n\n- PUB/SUB适合实时通知场景\n- 不适合需要可靠消息传递的场景\n- Stream是更好的消息队列选择\n\n## 注意事项\n\n生产环境的消息传递建议使用Stream或专业的消息队列中间件。PUB/SUB只适合对消息可靠性要求不高的实时通知场景。",
+    "tags": [
+      "PUB/SUB",
+      "发布订阅",
+      "实时通知",
+      "局限性"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "redis-persist-040",
+    "module": "Redis持久化",
+    "difficulty": 2,
+    "question": "Redis的TRANSACTION（事务）是什么？MULTI/EXEC/WATCH如何使用？",
+    "answer": "## 核心概念\n\nRedis事务通过MULTI/EXEC命令实现，保证命令按顺序执行，但不支持回滚。\n\n## 基本使用\n\n```redis\n# 开始事务\nMULTI\n\n# 命令入队\nSET user:1001:name \"张三\"\nSET user:1001:age 25\nINCR counter\n\n# 执行事务\nEXEC\n```\n\n## 事务错误处理\n\n```redis\n# 命令语法错误（全体放弃）\nMULTI\nSET key value\nINVALID_COMMAND           # 语法错误\nEXEC                      # 返回错误，所有命令都不执行\n\n# 运行时错误（其他命令正常执行）\nMULTI\nSET key \"string\"\nINCR key                  # 运行时错误（不能对字符串INCR）\nSET another_key \"value\"\nEXEC                      # INCR失败，其他命令正常执行\n```\n\n## WATCH乐观锁\n\n```redis\n# 监视key\nWATCH account:1001:balance\n\n# 获取当前值\nGET account:1001:balance\n\n# 事务（如果balance被修改，事务失败）\nMULTI\nDECRBY account:1001:balance 100\nINCRBY account:1001:expense 100\nEXEC\n# 如果balance在WATCH后被修改，EXEC返回nil\n```\n\n## WATCH实现CAS\n\n```python\ndef transfer(from_id, to_id, amount):\n    while True:\n        # 监视转出账户\n        redis.watch(f'account:{from_id}:balance')\n        \n        balance = int(redis.get(f'account:{from_id}:balance'))\n        if balance < amount:\n            redis.unwatch()\n            return False\n        \n        # 开始事务\n        pipe = redis.pipeline()\n        pipe.multi()\n        pipe.decrby(f'account:{from_id}:balance', amount)\n        pipe.incrby(f'account:{to_id}:balance', amount)\n        \n        try:\n            pipe.execute()\n            return True\n        except redis.WatchError:\n            # balance被修改，重试\n            continue\n```\n\n## 关键要点\n\n- MULTI/EXEC保证命令顺序执行\n- 不支持回滚（设计哲学：错误由编程导致）\n- WATCH实现乐观锁，防止并发修改\n- 事务期间其他客户端可以修改数据\n\n## 注意事项\n\nRedis事务不是真正的ACID事务，不支持回滚。对于强一致性要求的场景，需要使用Lua脚本或分布式事务。",
+    "tags": [
+      "事务",
+      "MULTI",
+      "EXEC",
+      "WATCH",
+      "乐观锁"
+    ],
+    "source": "高频"
+  }
+]

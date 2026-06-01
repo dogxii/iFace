@@ -1,0 +1,407 @@
+[
+  {
+    "id": "mysql-basics-001",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中InnoDB和MyISAM存储引擎有什么区别？",
+    "answer": "## 核心概念\n\nInnoDB和MyISAM是MySQL中最常用的两种存储引擎，它们在事务支持、锁机制、外键支持等方面有本质区别。InnoDB自MySQL 5.5起成为默认存储引擎。\n\n## 关键对比\n\n| 特性 | InnoDB | MyISAM |\n|------|--------|--------|\n| 事务支持 | 支持ACID事务 | 不支持事务 |\n| 锁粒度 | 行级锁 | 表级锁 |\n| 外键 | 支持 | 不支持 |\n| 崩溃恢复 | 支持（redo log） | 不支持 |\n| MVCC | 支持 | 不支持 |\n| 聚簇索引 | 支持 | 不支持 |\n| 全文索引 | 5.6+支持 | 支持 |\n| 存储文件 | .frm + .ibd | .frm + .MYD + .MYI |\n\n## SQL示例\n\n```sql\n-- 查看当前支持的存储引擎\nSHOW ENGINES;\n\n-- 查看表使用的存储引擎\nSHOW TABLE STATUS LIKE 'users'\\G\n\n-- 创建表时指定存储引擎\nCREATE TABLE t1 (\n    id INT PRIMARY KEY,\n    name VARCHAR(50)\n) ENGINE=InnoDB;\n\n-- 修改表的存储引擎\nALTER TABLE t1 ENGINE = MyISAM;\n```\n\n## 关键要点\n\n- **事务场景**：涉及转账、订单等业务必须用InnoDB\n- **读多写少**：纯读场景MyISAM理论上更快（无事务开销），但实际差距很小\n- **全文搜索**：MySQL 5.6之前MyISAM支持全文索引，InnoDB不支持\n- **外键约束**：只有InnoDB支持外键约束\n\n## 注意事项\n\n- 生产环境几乎全部使用InnoDB，MyISAM已逐步被弃用\n- MyISAM的表级锁在并发写入时性能极差\n- InnoDB的redo log机制保证了崩溃恢复能力\n- MySQL 8.0已移除对MyISAM的系统表依赖",
+    "tags": ["存储引擎", "InnoDB", "MyISAM"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-002",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中有哪些常用数据类型？如何选择合适的数据类型？",
+    "answer": "## 核心概念\n\nMySQL数据类型分为数值类型、字符串类型、日期时间类型三大类。选择合适的数据类型直接影响存储效率、查询性能和数据准确性。\n\n## 数据类型分类\n\n### 数值类型\n- **整数**：TINYINT(1字节)、SMALLINT(2)、MEDIUMINT(3)、INT(4)、BIGINT(8)\n- **浮点**：FLOAT(4字节)、DOUBLE(8字节) — 有精度丢失\n- **定点**：DECIMAL(M,D) — 精确计算，适合金额\n\n### 字符串类型\n- **CHAR(n)**：定长，最多255字符，适合长度固定的字段（如手机号）\n- **VARCHAR(n)**：变长，最多65535字节，适合长度变化的字段\n- **TEXT**：长文本，不计入行大小限制\n\n### 日期时间类型\n- **DATE**：YYYY-MM-DD\n- **TIME**：HH:MM:SS\n- **DATETIME**：YYYY-MM-DD HH:MM:SS（1000-9999年）\n- **TIMESTAMP**：时间戳（1970-2038年），自动时区转换\n\n## SQL示例\n\n```sql\n-- 金额使用DECIMAL\nCREATE TABLE orders (\n    id BIGINT PRIMARY KEY,\n    amount DECIMAL(10,2) NOT NULL,  -- 最大99999999.99\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n);\n\n-- 避免使用FLOAT存储金额\n-- 错误示例\nprice FLOAT(10,2);  -- 可能出现 0.01 + 0.02 = 0.030000000000000002\n\n-- 枚举类型适合有限选项\nstatus ENUM('pending','active','deleted') DEFAULT 'pending';\n```\n\n## 关键要点\n\n1. **够用就好**：能用TINYINT就不用INT，节省存储空间\n2. **金额用DECIMAL**：浮点数有精度问题\n3. **VARCHAR长度**：按实际最大长度分配，不要随意给255\n4. **TIMESTAMP vs DATETIME**：TIMESTAMP占4字节，DATETIME占8字节；TIMESTAMP有2038年问题\n5. **避免NULL**：尽量设为NOT NULL并给默认值\n\n## 注意事项\n\n- VARCHAR(10)和VARCHAR(100)在内存临时表中占用空间不同\n- 整型加UNSIGNED可以扩大正数范围\n- 字符集为UTF8MB4时，VARCHAR(n)最多占 n*4 字节\n- BLOB和TEXT会使用独立的存储区域，影响查询性能",
+    "tags": ["数据类型", "VARCHAR", "DECIMAL"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-003",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "什么是数据库三大范式？为什么要遵守范式？",
+    "answer": "## 核心概念\n\n三大范式是关系数据库设计的规范化理论，目的是减少数据冗余、避免更新异常。它们是逐层递进的关系，满足第二范式必然满足第一范式。\n\n## 三大范式详解\n\n### 第一范式（1NF）\n字段的原子性，每个字段不可再分。\n\n**反例**：地址字段存「北京市海淀区中关村」\n**正例**：拆分为省、市、区、详细地址四个字段\n\n### 第二范式（2NF）\n在1NF基础上，非主键字段完全依赖于主键（消除部分依赖）。\n\n**反例**：订单表 `(订单ID, 商品ID, 商品名称, 数量)` — 商品名称只依赖商品ID\n**正例**：拆为订单详情表 `(订单ID, 商品ID, 数量)` + 商品表 `(商品ID, 商品名称)`\n\n### 第三范式（3NF）\n在2NF基础上，非主键字段不传递依赖于主键（消除传递依赖）。\n\n**反例**：学生表 `(学号, 姓名, 学院ID, 学院名称)` — 学院名称依赖学院ID，学院ID依赖学号\n**正例**：学生表 `(学号, 姓名, 学院ID)` + 学院表 `(学院ID, 学院名称)`\n\n## SQL示例\n\n```sql\n-- 违反2NF的例子\nCREATE TABLE order_detail (\n    order_id INT,\n    product_id INT,\n    product_name VARCHAR(100),  -- 部分依赖，应拆出去\n    quantity INT,\n    PRIMARY KEY (order_id, product_id)\n);\n\n-- 符合2NF的拆分\nCREATE TABLE order_detail (\n    order_id INT,\n    product_id INT,\n    quantity INT,\n    PRIMARY KEY (order_id, product_id)\n);\n\nCREATE TABLE product (\n    product_id INT PRIMARY KEY,\n    product_name VARCHAR(100)\n);\n```\n\n## 关键要点\n\n- **范式越高，表越多**：查询时需要JOIN，可能影响性能\n- **适度反范式**：为提升查询效率，可以适当冗余字段（如订单表冗余商品名称）\n- **实际应用**：大多数业务表设计到3NF即可\n\n## 注意事项\n\n- 反范式设计虽然提升查询性能，但增加了数据一致性维护成本\n- 高并发场景下，适当的冗余字段可以减少JOIN操作\n- 数据仓库（OLAP）通常采用反范式设计（星型/雪花模型）",
+    "tags": ["范式", "数据库设计", "规范化"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-004",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "DDL、DML、DCL分别是什么？有哪些常用语句？",
+    "answer": "## 核心概念\n\nSQL语言按功能分为四大类：DDL（数据定义语言）、DML（数据操作语言）、DCL（数据控制语言）、TCL（事务控制语言）。\n\n## 各类语言详解\n\n### DDL（Data Definition Language）\n用于定义数据库对象结构，操作会自动提交，无法回滚。\n\n```sql\n-- 创建数据库\nCREATE DATABASE IF NOT EXISTS mydb DEFAULT CHARSET utf8mb4;\n\n-- 创建表\nCREATE TABLE users (\n    id BIGINT AUTO_INCREMENT PRIMARY KEY,\n    name VARCHAR(50) NOT NULL,\n    email VARCHAR(100) UNIQUE,\n    created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n-- 修改表结构\nALTER TABLE users ADD COLUMN age INT AFTER name;\nALTER TABLE users MODIFY COLUMN name VARCHAR(100);\nALTER TABLE users DROP COLUMN age;\n\n-- 删除表\nDROP TABLE IF EXISTS users;\n-- 截断表（释放空间，重置自增ID）\nTRUNCATE TABLE users;\n```\n\n### DML（Data Manipulation Language）\n用于操作表中的数据，可以回滚。\n\n```sql\n-- 插入\nINSERT INTO users (name, email) VALUES ('张三', 'zhangsan@test.com');\nINSERT INTO users (name, email) VALUES ('李四', 'lisi@test.com'), ('王五', 'wangwu@test.com');\n\n-- 更新\nUPDATE users SET name = '张三丰' WHERE id = 1;\n\n-- 删除\nDELETE FROM users WHERE id = 1;\n\n-- 查询\nSELECT * FROM users WHERE name LIKE '张%';\n```\n\n### DCL（Data Control Language）\n用于控制数据库访问权限。\n\n```sql\n-- 创建用户\nCREATE USER 'app_user'@'%' IDENTIFIED BY 'password123';\n\n-- 授权\nGRANT SELECT, INSERT, UPDATE ON mydb.* TO 'app_user'@'%';\n\n-- 撤销权限\nREVOKE INSERT ON mydb.* FROM 'app_user'@'%';\n\n-- 查看权限\nSHOW GRANTS FOR 'app_user'@'%';\n```\n\n## 关键要点\n\n1. **DDL自动提交**：`DROP TABLE`执行后无法回滚\n2. **DML需要事务控制**：`UPDATE`、`DELETE`建议在事务中执行\n3. **权限最小化原则**：DCL授权时只授予必要的最小权限\n4. **TRUNCATE vs DELETE**：TRUNCATE是DDL，速度快，重置自增；DELETE是DML，可回滚\n\n## 注意事项\n\n- 生产环境执行DDL前务必做好备份\n- `ALTER TABLE`大表操作可能导致锁表，推荐使用`pt-online-schema-change`\n- 避免使用`GRANT ALL PRIVILEGES`，应按需授权\n- `DROP TABLE`和`TRUNCATE TABLE`是不可逆操作，需谨慎",
+    "tags": ["DDL", "DML", "DCL", "SQL分类"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-005",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中JOIN有哪些类型？各自的含义是什么？",
+    "answer": "## 核心概念\n\nJOIN用于将多个表的数据根据关联条件组合查询。MySQL支持INNER JOIN、LEFT JOIN、RIGHT JOIN、CROSS JOIN等类型。\n\n## JOIN类型详解\n\n### INNER JOIN（内连接）\n返回两表中满足连接条件的行，不满足的行被过滤。\n\n### LEFT JOIN（左外连接）\n返回左表所有行，右表无匹配时以NULL填充。\n\n### RIGHT JOIN（右外连接）\n返回右表所有行，左表无匹配时以NULL填充。\n\n### CROSS JOIN（交叉连接）\n返回两表的笛卡尔积，即 m*n 行结果。\n\n## SQL示例\n\n```sql\n-- 创建示例表\nCREATE TABLE dept (id INT PRIMARY KEY, name VARCHAR(50));\nCREATE TABLE emp (id INT PRIMARY KEY, name VARCHAR(50), dept_id INT);\n\nINSERT INTO dept VALUES (1, '技术部'), (2, '市场部'), (3, '财务部');\nINSERT INTO emp VALUES (1, '张三', 1), (2, '李四', 1), (3, '王五', 2);\n\n-- INNER JOIN：只返回有部门的员工\nSELECT e.name, d.name AS dept_name\nFROM emp e\nINNER JOIN dept d ON e.dept_id = d.id;\n-- 结果：张三-技术部, 李四-技术部, 王五-市场部\n\n-- LEFT JOIN：返回所有员工，无部门显示NULL\nSELECT e.name, d.name AS dept_name\nFROM emp e\nLEFT JOIN dept d ON e.dept_id = d.id;\n\n-- RIGHT JOIN：返回所有部门，无员工显示NULL\nSELECT e.name, d.name AS dept_name\nFROM emp e\nRIGHT JOIN dept d ON e.dept_id = d.id;\n\n-- CROSS JOIN：笛卡尔积\nSELECT e.name, d.name\nFROM emp e\nCROSS JOIN dept d;\n-- 结果：3 * 3 = 9 行\n```\n\n## 关键要点\n\n1. **INNER JOIN最常用**：只取有关联的数据\n2. **LEFT JOIN保留主表**：查询「所有A及其B信息」时使用\n3. **CROSS JOIN慎用**：数据量大时笛卡尔积会导致结果集爆炸\n4. **隐式连接**：`FROM a, b WHERE a.id = b.id` 等价于 `INNER JOIN`，但推荐显式写法\n5. **自连接**：表可以和自身JOIN，常用于层级数据查询\n\n## 注意事项\n\n- JOIN条件必须有索引，否则会全表扫描\n- 多表JOIN时注意驱动表的选择，小表驱动大表\n- MySQL不支持FULL OUTER JOIN，可用`LEFT JOIN UNION RIGHT JOIN`模拟\n- JOIN的ON条件和WHERE条件在LEFT JOIN中有区别：ON保留左表所有行，WHERE会过滤",
+    "tags": ["JOIN", "INNER JOIN", "LEFT JOIN"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-006",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中子查询有哪些类型？使用时有哪些注意事项？",
+    "answer": "## 核心概念\n\n子查询是嵌套在其他SQL语句中的SELECT查询。按位置可分为WHERE子查询、FROM子查询、SELECT子查询；按结果集可分为标量子查询、行子查询、表子查询。\n\n## 子查询分类\n\n| 分类方式 | 类型 | 说明 |\n|----------|------|------|\n| 按位置 | WHERE子查询 | 作为WHERE条件 |\n| | FROM子查询 | 作为临时表（派生表） |\n| | SELECT子查询 | 作为计算列（关联子查询性能差） |\n| 按结果 | 标量子查询 | 返回单行单列 |\n| | 行子查询 | 返回单行多列 |\n| | 表子查询 | 返回多行多列 |\n\n## SQL示例\n\n```sql\n-- 标量子查询：查询薪资高于平均值的员工\nSELECT name, salary\nFROM emp\nWHERE salary > (SELECT AVG(salary) FROM emp);\n\n-- IN子查询：查询技术部的所有员工\nSELECT name FROM emp\nWHERE dept_id IN (SELECT id FROM dept WHERE name = '技术部');\n\n-- EXISTS子查询：查询有员工的部门\nSELECT name FROM dept d\nWHERE EXISTS (SELECT 1 FROM emp e WHERE e.dept_id = d.id);\n\n-- FROM子查询（派生表）\nSELECT t.dept_name, t.cnt\nFROM (\n    SELECT d.name AS dept_name, COUNT(*) AS cnt\n    FROM emp e\n    JOIN dept d ON e.dept_id = d.id\n    GROUP BY d.name\n) t\nWHERE t.cnt > 5;\n\n-- 关联子查询：查询每个部门薪资最高的员工\nSELECT name, dept_id, salary\nFROM emp e1\nWHERE salary = (\n    SELECT MAX(salary)\n    FROM emp e2\n    WHERE e2.dept_id = e1.dept_id\n);\n```\n\n## 关键要点\n\n1. **IN vs EXISTS**：外表小内表大用EXISTS，外表大内表小用IN\n2. **关联子查询性能差**：外层每行都要执行一次子查询\n3. **ANY/ALL**：`= ANY` 等价于 `IN`，`> ALL` 等价于大于最大值\n4. **子查询优化**：MySQL优化器会尝试将子查询转换为JOIN\n\n## 注意事项\n\n- MySQL 5.6之前FROM子查询不能使用索引，建议改用JOIN\n- SELECT子查询（标量）对外表每行执行一次，性能开销大\n- IN子查询结果集过大时，考虑改用JOIN或EXISTS\n- 子查询中不要使用`LIMIT`（MySQL某些版本不支持）\n- `NOT IN`遇到NULL值会返回空结果，建议用`NOT EXISTS`替代",
+    "tags": ["子查询", "EXISTS", "IN"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-007",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "GROUP BY和HAVING的作用是什么？它们有什么区别？",
+    "answer": "## 核心概念\n\n`GROUP BY`用于将结果集按指定字段分组，通常与聚合函数（COUNT、SUM、AVG、MAX、MIN）配合使用。`HAVING`用于对分组后的结果进行过滤，类似于WHERE但作用于分组结果。\n\n## 核心区别\n\n| 特性 | WHERE | HAVING |\n|------|-------|--------|\n| 执行时机 | 分组前过滤 | 分组后过滤 |\n| 可用字段 | 原始表字段 | 分组字段或聚合结果 |\n| 能否用聚合函数 | 不能 | 可以 |\n| 性能 | 较好（减少分组数据量） | 较差（先分组再过滤） |\n\n## SQL示例\n\n```sql\n-- 基本GROUP BY\nSELECT dept_id, COUNT(*) AS emp_count, AVG(salary) AS avg_salary\nFROM emp\nGROUP BY dept_id;\n\n-- HAVING过滤分组结果\nSELECT dept_id, COUNT(*) AS cnt\nFROM emp\nGROUP BY dept_id\nHAVING cnt >= 5;\n\n-- WHERE + GROUP BY + HAVING 组合\nSELECT dept_id, AVG(salary) AS avg_salary\nFROM emp\nWHERE age > 25              -- 先过滤年龄\nGROUP BY dept_id            -- 再按部门分组\nHAVING avg_salary > 10000;  -- 最后过滤平均薪资\n\n-- 多字段分组\nSELECT dept_id, gender, COUNT(*)\nFROM emp\nGROUP BY dept_id, gender;\n\n-- GROUP BY与ORDER BY\nSELECT dept_id, COUNT(*) AS cnt\nFROM emp\nGROUP BY dept_id\nHAVING cnt > 3\nORDER BY cnt DESC;\n```\n\n## 关键要点\n\n1. **SELECT字段限制**：GROUP BY后SELECT只能包含分组字段和聚合函数\n2. **执行顺序**：`WHERE → GROUP BY → HAVING → SELECT → ORDER BY`\n3. **WHERE优先**：能用WHERE过滤的条件不要放到HAVING中\n4. **GROUP_CONCAT**：分组后拼接字符串\n\n```sql\n-- GROUP_CONCAT示例\nSELECT dept_id, GROUP_CONCAT(name SEPARATOR ',') AS names\nFROM emp\nGROUP BY dept_id;\n```\n\n## 注意事项\n\n- MySQL的`sql_mode`如果包含`ONLY_FULL_GROUP_BY`，则SELECT字段必须在GROUP BY中\n- GROUP BY默认会对结果排序（MySQL 8.0已取消此行为）\n- 对大表GROUP BY时，如果没有索引会使用临时表和文件排序\n- GROUP BY NULL值会将所有NULL分为一组",
+    "tags": ["GROUP BY", "HAVING", "聚合函数"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-008",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "UNION和UNION ALL有什么区别？什么时候用哪个？",
+    "answer": "## 核心概念\n\n`UNION`和`UNION ALL`都用于合并多个SELECT语句的结果集。`UNION`会对结果去重并排序，`UNION ALL`直接合并不去重。\n\n## 核心区别\n\n| 特性 | UNION | UNION ALL |\n|------|-------|----------|\n| 去重 | 是 | 否 |\n| 排序 | 会排序（去重需要） | 不排序 |\n| 性能 | 较慢（需要去重操作） | 较快 |\n| 结果集 | 可能小于等于 | 等于各行之和 |\n\n## SQL示例\n\n```sql\n-- 基本UNION（自动去重）\nSELECT name FROM table_a\nUNION\nSELECT name FROM table_b;\n\n-- UNION ALL（不去重，保留所有行）\nSELECT name FROM table_a\nUNION ALL\nSELECT name FROM table_b;\n\n-- 多表合并\nSELECT id, name, 'type_a' AS type FROM table_a\nUNION ALL\nSELECT id, name, 'type_b' AS type FROM table_b\nUNION ALL\nSELECT id, name, 'type_c' AS type FROM table_c;\n\n-- 合并后排序\nSELECT name FROM table_a\nUNION ALL\nSELECT name FROM table_b\nORDER BY name;  -- ORDER BY作用于整个结果集\n\n-- 实际应用场景：合并多个月份的订单\nSELECT order_id, amount, '2024-01' AS month FROM orders_202401\nUNION ALL\nSELECT order_id, amount, '2024-02' AS month FROM orders_202402;\n```\n\n## 关键要点\n\n1. **确认无需去重时用UNION ALL**：性能更好，避免不必要的排序和去重操作\n2. **列数和类型必须一致**：每个SELECT的列数和对应列类型需兼容\n3. **ORDER BY位置**：只能放在最后一个SELECT语句后\n4. **LIMIT**：可以对整个UNION结果使用LIMIT\n\n## 注意事项\n\n- UNION的去重操作使用临时表，大数据量时性能很差\n- 如果业务上确定不会有重复数据，务必使用UNION ALL\n- UNION中每个SELECT的列名以第一个SELECT为准\n- UNION ALL + DISTINCT 和 UNION 效果相同，但前者更灵活\n- 合并结果集时建议加上来源标识字段，便于排查问题",
+    "tags": ["UNION", "UNION ALL", "合并查询"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-009",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL窗口函数有哪些？和GROUP BY有什么区别？",
+    "answer": "## 核心概念\n\n窗口函数（Window Function）是MySQL 8.0引入的功能，可以在不减少结果集行数的情况下进行聚合计算。与GROUP BY不同，窗口函数为每行都返回一个计算值。\n\n## 核心区别\n\n| 特性 | GROUP BY | 窗口函数 |\n|------|----------|----------|\n| 结果行数 | 减少（每组一行） | 不变（每行都有结果） |\n| 原始数据 | 丢失组内明细 | 保留每行明细 |\n| 使用场景 | 汇总统计 | 排名、累计、移动平均等 |\n\n## 常用窗口函数\n\n```sql\n-- 排名函数\nROW_NUMBER()    -- 无并列，1,2,3,4\nRANK()          -- 有并列会跳号，1,1,3,4\nDENSE_RANK()    -- 有并列不跳号，1,1,2,3\n\n-- 聚合窗口函数\nSUM() OVER()、AVG() OVER()、COUNT() OVER()\n\n-- 偏移函数\nLAG(col, n)     -- 前n行的值\nLEAD(col, n)    -- 后n行的值\n\n-- 分布函数\nNTILE(n)        -- 将数据分成n组\n```\n\n## SQL示例\n\n```sql\n-- 部门薪资排名\nSELECT name, dept_id, salary,\n       ROW_NUMBER() OVER (PARTITION BY dept_id ORDER BY salary DESC) AS rn\nFROM emp;\n\n-- 全公司薪资排名（三种排名对比）\nSELECT name, salary,\n       ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num,\n       RANK() OVER (ORDER BY salary DESC) AS rank_num,\n       DENSE_RANK() OVER (ORDER BY salary DESC) AS dense_rank_num\nFROM emp;\n\n-- 累计薪资\nSELECT name, salary,\n       SUM(salary) OVER (ORDER BY id) AS cumulative_salary\nFROM emp;\n\n-- 移动平均（当前行与前两行的平均）\nSELECT name, salary,\n       AVG(salary) OVER (ORDER BY id ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) AS moving_avg\nFROM emp;\n\n-- LAG/LEAD：与上月对比\nSELECT month, revenue,\n       LAG(revenue, 1) OVER (ORDER BY month) AS prev_month,\n       revenue - LAG(revenue, 1) OVER (ORDER BY month) AS growth\nFROM monthly_sales;\n\n-- NTILE：将员工按薪资分为4组\nSELECT name, salary,\n       NTILE(4) OVER (ORDER BY salary DESC) AS quarter\nFROM emp;\n```\n\n## 关键要点\n\n1. **PARTITION BY**：类似GROUP BY的分组依据，但不减少行数\n2. **ORDER BY**：窗口函数内的排序，决定计算顺序\n3. **帧（Frame）**：`ROWS BETWEEN ... AND ...`定义计算范围\n4. **不能在WHERE中使用**：窗口函数在SELECT阶段执行，WHERE在之前\n\n## 注意事项\n\n- 窗口函数只能在SELECT和ORDER BY中使用\n- MySQL 8.0之前需要使用变量模拟窗口函数\n- 窗口函数的OVER中不写PARTITION BY则对全表操作\n- `ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW`是默认帧范围",
+    "tags": ["窗口函数", "ROW_NUMBER", "PARTITION BY"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-010",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中触发器和存储过程是什么？有哪些使用场景？",
+    "answer": "## 核心概念\n\n**存储过程（Stored Procedure）** 是一组预编译的SQL语句集合，通过CALL调用执行。**触发器（Trigger）** 是与表关联的数据库对象，在INSERT/UPDATE/DELETE操作前或后自动触发执行。\n\n## 存储过程\n\n### 基本语法\n\n```sql\n-- 创建存储过程\nDELIMITER //\nCREATE PROCEDURE get_emp_by_dept(IN dept_id INT, OUT emp_count INT)\nBEGIN\n    SELECT COUNT(*) INTO emp_count FROM emp WHERE emp.dept_id = dept_id;\n    SELECT * FROM emp WHERE emp.dept_id = dept_id;\nEND //\nDELIMITER ;\n\n-- 调用\nCALL get_emp_by_dept(1, @count);\nSELECT @count;\n\n-- 带条件判断的存储过程\nDELIMITER //\nCREATE PROCEDURE transfer(\n    IN from_id INT, IN to_id INT, IN amount DECIMAL(10,2)\n)\nBEGIN\n    DECLARE from_balance DECIMAL(10,2);\n    \n    START TRANSACTION;\n    SELECT balance INTO from_balance FROM account WHERE id = from_id;\n    \n    IF from_balance >= amount THEN\n        UPDATE account SET balance = balance - amount WHERE id = from_id;\n        UPDATE account SET balance = balance + amount WHERE id = to_id;\n        COMMIT;\n    ELSE\n        ROLLBACK;\n        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '余额不足';\n    END IF;\nEND //\nDELIMITER ;\n```\n\n## 触发器\n\n```sql\n-- 创建触发器：插入订单时更新库存\nDELIMITER //\nCREATE TRIGGER trg_after_insert_order\nAFTER INSERT ON orders\nFOR EACH ROW\nBEGIN\n    UPDATE products SET stock = stock - NEW.quantity\n    WHERE id = NEW.product_id;\nEND //\nDELIMITER ;\n\n-- BEFORE INSERT触发器：数据校验\nDELIMITER //\nCREATE TRIGGER trg_before_insert_emp\nBEFORE INSERT ON emp\nFOR EACH ROW\nBEGIN\n    IF NEW.salary < 0 THEN\n        SET NEW.salary = 0;\n    END IF;\nEND //\nDELIMITER ;\n\n-- 删除触发器\nDROP TRIGGER IF EXISTS trg_after_insert_order;\n```\n\n## 关键要点\n\n1. **存储过程优势**：减少网络传输、预编译提高性能、封装业务逻辑\n2. **触发器特点**：自动执行、不可手动调用、对应用透明\n3. **NEW/OLD关键字**：NEW表示新数据，OLD表示旧数据\n4. **触发时机**：BEFORE/AFTER + INSERT/UPDATE/DELETE\n\n## 注意事项\n\n- 触发器难以调试，隐式执行增加排查复杂度\n- 触发器嵌套和递归可能导致死锁\n- 存储过程在数据库迁移时维护成本高\n- 生产环境建议少用触发器，业务逻辑放在应用层\n- 存储过程中使用事务需要显式START TRANSACTION\n- MySQL触发器不支持对同一表进行触发操作后再查询（变异表问题）",
+    "tags": ["存储过程", "触发器", "过程式SQL"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-011",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL支持哪些字符集和排序规则？如何选择？",
+    "answer": "## 核心概念\n\n字符集（Character Set）定义了字符的编码方式，排序规则（Collation）定义了字符的比较和排序规则。每个字符集有一个默认排序规则。\n\n## 常用字符集\n\n| 字符集 | 字节/字符 | 说明 |\n|--------|----------|------|\n| latin1 | 1 | 西欧字符，不支持中文 |\n| gbk | 2 | 支持中文，国内常用 |\n| utf8 | 3 | UTF-8，但不支持emoji |\n| utf8mb4 | 4 | 完整UTF-8，推荐使用 |\n\n## 常用排序规则\n\n- **utf8mb4_general_ci**：通用排序，性能好，不区分大小写\n- **utf8mb4_unicode_ci**：基于Unicode标准排序，更准确\n- **utf8mb4_bin**：二进制比较，区分大小写\n- **utf8mb4_0900_ai_ci**：MySQL 8.0默认，基于Unicode 9.0\n\n## SQL示例\n\n```sql\n-- 查看支持的字符集\nSHOW CHARACTER SET;\n\n-- 查看支持的排序规则\nSHOW COLLATION WHERE Charset = 'utf8mb4';\n\n-- 查看当前数据库字符集\nSHOW VARIABLES LIKE 'character_set%';\nSHOW VARIABLES LIKE 'collation%';\n\n-- 创建数据库时指定字符集\nCREATE DATABASE mydb\n    DEFAULT CHARACTER SET utf8mb4\n    DEFAULT COLLATE utf8mb4_general_ci;\n\n-- 创建表时指定字符集\nCREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(50)\n) DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;\n\n-- 修改已有表的字符集\nALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\n\n-- 修改列的字符集\nALTER TABLE users MODIFY name VARCHAR(50) CHARACTER SET utf8mb4;\n```\n\n## 关键要点\n\n1. **统一使用utf8mb4**：支持所有Unicode字符包括emoji\n2. **排序规则选择**：一般场景用`_general_ci`或`_0900_ai_ci`，需要精确匹配用`_bin`\n3. **连接字符集**：确保客户端连接也使用utf8mb4\n4. **字符集继承**：列未指定时继承表，表未指定时继承数据库\n\n## 注意事项\n\n- MySQL的`utf8`不是真正的UTF-8，最多3字节，不支持4字节字符\n- 生产环境必须使用`utf8mb4`而不是`utf8`\n- 字符集不一致会导致索引失效（隐式类型转换）\n- `CONVERT TO`会重建表数据，大表操作需谨慎\n- 连接时设置：`SET NAMES utf8mb4;`",
+    "tags": ["字符集", "utf8mb4", "排序规则"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-012",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中NULL值如何处理？有哪些注意事项？",
+    "answer": "## 核心概念\n\nNULL表示「未知」或「不存在」的值，它不等于空字符串''，也不等于0。NULL参与的运算结果通常还是NULL，这与大多数编程语言不同。\n\n## NULL的特殊行为\n\n```sql\n-- NULL不等于任何值，包括NULL\nSELECT NULL = NULL;       -- 返回NULL（不是TRUE）\nSELECT NULL != 1;         -- 返回NULL\nSELECT NULL IS NULL;      -- 返回TRUE\nSELECT NULL IS NOT NULL;  -- 返回FALSE\n\n-- NULL参与运算结果为NULL\nSELECT 1 + NULL;          -- 返回NULL\nSELECT CONCAT('abc', NULL); -- 返回NULL\n```\n\n## SQL示例\n\n```sql\n-- 查询NULL值\nSELECT * FROM users WHERE email IS NULL;\nSELECT * FROM users WHERE email IS NOT NULL;\n\n-- IFNULL处理NULL\nSELECT name, IFNULL(email, '未填写') AS email FROM users;\n\n-- COALESCE：返回第一个非NULL值\nSELECT name, COALESCE(phone, email, '无联系方式') AS contact FROM users;\n\n-- NULLIF：相等时返回NULL\nSELECT NULLIF(1, 1);  -- 返回NULL\nSELECT NULLIF(1, 2);  -- 返回1\n\n-- COUNT与NULL\nSELECT COUNT(*), COUNT(email) FROM users;\n-- COUNT(*)统计所有行，COUNT(email)忽略NULL值\n\n-- NULL与索引\n-- NULL值可以被索引，但IS NULL/IS NOT NULL是否走索引取决于数据分布\nSELECT * FROM users WHERE email IS NULL;  -- 可能走索引\n```\n\n## 关键要点\n\n1. **不能用=判断NULL**：必须用`IS NULL`或`IS NOT NULL`\n2. **聚合函数忽略NULL**：SUM、AVG、COUNT(col)不计入NULL\n3. **COUNT(*) vs COUNT(col)**：前者统计所有行，后者忽略NULL\n4. **NOT IN与NULL**：`NOT IN`子查询中有NULL时返回空结果\n5. **NULL与排序**：`ORDER BY ASC`时NULL排在最前面\n\n## 注意事项\n\n- 尽量避免在字段中使用NULL，用默认值替代\n- UNIQUE约束允许多个NULL值（MySQL 8.0之前）\n- 外键中NULL表示没有关联关系\n- `COALESCE`比`IFNULL`更通用，支持多参数\n- NULL与比较运算符的结果都是NULL，包括 `1 > NULL`\n- 使用NOT EXISTS替代NOT IN避免NULL陷阱",
+    "tags": ["NULL", "IS NULL", "COALESCE"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-013",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "SQL语句的执行顺序是怎样的？",
+    "answer": "## 核心概念\n\nSQL语句的书写顺序和执行顺序不同。理解执行顺序对于优化查询、理解别名使用限制等非常重要。\n\n## 执行顺序\n\n| 顺序 | 关键字 | 作用 |\n|------|--------|------|\n| 1 | FROM | 确定数据来源表 |\n| 2 | ON | 连接条件过滤 |\n| 3 | JOIN | 表连接 |\n| 4 | WHERE | 行级过滤 |\n| 5 | GROUP BY | 分组 |\n| 6 | HAVING | 组级过滤 |\n| 7 | SELECT | 选择列、计算表达式 |\n| 8 | DISTINCT | 去重 |\n| 9 | ORDER BY | 排序 |\n| 10 | LIMIT | 限制行数 |\n\n## SQL示例\n\n```sql\n-- 书写顺序\nSELECT dept_id, AVG(salary) AS avg_sal\nFROM emp\nWHERE age > 25\nGROUP BY dept_id\nHAVING avg_sal > 10000\nORDER BY avg_sal DESC\nLIMIT 10;\n\n-- 执行顺序等价于：\n-- 1. FROM emp\n-- 2. WHERE age > 25\n-- 3. GROUP BY dept_id\n-- 4. HAVING AVG(salary) > 10000\n-- 5. SELECT dept_id, AVG(salary) AS avg_sal\n-- 6. ORDER BY avg_sal DESC\n-- 7. LIMIT 10\n\n-- 执行顺序的影响示例\n-- WHERE中不能使用SELECT的别名（WHERE在SELECT之前执行）\nSELECT salary * 12 AS annual_salary\nFROM emp\nWHERE annual_salary > 100000;  -- 错误！别名还未生效\n\n-- 正确写法\nSELECT salary * 12 AS annual_salary\nFROM emp\nWHERE salary * 12 > 100000;  -- 或者在HAVING中使用别名\n\n-- GROUP BY中可以使用别名（MySQL 8.0+）\nSELECT dept_id AS d_id, COUNT(*) AS cnt\nFROM emp\nGROUP BY d_id;  -- MySQL 8.0支持\n```\n\n## 关键要点\n\n1. **FROM最先执行**：确定数据源\n2. **WHERE在GROUP BY之前**：先过滤再分组，减少分组数据量\n3. **SELECT在GROUP BY之后**：所以WHERE中不能用列别名\n4. **ORDER BY可以使用别名**：因为它在SELECT之后执行\n5. **LIMIT最后执行**：在排序之后取前N条\n\n## 注意事项\n\n- 理解执行顺序有助于判断SQL优化方向\n- WHERE过滤在分组前，HAVING过滤在分组后\n- 子查询的执行取决于其在SQL中的位置\n- MySQL优化器可能会重写执行计划，但逻辑顺序不变\n- GROUP BY在MySQL 8.0中可以使用SELECT别名",
+    "tags": ["SQL执行顺序", "查询优化", "SQL基础"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-014",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL的整体架构是怎样的？各层的作用是什么？",
+    "answer": "## 核心概念\n\nMySQL采用分层架构，从上到下分为：连接层、Server层（SQL层）、存储引擎层。这种设计使得存储引擎可插拔，不同引擎可以共存。\n\n## 架构分层详解\n\n### 连接层\n- 负责客户端连接的建立、认证和管理\n- 管理连接池，每个连接对应一个线程\n- 支持多种连接协议：TCP/IP、Socket、命名管道\n\n### Server层\n- **连接器**：身份验证、权限校验\n- **查询缓存**：MySQL 8.0已移除\n- **分析器**：词法分析、语法分析\n- **优化器**：选择执行计划（索引选择、JOIN顺序）\n- **执行器**：调用存储引擎接口执行查询\n\n### 存储引擎层\n- 负责数据的存储和提取\n- 支持InnoDB、MyISAM、Memory等\n- 通过API与Server层交互\n\n## SQL执行流程\n\n```\n客户端 → 连接器（认证）→ 查询缓存（8.0移除）→ 分析器（解析SQL）→ 优化器（生成执行计划）→ 执行器（调用引擎接口）→ 存储引擎\n```\n\n## 关键要点\n\n1. **连接管理**：长连接 vs 短连接，长连接需定期断开避免内存泄漏\n2. **查询缓存**：表有更新则缓存失效，命中率低，MySQL 8.0移除\n3. **优化器**：选择最优执行计划，如选择哪个索引、JOIN顺序\n4. **执行器**：检查表权限后，调用存储引擎接口\n\n```sql\n-- 查看连接信息\nSHOW PROCESSLIST;\n\n-- 查看最大连接数\nSHOW VARIABLES LIKE 'max_connections';\n\n-- 设置连接超时\nSET GLOBAL wait_timeout = 28800;  -- 8小时\nSET GLOBAL interactive_timeout = 28800;\n```\n\n## 注意事项\n\n- 连接数过多会导致内存消耗大，建议使用连接池\n- `SHOW PROCESSLIST`可以查看当前所有连接状态\n- 长连接累积可能导致内存增长，定期断开重连或使用`mysql_reset_connection`\n- 优化器不一定选择最优的执行计划，必要时使用FORCE INDEX或STRAIGHT_JOIN",
+    "tags": ["MySQL架构", "Server层", "存储引擎"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-015",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中LIMIT的用法有哪些？分页查询如何优化？",
+    "answer": "## 核心概念\n\nLIMIT用于限制查询结果返回的行数，常用于分页查询。基本语法为`LIMIT offset, count`或`LIMIT count OFFSET offset`。\n\n## SQL示例\n\n```sql\n-- 基本用法：取前10条\nSELECT * FROM emp LIMIT 10;\n-- 等价写法\nSELECT * FROM emp LIMIT 0, 10;\nSELECT * FROM emp LIMIT 10 OFFSET 0;\n\n-- 分页查询：第2页，每页10条\nSELECT * FROM emp LIMIT 10, 10;\n-- 等价\nSELECT * FROM emp LIMIT 10 OFFSET 10;\n\n-- 深分页问题\nSELECT * FROM emp LIMIT 1000000, 10;\n-- MySQL需要扫描1000010行，然后丢弃前1000000行，非常慢\n\n-- 优化方案1：使用主键游标\n-- 上一页最后一条的id为1000000\nSELECT * FROM emp WHERE id > 1000000 LIMIT 10;\n\n-- 优化方案2：延迟关联\nSELECT e.* FROM emp e\nINNER JOIN (\n    SELECT id FROM emp LIMIT 1000000, 10\n) t ON e.id = t.id;\n\n-- 优化方案3：子查询优化\nSELECT * FROM emp\nWHERE id >= (SELECT id FROM emp LIMIT 1000000, 1)\nLIMIT 10;\n\n-- LIMIT与ORDER BY结合\nSELECT * FROM emp\nORDER BY salary DESC\nLIMIT 10;  -- 取薪资最高的10人\n\n-- LIMIT 1的应用\nSELECT * FROM emp WHERE email = 'test@test.com' LIMIT 1;\n-- 已知只有一条记录时，加LIMIT 1可以在找到后立即返回\n```\n\n## 关键要点\n\n1. **深分页性能差**：`LIMIT 1000000, 10`需要扫描大量数据\n2. **游标分页**：使用`WHERE id > last_id LIMIT n`避免深分页\n3. **延迟关联**：先查主键再回表，减少回表次数\n4. **覆盖索引**：如果查询字段都在索引中，LIMIT性能更好\n\n## 注意事项\n\n- LIMIT必须与ORDER BY配合才能保证结果的确定性\n- `LIMIT 0, n`可以用于快速获取表的大致数据量\n- 深分页场景考虑使用搜索引擎（Elasticsearch）或缓存\n- 某些场景可以用`BETWEEN`替代LIMIT分页",
+    "tags": ["LIMIT", "分页优化", "深分页"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-016",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用正则表达式进行查询？",
+    "answer": "## 核心概念\n\nMySQL通过`REGEXP`（或`RLIKE`）操作符支持正则表达式匹配。正则表达式提供了比LIKE更强大的模式匹配能力。\n\n## SQL示例\n\n```sql\n-- REGEXP基本用法\nSELECT * FROM users WHERE name REGEXP '^张';  -- 以张开头\nSELECT * FROM users WHERE name REGEXP '三$';  -- 以三结尾\n\n-- 常用正则模式\n-- 匹配数字\nSELECT * FROM products WHERE code REGEXP '[0-9]+';\n\n-- 匹配邮箱格式（简化）\nSELECT * FROM users WHERE email REGEXP '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$';\n\n-- 匹配手机号\nSELECT * FROM users WHERE phone REGEXP '^1[3-9][0-9]{9}$';\n\n-- . 匹配任意单个字符\nSELECT * FROM users WHERE name REGEXP '张.三';  -- 张三、张X三等\n\n-- | 表示或\nSELECT * FROM users WHERE name REGEXP '张|李|王';  -- 姓张或李或王\n\n-- [abc] 字符集合\nSELECT * FROM users WHERE name REGEXP '[张李王]三';\n\n-- [^abc] 排除字符\nSELECT * FROM users WHERE name REGEXP '[^张李王]';\n\n-- * + ? 量词\nSELECT * FROM products WHERE name REGEXP '手机.*壳';  -- 手机xx壳\n\n-- NOT REGEXP\nSELECT * FROM users WHERE email NOT REGEXP '@(qq|163)\\.com$';\n```\n\n## 关键要点\n\n1. **REGEXP vs LIKE**：REGEXP匹配子串，LIKE匹配整个字符串\n2. **大小写**：REGEXP默认不区分大小写，可用`BINARY`关键字区分\n3. **性能**：REGEXP无法使用索引，大数据量时性能差\n4. **特殊字符**：`.`、`*`、`+`等需要转义`\\\\.`\n\n## 注意事项\n\n- REGEXP不走索引，数据量大时建议用LIKE或应用层正则\n- MySQL 8.0支持更丰富的正则函数：`REGEXP_LIKE`、`REGEXP_REPLACE`、`REGEXP_SUBSTR`\n- 复杂正则表达式应考虑在应用层处理\n- `BINARY`关键字使匹配区分大小写：`WHERE name REGEXP BINARY '^[A-Z]'`",
+    "tags": ["REGEXP", "正则表达式", "模式匹配"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-017",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中CASE表达式如何使用？有哪些应用场景？",
+    "answer": "## 核心概念\n\nCASE表达式是MySQL中的条件表达式，类似于编程语言中的if-else或switch-case。它可以在SELECT、UPDATE、ORDER BY等语句中使用。\n\n## 两种语法形式\n\n```sql\n-- 简单CASE（等值判断）\nCASE expression\n    WHEN value1 THEN result1\n    WHEN value2 THEN result2\n    ELSE default_result\nEND\n\n-- 搜索CASE（条件判断，更灵活）\nCASE\n    WHEN condition1 THEN result1\n    WHEN condition2 THEN result2\n    ELSE default_result\nEND\n```\n\n## SQL示例\n\n```sql\n-- 简单CASE：状态翻译\nSELECT name,\n    CASE status\n        WHEN 1 THEN '待审核'\n        WHEN 2 THEN '已通过'\n        WHEN 3 THEN '已拒绝'\n        ELSE '未知'\n    END AS status_text\nFROM orders;\n\n-- 搜索CASE：薪资等级\nSELECT name, salary,\n    CASE\n        WHEN salary >= 20000 THEN '高薪'\n        WHEN salary >= 10000 THEN '中等'\n        ELSE '普通'\n    END AS salary_level\nFROM emp;\n\n-- CASE在GROUP BY中使用（行转列）\nSELECT dept_id,\n    SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) AS male_count,\n    SUM(CASE WHEN gender = 'F' THEN 1 ELSE 0 END) AS female_count\nFROM emp\nGROUP BY dept_id;\n\n-- CASE在ORDER BY中使用\nSELECT * FROM emp\nORDER BY\n    CASE status\n        WHEN 'active' THEN 1\n        WHEN 'pending' THEN 2\n        ELSE 3\n    END;\n\n-- CASE在UPDATE中使用（批量条件更新）\nUPDATE emp SET salary = CASE\n    WHEN dept_id = 1 THEN salary * 1.1\n    WHEN dept_id = 2 THEN salary * 1.2\n    ELSE salary * 1.05\nEND;\n\n-- CASE在DISTINCT中使用\nSELECT COUNT(DISTINCT CASE WHEN status = 1 THEN user_id END) AS active_users\nFROM orders;\n```\n\n## 关键要点\n\n1. **搜索CASE更灵活**：支持任意条件表达式\n2. **ELSE可省略**：但不建议，省略时不符合条件返回NULL\n3. **数据类型一致**：所有THEN结果的类型应兼容\n4. **可以嵌套**：但嵌套过深影响可读性\n\n## 注意事项\n\n- CASE是表达式不是语句，可以用在任何可以使用表达式的地方\n- MySQL会短路评估，找到匹配后不再继续\n- 大量CASE WHEN可以考虑使用临时表或字典表替代\n- CASE在GROUP BY中实现行转列是常见的报表技巧",
+    "tags": ["CASE WHEN", "条件表达式", "行转列"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-018",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何处理JSON数据？有哪些常用函数？",
+    "answer": "## 核心概念\n\nMySQL 5.7引入了原生JSON数据类型，支持高效的JSON文档存储和查询。MySQL 8.0进一步增强了JSON功能，包括JSON表函数等。\n\n## SQL示例\n\n```sql\n-- 创建JSON字段\nCREATE TABLE products (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    attrs JSON\n);\n\n-- 插入JSON数据\nINSERT INTO products VALUES\n(1, '手机', '{\"brand\": \"Apple\", \"color\": \"black\", \"price\": 6999}'),\n(2, '笔记本', JSON_OBJECT('brand', 'Dell', 'color', 'silver', 'price', 8999));\n\n-- 提取JSON值\nSELECT name,\n    attrs->'$.brand' AS brand_quoted,    -- 带引号的结果\n    attrs->>'$.brand' AS brand,           -- 不带引号的结果（MySQL 5.7.13+）\n    JSON_EXTRACT(attrs, '$.price') AS price\nFROM products;\n\n-- JSON路径查询\nSELECT * FROM products\nWHERE JSON_EXTRACT(attrs, '$.brand') = 'Apple';\n\n-- 等价写法（MySQL 8.0）\nSELECT * FROM products\nWHERE attrs->>'$.brand' = 'Apple';\n\n-- 修改JSON值\nUPDATE products SET attrs = JSON_SET(attrs, '$.price', 7999) WHERE id = 1;\n\n-- 添加JSON键值\nUPDATE products SET attrs = JSON_INSERT(attrs, '$.weight', '180g') WHERE id = 1;\n\n-- 删除JSON键\nUPDATE products SET attrs = JSON_REMOVE(attrs, '$.weight') WHERE id = 1;\n\n-- JSON数组操作\nINSERT INTO products VALUES (3, '耳机', '{\"brand\": \"Sony\", \"tags\": [\"wireless\", \"noise-canceling\"]}');\nSELECT * FROM products WHERE JSON_CONTAINS(attrs->'$.tags', '\"wireless\"');\n\n-- JSON_TABLE：将JSON展开为表\nSELECT p.name, jt.*\nFROM products p,\nJSON_TABLE(p.attrs, '$' COLUMNS (\n    brand VARCHAR(50) PATH '$.brand',\n    color VARCHAR(20) PATH '$.color',\n    price INT PATH '$.price'\n)) AS jt;\n```\n\n## 关键要点\n\n1. **JSON类型校验**：插入非法JSON会报错\n2. **->与->>**：`->`返回带引号，`->>`返回不带引号\n3. **虚拟列索引**：可以在JSON字段上创建虚拟列并建索引\n4. **部分更新**：MySQL 8.0支持JSON列的部分更新（Partial Update）\n\n```sql\n-- 虚拟列 + 索引\nALTER TABLE products\nADD COLUMN brand VARCHAR(50) GENERATED ALWAYS AS (attrs->>'$.brand') VIRTUAL,\nADD INDEX idx_brand (brand);\n```\n\n## 注意事项\n\n- JSON字段不支持直接索引，需要通过虚拟列间接索引\n- JSON数据类型相比VARCHAR存储有额外开销\n- 复杂JSON查询应考虑拆分为关系表\n- JSON字段更新会导致整行重写（MySQL 8.0部分更新可缓解）\n- JSON路径不存在时返回NULL",
+    "tags": ["JSON", "JSON函数", "JSON类型"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-019",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用事务？BEGIN/COMMIT/ROLLBACK的作用是什么？",
+    "answer": "## 核心概念\n\n事务是一组不可分割的SQL操作序列，要么全部执行成功，要么全部回滚。MySQL中只有InnoDB引擎支持事务。\n\n## SQL示例\n\n```sql\n-- 显式开启事务\nBEGIN;\n-- 或者\nSTART TRANSACTION;\n\nUPDATE account SET balance = balance - 100 WHERE id = 1;\nUPDATE account SET balance = balance + 100 WHERE id = 2;\n\n-- 提交事务\nCOMMIT;\n\n-- 回滚事务\nROLLBACK;\n\n-- SAVEPOINT（保存点）\nBEGIN;\nINSERT INTO orders VALUES (1, '订单1');\nSAVEPOINT sp1;\n\nINSERT INTO orders VALUES (2, '订单2');\nSAVEPOINT sp2;\n\n-- 回滚到保存点sp1，订单2的操作被撤销\nROLLBACK TO sp1;\n\n-- 继续操作\nINSERT INTO orders VALUES (3, '订单3');\nCOMMIT;  -- 最终提交订单1和订单3\n\n-- 查看当前事务状态\nSELECT * FROM information_schema.INNODB_TRX;\n\n-- 自动提交\nSHOW VARIABLES LIKE 'autocommit';  -- 默认ON\nSET autocommit = 0;  -- 关闭自动提交\n```\n\n## 关键要点\n\n1. **BEGIN到COMMIT**：显式事务的边界\n2. **ROLLBACK**：撤销事务中所有未提交的操作\n3. **SAVEPOINT**：设置回滚点，可以选择性回滚\n4. **autocommit**：默认每条SQL都是独立事务\n5. **DDL自动提交**：CREATE/ALTER/DROP会隐式提交当前事务\n\n## 注意事项\n\n- 长事务持有锁时间长，影响并发性能\n- 事务中避免使用SELECT ... LOCK IN SHARE MODE长时间持有\n- DDL语句（ALTER TABLE等）会导致隐式COMMIT\n- 连接断开时未提交的事务会自动ROLLBACK\n- 建议事务尽可能短小，减少锁持有时间",
+    "tags": ["事务", "BEGIN", "COMMIT"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-020",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用视图（VIEW）？有什么作用？",
+    "answer": "## 核心概念\n\n视图是一个虚拟表，其内容由查询定义。视图本身不存储数据，数据来源于基表。视图可以简化复杂查询、提供安全访问控制。\n\n## SQL示例\n\n```sql\n-- 创建视图\nCREATE VIEW v_emp_dept AS\nSELECT e.id, e.name AS emp_name, d.name AS dept_name, e.salary\nFROM emp e\nJOIN dept d ON e.dept_id = d.id;\n\n-- 使用视图（与普通表相同）\nSELECT * FROM v_emp_dept WHERE salary > 10000;\n\n-- 创建带聚合的视图\nCREATE VIEW v_dept_stats AS\nSELECT d.name AS dept_name,\n       COUNT(e.id) AS emp_count,\n       AVG(e.salary) AS avg_salary\nFROM dept d\nLEFT JOIN emp e ON d.id = e.dept_id\nGROUP BY d.id, d.name;\n\n-- 修改视图\nCREATE OR REPLACE VIEW v_emp_dept AS\nSELECT e.id, e.name AS emp_name, d.name AS dept_name, e.salary, e.hire_date\nFROM emp e\nJOIN dept d ON e.dept_id = d.id;\n\n-- 删除视图\nDROP VIEW IF EXISTS v_emp_dept;\n\n-- 查看视图定义\nSHOW CREATE VIEW v_emp_dept;\n\n-- 可更新视图（满足条件时可以INSERT/UPDATE/DELETE）\nCREATE VIEW v_active_emp AS\nSELECT * FROM emp WHERE status = 'active'\nWITH CHECK OPTION;  -- 确保操作满足视图条件\n\nUPDATE v_active_emp SET salary = salary * 1.1 WHERE id = 1;\n```\n\n## 关键要点\n\n1. **简化查询**：封装复杂JOIN和子查询\n2. **数据安全**：限制用户只能访问特定列或行\n3. **逻辑独立**：基表结构变化时，修改视图定义保持接口不变\n4. **WITH CHECK OPTION**：保证通过视图的修改仍满足视图条件\n\n## 注意事项\n\n- 视图不存储数据，查询视图时仍需要查询基表\n- 过度使用视图可能导致性能问题（嵌套视图）\n- 并非所有视图都可更新（含聚合函数、DISTINCT、GROUP BY的视图不可更新）\n- MySQL的视图定义在information_schema.VIEWS中\n- 物化视图（Materialized View）MySQL不原生支持，需自行实现",
+    "tags": ["视图", "VIEW", "虚拟表"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-021",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何创建和使用临时表？",
+    "answer": "## 核心概念\n\n临时表是只在当前会话中可见的表，会话结束时自动删除。临时表与普通表同名时，临时表会隐藏普通表。\n\n## SQL示例\n\n```sql\n-- 创建临时表\nCREATE TEMPORARY TABLE tmp_active_users AS\nSELECT * FROM users WHERE status = 'active';\n\n-- 使用临时表\nSELECT * FROM tmp_active_users WHERE age > 25;\n\n-- 创建临时表（指定结构）\nCREATE TEMPORARY TABLE tmp_result (\n    id INT PRIMARY KEY,\n    total_amount DECIMAL(10,2),\n    order_count INT\n);\n\n-- 插入数据到临时表\nINSERT INTO tmp_result\nSELECT user_id, SUM(amount), COUNT(*)\nFROM orders\nGROUP BY user_id;\n\n-- 删除临时表\nDROP TEMPORARY TABLE IF EXISTS tmp_active_users;\n```\n\n## 关键要点\n\n1. **会话隔离**：临时表只在创建它的会话中可见\n2. **自动清理**：会话结束时自动删除\n3. **同名隐藏**：临时表与普通表同名时，临时表优先\n4. **不支持外键**：临时表不能创建外键约束\n\n## 注意事项\n\n- 临时表使用内存或磁盘存储，取决于大小和配置\n- `tmp_table_size`和`max_heap_table_size`控制内存临时表大小\n- 超出大小限制会自动转换为磁盘临时表（MyISAM引擎）\n- 存储过程中使用临时表需注意命名冲突\n- SHOW TABLES不会显示临时表",
+    "tags": ["临时表", "TEMPORARY TABLE", "会话"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-022",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用SHOW和DESCRIBE命令查看数据库信息？",
+    "answer": "## 核心概念\n\nSHOW和DESCRIBE（DESC）是MySQL的信息查询命令，用于查看数据库、表、列、索引、状态等元数据信息。\n\n## SQL示例\n\n```sql\n-- 数据库级别\nSHOW DATABASES;                        -- 查看所有数据库\nUSE mydb;                              -- 切换数据库\nSELECT DATABASE();                     -- 查看当前数据库\n\n-- 表级别\nSHOW TABLES;                           -- 查看当前数据库所有表\nSHOW TABLES LIKE 'user%';              -- 模糊匹配\nSHOW TABLE STATUS;                     -- 表详细信息（引擎、行数、大小）\nSHOW TABLE STATUS LIKE 'users'\\G       -- 垂直显示\n\n-- 列级别\nDESC users;                            -- 查看表结构\nDESCRIBE users;                        -- 同上\nSHOW COLUMNS FROM users;               -- 同上\nSHOW FULL COLUMNS FROM users;          -- 含注释和排序规则\n\n-- 索引\nSHOW INDEX FROM users;                 -- 查看表的索引信息\nSHOW KEYS FROM users;                  -- 同上\n\n-- 建表语句\nSHOW CREATE TABLE users;               -- 查看建表SQL\nSHOW CREATE DATABASE mydb;             -- 查看建库SQL\n\n-- 服务器状态\nSHOW STATUS;                           -- 服务器状态变量\nSHOW STATUS LIKE 'Threads%';           -- 连接线程信息\nSHOW VARIABLES;                        -- 系统变量\nSHOW VARIABLES LIKE 'max_connections'; -- 最大连接数\nSHOW PROCESSLIST;                      -- 当前连接\nSHOW ENGINE INNODB STATUS;             -- InnoDB引擎状态\n\n-- 权限\nSHOW GRANTS;                           -- 当前用户权限\nSHOW GRANTS FOR 'root'@'localhost';    -- 指定用户权限\n```\n\n## 关键要点\n\n1. **SHOW TABLE STATUS**：查看表的行数估算、数据大小、索引大小\n2. **information_schema**：更详细的元数据查询\n3. **\\G结尾**：垂直显示，适合字段多的结果\n4. **LIKE模糊**：SHOW命令支持LIKE通配符\n\n## 注意事项\n\n- `SHOW TABLE STATUS`中的行数是估算值，不是精确值\n- 大量使用SHOW命令会影响性能\n- `information_schema`提供更结构化的元数据查询\n- `SHOW WARNINGS`和`SHOW ERRORS`查看上一条语句的警告和错误",
+    "tags": ["SHOW", "DESCRIBE", "元数据"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-023",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用DISTINCT去重？有哪些注意事项？",
+    "answer": "## 核心概念\n\nDISTINCT用于消除SELECT结果中的重复行。它可以作用于单列或多列组合。DISTINCT会对结果进行排序（隐式GROUP BY）。\n\n## SQL示例\n\n```sql\n-- 单列去重\nSELECT DISTINCT city FROM users;\n\n-- 多列去重（组合去重）\nSELECT DISTINCT city, age FROM users;\n\n-- COUNT(DISTINCT) 统计不重复的数量\nSELECT COUNT(DISTINCT city) FROM users;\n\n-- 多列COUNT DISTINCT\nSELECT COUNT(DISTINCT city, age) FROM users;  -- MySQL支持\n\n-- DISTINCT与NULL\n-- DISTINCT会将多个NULL视为一个\nSELECT DISTINCT email FROM users;  -- 多个NULL只返回一个\n\n-- DISTINCT与ORDER BY\nSELECT DISTINCT city FROM users ORDER BY city;\n-- 注意：ORDER BY的列必须在SELECT中（使用DISTINCT时）\n\n-- GROUP BY替代DISTINCT\nSELECT city FROM users GROUP BY city;\n-- 效果等同于 SELECT DISTINCT city FROM users\n\n-- 不要对所有列使用DISTINCT\n-- 差：SELECT DISTINCT * FROM users;  -- 没有实际意义\n-- 好：SELECT DISTINCT city, gender FROM users;\n```\n\n## 关键要点\n\n1. **DISTINCT作用于所有SELECT列**：不是单列去重\n2. **性能开销**：需要排序或哈希去重，大表慎用\n3. **NULL处理**：多个NULL只算一个\n4. **GROUP BY替代**：GROUP BY更灵活，可以配合聚合函数\n\n## 注意事项\n\n- DISTINCT会导致隐式排序，可能产生临时表和文件排序\n- 对高基数列（几乎无重复）使用DISTINCT无意义\n- `COUNT(DISTINCT col)`比`COUNT(col)`性能差\n- 多列DISTINCT是组合去重，不是各自去重\n- EXPLAIN中DISTINCT会显示`Using temporary; Using filesort`",
+    "tags": ["DISTINCT", "去重", "COUNT DISTINCT"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-024",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中如何使用WITH（CTE公共表表达式）？",
+    "answer": "## 核心概念\n\nWITH子句（Common Table Expression，CTE）是MySQL 8.0引入的功能，用于定义临时命名结果集。CTE提高了复杂查询的可读性，可以替代子查询和临时表。\n\n## SQL示例\n\n```sql\n-- 基本CTE\nWITH dept_count AS (\n    SELECT dept_id, COUNT(*) AS cnt\n    FROM emp\n    GROUP BY dept_id\n)\nSELECT d.name, dc.cnt\nFROM dept d\nJOIN dept_count dc ON d.id = dc.dept_id\nWHERE dc.cnt > 5;\n\n-- 多个CTE\nWITH\nactive_emp AS (\n    SELECT * FROM emp WHERE status = 'active'\n),\ndept_avg AS (\n    SELECT dept_id, AVG(salary) AS avg_salary\n    FROM active_emp\n    GROUP BY dept_id\n)\nSELECT ae.name, ae.salary, da.avg_salary\nFROM active_emp ae\nJOIN dept_avg da ON ae.dept_id = da.dept_id\nWHERE ae.salary > da.avg_salary;\n\n-- 递归CTE（层级查询）\nWITH RECURSIVE emp_hierarchy AS (\n    -- 锚点：顶级管理者\n    SELECT id, name, manager_id, 1 AS level\n    FROM emp\n    WHERE manager_id IS NULL\n    \n    UNION ALL\n    \n    -- 递归部分\n    SELECT e.id, e.name, e.manager_id, h.level + 1\n    FROM emp e\n    JOIN emp_hierarchy h ON e.manager_id = h.id\n)\nSELECT * FROM emp_hierarchy ORDER BY level;\n\n-- 递归CTE生成序列\nWITH RECURSIVE nums AS (\n    SELECT 1 AS n\n    UNION ALL\n    SELECT n + 1 FROM nums WHERE n < 100\n)\nSELECT n FROM nums;\n\n-- CTE可以引用之前的CTE\nWITH\ncte1 AS (SELECT id, name FROM emp),\ncte2 AS (SELECT cte1.*, d.name AS dept_name FROM cte1 JOIN dept d ON cte1.id = d.id)\nSELECT * FROM cte2;\n```\n\n## 关键要点\n\n1. **提高可读性**：复杂SQL拆分为多个逻辑块\n2. **可复用**：同一CTE可在主查询中多次引用\n3. **递归CTE**：处理层级数据、生成序列\n4. **物化优化**：MySQL可能将CTE物化为临时表\n\n## 注意事项\n\n- CTE只在当前语句中有效，不是临时表\n- 递归CTE必须有终止条件，否则会无限循环\n- `RECURSIVE`关键字必须显式声明\n- CTE在MySQL 8.0+可用，低版本需用子查询替代\n- 递归CTE默认最大递归深度为1000，可通过`cte_max_recursion_depth`调整",
+    "tags": ["CTE", "WITH", "递归查询"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-025",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何进行数据导入和导出？",
+    "answer": "## 核心概念\n\nMySQL提供多种数据导入导出方式：LOAD DATA INFILE批量导入、SELECT INTO OUTFILE导出、mysqldump备份工具等。\n\n## SQL示例\n\n```sql\n-- LOAD DATA INFILE：从文件批量导入\nLOAD DATA INFILE '/tmp/users.csv'\nINTO TABLE users\nFIELDS TERMINATED BY ','\nENCLOSED BY '\"'\nLINES TERMINATED BY '\\n'\nIGNORE 1 ROWS  -- 跳过标题行\n(name, email, age);\n\n-- 导出到文件\nSELECT * FROM users\nINTO OUTFILE '/tmp/users_export.csv'\nFIELDS TERMINATED BY ','\nENCLOSED BY '\"'\nLINES TERMINATED BY '\\n';\n\n-- 导出为带标题的CSV\nSELECT 'ID', 'Name', 'Email'\nUNION ALL\nSELECT CAST(id AS CHAR), name, email\nFROM users\nINTO OUTFILE '/tmp/users_with_header.csv'\nFIELDS TERMINATED BY ','\nLINES TERMINATED BY '\\n';\n\n-- INSERT批量插入\nINSERT INTO users (name, email) VALUES\n('张三', 'zhangsan@test.com'),\n('李四', 'lisi@test.com'),\n('王五', 'wangwu@test.com');\n\n-- INSERT ... SELECT\nINSERT INTO users_backup\nSELECT * FROM users WHERE created_at < '2024-01-01';\n```\n\n```bash\n# mysqldump命令行工具\n# 导出整个数据库\nmysqldump -u root -p mydb > mydb_backup.sql\n\n# 导出特定表\nmysqldump -u root -p mydb users orders > tables_backup.sql\n\n# 只导出结构\nmysqldump -u root -p --no-data mydb > mydb_schema.sql\n\n# 只导出数据\nmysqldump -u root -p --no-create-info mydb > mydb_data.sql\n\n# 导入\nmysql -u root -p mydb < mydb_backup.sql\n```\n\n## 关键要点\n\n1. **LOAD DATA最快**：比INSERT快20倍以上\n2. **secure_file_priv**：限制文件导入导出路径\n3. **批量INSERT**：一次插入多行比逐行插入快\n4. **mysqldump**：逻辑备份标准工具\n\n## 注意事项\n\n- LOAD DATA INFILE需要FILE权限\n- `secure_file_priv`变量限制文件操作路径\n- 大文件导入时可设置`innodb_flush_log_at_trx_commit=0`加速\n- 导入前禁用索引和外键检查可提升性能：`SET FOREIGN_KEY_CHECKS=0;`\n- mysqldump导出大表时加`--single-transaction`避免锁表",
+    "tags": ["数据导入导出", "LOAD DATA", "mysqldump"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-026",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中DATE、DATETIME、TIMESTAMP有什么区别？",
+    "answer": "## 核心概念\n\nMySQL提供多种日期时间类型，各有适用场景。选择合适的时间类型对数据准确性和存储效率都很重要。\n\n## 类型对比\n\n| 类型 | 格式 | 字节数 | 范围 | 时区 | 自动更新 |\n|------|------|--------|------|------|----------|\n| DATE | YYYY-MM-DD | 3 | 1000-01-01 ~ 9999-12-31 | 否 | 否 |\n| TIME | HH:MM:SS | 3 | -838:59:59 ~ 838:59:59 | 否 | 否 |\n| DATETIME | YYYY-MM-DD HH:MM:SS | 5(+小数) | 1000-01-01 ~ 9999-12-31 | 否 | 可选 |\n| TIMESTAMP | YYYY-MM-DD HH:MM:SS | 4(+小数) | 1970-01-01 ~ 2038-01-19 | 是 | 默认 |\n| YEAR | YYYY | 1 | 1901 ~ 2155 | 否 | 否 |\n\n## SQL示例\n\n```sql\nCREATE TABLE time_demo (\n    id INT PRIMARY KEY,\n    dt DATETIME DEFAULT CURRENT_TIMESTAMP,\n    ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n    d DATE,\n    t TIME\n);\n\n-- 插入数据\nINSERT INTO time_demo VALUES\n(1, '2024-06-15 10:30:00', '2024-06-15 10:30:00', '2024-06-15', '10:30:00');\n\n-- 自动更新TIMESTAMP\nUPDATE time_demo SET id = 1 WHERE id = 1;\n-- ts字段自动更新为当前时间\n\n-- 时间函数\nSELECT NOW();              -- 当前时间\nSELECT CURDATE();          -- 当前日期\nSELECT CURTIME();          -- 当前时间（时分秒）\nSELECT UNIX_TIMESTAMP();   -- Unix时间戳\nSELECT FROM_UNIXTIME(1718431800);  -- 时间戳转日期\n\n-- 日期计算\nSELECT DATE_ADD(NOW(), INTERVAL 7 DAY);     -- 7天后\nSELECT DATE_SUB(NOW(), INTERVAL 1 MONTH);   -- 1个月前\nSELECT DATEDIFF('2024-12-31', '2024-01-01'); -- 间隔天数\n\n-- 提取部分\nSELECT YEAR(NOW()), MONTH(NOW()), DAY(NOW());\nSELECT HOUR(NOW()), MINUTE(NOW()), SECOND(NOW());\nSELECT DATE_FORMAT(NOW(), '%Y年%m月%d日 %H:%i:%s');\n```\n\n## 关键要点\n\n1. **TIMESTAMP自动更新**：`ON UPDATE CURRENT_TIMESTAMP`\n2. **时区转换**：TIMESTAMP存UTC，显示时按会话时区转换\n3. **2038问题**：TIMESTAMP在2038年溢出\n4. **存储空间**：TIMESTAMP比DATETIME更省空间\n\n## 注意事项\n\n- TIMESTAMP受时区影响，跨时区系统要注意\n- 2038年后TIMESTAMP溢出，MySQL 8.0.28+已修复\n- DATETIME不受时区影响，存储的是字面值\n- 小数秒精度：`DATETIME(3)`支持毫秒\n- 建议用DATETIME代替TIMESTAMP避免时区和2038问题",
+    "tags": ["DATETIME", "TIMESTAMP", "日期时间"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-027",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用LIKE进行模糊查询？有哪些注意事项？",
+    "answer": "## 核心概念\n\nLIKE是SQL中的模式匹配操作符，支持两个通配符：`%`（任意多个字符）和`_`（单个字符）。LIKE可以配合索引使用，但有前置条件。\n\n## SQL示例\n\n```sql\n-- %通配符\nSELECT * FROM users WHERE name LIKE '张%';      -- 以张开头\nSELECT * FROM users WHERE name LIKE '%三';      -- 以三结尾\nSELECT * FROM users WHERE name LIKE '%三%';     -- 包含三\n\n-- _通配符\nSELECT * FROM users WHERE name LIKE '张_';      -- 张X（两个字符）\nSELECT * FROM users WHERE name LIKE '张__';     -- 张XX（三个字符）\n\n-- 混合使用\nSELECT * FROM users WHERE name LIKE '张%丰';    -- 张X...丰\n\n-- NOT LIKE\nSELECT * FROM users WHERE name NOT LIKE '%test%';\n\n-- LIKE与转义\nSELECT * FROM users WHERE name LIKE '%\\%%';     -- 包含%字符\nSELECT * FROM users WHERE name LIKE '%\\_%';     -- 包含_字符\n\n-- 自定义转义字符\nSELECT * FROM users WHERE name LIKE '%@%%' ESCAPE '@';  -- @为转义符\n```\n\n## 关键要点\n\n1. **前缀匹配走索引**：`LIKE '张%'`可以使用索引\n2. **后缀和中缀不走索引**：`LIKE '%三'`和`LIKE '%三%'`全表扫描\n3. **覆盖索引优化**：查询字段都在索引中时，即使`LIKE '%三%'`也可以用索引扫描\n4. **全文索引替代**：大量模糊搜索考虑使用全文索引\n\n## 注意事项\n\n- `LIKE '%xxx%'`在大数据量表上性能极差\n- 使用覆盖索引可以减少回表开销\n- 考虑使用`LOCATE()`、`INSTR()`函数替代\n- 复杂模式匹配使用REGEXP，但也不走索引\n- Elasticsearch等搜索引擎更适合模糊搜索场景",
+    "tags": ["LIKE", "模糊查询", "通配符"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-028",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中如何使用INTERSECT和EXCEPT？",
+    "answer": "## 核心概念\n\nINTERSECT返回两个查询结果的交集，EXCEPT（MySQL中称为EXCEPT）返回第一个查询结果中不在第二个结果中的行。这两个操作符在MySQL 8.0.31中引入。\n\n## SQL示例\n\n```sql\n-- INTERSECT：取交集\nSELECT user_id FROM orders WHERE YEAR(created_at) = 2023\nINTERSECT\nSELECT user_id FROM orders WHERE YEAR(created_at) = 2024;\n-- 结果：2023年和2024年都下过单的用户\n\n-- EXCEPT：取差集\nSELECT user_id FROM orders WHERE YEAR(created_at) = 2023\nEXCEPT\nSELECT user_id FROM orders WHERE YEAR(created_at) = 2024;\n-- 结果：2023年下过单但2024年没下单的用户\n\n-- MySQL 8.0.31之前使用JOIN模拟INTERSECT\nSELECT DISTINCT a.user_id\nFROM (SELECT user_id FROM orders WHERE YEAR(created_at) = 2023) a\nINNER JOIN (SELECT user_id FROM orders WHERE YEAR(created_at) = 2024) b\nON a.user_id = b.user_id;\n\n-- 使用NOT EXISTS模拟EXCEPT\nSELECT DISTINCT a.user_id\nFROM orders a\nWHERE YEAR(a.created_at) = 2023\nAND NOT EXISTS (\n    SELECT 1 FROM orders b\n    WHERE b.user_id = a.user_id AND YEAR(b.created_at) = 2024\n);\n\n-- 使用NOT IN模拟EXCEPT（注意NULL问题）\nSELECT DISTINCT user_id FROM orders\nWHERE YEAR(created_at) = 2023\nAND user_id NOT IN (\n    SELECT user_id FROM orders WHERE YEAR(created_at) = 2024\n);\n\n-- ALL变体\nSELECT user_id FROM orders WHERE YEAR(created_at) = 2023\nINTERSECT ALL   -- 保留重复\nSELECT user_id FROM orders WHERE YEAR(created_at) = 2024;\n```\n\n## 关键要点\n\n1. **INTERSECT**：两个结果集的公共部分\n2. **EXCEPT**：属于第一个但不属于第二个的部分\n3. **默认去重**：INTERSECT和EXCEPT默认去重\n4. **ALL变体**：INTERSECT ALL/EXCEPT ALL保留重复行\n\n## 注意事项\n\n- MySQL 8.0.31+才支持INTERSECT和EXCEPT\n- 早期版本需要用JOIN或NOT EXISTS模拟\n- 列数和类型必须匹配\n- INTERSECT和EXCEPT的优先级高于UNION\n- NOT IN遇到NULL会返回空结果，推荐用NOT EXISTS替代",
+    "tags": ["INTERSECT", "EXCEPT", "集合运算"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-029",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用IF函数和IFNULL函数？",
+    "answer": "## 核心概念\n\nIF和IFNULL是MySQL的流程控制函数。IF根据条件返回不同值，IFNULL专门用于处理NULL值的替换。\n\n## SQL示例\n\n```sql\n-- IF函数：IF(condition, true_value, false_value)\nSELECT name, salary,\n    IF(salary >= 10000, '高薪', '普通') AS salary_level\nFROM emp;\n\n-- IF嵌套\nSELECT name, salary,\n    IF(salary >= 20000, '高薪',\n        IF(salary >= 10000, '中等', '普通')\n    ) AS salary_level\nFROM emp;\n\n-- IFNULL函数：IFNULL(expr, default_value)\n-- expr为NULL时返回default_value\nSELECT name, IFNULL(email, '未填写') AS email FROM users;\n\n-- IFNULL在聚合中的应用\nSELECT dept_id, SUM(IFNULL(commission, 0)) AS total_commission\nFROM emp\nGROUP BY dept_id;\n\n-- COALESCE：多值NULL处理\nSELECT name, COALESCE(phone, email, wechat, '无联系方式') AS contact\nFROM users;\n\n-- NULLIF：相等返回NULL\nSELECT NULLIF(status, 'deleted') FROM orders;\n-- 如果status='deleted'返回NULL，否则返回status值\n\n-- IF在UPDATE中使用\nUPDATE emp SET bonus = IF(dept_id = 1, salary * 0.2, salary * 0.1);\n\n-- IF在ORDER BY中使用\nSELECT * FROM emp\nORDER BY IF(status = 'active', 0, 1), name;\n-- active状态的排在前面\n```\n\n## 关键要点\n\n1. **IF函数**：三元表达式，适合简单二选一\n2. **IFNULL**：专门处理NULL，比IF简洁\n3. **COALESCE**：多值选择，返回第一个非NULL\n4. **NULLIF**：相等时返回NULL，常用于避免除零错误\n\n## 注意事项\n\n- IF函数在SELECT、WHERE、ORDER BY中都可以使用\n- IFNULL只判断NULL，空字符串''不是NULL\n- 复杂逻辑建议使用CASE WHEN替代IF嵌套\n- `SUM(IFNULL(col, 0))`确保NULL值参与计算\n- NULLIF可用于除法中避免除零：`a / NULLIF(b, 0)`",
+    "tags": ["IF函数", "IFNULL", "NULL处理"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-030",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用字符串函数？常用的有哪些？",
+    "answer": "## 核心概念\n\nMySQL提供丰富的字符串处理函数，涵盖拼接、截取、查找、替换、格式化等操作。\n\n## SQL示例\n\n```sql\n-- 拼接\nSELECT CONCAT('Hello', ' ', 'World');         -- Hello World\nSELECT CONCAT_WS('-', '2024', '06', '15');    -- 2024-06-15\n\n-- 截取\nSELECT SUBSTRING('Hello World', 1, 5);        -- Hello\nSELECT LEFT('Hello World', 5);                -- Hello\nSELECT RIGHT('Hello World', 5);               -- World\n\n-- 查找\nSELECT LOCATE('World', 'Hello World');         -- 7（位置从1开始）\nSELECT INSTR('Hello World', 'World');          -- 7\nSELECT FIELD('b', 'a', 'b', 'c');             -- 2\n\n-- 替换\nSELECT REPLACE('Hello World', 'World', 'MySQL'); -- Hello MySQL\nSELECT INSERT('Hello World', 7, 5, 'MySQL');     -- Hello MySQL\n\n-- 大小写\nSELECT UPPER('hello');                         -- HELLO\nSELECT LOWER('HELLO');                         -- hello\n\n-- 去空格\nSELECT TRIM('  Hello  ');                      -- Hello\nSELECT LTRIM('  Hello');                       -- Hello\nSELECT RTRIM('Hello  ');                       -- Hello\n\n-- 填充\nSELECT LPAD('42', 5, '0');                    -- 00042\nSELECT RPAD('Hello', 10, '.');                -- Hello.....\n\n-- 长度\nSELECT LENGTH('Hello');                        -- 5（字节数）\nSELECT CHAR_LENGTH('你好');                     -- 2（字符数）\n\n-- 格式化\nSELECT FORMAT(1234567.89, 2);                 -- 1,234,567.89\n\n-- 重复和反转\nSELECT REPEAT('ab', 3);                       -- ababab\nSELECT REVERSE('Hello');                       // olleH\n\n-- ELT和MAKE_SET\nSELECT ELT(2, 'a', 'b', 'c');                -- b\n```\n\n## 关键要点\n\n1. **CONCAT与CONCAT_WS**：后者自动处理分隔符\n2. **SUBSTRING**：位置从1开始（不是0）\n3. **CHAR_LENGTH vs LENGTH**：前者按字符计算，后者按字节\n4. **TRIM**：去除首尾空格\n\n## 注意事项\n\n- `CONCAT`中有NULL参数时返回NULL，用`IFNULL`处理\n- UTF8MB4下`LENGTH`返回字节数，中文3-4字节\n- `SUBSTRING_INDEX`用于按分隔符截取\n- 字符串函数通常不走索引，大量数据避免在WHERE中使用\n- MySQL的字符串索引从1开始，不是0",
+    "tags": ["字符串函数", "CONCAT", "SUBSTRING"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-031",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用数学函数和聚合函数？",
+    "answer": "## 核心概念\n\nMySQL提供丰富的数学函数（ABS、ROUND、CEIL等）和聚合函数（COUNT、SUM、AVG、MAX、MIN），是SQL查询的基础工具。\n\n## SQL示例\n\n```sql\n-- 数学函数\nSELECT ABS(-10);              -- 10（绝对值）\nSELECT CEIL(3.2);             -- 4（向上取整）\nSELECT FLOOR(3.8);            -- 3（向下取整）\nSELECT ROUND(3.456, 2);       -- 3.46（四舍五入）\nSELECT TRUNCATE(3.456, 2);    -- 3.45（截断）\nSELECT MOD(10, 3);            -- 1（取模）\nSELECT POWER(2, 10);          -- 1024（幂运算）\nSELECT SQRT(16);              -- 4（平方根）\nSELECT RAND();                -- 0~1随机数\nSELECT GREATEST(1, 2, 3);     -- 3（最大值）\nSELECT LEAST(1, 2, 3);        -- 1（最小值）\n\n-- 聚合函数\nSELECT COUNT(*) FROM emp;                 -- 总行数（含NULL）\nSELECT COUNT(email) FROM emp;             -- email非NULL的行数\nSELECT COUNT(DISTINCT dept_id) FROM emp;  -- 不重复部门数\nSELECT SUM(salary) FROM emp;              -- 薪资总和\nSELECT AVG(salary) FROM emp;              -- 平均薪资（忽略NULL）\nSELECT MAX(salary) FROM emp;              -- 最高薪资\nSELECT MIN(salary) FROM emp;              -- 最低薪资\n\n-- GROUP_CONCAT：分组拼接\nSELECT dept_id, GROUP_CONCAT(name ORDER BY name SEPARATOR ', ')\nFROM emp\nGROUP BY dept_id;\n\n-- 聚合函数与NULL\n-- SUM、AVG、COUNT(col)忽略NULL\n-- COUNT(*)不忽略NULL\n-- MAX、MIN忽略NULL\n```\n\n## 关键要点\n\n1. **ROUND vs TRUNCATE**：ROUND四舍五入，TRUNCATE直接截断\n2. **COUNT(*) vs COUNT(col)**：前者统计所有行，后者忽略NULL\n3. **AVG忽略NULL**：计算时NULL行不参与\n4. **GROUP_CONCAT**：将分组数据拼接为字符串\n\n## 注意事项\n\n- `COUNT(*)`是统计行数的最优写法\n- `AVG(col)`中col为NULL的行不计入分母\n- `RAND()`每次调用返回不同值，可用于随机抽样\n- `GROUP_CONCAT`默认最大长度1024，可调整`group_concat_max_len`\n- 浮点数运算有精度问题，金额计算用DECIMAL",
+    "tags": ["数学函数", "聚合函数", "COUNT"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-032",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中如何处理字符编码和乱码问题？",
+    "answer": "## 核心概念\n\nMySQL乱码问题通常由字符集不一致导致：客户端字符集、连接字符集、数据库字符集、表字符集、列字符集中任意一个不匹配都可能产生乱码。\n\n## 字符集层次\n\n```\n客户端程序 → 连接层 → Server层 → 存储引擎层 → 存储\nclient      connection   database     table/column\n```\n\n## SQL示例\n\n```sql\n-- 查看所有字符集设置\nSHOW VARIABLES LIKE 'character_set%';\nSHOW VARIABLES LIKE 'collation%';\n\n-- 设置连接字符集\nSET NAMES utf8mb4;\n-- 等价于：\nSET character_set_client = utf8mb4;\nSET character_set_connection = utf8mb4;\nSET character_set_results = utf8mb4;\n\n-- 查看某个表的字符集\nSHOW CREATE TABLE users\\G\n\n-- 修改数据库字符集\nALTER DATABASE mydb CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\n\n-- 修改表字符集\nALTER TABLE users CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;\n\n-- 修改列字符集\nALTER TABLE users MODIFY name VARCHAR(100) CHARACTER SET utf8mb4;\n\n-- 查看字符串的编码\nSELECT HEX('你好');  -- 查看十六进制表示\nSELECT CHARSET('你好');  -- 查看字符集\n\n-- 编码转换\nSELECT CONVERT('你好' USING gbk);\nSELECT CONVERT(x'E4BDA0E5A5BD' USING utf8mb4);  -- 十六进制转utf8mb4\n```\n\n## 常见乱码场景及解决\n\n```sql\n-- 场景1：cmd窗口乱码\n-- 解决：设置cmd字符集\nSET NAMES gbk;  -- Windows cmd使用GBK\n\n-- 场景2：JDBC连接乱码\n-- 解决：URL中指定字符集\n-- jdbc:mysql://localhost:3306/mydb?characterEncoding=utf-8\n\n-- 场景3：已有数据乱码（双重编码）\n-- 错误地将UTF8数据以Latin1存储\n-- 修复方法\nALTER TABLE users MODIFY name VARCHAR(100) CHARACTER SET latin1;  -- 先改回latin1\nUPDATE users SET name = CONVERT(name USING utf8mb4);  -- 再转为utf8mb4\n```\n\n## 关键要点\n\n1. **统一utf8mb4**：从数据库到连接到客户端全部使用\n2. **SET NAMES**：连接时第一件事设置字符集\n3. **检查各层**：乱码时逐层排查字符集设置\n4. **hex函数**：通过十六进制查看实际存储内容\n\n## 注意事项\n\n- MySQL的`utf8`是阉割版（3字节），必须用`utf8mb4`\n- `character_set_results`影响返回结果的编码\n- LOAD DATA INFILE可以指定`CHARACTER SET`选项\n- 修复乱码数据前务必备份\n- `CONVERT`函数可以做实时编码转换",
+    "tags": ["字符编码", "乱码", "utf8mb4"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-033",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中AUTO_INCREMENT的用法和注意事项有哪些？",
+    "answer": "## 核心概念\n\nAUTO_INCREMENT是MySQL的自增属性，通常用于主键列，自动生成唯一的递增序列号。只有InnoDB和MyISAM引擎支持。\n\n## SQL示例\n\n```sql\n-- 创建自增主键\nCREATE TABLE users (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n    name VARCHAR(50)\n);\n\n-- 插入时不指定自增列\nINSERT INTO users (name) VALUES ('张三');  -- id=1\nINSERT INTO users (name) VALUES ('李四');  -- id=2\n\n-- 查看当前自增值\nSELECT LAST_INSERT_ID();  -- 返回最近一次自增值\nSHOW CREATE TABLE users;  -- 查看AUTO_INCREMENT值\n\n-- 修改自增值\nALTER TABLE users AUTO_INCREMENT = 100;\n\n-- 删除后自增值不回退\nDELETE FROM users WHERE id = 2;\nINSERT INTO users (name) VALUES ('王五');  -- id=3（不是2）\n\n-- TRUNCATE重置自增值\nTRUNCATE TABLE users;  -- 自增值重置为1\n\n-- 设置全局自增步长\nSET @@auto_increment_increment = 2;  -- 步长为2\nSET @@auto_increment_offset = 1;     -- 起始值为1\n\n-- 指定自增值插入\nINSERT INTO users (id, name) VALUES (100, '特殊用户');\n```\n\n## 关键要点\n\n1. **自增值只增不减**：DELETE不会回退自增值\n2. **LAST_INSERT_ID()**：获取最后插入的自增值，连接级别安全\n3. **TRUNCATE重置**：TRUNCATE TABLE会重置自增值\n4. **并发安全**：InnoDB通过自增锁保证并发插入的唯一性\n\n## 注意事项\n\n- 不要依赖自增ID的连续性，可能有间隔\n- `LAST_INSERT_ID()`基于连接，多线程安全\n- 自增列建议使用BIGINT，避免INT溢出\n- InnoDB的自增计数器存储在内存中，重启后可能重置\n- MySQL 8.0自增计数器持久化到redo log，重启不丢失\n- 分布式环境下自增ID可能冲突，考虑使用雪花算法",
+    "tags": ["AUTO_INCREMENT", "自增主键", "LAST_INSERT_ID"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-034",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中如何使用ENUM和SET类型？各有什么优缺点？",
+    "answer": "## 核心概念\n\nENUM是字符串对象，值必须从预定义列表中选择一个。SET类似ENUM，但可以选择多个值。两者都在数据库层面限制了合法值。\n\n## SQL示例\n\n```sql\n-- ENUM类型\nCREATE TABLE orders (\n    id INT PRIMARY KEY,\n    status ENUM('pending', 'paid', 'shipped', 'completed', 'cancelled')\n);\n\n-- 插入ENUM值\nINSERT INTO orders VALUES (1, 'pending');\nINSERT INTO orders VALUES (2, 2);        -- 使用索引值，2='paid'\n\n-- ENUM比较\nSELECT * FROM orders WHERE status = 'paid';\nSELECT * FROM orders WHERE status > 2;   -- 索引值大于2\n\n-- SET类型\nCREATE TABLE articles (\n    id INT PRIMARY KEY,\n    tags SET('tech', 'life', 'travel', 'food')\n);\n\n-- 插入SET值（多个值用逗号分隔）\nINSERT INTO articles VALUES (1, 'tech,life');\nINSERT INTO articles VALUES (2, 5);      -- 二进制值，5=1+4='tech,travel'\n\n-- SET查询\nSELECT * FROM articles WHERE FIND_IN_SET('tech', tags);\nSELECT * FROM articles WHERE tags & 1;   -- 位运算\n```\n\n## 关键要点\n\n1. **ENUM存储效率**：内部存储为整数（1或2字节）\n2. **SET存储**：最多8字节，支持64个成员\n3. **合法值约束**：插入非法值会警告或报错（取决于SQL模式）\n4. **排序**：ENUM按定义顺序排序，不是字母顺序\n\n## 注意事项\n\n- ENUM和SET的值列表修改需要ALTER TABLE，代价高\n- ENUM值有隐式排序规则，可能与预期不同\n- ENUM添加新值可以追加，但不建议在中间插入\n- 生产环境中建议使用TINYINT+字典表替代ENUM\n- SET的位运算查询不走索引\n- ENUM和SET与应用程序的兼容性较差",
+    "tags": ["ENUM", "SET", "类型选择"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-035",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何进行数据类型转换？隐式转换有什么风险？",
+    "answer": "## 核心概念\n\nMySQL支持隐式类型转换和显式类型转换（CAST/CONVERT）。隐式转换可能导致索引失效和意外结果。\n\n## SQL示例\n\n```sql\n-- 显式类型转换\nSELECT CAST('123' AS SIGNED);            -- 字符串转整数\nSELECT CAST('2024-06-15' AS DATE);       -- 字符串转日期\nSELECT CONVERT('123', SIGNED);           -- 同上\nSELECT CAST(123 AS CHAR);                -- 整数转字符串\n\n-- 隐式转换示例\n-- 字符串列与数字比较：字符串转数字\nSELECT * FROM users WHERE phone = 13800138000;\n-- phone是VARCHAR，13800138000是数字\n-- phone列的值会逐行转换为数字进行比较\n-- 导致索引失效！\n\n-- 正确写法\nSELECT * FROM users WHERE phone = '13800138000';\n\n-- 数字列与字符串比较：字符串转数字\nSELECT * FROM orders WHERE id = '100';\n-- id是INT，'100'是字符串，MySQL会把'100'转为数字\n-- 此时索引可以正常使用\n\n-- 字符集隐式转换\nSELECT * FROM users WHERE name = '张三';\n-- 如果name是utf8mb4，字符串常量也是utf8mb4，正常\n-- 如果字符集不一致，会导致索引失效\n\n-- 日期隐式转换\nSELECT * FROM orders WHERE create_time = '2024-06-15';\n-- 日期字符串可以隐式转换，但建议使用标准格式\n```\n\n## 隐式转换规则\n\n| 转换方向 | 说明 |\n|----------|------|\n| 字符串→数字 | 从头解析数字，'abc'→0 |\n| 数字→字符串 | 直接转为字符串表示 |\n| 日期→字符串 | 按格式转换 |\n| 字符串→日期 | 按标准格式解析 |\n\n## 关键要点\n\n1. **字符串列与数字比较**：索引失效（每行转换）\n2. **数字列与字符串比较**：索引正常（常量转换）\n3. **字符集不一致**：导致索引失效\n4. **使用CAST显式转换**：避免隐式转换风险\n\n## 注意事项\n\n- 隐式类型转换是索引失效的常见原因之一\n- `WHERE varchar_col = 123`会全表扫描\n- `WHERE int_col = '123'`可以走索引\n- 字符集不一致的JOIN也会导致隐式转换\n- 建议表字段类型与应用层传入类型一致\n- 使用`SHOW WARNINGS`查看隐式转换警告",
+    "tags": ["类型转换", "隐式转换", "索引失效"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-036",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何进行表的重命名和列的重命名？",
+    "answer": "## 核心概念\n\nMySQL提供RENAME TABLE和ALTER TABLE两种方式修改表名，使用ALTER TABLE或CHANGE/MODIFY修改列名和列属性。\n\n## SQL示例\n\n```sql\n-- 重命名表\nRENAME TABLE old_table TO new_table;\n\n-- 同时重命名多个表\nRENAME TABLE t1 TO t1_backup, t2 TO t2_backup;\n\n-- 使用ALTER TABLE重命名\nALTER TABLE old_table RENAME TO new_table;\n\n-- 跨数据库重命名\nRENAME TABLE mydb.users TO backup.users;\n\n-- 重命名列\nALTER TABLE users CHANGE COLUMN old_name new_name VARCHAR(100);\n-- CHANGE需要重新指定列类型\n\n-- 只修改列名（MySQL 8.0+）\nALTER TABLE users RENAME COLUMN old_name TO new_name;\n\n-- 修改列类型\nALTER TABLE users MODIFY COLUMN name VARCHAR(200);\n\n-- 修改列位置\nALTER TABLE users MODIFY COLUMN name VARCHAR(50) AFTER email;\nALTER TABLE users ADD COLUMN age INT FIRST;\n\n-- 添加列\nALTER TABLE users ADD COLUMN phone VARCHAR(20);\nALTER TABLE users ADD COLUMN phone VARCHAR(20) AFTER name;\n\n-- 删除列\nALTER TABLE users DROP COLUMN phone;\n\n-- 添加/删除默认值\nALTER TABLE users ALTER COLUMN status SET DEFAULT 'active';\nALTER TABLE users ALTER COLUMN status DROP DEFAULT;\n```\n\n## 关键要点\n\n1. **RENAME TABLE**：原子操作，比ALTER TABLE更高效\n2. **CHANGE vs MODIFY**：CHANGE可以改名+改类型，MODIFY只改类型\n3. **RENAME COLUMN**：MySQL 8.0+的简洁语法\n4. **DDL会锁表**：大表操作要考虑影响\n\n## 注意事项\n\n- RENAME TABLE是原子操作，不会丢失数据\n- ALTER TABLE会重建表（某些情况下），大表耗时长\n- 重命名表后，视图、存储过程中的引用需要手动更新\n- 使用`pt-online-schema-change`或`gh-ost`进行在线DDL\n- 修改列类型可能导致数据丢失或转换错误",
+    "tags": ["重命名", "ALTER TABLE", "DDL"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-037",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用多表更新和多表删除？",
+    "answer": "## 核心概念\n\nMySQL支持在UPDATE和DELETE语句中使用JOIN操作，实现基于多表关联的更新和删除操作。\n\n## SQL示例\n\n```sql\n-- 多表UPDATE\n-- 根据订单表更新用户表的消费总额\nUPDATE users u\nINNER JOIN (\n    SELECT user_id, SUM(amount) AS total\n    FROM orders\n    GROUP BY user_id\n) o ON u.id = o.user_id\nSET u.total_spent = o.total;\n\n-- LEFT JOIN更新（将没有订单的用户总额设为0）\nUPDATE users u\nLEFT JOIN (\n    SELECT user_id, SUM(amount) AS total\n    FROM orders\n    GROUP BY user_id\n) o ON u.id = o.user_id\nSET u.total_spent = IFNULL(o.total, 0);\n\n-- 基于其他表的条件更新\nUPDATE products p\nINNER JOIN categories c ON p.category_id = c.id\nSET p.status = 'inactive'\nWHERE c.status = 'disabled';\n\n-- 多表DELETE\n-- 删除没有订单的用户\nDELETE u FROM users u\nLEFT JOIN orders o ON u.id = o.user_id\nWHERE o.id IS NULL;\n\n-- 删除特定条件的关联数据\nDELETE o FROM orders o\nINNER JOIN users u ON o.user_id = u.id\nWHERE u.status = 'banned';\n\n-- 删除重复数据（保留id最小的）\nDELETE t1 FROM users t1\nINNER JOIN users t2\nWHERE t1.email = t2.email AND t1.id > t2.id;\n```\n\n## 关键要点\n\n1. **UPDATE JOIN语法**：UPDATE后跟JOIN子句\n2. **DELETE JOIN语法**：DELETE后指定要删除的表别名\n3. **LEFT JOIN DELETE**：删除在另一表中没有匹配的行\n4. **删除重复数据**：自连接删除是一种经典方法\n\n## 注意事项\n\n- 多表更新/删除前务必先用SELECT确认影响范围\n- 大批量操作建议分批执行，避免长事务\n- 多表DELETE中DELETE后的表名指定要删除哪个表的数据\n- MySQL不支持在UPDATE子查询中直接引用被更新的表\n- 建议在事务中执行，验证结果后COMMIT",
+    "tags": ["多表更新", "多表删除", "JOIN"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-038",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用INSERT ON DUPLICATE KEY UPDATE和REPLACE？",
+    "answer": "## 核心概念\n\n`INSERT ... ON DUPLICATE KEY UPDATE`在插入时如果主键或唯一键冲突则执行更新。`REPLACE`在插入时如果主键或唯一键冲突则先删除再插入。两者都用于处理「存在则更新，不存在则插入」的场景。\n\n## SQL示例\n\n```sql\n-- INSERT ON DUPLICATE KEY UPDATE\nINSERT INTO user_stats (user_id, login_count, last_login)\nVALUES (1, 1, NOW())\nON DUPLICATE KEY UPDATE\n    login_count = login_count + 1,\n    last_login = NOW();\n\n-- 批量插入+更新\nINSERT INTO products (id, name, price, stock) VALUES\n(1, '手机', 2999, 100),\n(2, '平板', 3999, 50),\n(3, '电脑', 5999, 30)\nON DUPLICATE KEY UPDATE\n    price = VALUES(price),\n    stock = VALUES(stock);\n\n-- MySQL 8.0.19+使用别名\nINSERT INTO products (id, name, price) VALUES\n(1, '手机', 2999) AS new_data\nON DUPLICATE KEY UPDATE\n    price = new_data.price;\n\n-- 获取受影响的行数\n-- 返回值：1=插入，2=更新，0=未变化\n\n-- REPLACE（冲突时删除再插入）\nREPLACE INTO users (id, name, email)\nVALUES (1, '张三', 'zhangsan@new.com');\n-- 如果id=1存在，先DELETE再INSERT\n-- 注意：自增ID会变化，触发DELETE和INSERT触发器\n```\n\n## 核心区别\n\n| 特性 | ON DUPLICATE KEY UPDATE | REPLACE |\n|------|------------------------|----------|\n| 冲突处理 | 更新冲突行 | 删除后重新插入 |\n| 自增ID | 不变 | 可能变化 |\n| 触发器 | 触发UPDATE触发器 | 触发DELETE+INSERT触发器 |\n| 未指定字段 | 保留原值 | 重置为默认值 |\n| 性能 | 较好 | 较差（删+插） |\n\n## 关键要点\n\n1. **ON DUPLICATE KEY UPDATE更推荐**：只更新指定字段，不影响其他字段\n2. **VALUES()引用**：引用插入的值\n3. **REPLACE会改变行数据**：未指定的字段重置为默认值\n4. **批量操作**：两者都支持批量\n\n## 注意事项\n\n- 两者都需要主键或唯一键冲突才会触发\n- REPLACE会触发DELETE触发器，可能影响外键约束\n- ON DUPLICATE KEY UPDATE的返回值：1=新增，2=更新\n- `LAST_INSERT_ID()`在ON DUPLICATE KEY UPDATE更新时不会更新\n- 大批量操作注意死锁风险",
+    "tags": ["UPSERT", "ON DUPLICATE KEY", "REPLACE"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-039",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中如何使用FULLTEXT全文索引？",
+    "answer": "## 核心概念\n\n全文索引（FULLTEXT Index）用于在大量文本数据中进行关键词搜索，比LIKE '%keyword%'性能好得多。MySQL支持InnoDB（5.6+）和MyISAM的全文索引。\n\n## SQL示例\n\n```sql\n-- 创建全文索引\nCREATE TABLE articles (\n    id INT AUTO_INCREMENT PRIMARY KEY,\n    title VARCHAR(200),\n    content TEXT,\n    FULLTEXT INDEX ft_title_content (title, content)\n) ENGINE=InnoDB;\n\n-- 对已有表添加全文索引\nALTER TABLE articles ADD FULLTEXT INDEX ft_content (content);\n\n-- 使用全文索引搜索\n-- 自然语言模式（默认）\nSELECT * FROM articles\nWHERE MATCH(title, content) AGAINST('MySQL 优化');\n\n-- 布尔模式\nSELECT * FROM articles\nWHERE MATCH(title, content) AGAINST('+MySQL +优化' IN BOOLEAN MODE);\n\n-- 布尔模式操作符\n-- +  必须包含\n-- -  必须不包含\n-- >  提高相关性\n-- <  降低相关性\n-- *  通配符\n-- \"\" 短语匹配\n\nSELECT * FROM articles\nWHERE MATCH(content) AGAINST('+MySQL -Oracle +优化 \"索引优化\"' IN BOOLEAN MODE);\n\n-- 查询扩展模式\nSELECT * FROM articles\nWHERE MATCH(title, content) AGAINST('MySQL' WITH QUERY EXPANSION);\n\n-- 相关性分数\nSELECT *, MATCH(title, content) AGAINST('MySQL 优化') AS score\nFROM articles\nWHERE MATCH(title, content) AGAINST('MySQL 优化')\nORDER BY score DESC;\n\n-- 删除全文索引\nALTER TABLE articles DROP INDEX ft_content;\n```\n\n## 布尔模式操作符\n\n| 操作符 | 含义 |\n|--------|------|\n| + | 必须包含该词 |\n| - | 必须不包含 |\n| > | 提高相关性权重 |\n| < | 降低相关性权重 |\n| * | 通配符（后缀） |\n| \"\" | 短语精确匹配 |\n\n## 关键要点\n\n1. **性能优势**：全文索引比LIKE快很多\n2. **自然语言模式**：按相关性排序\n3. **布尔模式**：支持+/-等高级操作\n4. **最短词长**：默认4个字符，可通过`ft_min_word_len`调整\n\n## 注意事项\n\n- 全文索引不支持中文分词（默认按空格分词）\n- 中文全文搜索需要安装ngram解析器\n- `innodb_ft_min_token_size`控制最短词长\n- 全文索引会增加存储空间和写入开销\n- 复杂搜索场景建议使用Elasticsearch\n- InnoDB全文索引支持事务，MyISAM不支持",
+    "tags": ["全文索引", "FULLTEXT", "文本搜索"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-040",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何生成序列号或唯一编号？",
+    "answer": "## 核心概念\n\nMySQL没有原生的SEQUENCE对象（Oracle有），但可以通过多种方式生成序列号：AUTO_INCREMENT、变量模拟、UUID、雪花算法等。\n\n## SQL示例\n\n```sql\n-- 方法1：AUTO_INCREMENT（最常用）\nCREATE TABLE orders (\n    id BIGINT AUTO_INCREMENT PRIMARY KEY,\n    order_no VARCHAR(32)\n);\n\n-- 方法2：使用变量模拟行号\nSET @row_num = 0;\nSELECT @row_num := @row_num + 1 AS row_num, name\nFROM emp\nORDER BY salary DESC;\n\n-- MySQL 8.0使用窗口函数\nSELECT ROW_NUMBER() OVER (ORDER BY salary DESC) AS row_num, name\nFROM emp;\n\n-- 方法3：UUID\nSELECT UUID();  -- 生成UUID\n-- 例如：550e8400-e29b-41d4-a716-446655440000\n\n-- UUID_SHORT()（更短的唯一标识）\nSELECT UUID_SHORT();  -- 数字形式的唯一ID\n\n-- 方法4：生成订单号（日期+序号）\nDELIMITER //\nCREATE PROCEDURE generate_order_no(OUT order_no VARCHAR(32))\nBEGIN\n    DECLARE seq INT;\n    -- 使用序号表\n    UPDATE sequence SET current_val = current_val + 1 WHERE seq_name = 'order';\n    SELECT current_val INTO seq FROM sequence WHERE seq_name = 'order';\n    SET order_no = CONCAT('ORD', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(seq, 6, '0'));\nEND //\nDELIMITER ;\n\n-- 方法5：时间戳+随机数\nSELECT CONCAT(\n    DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'),\n    LPAD(FLOOR(RAND() * 10000), 4, '0')\n) AS unique_no;\n\n-- 方法6：REPLACE INTO序号表\nCREATE TABLE sequence (\n    seq_name VARCHAR(50) PRIMARY KEY,\n    current_val BIGINT NOT NULL DEFAULT 0\n);\n\nREPLACE INTO sequence (seq_name, current_val) VALUES ('order', LAST_INSERT_ID(current_val + 1));\nSELECT LAST_INSERT_ID();\n```\n\n## 关键要点\n\n1. **AUTO_INCREMENT**：简单可靠，适合自增主键\n2. **UUID**：全局唯一，但无序且占空间\n3. **序号表**：可控的自定义序列\n4. **雪花算法**：分布式环境下的唯一ID方案\n\n## 注意事项\n\n- UUID作为主键会导致页分裂，影响InnoDB性能\n- UUID_SHORT()返回64位整数，比UUID更紧凑\n- 分布式环境建议使用雪花算法（应用层生成）\n- 序号表需要加锁避免并发冲突\n- LAST_INSERT_ID()是连接级别的，多线程安全",
+    "tags": ["序列号", "UUID", "自增ID"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-041",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中事件调度器（EVENT SCHEDULER）是什么？如何使用？",
+    "answer": "## 核心概念\n\n事件调度器是MySQL内置的定时任务功能，类似于Linux的cron。可以在指定时间或周期性地执行SQL语句或存储过程。\n\n## SQL示例\n\n```sql\n-- 开启事件调度器\nSET GLOBAL event_scheduler = ON;\n\n-- 查看调度器状态\nSHOW VARIABLES LIKE 'event_scheduler';\n\n-- 创建一次性事件\nCREATE EVENT evt_cleanup_logs\nON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 HOUR\nDO\n    DELETE FROM logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);\n\n-- 创建周期性事件\nCREATE EVENT evt_daily_report\nON SCHEDULE EVERY 1 DAY\nSTARTS '2024-06-15 00:00:00'\nDO\n    INSERT INTO daily_stats (stat_date, total_orders, total_amount)\n    SELECT CURDATE(), COUNT(*), SUM(amount)\n    FROM orders\n    WHERE DATE(created_at) = CURDATE();\n\n-- 每小时执行\nCREATE EVENT evt_hourly_cleanup\nON SCHEDULE EVERY 1 HOUR\nON COMPLETION PRESERVE\nENABLE\nDO\n    DELETE FROM tmp_data WHERE created_at < DATE_SUB(NOW(), INTERVAL 2 HOUR);\n\n-- 带存储过程的事件\nCREATE EVENT evt_monthly_archive\nON SCHEDULE EVERY 1 MONTH\nSTARTS '2024-07-01 02:00:00'\nDO\n    CALL archive_old_data();\n\n-- 查看所有事件\nSHOW EVENTS;\nSHOW EVENTS FROM mydb;\n\n-- 修改事件\nALTER EVENT evt_daily_report DISABLE;\nALTER EVENT evt_daily_report ENABLE;\nALTER EVENT evt_daily_report ON SCHEDULE EVERY 2 HOUR;\n\n-- 删除事件\nDROP EVENT IF EXISTS evt_cleanup_logs;\n```\n\n## 事件属性\n\n| 属性 | 说明 |\n|------|------|\n| ON SCHEDULE | 调度时间（AT一次/EVERY周期） |\n| ON COMPLETION PRESERVE | 完成后保留事件定义 |\n| ON COMPLETION NOT DELETE | 完成后删除（默认一次性） |\n| ENABLE/DISABLE | 启用/禁用 |\n| COMMENT | 事件注释 |\n\n## 关键要点\n\n1. **event_scheduler变量**：必须开启才能使用\n2. **ON COMPLETION**：决定事件执行完是否保留\n3. **存储过程配合**：复杂逻辑封装在存储过程中\n4. **时区**：事件使用服务器时区\n\n## 注意事项\n\n- 事件在MySQL重启后仍然存在（持久化）\n- 事件执行使用独立的线程\n- 事件中的SQL出错不会回滚，需在存储过程中处理异常\n- 主从复制中，事件默认在主库执行，从库不执行\n- 事件没有执行历史日志，需自行记录",
+    "tags": ["事件调度器", "EVENT", "定时任务"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-042",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何进行数据备份和恢复？",
+    "answer": "## 核心概念\n\n数据备份是数据库运维的核心工作。MySQL支持逻辑备份（mysqldump、SELECT INTO OUTFILE）和物理备份（xtrabackup、cp数据文件）。\n\n## SQL示例\n\n```bash\n# 逻辑备份：mysqldump\n# 备份单个数据库\nmysqldump -u root -p --single-transaction mydb > mydb_backup.sql\n\n# 备份多个数据库\nmysqldump -u root -p --databases db1 db2 > multi_db_backup.sql\n\n# 备份所有数据库\nmysqldump -u root -p --all-databases > all_backup.sql\n\n# 备份特定表\nmysqldump -u root -p mydb users orders > tables_backup.sql\n\n# 只备份结构\nmysqldump -u root -p --no-data mydb > schema_backup.sql\n\n# 只备份数据\nmysqldump -u root -p --no-create-info mydb > data_backup.sql\n\n# 带压缩备份\nmysqldump -u root -p mydb | gzip > mydb_backup.sql.gz\n\n# 恢复\nmysql -u root -p mydb < mydb_backup.sql\n# 或在MySQL命令中\n# source /path/to/backup.sql\n\n# 压缩备份恢复\ngunzip < mydb_backup.sql.gz | mysql -u root -p mydb\n```\n\n```sql\n-- SQL层面备份\n-- 导出到文件\nSELECT * FROM users INTO OUTFILE '/tmp/users_backup.csv'\nFIELDS TERMINATED BY ',' ENCLOSED BY '\"'\nLINES TERMINATED BY '\\n';\n\n-- 从文件恢复\nLOAD DATA INFILE '/tmp/users_backup.csv'\nINTO TABLE users\nFIELDS TERMINATED BY ',' ENCLOSED BY '\"'\nLINES TERMINATED BY '\\n';\n```\n\n## 备份工具对比\n\n| 工具 | 类型 | 锁表 | 速度 | 恢复速度 |\n|------|------|------|------|----------|\n| mysqldump | 逻辑 | 不锁（--single-transaction） | 中 | 慢 |\n| xtrabackup | 物理 | 不锁 | 快 | 快 |\n| mysqlpump | 逻辑 | 不锁 | 较快 | 慢 |\n| cp/rsync | 物理 | 需锁 | 最快 | 最快 |\n\n## 关键要点\n\n1. **--single-transaction**：InnoDB一致性备份，不锁表\n2. **定期备份**：自动化备份脚本+异地存储\n3. **备份验证**：定期恢复测试确保备份有效\n4. **增量备份**：结合binlog实现增量恢复\n\n## 注意事项\n\n- 大数据库备份推荐使用xtrabackup\n- mysqldump备份大表时可能很慢\n- 备份文件需要加密存储（敏感数据）\n- 主从架构中建议在从库执行备份\n- `--flush-logs`选项会在备份时切换binlog",
+    "tags": ["备份恢复", "mysqldump", "数据安全"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-043",
+    "module": "MySQL基础",
+    "difficulty": 2,
+    "question": "MySQL中information_schema有哪些常用的表？如何使用？",
+    "answer": "## 核心概念\n\ninformation_schema是MySQL的元数据库，包含所有数据库对象的元数据信息。它是只读的，提供了比SHOW命令更灵活的查询能力。\n\n## SQL示例\n\n```sql\n-- 查看所有数据库\nSELECT SCHEMA_NAME FROM information_schema.SCHEMATA;\n\n-- 查看某个数据库的所有表\nSELECT TABLE_NAME, TABLE_ROWS, DATA_LENGTH, INDEX_LENGTH\nFROM information_schema.TABLES\nWHERE TABLE_SCHEMA = 'mydb'\nORDER BY DATA_LENGTH DESC;\n\n-- 查看表的列信息\nSELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT, COLUMN_COMMENT\nFROM information_schema.COLUMNS\nWHERE TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'users';\n\n-- 查看索引信息\nSELECT INDEX_NAME, COLUMN_NAME, NON_UNIQUE, SEQ_IN_INDEX\nFROM information_schema.STATISTICS\nWHERE TABLE_SCHEMA = 'mydb' AND TABLE_NAME = 'users';\n\n-- 查看外键约束\nSELECT CONSTRAINT_NAME, TABLE_NAME, COLUMN_NAME,\n       REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME\nFROM information_schema.KEY_COLUMN_USAGE\nWHERE TABLE_SCHEMA = 'mydb' AND REFERENCED_TABLE_NAME IS NOT NULL;\n\n-- 查看当前运行的事务\nSELECT * FROM information_schema.INNODB_TRX;\n\n-- 查看锁等待\nSELECT * FROM information_schema.INNODB_LOCK_WAITS;\n\n-- 查看数据库大小\nSELECT TABLE_SCHEMA,\n       ROUND(SUM(DATA_LENGTH) / 1024 / 1024, 2) AS data_mb,\n       ROUND(SUM(INDEX_LENGTH) / 1024 / 1024, 2) AS index_mb,\n       ROUND(SUM(DATA_LENGTH + INDEX_LENGTH) / 1024 / 1024, 2) AS total_mb\nFROM information_schema.TABLES\nGROUP BY TABLE_SCHEMA\nORDER BY total_mb DESC;\n\n-- 查看用户权限\nSELECT * FROM information_schema.USER_PRIVILEGES;\n\n-- 查看字符集信息\nSELECT * FROM information_schema.CHARACTER_SETS;\nSELECT * FROM information_schema.COLLATIONS;\n```\n\n## 常用表\n\n| 表名 | 内容 |\n|------|------|\n| SCHEMATA | 数据库信息 |\n| TABLES | 表信息（行数、大小） |\n| COLUMNS | 列信息（类型、默认值） |\n| STATISTICS | 索引信息 |\n| KEY_COLUMN_USAGE | 主键和外键信息 |\n| INNODB_TRX | 当前运行事务 |\n| INNODB_LOCK_WAITS | 锁等待信息 |\n| PROCESSLIST | 当前连接 |\n| USER_PRIVILEGES | 用户权限 |\n\n## 关键要点\n\n1. **TABLE_ROWS是估算值**：InnoDB的行数不精确\n2. **DATA_LENGTH**：数据大小（字节）\n3. **INNODB_TRX**：排查长事务的重要视图\n4. **只读**：不能直接修改information_schema\n\n## 注意事项\n\n- information_schema的查询可能很慢（需要打开很多文件）\n- 大量并发查询information_schema会影响性能\n- MySQL 8.0对information_schema做了性能优化\n- TABLE_ROWS对于InnoDB是采样估算，MyISAM是精确值\n- 生产环境谨慎使用`SELECT * FROM information_schema`",
+    "tags": ["information_schema", "元数据", "数据库信息"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-044",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用ORDER BY排序？有哪些注意事项？",
+    "answer": "## 核心概念\n\nORDER BY用于对查询结果排序。默认升序（ASC），可指定降序（DESC）。可以按单列或多列排序，也可以按表达式排序。\n\n## SQL示例\n\n```sql\n-- 基本排序\nSELECT * FROM emp ORDER BY salary;           -- 升序（默认）\nSELECT * FROM emp ORDER BY salary DESC;      -- 降序\n\n-- 多列排序\nSELECT * FROM emp ORDER BY dept_id ASC, salary DESC;\n-- 先按部门升序，部门相同按薪资降序\n\n-- 按表达式排序\nSELECT name, salary, salary * 12 AS annual\nFROM emp\nORDER BY annual DESC;\n\n-- 按字段位置排序\nSELECT name, salary, dept_id\nFROM emp\nORDER BY 3, 2 DESC;  -- 第3列升序，第2列降序\n\n-- 按CASE WHEN排序\nSELECT * FROM emp\nORDER BY CASE status\n    WHEN 'active' THEN 1\n    WHEN 'pending' THEN 2\n    ELSE 3\nEND;\n\n-- NULL值排序\nSELECT * FROM emp ORDER BY manager_id ASC;\n-- NULL排在最前面（ASC时）\n\n-- 自定义NULL排序\nSELECT * FROM emp\nORDER BY ISNULL(manager_id), manager_id ASC;\n-- ISNULL返回0或1，NULL的行排前面\n\n-- 按IN列表排序\nSELECT * FROM emp\nWHERE id IN (3, 1, 4, 1, 5)\nORDER BY FIELD(id, 3, 1, 4, 1, 5);\n\n-- 中文排序\nSELECT * FROM users\nORDER BY CONVERT(name USING gbk);  -- 按拼音排序\n```\n\n## 关键要点\n\n1. **索引利用**：ORDER BY字段有索引时可避免排序\n2. **filesort**：无法使用索引时会使用文件排序\n3. **NULL排序**：ASC时NULL在前，DESC时NULL在后\n4. **多列排序**：排序方向需一致才能使用索引\n\n## 注意事项\n\n- ORDER BY + LIMIT在使用索引时非常高效\n- 大数据量排序会使用磁盘临时文件（filesort）\n- `max_length_for_sort_data`影响排序算法选择\n- ORDER BY RAND()会导致全表扫描+排序，性能极差\n- 中文排序需要指定字符集或使用CONVERT\n- 未指定ORDER BY时结果顺序不确定",
+    "tags": ["ORDER BY", "排序", "filesort"],
+    "source": "高频"
+  },
+  {
+    "id": "mysql-basics-045",
+    "module": "MySQL基础",
+    "difficulty": 1,
+    "question": "MySQL中如何使用HAVING和WHERE的区别？",
+    "answer": "## 核心概念\n\nWHERE和HAVING都是过滤条件，但作用阶段不同。WHERE在分组前过滤行，HAVING在分组后过滤组。HAVING可以使用聚合函数，WHERE不行。\n\n## SQL示例\n\n```sql\n-- WHERE：分组前过滤\nSELECT dept_id, COUNT(*) AS cnt\nFROM emp\nWHERE salary > 5000  -- 先过滤薪资低于5000的行\nGROUP BY dept_id;\n\n-- HAVING：分组后过滤\nSELECT dept_id, COUNT(*) AS cnt\nFROM emp\nGROUP BY dept_id\nHAVING cnt > 3;  -- 过滤员工数不超过3人的部门\n\n-- WHERE + HAVING 组合使用\nSELECT dept_id, AVG(salary) AS avg_salary\nFROM emp\nWHERE status = 'active'     -- 先过滤非活跃员工\nGROUP BY dept_id\nHAVING avg_salary > 10000;  -- 再过滤平均薪资低的部门\n\n-- HAVING使用聚合函数\nSELECT dept_id, MAX(salary) AS max_sal, MIN(salary) AS min_sal\nFROM emp\nGROUP BY dept_id\nHAVING max_sal - min_sal > 5000;  -- 薪资差距超过5000的部门\n\n-- 错误示例：WHERE中使用聚合函数\nSELECT dept_id, COUNT(*) AS cnt\nFROM emp\nWHERE COUNT(*) > 3  -- 错误！WHERE不能使用聚合函数\nGROUP BY dept_id;\n\n-- 错误示例：HAVING中使用未分组的字段\nSELECT dept_id, COUNT(*) AS cnt\nFROM emp\nGROUP BY dept_id\nHAVING name = '张三';  -- 错误！name不是分组字段也不是聚合\n```\n\n## 核心区别\n\n| 特性 | WHERE | HAVING |\n|------|-------|--------|\n| 执行时机 | 分组前 | 分组后 |\n| 作用对象 | 行 | 组 |\n| 聚合函数 | 不可使用 | 可以使用 |\n| 别名 | 不可使用 | 可以使用（MySQL 8.0+） |\n| 性能 | 较好（减少分组数据） | 较差（先分组再过滤） |\n\n## 关键要点\n\n1. **能用WHERE就不用HAVING**：WHERE先执行，减少分组数据量\n2. **HAVING可以引用聚合结果**：SUM、AVG等\n3. **执行顺序**：WHERE → GROUP BY → HAVING → SELECT → ORDER BY\n4. **性能差异**：WHERE利用索引，HAVING不能\n\n## 注意事项\n\n- 只有过滤分组结果时才使用HAVING\n- WHERE中的条件放到HAVING不会影响结果，但影响性能\n- MySQL 8.0中HAVING可以使用SELECT中的别名\n- 没有GROUP BY时，HAVING作用于整个结果集",
+    "tags": ["HAVING", "WHERE", "分组过滤"],
+    "source": "高频"
+  }
+]

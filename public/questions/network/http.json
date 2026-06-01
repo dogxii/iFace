@@ -1,0 +1,407 @@
+[
+  {
+    "id": "net-http-001",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "HTTP请求报文和响应报文的格式是什么？",
+    "answer": "## 核心概念\n\nHTTP（HyperText Transfer Protocol）是应用层协议，基于请求-响应模型。客户端发送请求报文，服务器返回响应报文。\n\n## 请求报文格式\n\n```text\n┌─────────────────────────────────────────┐\n│ 请求行                                  │\n│ 方法 URL 版本                           │\n│ GET /index.html HTTP/1.1                │\n├─────────────────────────────────────────┤\n│ 请求头                                  │\n│ Host: www.example.com                   │\n│ User-Agent: Mozilla/5.0                 │\n│ Accept: text/html                       │\n│ Connection: keep-alive                  │\n├─────────────────────────────────────────┤\n│ 空行                                    │\n├─────────────────────────────────────────┤\n│ 请求体（可选）                          │\n│ key=value&key2=value2                   │\n└─────────────────────────────────────────┘\n```\n\n## 响应报文格式\n\n```text\n┌─────────────────────────────────────────┐\n│ 状态行                                  │\n│ 版本 状态码 原因短语                    │\n│ HTTP/1.1 200 OK                         │\n├─────────────────────────────────────────┤\n│ 响应头                                  │\n│ Content-Type: text/html                 │\n│ Content-Length: 1234                    │\n│ Server: nginx/1.18.0                    │\n├─────────────────────────────────────────┤\n│ 空行                                    │\n├─────────────────────────────────────────┤\n│ 响应体                                  │\n│ <html>...</html>                        │\n└─────────────────────────────────────────┘\n```\n\n## 关键要点\n\n- 请求行包含**方法**、**URL**、**HTTP版本**三个部分\n- 头部字段是**键值对**格式，用冒号分隔\n- 空行（CRLF）用于分隔头部和主体\n- GET请求通常没有请求体，POST请求有请求体\n\n## 面试高频追问\n\n1. HTTP请求方法有哪些？\n2. 常见的状态码有哪些？\n3. 请求头和响应头有哪些重要字段？",
+    "tags": ["HTTP报文", "请求格式", "响应格式"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-002",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "HTTP有哪些请求方法？GET和POST有什么区别？",
+    "answer": "## 核心概念\n\nHTTP定义了多种请求方法，用于指定对资源的操作。最常用的是GET和POST。\n\n## HTTP请求方法\n\n| 方法 | 用途 | 是否有请求体 | 是否幂等 |\n|------|------|-------------|--------|\n| **GET** | 获取资源 | 通常无 | 是 |\n| **POST** | 提交数据 | 有 | 否 |\n| **PUT** | 更新资源（整体替换） | 有 | 是 |\n| **DELETE** | 删除资源 | 通常无 | 是 |\n| **PATCH** | 更新资源（部分修改） | 有 | 否 |\n| **HEAD** | 获取响应头（无主体） | 无 | 是 |\n| **OPTIONS** | 查询支持的方法 | 无 | 是 |\n| **TRACE** | 回显请求 | 无 | 是 |\n\n## GET vs POST对比\n\n| 对比维度 | GET | POST |\n|----------|-----|------|\n| 语义 | 获取资源 | 提交数据 |\n| 参数位置 | URL查询字符串 | 请求体 |\n| 参数长度 | 有限制（浏览器/服务器限制） | 无限制 |\n| 安全性 | 参数暴露在URL中 | 参数在请求体中 |\n| 缓存 | 可被缓存 | 默认不缓存 |\n| 幂等性 | 幂等 | 非幂等 |\n| 书签 | 可收藏为书签 | 不可 |\n\n```text\nGET请求示例:\nGET /api/users?id=123 HTTP/1.1\nHost: example.com\n\nPOST请求示例:\nPOST /api/users HTTP/1.1\nHost: example.com\nContent-Type: application/json\n\n{\"name\": \"张三\", \"age\": 25}\n```\n\n## 关键要点\n\n- GET和POST在**语义**上不同，不仅仅是参数位置的区别\n- **幂等性**：相同请求多次执行结果相同\n- GET请求**可缓存**，POST请求默认不缓存\n- 实际使用中GET和POST的选择取决于**语义**而非功能\n\n## 面试高频追问\n\n1. GET请求可以有请求体吗？\n2. POST请求一定是非幂等的吗？\n3. PUT和PATCH有什么区别？",
+    "tags": ["GET", "POST", "请求方法"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-003",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "HTTP状态码有哪些分类？常见的状态码及其含义是什么？",
+    "answer": "## 核心概念\n\nHTTP状态码是服务器返回给客户端的三位数字代码，表示请求的处理结果。状态码分为5大类。\n\n## 状态码分类\n\n| 分类 | 范围 | 含义 |\n|------|------|------|\n| **1xx** | 100-199 | 信息性，请求已被接收 |\n| **2xx** | 200-299 | 成功，请求已被正确处理 |\n| **3xx** | 300-399 | 重定向，需要进一步操作 |\n| **4xx** | 400-499 | 客户端错误 |\n| **5xx** | 500-599 | 服务器错误 |\n\n## 常见状态码\n\n| 状态码 | 名称 | 含义 |\n|--------|------|------|\n| **200** | OK | 请求成功 |\n| **201** | Created | 资源创建成功（POST） |\n| **204** | No Content | 成功但无返回内容（DELETE） |\n| **206** | Partial Content | 部分内容（断点续传） |\n| **301** | Moved Permanently | 永久重定向 |\n| **302** | Found | 临时重定向 |\n| **304** | Not Modified | 资源未修改（缓存） |\n| **400** | Bad Request | 请求语法错误 |\n| **401** | Unauthorized | 未认证 |\n| **403** | Forbidden | 无权限 |\n| **404** | Not Found | 资源不存在 |\n| **405** | Method Not Allowed | 方法不允许 |\n| **429** | Too Many Requests | 请求过多（限流） |\n| **500** | Internal Server Error | 服务器内部错误 |\n| **502** | Bad Gateway | 网关错误 |\n| **503** | Service Unavailable | 服务不可用 |\n| **504** | Gateway Timeout | 网关超时 |\n\n## 关键要点\n\n- **301 vs 302**：301永久重定向（搜索引擎更新链接），302临时重定向\n- **401 vs 403**：401需要认证，403已认证但无权限\n- **502 vs 504**：502是后端服务错误，504是后端服务超时\n- 状态码配合**响应头**提供完整的错误信息\n\n## 面试高频追问\n\n1. 301和302重定向有什么区别？对SEO有什么影响？\n2. 401和403的区别是什么？\n3. 如何处理502和504错误？",
+    "tags": ["状态码", "HTTP", "响应"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-004",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是Cookie和Session？它们有什么区别？",
+    "answer": "## 核心概念\n\nHTTP是无状态协议，Cookie和Session是两种维持状态的机制。Cookie存储在客户端，Session存储在服务器端。\n\n## Cookie机制\n\n```text\n工作流程:\n1. 服务器在响应头中设置Cookie:\n   Set-Cookie: session_id=abc123; Path=/; HttpOnly\n\n2. 浏览器保存Cookie\n\n3. 后续请求自动携带Cookie:\n   Cookie: session_id=abc123\n\n4. 服务器根据Cookie识别用户\n```\n\n## Session机制\n\n```text\n工作流程:\n1. 用户首次访问，服务器创建Session\n2. 生成SessionID，通过Cookie发送给客户端\n3. 服务器存储Session数据（内存/Redis等）\n4. 后续请求携带SessionID\n5. 服务器根据SessionID查找Session数据\n```\n\n## Cookie vs Session对比\n\n| 对比维度 | Cookie | Session |\n|----------|--------|---------|\n| 存储位置 | 客户端浏览器 | 服务器端 |\n| 安全性 | 较低（可被篡改） | 较高 |\n| 大小限制 | 4KB左右 | 无明确限制 |\n| 生命周期 | 可设置过期时间 | 通常30分钟超时 |\n| 服务器压力 | 小（客户端存储） | 大（服务器存储） |\n| 跨域 | 受同源策略限制 | 不涉及 |\n\n## Cookie属性\n\n| 属性 | 说明 |\n|------|------|\n| **HttpOnly** | 禁止JavaScript访问（防XSS） |\n| **Secure** | 仅HTTPS传输 |\n| **SameSite** | 限制跨站发送（防CSRF） |\n| **Path** | Cookie适用路径 |\n| **Domain** | Cookie适用域名 |\n| **Expires/Max-Age** | 过期时间 |\n\n## 关键要点\n\n- Cookie是**客户端**状态管理，Session是**服务器端**状态管理\n- SessionID通常通过Cookie传递，也可以通过URL传递\n- Cookie有**安全风险**（XSS窃取、CSRF攻击）\n- 分布式Session需要使用**Redis**等共享存储\n\n## 面试高频追问\n\n1. 如果Cookie被禁用了怎么办？\n2. 分布式系统如何实现Session共享？\n3. Cookie的HttpOnly属性有什么作用？",
+    "tags": ["Cookie", "Session", "状态管理"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-005",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP缓存？强缓存和协商缓存有什么区别？",
+    "answer": "## 核心概念\n\nHTTP缓存是通过在客户端或中间代理存储响应副本，减少对源服务器的请求，提高性能。分为强缓存和协商缓存。\n\n## 强缓存\n\n```text\n不向服务器发请求，直接使用本地缓存\n\n相关头部:\n- Cache-Control: max-age=3600 (相对时间，优先级高)\n- Expires: Thu, 01 Dec 2025 16:00:00 GMT (绝对时间)\n\n工作流程:\n请求 → 检查缓存 → 未过期 → 直接使用缓存 (200 from cache)\n请求 → 检查缓存 → 已过期 → 进入协商缓存\n```\n\n## 协商缓存\n\n```text\n向服务器验证缓存是否可用\n\n相关头部:\n- Last-Modified / If-Modified-Since (基于时间)\n- ETag / If-None-Match (基于内容hash，优先级高)\n\n工作流程:\n请求 → 携带If-None-Match/If-Modified-Since\n服务器检查 → 资源未变化 → 返回304 Not Modified\n服务器检查 → 资源已变化 → 返回200 + 新资源\n```\n\n## 缓存流程图\n\n```text\n┌──────────────────────────────────────────┐\n│                请求                       │\n└───────────────┬──────────────────────────┘\n                ↓\n┌──────────────────────────────────────────┐\n│         强缓存检查                        │\n│  Cache-Control/Expires未过期？            │\n└────────┬──────────────────┬──────────────┘\n         ↓ 是               ↓ 否\n┌────────────────┐  ┌────────────────────┐\n│ 200 from cache │  │ 协商缓存           │\n│ 直接使用缓存   │  │ 发送验证请求       │\n└────────────────┘  └────────┬───────────┘\n                             ↓\n                    ┌────────────────────┐\n                    │ 服务器检查资源     │\n                    │ ETag/Last-Modified │\n                    └────────┬───────────┘\n                             ↓\n                    ┌────────────────────┐\n                    │ 304: 使用缓存      │\n                    │ 200: 返回新资源    │\n                    └────────────────────┘\n```\n\n## Cache-Control常用指令\n\n| 指令 | 含义 |\n|------|------|\n| **max-age** | 缓存有效期（秒） |\n| **no-cache** | 需要协商缓存验证 |\n| **no-store** | 完全不缓存 |\n| **public** | 任何缓存都可缓存 |\n| **private** | 只有浏览器可缓存 |\n| **immutable** | 资源永不变（配合hash） |\n\n## 关键要点\n\n- 强缓存优先级**高于**协商缓存\n- **ETag**比**Last-Modified**更精确（内容hash vs 时间）\n- `no-cache`不是不缓存，而是需要**验证**后才能使用\n- `no-store`才是完全不缓存\n\n## 面试高频追问\n\n1. ETag和Last-Modified有什么区别？\n2. no-cache和no-store有什么区别？\n3. 如何实现缓存的版本更新（缓存busting）？",
+    "tags": ["HTTP缓存", "强缓存", "协商缓存"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-006",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "HTTP/1.0、HTTP/1.1、HTTP/2和HTTP/3有什么区别？",
+    "answer": "## 核心概念\n\nHTTP协议经历了多个版本的演进，每个版本都在性能、功能和效率方面进行了改进。\n\n## 版本对比\n\n| 特性 | HTTP/1.0 | HTTP/1.1 | HTTP/2 | HTTP/3 |\n|------|----------|----------|--------|--------|\n| 连接方式 | 短连接 | 长连接 | 多路复用 | 多路复用 |\n| 头部压缩 | 无 | 无 | HPACK | QPACK |\n| 服务器推送 | 不支持 | 不支持 | 支持 | 支持 |\n| 二进制协议 | 否 | 否 | 是 | 是 |\n| 传输层 | TCP | TCP | TCP | QUIC(UDP) |\n| 队头阻塞 | 有 | 有 | 有(TCP层) | 无 |\n\n## 各版本核心改进\n\n### HTTP/1.0\n```text\n- 每个请求需要单独的TCP连接\n- 不支持Host头部（虚拟主机受限）\n- 不支持断点续传\n```\n\n### HTTP/1.1\n```text\n改进:\n- 默认长连接 (Connection: keep-alive)\n- 管线化 (Pipelining)\n- Host头部（虚拟主机支持）\n- 断点续传 (Range/Content-Range)\n- 更多缓存控制头\n```\n\n### HTTP/2\n```text\n改进:\n- 二进制分帧层\n- 多路复用 (一个连接并行多个请求)\n- 头部压缩 (HPACK)\n- 服务器推送 (Server Push)\n- 流优先级\n```\n\n### HTTP/3\n```text\n改进:\n- 基于QUIC协议 (UDP)\n- 0-RTT连接建立\n- 彻底解决队头阻塞\n- 更好的移动网络支持\n```\n\n## 关键要点\n\n- HTTP/2解决了**应用层**队头阻塞，但**TCP层**仍有\n- HTTP/3使用**QUIC**彻底解决队头阻塞\n- HTTP/2的**多路复用**是最大的性能改进\n- 所有主流浏览器都已支持HTTP/2和HTTP/3\n\n## 面试高频追问\n\n1. 什么是队头阻塞？HTTP/2和HTTP/3如何解决？\n2. HTTP/2的多路复用是如何实现的？\n3. 为什么HTTP/3选择基于UDP而不是TCP？",
+    "tags": ["HTTP版本", "HTTP/2", "HTTP/3"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-007",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "HTTP/2的多路复用是什么？它是如何工作的？",
+    "answer": "## 核心概念\n\nHTTP/2的多路复用（Multiplexing）允许在单个TCP连接上同时发送多个请求和响应，解决了HTTP/1.1的队头阻塞问题。\n\n## HTTP/1.1的问题\n\n```text\nHTTP/1.1 (管线化):\n请求1 → 等待响应1 → 请求2 → 等待响应2\n\n即使开启管线化:\n请求1,请求2,请求3 → 响应1,响应2,响应3\n→ 响应必须按顺序返回\n→ 响应1慢会阻塞2和3\n```\n\n## HTTP/2多路复用\n\n```text\nHTTP/2:\n\n单个TCP连接上:\n┌─────────────────────────────────────┐\n│ Stream 1: 请求1 ──→ 响应1 (帧交错) │\n│ Stream 2: 请求2 ──→ 响应2 (帧交错) │\n│ Stream 3: 请求3 ──→ 响应3 (帧交错) │\n└─────────────────────────────────────┘\n\n帧交错传输:\n[帧1-1] [帧2-1] [帧3-1] [帧1-2] [帧2-2]...\n\n接收方根据Stream ID重新组装\n```\n\n## 二进制分帧层\n\n```text\nHTTP/2将消息分解为帧:\n\n帧格式:\n┌────────┬────────┬────────┬────────┐\n│长度(24)│类型(8) │标志(8) │流ID(31)│\n├────────┴────────┴────────┴────────┤\n│              帧负载               │\n└───────────────────────────────────┘\n\n帧类型:\n- DATA: 数据帧\n- HEADERS: 头部帧\n- PRIORITY: 优先级帧\n- RST_STREAM: 终止流\n- SETTINGS: 设置帧\n- PUSH_PROMISE: 推送承诺\n```\n\n## 关键要点\n\n- 多路复用解决了**HTTP层**的队头阻塞\n- **TCP层**的队头阻塞仍然存在（一个包丢失影响所有流）\n- Stream是HTTP/2的**逻辑通道**，可以设置优先级\n- HTTP/3使用QUIC彻底解决队头阻塞\n\n## 面试高频追问\n\n1. 什么是队头阻塞？\n2. HTTP/2为什么还有TCP层的队头阻塞？\n3. HTTP/2的Stream和连接有什么关系？",
+    "tags": ["多路复用", "HTTP/2", "队头阻塞"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-008",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "HTTP/2的服务器推送（Server Push）是什么？",
+    "answer": "## 核心概念\n\n服务器推送（Server Push）允许服务器在客户端请求之前主动推送资源，减少请求往返次数。\n\n## 工作原理\n\n```text\n传统HTTP/1.1:\n1. 请求index.html\n2. 解析发现需要style.css和script.js\n3. 分别请求style.css和script.js\n4. 共3个请求往返\n\nHTTP/2 Server Push:\n1. 请求index.html\n2. 服务器推送style.css和script.js\n3. 同时返回index.html + 推送的资源\n4. 1个请求往返\n```\n\n## 推送流程\n\n```text\n客户端                    服务器\n   |                        |\n   |-- GET /index.html ---→|\n   |                        |\n   |←-- PUSH_PROMISE ------| 推送style.css\n   |    (style.css)         |\n   |                        |\n   |←-- PUSH_PROMISE ------| 推送script.js\n   |    (script.js)         |\n   |                        |\n   |←-- DATA (index.html) --|\n   |←-- DATA (style.css) ---|\n   |←-- DATA (script.js) ---|\n```\n\n## 服务器推送的限制\n\n| 限制 | 说明 |\n|------|------|\n| 只能推送GET请求 | 不能推送POST等 |\n| 需要缓存配合 | 如果客户端已有缓存，推送浪费带宽 |\n| 实现复杂 | 需要服务器正确判断推送资源 |\n| 浏览器支持有限 | 部分浏览器已移除支持 |\n\n## 关键要点\n\n- 服务器推送**减少请求延迟**，但增加了带宽使用\n- 需要**正确判断**哪些资源需要推送\n- 可以通过**Cache-Digest**头避免推送已有缓存的资源\n- 实际使用中效果不如预期，部分浏览器已放弃支持\n\n## 面试高频追问\n\n1. 服务器推送和预加载（preload）有什么区别？\n2. 为什么HTTP/3不推荐使用服务器推送？\n3. 如何判断哪些资源应该推送？",
+    "tags": ["服务器推送", "Server Push", "HTTP/2"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-009",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "什么是HTTPS？HTTPS的握手流程是什么？",
+    "answer": "## 核心概念\n\nHTTPS（HTTP Secure）是HTTP的安全版本，在HTTP和TCP之间加入TLS/SSL层，提供数据加密、身份验证和完整性保护。\n\n## HTTPS握手流程（TLS 1.2）\n\n```text\n客户端                                服务器\n   |                                     |\n   |--- ClientHello ------------------→  |\n   |    (支持的TLS版本、加密套件、       |\n   |     随机数Client Random)            |\n   |                                     |\n   |←-- ServerHello -------------------  |\n   |    (选定的加密套件、                 |\n   |     随机数Server Random)            |\n   |                                     |\n   |←-- Certificate -------------------  |\n   |    (服务器证书/公钥)                |\n   |                                     |\n   |←-- ServerHelloDone ----------------  |\n   |                                     |\n   |--- ClientKeyExchange ------------→  |\n   |    (预主密钥，用服务器公钥加密)     |\n   |                                     |\n   |--- ChangeCipherSpec --------------→  |\n   |    (切换到加密通信)                 |\n   |                                     |\n   |--- Finished ----------------------→  |\n   |    (验证握手消息)                   |\n   |                                     |\n   |←-- ChangeCipherSpec ---------------  |\n   |←-- Finished -----------------------  |\n   |                                     |\n   |     加密通信开始                     |\n```\n\n## TLS 1.3改进\n\n```text\nTLS 1.3简化握手:\n\n1-RTT握手:\nClientHello + KeyShare →\n← ServerHello + KeyShare + Certificate + Finished\n(完成！只需1个RTT)\n\n0-RTT恢复:\n使用之前会话的PSK，直接发送加密数据\n```\n\n## 关键要点\n\n- HTTPS = HTTP + TLS/SSL\n- TLS握手阶段使用**非对称加密**，数据传输使用**对称加密**\n- TLS 1.3将握手从2-RTT优化到**1-RTT**\n- 0-RTT有**重放攻击**风险，需谨慎使用\n\n## 面试高频追问\n\n1. TLS握手过程中如何保证安全性？\n2. 什么是证书链？如何验证证书？\n3. TLS 1.2和TLS 1.3有什么区别？",
+    "tags": ["HTTPS", "TLS握手", "加密"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-010",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "HTTP/1.1的长连接和管线化是什么？",
+    "answer": "## 核心概念\n\nHTTP/1.1默认启用长连接（Persistent Connection），允许在同一个TCP连接上发送多个HTTP请求。管线化（Pipelining）是进一步的优化，允许不等待响应就发送后续请求。\n\n## 长连接\n\n```text\nHTTP/1.0 (短连接):\n请求1 → 响应1 → 关闭连接\n请求2 → 响应2 → 关闭连接\n→ 每次请求都需要TCP握手\n\nHTTP/1.1 (长连接):\n请求1 → 响应1 → 请求2 → 响应2 → ...\n→ 同一连接复用\n\n头部字段:\nConnection: keep-alive (默认开启)\nConnection: close (关闭长连接)\nKeep-Alive: timeout=5, max=100\n```\n\n## 管线化\n\n```text\n非管线化:\n请求1 → 等待响应1 → 请求2 → 等待响应2\n\n管线化:\n请求1 → 请求2 → 请求3 → 响应1 → 响应2 → 响应3\n\n限制:\n- 响应必须按请求顺序返回\n- 存在队头阻塞问题\n- 实际使用很少（浏览器支持有限）\n```\n\n## 长连接的优缺点\n\n| 优点 | 缺点 |\n|------|------|\n| 减少TCP握手开销 | 占用服务器连接资源 |\n| 减少网络拥塞 | 需要合理设置超时 |\n| 提高响应速度 | 可能造成连接泄漏 |\n\n## 关键要点\n\n- HTTP/1.1默认开启长连接，需要显式关闭\n- 管线化因为**队头阻塞**问题，实际上**很少使用**\n- 长连接需要合理设置**超时时间**和**最大请求数**\n- HTTP/2的多路复用**替代**了管线化\n\n## 面试高频追问\n\n1. 长连接和短连接各适合什么场景？\n2. 为什么管线化没有被广泛使用？\n3. 长连接的超时时间如何设置？",
+    "tags": ["长连接", "管线化", "HTTP/1.1"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-011",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "什么是WebSocket？WebSocket和HTTP有什么区别？",
+    "answer": "## 核心概念\n\nWebSocket是一种在单个TCP连接上提供全双工通信的协议，允许服务器主动向客户端推送数据。\n\n## WebSocket握手\n\n```text\n客户端发起HTTP升级请求:\nGET /chat HTTP/1.1\nHost: server.example.com\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\n\n服务器回复:\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n\n→ 升级成功，切换到WebSocket协议\n```\n\n## WebSocket vs HTTP对比\n\n| 对比维度 | HTTP | WebSocket |\n|----------|------|----------|\n| 通信模式 | 请求-响应（半双工） | 全双工 |\n| 连接方式 | 短连接/长连接 | 持久连接 |\n| 服务器推送 | 不支持（轮询模拟） | 原生支持 |\n| 头部开销 | 每次请求都有完整头部 | 数据帧头部很小(2-14字节) |\n| 协议标识 | http:// / https:// | ws:// / wss:// |\n| 适用场景 | 请求-响应模式 | 实时通信 |\n\n## WebSocket应用场景\n\n- **实时聊天**：微信网页版、客服系统\n- **在线游戏**：实时状态同步\n- **股票行情**：实时数据推送\n- **协同编辑**：多人同时编辑\n- **通知系统**：消息推送\n\n## 关键要点\n\n- WebSocket通过HTTP**升级**建立连接\n- 握手完成后使用**独立的帧格式**通信\n- WebSocket有**心跳机制**（Ping/Pong）保持连接\n- 比HTTP轮询**更高效**，减少延迟和带宽\n\n## 面试高频追问\n\n1. WebSocket的连接是如何建立的？\n2. WebSocket和SSE有什么区别？\n3. 如何处理WebSocket的断线重连？",
+    "tags": ["WebSocket", "全双工", "实时通信"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-012",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是DNS？DNS的解析流程是什么？",
+    "answer": "## 核心概念\n\nDNS（Domain Name System，域名系统）是将域名转换为IP地址的系统，是互联网的基础设施之一。\n\n## DNS解析流程\n\n```text\n浏览器输入: www.example.com\n\n1. 浏览器缓存\n   → 检查浏览器DNS缓存\n   → 命中则直接使用\n\n2. 操作系统缓存\n   → 检查系统hosts文件和DNS缓存\n   → 命中则返回\n\n3. 本地DNS服务器\n   → 向配置的DNS服务器发起查询\n   → 如果有缓存则返回\n\n4. 递归查询过程:\n   本地DNS → 根DNS服务器\n           → .com顶级域DNS\n           → example.com权威DNS\n           → 返回www.example.com的IP\n\n5. 返回结果并缓存\n```\n\n## DNS查询方式\n\n```text\n递归查询:\n客户端 → 本地DNS → 代为查询到底 → 返回结果\n\n迭代查询:\n本地DNS → 根DNS: \"去问.com\"\n本地DNS → .comDNS: \"去问example.com\"\n本地DNS → example.comDNS: \"IP是1.2.3.4\"\n```\n\n## DNS记录类型\n\n| 类型 | 含义 | 示例 |\n|------|------|------|\n| **A** | 域名→IPv4地址 | www.example.com → 1.2.3.4 |\n| **AAAA** | 域名→IPv6地址 | www.example.com → ::1 |\n| **CNAME** | 域名别名 | www.example.com → example.com |\n| **MX** | 邮件服务器 | example.com → mail.example.com |\n| **NS** | 域名服务器 | example.com → ns1.example.com |\n| **TXT** | 文本记录 | SPF、DKIM验证 |\n\n## 关键要点\n\n- DNS使用**UDP**协议，端口53（大响应用TCP）\n- DNS解析是**逐级查询**的过程\n- DNS缓存可以**显著减少**解析时间\n- DNS存在**安全风险**（DNS劫持、DNS污染）\n\n## 面试高频追问\n\n1. DNS为什么既使用UDP又使用TCP？\n2. 什么是DNS劫持和DNS污染？\n3. 什么是DNS负载均衡？",
+    "tags": ["DNS", "域名解析", "递归查询"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-013",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是CDN？CDN的工作原理是什么？",
+    "answer": "## 核心概念\n\nCDN（Content Delivery Network，内容分发网络）是通过在全球部署边缘节点，将内容缓存到离用户最近的服务器，加速内容分发的技术。\n\n## CDN工作原理\n\n```text\n传统访问:\n用户 → 源站（可能很远） → 返回内容\n延迟高，速度慢\n\nCDN访问:\n用户 → 最近的CDN边缘节点 → 返回缓存内容\n延迟低，速度快\n\n如果边缘节点没有缓存:\n边缘节点 → 源站获取内容 → 缓存并返回\n```\n\n## CDN关键技术\n\n| 技术 | 说明 |\n|------|------|\n| **DNS调度** | 根据用户位置返回最近节点IP |\n| **内容缓存** | 静态资源缓存在边缘节点 |\n| **负载均衡** | 节点间负载均衡 |\n| **回源策略** | 缓存失效时从源站获取 |\n\n## CDN加速过程\n\n```text\n1. 用户请求cdn.example.com/resource.js\n2. DNS解析返回最近的CDN节点IP\n3. 请求发送到CDN节点\n4. 节点检查缓存:\n   - 命中: 直接返回\n   - 未命中: 从源站获取，缓存后返回\n```\n\n## CDN适用场景\n\n- **静态资源**：JS、CSS、图片、视频\n- **下载加速**：软件、游戏下载\n- **视频点播/直播**：流媒体分发\n- **安全防护**：DDoS防护、WAF\n\n## 关键要点\n\n- CDN通过**DNS调度**实现就近访问\n- **缓存命中率**是CDN性能的关键指标\n- 动态内容通常**不适合**CDN缓存\n- CDN也可以提供**安全防护**功能\n\n## 面试高频追问\n\n1. CDN是如何实现DNS调度的？\n2. 如何保证CDN缓存与源站数据的一致性？\n3. 动态内容可以使用CDN加速吗？",
+    "tags": ["CDN", "内容分发", "缓存"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-014",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是RESTful API？REST的设计原则是什么？",
+    "answer": "## 核心概念\n\nREST（Representational State Transfer）是一种架构风格，用于设计网络应用的API。RESTful API遵循REST原则，使用HTTP方法操作资源。\n\n## REST设计原则\n\n| 原则 | 说明 |\n|------|------|\n| **资源导向** | 每个URL代表一个资源 |\n| **统一接口** | 使用标准HTTP方法（GET/POST/PUT/DELETE） |\n| **无状态** | 每个请求包含所有必要信息 |\n| **可缓存** | 响应应明确是否可缓存 |\n| **分层系统** | 客户端无需知道是否直连服务器 |\n\n## RESTful API设计示例\n\n```text\n资源: 用户(users)\n\nGET    /api/users          → 获取用户列表\nGET    /api/users/123      → 获取ID为123的用户\nPOST   /api/users          → 创建新用户\nPUT    /api/users/123      → 更新用户（全量）\nPATCH  /api/users/123      → 更新用户（部分）\nDELETE /api/users/123      → 删除用户\n\n嵌套资源:\nGET    /api/users/123/orders → 获取用户123的订单\n```\n\n## HTTP方法与CRUD对应\n\n| HTTP方法 | CRUD操作 | 幂等性 | 安全性 |\n|----------|---------|--------|--------|\n| GET | Read | 是 | 是 |\n| POST | Create | 否 | 否 |\n| PUT | Update | 是 | 否 |\n| DELETE | Delete | 是 | 否 |\n\n## 状态码使用\n\n```text\n成功:\n- GET: 200 OK\n- POST: 201 Created\n- PUT: 200 OK\n- DELETE: 204 No Content\n\n客户端错误:\n- 400 Bad Request: 参数错误\n- 401 Unauthorized: 未认证\n- 403 Forbidden: 无权限\n- 404 Not Found: 资源不存在\n- 422 Unprocessable Entity: 参数验证失败\n```\n\n## 关键要点\n\n- REST是**架构风格**，不是协议或标准\n- **无状态**是REST的核心要求\n- URL应该是**名词**（资源），不是动词（操作）\n- HTTP方法表示**操作类型**\n\n## 面试高频追问\n\n1. REST和GraphQL有什么区别？\n2. 为什么REST要求无状态？\n3. 如何设计一个好的RESTful API？",
+    "tags": ["RESTful", "API设计", "HTTP方法"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-015",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "什么是URL？URL的组成部分有哪些？",
+    "answer": "## 核心概念\n\nURL（Uniform Resource Locator，统一资源定位符）是用于定位互联网上资源的地址。它是Web的基础。\n\n## URL结构\n\n```text\nhttps://www.example.com:443/path/to/page?query=value#fragment\n\n┌───────┬────────────────────┬────┬─────────────┬───────────┬─────────┐\n│协议   │主机名              │端口│路径         │查询参数   │片段标识 │\n│https  │www.example.com     │443 │/path/to/page│query=value│#fragment│\n└───────┴────────────────────┴────┴─────────────┴───────────┴─────────┘\n\n各部分说明:\n- 协议(Scheme): https, http, ftp, file等\n- 主机名(Host): 域名或IP地址\n- 端口(Port): 可选，默认http=80, https=443\n- 路径(Path): 资源在服务器上的位置\n- 查询(Query): 键值对参数，用&分隔\n- 片段(Fragment): 页面内锚点，不发送给服务器\n```\n\n## URL编码\n```text\n特殊字符需要编码:\n空格 → %20\n中文 → UTF-8编码 → %XX%XX%XX\n& → %26\n= → %3D\n\n例:\nsearch?q=hello world\n→ search?q=hello%20world\n```\n\n## 关键要点\n\n- URL是**资源的地址**，URI是资源的标识（URL是URI的子集）\n- 查询参数以**?**开始，多个参数用**&**分隔\n- 片段（#）**不会发送**给服务器\n- URL长度有限制（浏览器通常2048字符）\n\n## 面试高频追问\n\n1. URL和URI有什么区别？\n2. 为什么URL需要编码？如何编码？\n3. 什么是URL的相对路径和绝对路径？",
+    "tags": ["URL", "URI", "地址格式"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-016",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是Content-Type？常见的Content-Type有哪些？",
+    "answer": "## 核心概念\n\nContent-Type是HTTP头部字段，用于指示请求体或响应体的媒体类型（MIME类型），告诉接收方如何解析数据。\n\n## 请求Content-Type\n\n| Content-Type | 说明 | 示例 |\n|--------------|------|------|\n| **application/x-www-form-urlencoded** | 表单默认编码 | name=value&age=25 |\n| **multipart/form-data** | 文件上传 | 带boundary的分段数据 |\n| **application/json** | JSON数据 | {\"name\":\"张三\"} |\n| **text/plain** | 纯文本 | hello world |\n| **application/xml** | XML数据 | <user>...</user> |\n\n## 响应Content-Type\n\n| Content-Type | 说明 |\n|--------------|------|\n| **text/html** | HTML页面 |\n| **text/css** | CSS样式表 |\n| **application/javascript** | JavaScript代码 |\n| **image/jpeg** | JPEG图片 |\n| **image/png** | PNG图片 |\n| **application/json** | JSON数据 |\n| **application/pdf** | PDF文档 |\n| **video/mp4** | MP4视频 |\n\n## 表单编码方式对比\n\n```text\napplication/x-www-form-urlencoded:\n- 数据编码为键值对\n- 特殊字符URL编码\n- 不适合文件上传\n\nmultipart/form-data:\n- 使用boundary分隔字段\n- 支持文件上传\n- 每个字段可以有不同的Content-Type\n```\n\n## 关键要点\n\n- Content-Type告诉接收方**如何解析**数据\n- 文件上传必须使用**multipart/form-data**\n- API通常使用**application/json**\n- 浏览器根据Content-Type**渲染**内容\n\n## 面试高频追问\n\n1. form表单的enctype属性有什么作用？\n2. 为什么API通常使用JSON而不是XML？\n3. 如何处理未知的Content-Type？",
+    "tags": ["Content-Type", "MIME", "请求格式"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-017",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是跨域？浏览器的同源策略是什么？",
+    "answer": "## 核心概念\n\n同源策略（Same-Origin Policy）是浏览器的安全机制，限制从一个源加载的文档或脚本与另一个源的资源进行交互。跨域是指违反同源策略的请求。\n\n## 同源定义\n\n```text\n两个URL的源相同 = 协议 + 域名 + 端口 都相同\n\nhttps://www.example.com:443/path\n  ↓\n协议: https\n域名: www.example.com\n端口: 443\n\n同源:\nhttps://www.example.com/a\nhttps://www.example.com/b\n\n不同源（跨域）:\nhttps://www.example.com vs http://www.example.com (协议不同)\nhttps://www.example.com vs https://api.example.com (域名不同)\nhttps://www.example.com:443 vs https://www.example.com:8080 (端口不同)\n```\n\n## 受限制的跨域行为\n\n| 操作 | 是否允许 |\n|------|----------|\n| Cookie、LocalStorage读取 | 不允许 |\n| DOM访问 | 不允许 |\n| AJAX请求 | 不允许 |\n| CSS/JS/图片加载 | 允许 |\n| 表单提交 | 允许 |\n\n## 跨域解决方案\n\n| 方案 | 说明 |\n|------|------|\n| **CORS** | 服务器设置跨域头，最标准的方案 |\n| **JSONP** | 利用script标签，只支持GET |\n| **代理** | 服务器端代理请求，绕过浏览器限制 |\n| **nginx反向代理** | 同源请求不同后端 |\n\n## 关键要点\n\n- 同源策略是**浏览器**的安全限制，服务器之间没有\n- **CORS**是目前最标准的跨域解决方案\n- JSONP是**老旧方案**，只支持GET请求\n- 跨域请求**会被发送**，只是浏览器限制了响应读取\n\n## 面试高频追问\n\n1. CORS的预检请求是什么？\n2. JSONP的原理是什么？\n3. 为什么表单提交不受同源策略限制？",
+    "tags": ["同源策略", "跨域", "CORS"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-018",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是CORS？CORS的工作原理是什么？",
+    "answer": "## 核心概念\n\nCORS（Cross-Origin Resource Sharing，跨域资源共享）是W3C标准，允许服务器声明哪些源可以访问其资源，是解决跨域问题的标准方案。\n\n## CORS请求类型\n\n### 简单请求\n```text\n满足以下条件:\n- 方法: GET/HEAD/POST\n- Content-Type: text/plain, multipart/form-data, application/x-www-form-urlencoded\n- 无自定义头部\n\n请求:\nGET /api/data HTTP/1.1\nOrigin: https://www.example.com\n\n响应:\nAccess-Control-Allow-Origin: https://www.example.com\nAccess-Control-Allow-Credentials: true\n```\n\n### 预检请求（Preflight）\n```text\n非简单请求会先发OPTIONS预检:\n\n请求:\nOPTIONS /api/data HTTP/1.1\nOrigin: https://www.example.com\nAccess-Control-Request-Method: PUT\nAccess-Control-Request-Headers: Content-Type\n\n响应:\nAccess-Control-Allow-Origin: https://www.example.com\nAccess-Control-Allow-Methods: GET, POST, PUT\nAccess-Control-Allow-Headers: Content-Type\nAccess-Control-Max-Age: 86400\n\n→ 预检通过后才发送实际请求\n```\n\n## CORS响应头\n\n| 头部 | 说明 |\n|------|------|\n| **Access-Control-Allow-Origin** | 允许的源 |\n| **Access-Control-Allow-Methods** | 允许的方法 |\n| **Access-Control-Allow-Headers** | 允许的头部 |\n| **Access-Control-Allow-Credentials** | 是否允许携带Cookie |\n| **Access-Control-Max-Age** | 预检缓存时间 |\n\n## 关键要点\n\n- CORS分为**简单请求**和**预检请求**\n- 预检请求（OPTIONS）增加了一个**RTT**延迟\n- `Access-Control-Allow-Origin: *` 不能与Credentials同时使用\n- CORS是**服务器端**配置，客户端无需特殊处理\n\n## 面试高频追问\n\n1. 什么情况下会触发预检请求？\n2. 如何让CORS请求携带Cookie？\n3. CORS和JSONP有什么区别？",
+    "tags": ["CORS", "预检请求", "跨域"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-019",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的Keep-Alive和TCP的Keep-Alive？有什么区别？",
+    "answer": "## 核心概念\n\nHTTP Keep-Alive和TCP Keep-Alive是两个不同的概念，分别在应用层和传输层实现连接的保持。\n\n## HTTP Keep-Alive\n\n```text\n作用: 复用TCP连接，发送多个HTTP请求\n\nHTTP/1.0:\nConnection: Keep-Alive (显式开启)\n\nHTTP/1.1:\n默认开启，Connection: close (显式关闭)\n\nKeep-Alive: timeout=5, max=100\ntimeout: 连接空闲超时时间\nmax: 最大请求数\n```\n\n## TCP Keep-Alive\n\n```text\n作用: 检测连接是否存活\n\n工作方式:\n- 连接空闲超过keepalive_time\n- 发送探测报文\n- 检测对端是否仍然在线\n\n默认参数:\n- keepalive_time: 7200秒 (2小时)\n- keepalive_intvl: 75秒\n- keepalive_probes: 9次\n```\n\n## 对比\n\n| 对比维度 | HTTP Keep-Alive | TCP Keep-Alive |\n|----------|----------------|----------------|\n| 层次 | 应用层 | 传输层 |\n| 作用 | 复用连接 | 检测存活 |\n| 默认行为 | 开启(1.1) | 关闭 |\n| 可配置性 | 响应头控制 | socket选项控制 |\n| 检测内容 | 无（只复用） | 连接是否存活 |\n\n## 关键要点\n\n- HTTP Keep-Alive是**连接复用**，TCP Keep-Alive是**存活检测**\n- HTTP/1.1默认开启Keep-Alive\n- TCP Keep-Alive默认关闭，需要应用显式开启\n- 两者**互不影响**，可以同时使用\n\n## 面试高频追问\n\n1. 如何在Nginx中配置Keep-Alive？\n2. Keep-Alive超时如何设置？\n3. 长连接过多会有什么问题？",
+    "tags": ["Keep-Alive", "长连接", "连接复用"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-020",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是TLS/SSL？TLS握手过程中如何保证安全性？",
+    "answer": "## 核心概念\n\nTLS（Transport Layer Security）是SSL的继任者，为网络通信提供加密、身份验证和完整性保护。HTTPS就是HTTP over TLS。\n\n## TLS提供的安全保证\n\n| 保证 | 说明 |\n|------|------|\n| **机密性** | 数据加密，防止窃听 |\n| **完整性** | 数据校验，防止篡改 |\n| **身份验证** | 证书验证，防止冒充 |\n\n## TLS握手安全性\n\n### 1. 证书验证\n```text\n服务器发送证书 → 客户端验证:\n- 证书是否由可信CA签发\n- 证书是否过期\n- 证书域名是否匹配\n- 证书链是否完整\n```\n\n### 2. 密钥交换\n```text\n使用非对称加密交换对称密钥:\n- 客户端生成预主密钥\n- 用服务器公钥加密后发送\n- 双方计算出相同的会话密钥\n- 后续使用对称加密通信\n```\n\n### 3. 防止中间人攻击\n```text\n中间人攻击防御:\n- 证书验证: 中间人无法伪造可信证书\n- 公钥加密: 中间人无法解密预主密钥\n- 握手完整性: Finished消息验证握手过程\n```\n\n## TLS 1.3改进\n\n```text\n- 移除不安全的加密算法\n- 简化握手流程 (1-RTT)\n- 0-RTT恢复模式\n- 前向保密默认开启\n```\n\n## 关键要点\n\n- TLS使用**非对称加密**交换密钥，**对称加密**传输数据\n- **证书**是身份验证的核心\n- TLS 1.3比1.2更**安全高效**\n- **前向保密**确保即使私钥泄露，历史通信仍安全\n\n## 面试高频追问\n\n1. 对称加密和非对称加密有什么区别？\n2. 什么是证书链？如何验证？\n3. TLS 1.3的0-RTT有什么安全风险？",
+    "tags": ["TLS", "SSL", "加密通信"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-021",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "HTTP请求头和响应头有哪些常见字段？",
+    "answer": "## 核心概念\n\nHTTP头部字段用于传递请求和响应的附加信息，是HTTP协议的重要组成部分。\n\n## 常见请求头\n\n| 字段 | 说明 | 示例 |\n|------|------|------|\n| **Host** | 目标主机（必须） | Host: www.example.com |\n| **User-Agent** | 客户端信息 | Mozilla/5.0... |\n| **Accept** | 可接受的响应类型 | text/html, application/json |\n| **Accept-Encoding** | 可接受的编码 | gzip, deflate, br |\n| **Accept-Language** | 可接受的语言 | zh-CN, en |\n| **Connection** | 连接管理 | keep-alive |\n| **Cookie** | 客户端Cookie | session_id=abc |\n| **Authorization** | 认证信息 | Bearer token_xxx |\n| **Content-Type** | 请求体类型 | application/json |\n| **Content-Length** | 请求体长度 | 1234 |\n| **Referer** | 来源页面URL | https://example.com/ |\n| **Origin** | 请求来源（CORS） | https://www.example.com |\n\n## 常见响应头\n\n| 字段 | 说明 | 示例 |\n|------|------|------|\n| **Content-Type** | 响应体类型 | text/html; charset=utf-8 |\n| **Content-Length** | 响应体长度 | 1234 |\n| **Content-Encoding** | 响应体编码 | gzip |\n| **Cache-Control** | 缓存策略 | max-age=3600 |\n| **Set-Cookie** | 设置Cookie | session_id=abc; HttpOnly |\n| **Location** | 重定向URL | /new-page |\n| **Access-Control-Allow-Origin** | CORS允许源 | * |\n| **Server** | 服务器信息 | nginx/1.18 |\n| **Strict-Transport-Security** | 强制HTTPS | max-age=31536000 |\n\n## 关键要点\n\n- 头部字段名**不区分大小写**\n- 每个字段以**CRLF**（回车换行）结尾\n- 字段值可以有**多个**，用逗号分隔\n- 自定义头部通常以**X-**为前缀（非标准）\n\n## 面试高频追问\n\n1. Host头部为什么是必须的？\n2. Cookie和Set-Cookie是如何配合的？\n3. 如何通过头部字段优化性能？",
+    "tags": ["HTTP头部", "请求头", "响应头"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-022",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP/2的头部压缩（HPACK）？",
+    "answer": "## 核心概念\n\nHPACK是HTTP/2的头部压缩算法，通过静态表、动态表和霍夫曼编码来减少头部大小，提高传输效率。\n\n## HTTP/1.x的头部问题\n\n```text\n每个HTTP请求都携带完整的头部:\nGET /index.html HTTP/1.1\nHost: www.example.com\nUser-Agent: Mozilla/5.0...\nAccept: text/html\nAccept-Encoding: gzip\nCookie: session_id=abc123...\n\n→ 大量重复的头部信息\n→ 消耗带宽\n```\n\n## HPACK压缩机制\n\n### 1. 静态表\n```text\n预定义的61个常见头部:\n索引1: :authority\n索引2: :method: GET\n索引3: :method: POST\n...\n索引61: www-authocomplete\n\n直接用索引号代替完整头部\n```\n\n### 2. 动态表\n```text\n连接期间动态添加的头部:\n首次: 发送完整头部并添加到动态表\n后续: 只发送索引号\n\n动态表大小可配置:\nSETTINGS_HEADER_TABLE_SIZE\n```\n\n### 3. 霍夫曼编码\n```text\n对头部值进行霍夫曼编码:\n- 高频字符用短编码\n- 低频字符用长编码\n- 进一步压缩大小\n```\n\n## 压缩效果\n\n```text\n典型HTTP头部: 约800字节\nHPACK压缩后: 约50-100字节\n压缩率: 约80-90%\n```\n\n## 关键要点\n\n- HPACK是HTTP/2**专用**的压缩算法\n- 静态表是**预定义**的，动态表是**连接级别**的\n- HPACK解决了**安全压缩**问题（避免CRIME攻击）\n- HTTP/3使用**QPACK**（改进的HPACK）\n\n## 面试高频追问\n\n1. 为什么HTTP/1.x不压缩头部？\n2. HPACK如何防止CRIME攻击？\n3. QPACK和HPACK有什么区别？",
+    "tags": ["HPACK", "头部压缩", "HTTP/2"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-023",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP/3？HTTP/3相比HTTP/2有什么改进？",
+    "answer": "## 核心概念\n\nHTTP/3是HTTP协议的第三个主要版本，底层使用QUIC协议（基于UDP）代替TCP，解决了HTTP/2遗留的TCP层队头阻塞问题。\n\n## HTTP/2的问题\n\n```text\nHTTP/2使用TCP:\n- TCP层队头阻塞: 一个TCP包丢失影响所有流\n- TCP握手延迟: 需要TCP握手+TLS握手\n- 连接迁移困难: 基于四元组\n```\n\n## HTTP/3的改进\n\n| 改进 | 说明 |\n|------|------|\n| **基于QUIC** | 使用UDP，避免TCP限制 |\n| **无队头阻塞** | 流之间独立，一个流丢包不影响其他 |\n| **0-RTT连接** | 首次1-RTT，后续0-RTT |\n| **连接迁移** | 基于Connection ID，支持网络切换 |\n| **内置加密** | TLS 1.3强制加密 |\n| **改进的头部压缩** | QPACK替代HPACK |\n\n## HTTP/2 vs HTTP/3\n\n```text\nHTTP/2:\n应用层: HTTP/2\n传输层: TCP + TLS\n网络层: IP\n\nHTTP/3:\n应用层: HTTP/3\n传输层: QUIC (内置TLS)\n网络层: UDP → IP\n```\n\n## HTTP/3的优势场景\n\n| 场景 | 优势 |\n|------|------|\n| 高丢包网络 | 无队头阻塞，一个丢包不影响其他流 |\n| 移动网络 | 连接迁移，网络切换不断连 |\n| 首次访问 | 更快的连接建立 |\n| 弱网环境 | 更好的传输效率 |\n\n## 关键要点\n\n- HTTP/3基于**QUIC**，不是TCP\n- HTTP/3**彻底解决**了队头阻塞问题\n- 主流浏览器和CDN已支持HTTP/3\n- HTTP/3对**弱网和移动网络**效果最好\n\n## 面试高频追问\n\n1. HTTP/3为什么选择UDP而不是改进TCP？\n2. QUIC是如何实现可靠传输的？\n3. HTTP/3的部署有什么挑战？",
+    "tags": ["HTTP/3", "QUIC", "UDP"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-024",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的断点续传？如何实现？",
+    "answer": "## 核心概念\n\n断点续传允许在下载中断后从断点处继续下载，而不是重新开始。通过HTTP的Range头部实现。\n\n## 实现原理\n\n```text\n1. 客户端获取文件大小:\nHEAD /file.zip HTTP/1.1\n→ Content-Length: 10000000\n\n2. 第一次下载 (假设下载了前5MB):\nGET /file.zip HTTP/1.1\nRange: bytes=0-5242879\n→ 206 Partial Content\nContent-Range: bytes 0-5242879/10000000\n\n3. 下载中断后恢复:\nGET /file.zip HTTP/1.1\nRange: bytes=5242880-\n→ 206 Partial Content\nContent-Range: bytes 5242880-9999999/10000000\n```\n\n## 相关头部\n\n| 头部 | 方向 | 说明 |\n|------|------|------|\n| **Range** | 请求 | 请求的字节范围 |\n| **If-Range** | 请求 | 条件性范围请求 |\n| **Content-Range** | 响应 | 响应的字节范围 |\n| **Accept-Ranges** | 响应 | 服务器支持范围请求 |\n| **206 Partial Content** | 响应 | 状态码 |\n\n## Range头部格式\n\n```text\nRange: bytes=0-499       → 前500字节\nRange: bytes=500-999     → 第500-999字节\nRange: bytes=-500        → 最后500字节\nRange: bytes=500-        → 从第500字节到结尾\nRange: bytes=0-499,900-  → 多段范围\n```\n\n## 关键要点\n\n- 断点续传使用**Range**请求头\n- 服务器返回**206 Partial Content**状态码\n- 需要服务器**支持范围请求**（Accept-Ranges: bytes）\n- **If-Range**头部可以验证资源是否变化\n\n## 面试高频追问\n\n1. 如何实现多线程下载？\n2. 如果下载过程中文件更新了怎么办？\n3. 所有服务器都支持断点续传吗？",
+    "tags": ["断点续传", "Range", "206"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-025",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的重定向？301、302、307、308有什么区别？",
+    "answer": "## 核心概念\n\nHTTP重定向是服务器告诉客户端去访问另一个URL的机制。不同的重定向状态码表示不同的重定向语义。\n\n## 重定向状态码对比\n\n| 状态码 | 名称 | 方法变化 | 缓存 | 使用场景 |\n|--------|------|----------|------|----------|\n| **301** | Moved Permanently | 可能变GET | 可缓存 | 永久迁移 |\n| **302** | Found | 可能变GET | 不缓存 | 临时重定向 |\n| **307** | Temporary Redirect | 保持不变 | 不缓存 | 临时重定向（保持方法） |\n| **308** | Permanent Redirect | 保持不变 | 可缓存 | 永久重定向（保持方法） |\n\n## 方法变化问题\n\n```text\n301/302的历史行为:\nPOST /old-api → 302 → GET /new-api\n→ POST变成GET！这是历史遗留问题\n\n307/308的行为:\nPOST /old-api → 307 → POST /new-api\n→ 方法保持不变\n```\n\n## 使用建议\n\n```text\n需要保持方法:\n- 用307替代302\n- 用308替代301\n\n不需要保持方法:\n- 永久迁移用301\n- 临时重定向用302\n```\n\n## SEO影响\n\n| 状态码 | SEO影响 |\n|--------|--------|\n| 301 | 搜索引擎更新链接 |\n| 302 | 搜索引擎保留原链接 |\n| 307 | 同302 |\n| 308 | 同301 |\n\n## 关键要点\n\n- 301/302可能**改变请求方法**（POST→GET）\n- 307/308**严格保持**请求方法\n- 选择重定向码时要考虑**方法保持**和**SEO影响**\n- 浏览器对301/302的处理可能不一致\n\n## 面试高频追问\n\n1. 301和302对SEO有什么影响？\n2. 为什么要有307和308？\n3. 如何实现重定向？",
+    "tags": ["重定向", "301", "302"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-026",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的Content-Encoding？常见的压缩方式有哪些？",
+    "answer": "## 核心概念\n\nContent-Encoding用于指示响应体的压缩方式，客户端通过Accept-Encoding告知服务器支持的压缩方式，服务器选择合适的压缩方式。\n\n## 压缩协商流程\n\n```text\n客户端请求:\nGET /data HTTP/1.1\nAccept-Encoding: gzip, deflate, br\n\n服务器响应:\nHTTP/1.1 200 OK\nContent-Encoding: gzip\nContent-Type: application/json\n\n[gzip压缩的数据]\n```\n\n## 常见压缩方式\n\n| 压缩方式 | 说明 | 压缩率 | 速度 |\n|----------|------|--------|------|\n| **gzip** | 最常用 | 高 | 中 |\n| **deflate** | 较少使用 | 高 | 快 |\n| **br (Brotli)** | Google开发 | 更高 | 较慢 |\n| **zstd** | Facebook开发 | 高 | 很快 |\n\n## 压缩配置\n\n```nginx\n# Nginx配置\ngzip on;\ngzip_types text/plain application/json application/javascript text/css;\ngzip_min_length 1024;\ngzip_comp_level 6;\n\n# Brotli配置\nbrotli on;\nbrotli_comp_level 6;\n```\n\n## 压缩策略\n\n| 内容类型 | 建议 |\n|----------|------|\n| 文本（HTML/CSS/JS/JSON） | 必须压缩 |\n| 图片（JPEG/PNG） | 不压缩（已压缩） |\n| 视频 | 不压缩 |\n| 小文件（<1KB） | 不压缩（开销大于收益） |\n\n## 关键要点\n\n- **gzip**是最广泛支持的压缩方式\n- **Brotli**压缩率更高，适合静态资源\n- 压缩会消耗**CPU资源**，需要权衡\n- 已压缩的内容（图片、视频）不需要再压缩\n\n## 面试高频追问\n\n1. gzip和Brotli有什么区别？\n2. 压缩级别如何选择？\n3. 为什么图片不需要压缩？",
+    "tags": ["Content-Encoding", "gzip", "压缩"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-027",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP/2的流（Stream）和帧（Frame）？",
+    "answer": "## 核心概念\n\nHTTP/2引入了流（Stream）和帧（Frame）的概念，将HTTP消息分解为更小的单元进行传输。\n\n## 帧（Frame）\n\n```text\nHTTP/2通信的最小单位:\n\n帧格式:\n┌────────────────────────────────────────┐\n│长度(24位)│类型(8位)│标志(8位)│流ID(31位)│\n├────────────────────────────────────────┤\n│              帧负载                    │\n└────────────────────────────────────────┘\n\n帧类型:\n- DATA (0x0): 数据帧\n- HEADERS (0x1): 头部帧\n- PRIORITY (0x2): 优先级帧\n- RST_STREAM (0x3): 终止流\n- SETTINGS (0x4): 设置帧\n- PUSH_PROMISE (0x5): 推送承诺\n- PING (0x6): 心跳\n- GOAWAY (0x7): 关闭连接\n- WINDOW_UPDATE (0x8): 窗口更新\n- CONTINUATION (0x9): 头部延续\n```\n\n## 流（Stream）\n\n```text\n流是HTTP/2的逻辑通道:\n\n一个连接可以有多个流:\n┌─────────────────────────────────┐\n│           TCP连接               │\n│  ┌────────┐ ┌────────┐         │\n│  │Stream 1│ │Stream 2│ ...     │\n│  │请求/响应│ │请求/响应│         │\n│  └────────┘ └────────┘         │\n└─────────────────────────────────┘\n\n流的生命周期:\n- HEADERS帧打开流\n- DATA帧传输数据\n- END_STREAM标志关闭流\n```\n\n## 流的优先级\n\n```text\n流可以设置优先级和依赖关系:\n\nStream 1 (HTML) ──→ Stream 2 (CSS)\n                 ──→ Stream 3 (JS)\n                 ──→ Stream 4 (图片)\n\n优先级: 权重 + 依赖关系\n→ 重要资源先传输\n```\n\n## 关键要点\n\n- **帧**是HTTP/2的最小传输单位\n- **流**是帧的逻辑分组\n- 不同流的帧可以**交错传输**（多路复用）\n- 流ID为奇数是客户端发起，偶数是服务器发起\n\n## 面试高频追问\n\n1. 帧和流的关系是什么？\n2. HTTP/2如何实现流优先级？\n3. 什么是CONTINUATION帧？",
+    "tags": ["Stream", "Frame", "HTTP/2"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-028",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的方法安全性（Safe）和幂等性（Idempotent）？",
+    "answer": "## 核心概念\n\nHTTP方法的安全性和幂等性是两个重要的语义特性，影响缓存、重试等行为。\n\n## 安全性（Safe）\n\n```text\n安全方法: 不会修改服务器资源\n\n安全的方法:\n- GET: 获取资源\n- HEAD: 获取响应头\n- OPTIONS: 查询支持的方法\n- TRACE: 回显请求\n\n不安全的方法:\n- POST: 创建资源\n- PUT: 更新资源\n- DELETE: 删除资源\n- PATCH: 修改资源\n```\n\n## 幂等性（Idempotent）\n\n```text\n幂等方法: 多次执行结果相同\n\n幂等的方法:\n- GET: 多次获取结果相同\n- HEAD: 同GET\n- PUT: 多次更新结果相同\n- DELETE: 多次删除结果相同（第一次200，后续404）\n- OPTIONS: 同GET\n- TRACE: 同GET\n\n非幂等的方法:\n- POST: 多次提交可能创建多个资源\n- PATCH: 部分实现可能非幂等\n```\n\n## 对比表\n\n| 方法 | 安全 | 幂等 | 有请求体 | 有响应体 |\n|------|------|------|----------|----------|\n| GET | 是 | 是 | 否 | 是 |\n| HEAD | 是 | 是 | 否 | 否 |\n| OPTIONS | 是 | 是 | 可选 | 是 |\n| POST | 否 | 否 | 是 | 是 |\n| PUT | 否 | 是 | 是 | 可选 |\n| DELETE | 否 | 是 | 可选 | 可选 |\n| PATCH | 否 | 否 | 是 | 是 |\n\n## 实际应用\n\n```text\n幂等性的重要性:\n- 网络超时时可以安全重试\n- API设计应保证幂等性\n- 非幂等操作需要特殊处理（如幂等键）\n\n安全性的重要性:\n- GET请求可以预加载（prefetch）\n- GET请求可以被缓存\n- 爬虫只访问安全方法\n```\n\n## 关键要点\n\n- **安全**方法不修改资源，**幂等**方法多次执行结果相同\n- 所有安全方法都是幂等的，反之不然\n- 幂等性对**重试和缓存**很重要\n- POST请求实现幂等需要**幂等键**等机制\n\n## 面试高频追问\n\n1. 为什么GET请求是幂等的但POST不是？\n2. 如何让POST请求实现幂等？\n3. 安全性和幂等性对缓存有什么影响？",
+    "tags": ["安全性", "幂等性", "HTTP方法"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-029",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的协商内容（Content Negotiation）？",
+    "answer": "## 核心概念\n\n内容协商是HTTP的一种机制，允许客户端和服务器协商返回最合适的内容格式（语言、编码、媒体类型等）。\n\n## 协商方式\n\n### 1. 服务器驱动协商（Server-Driven）\n```text\n客户端通过请求头告知偏好:\nAccept: text/html, application/json\nAccept-Language: zh-CN, en\nAccept-Encoding: gzip, br\n\n服务器根据这些头部选择最合适的内容\n```\n\n### 2. 客户端驱动协商（Agent-Driven）\n```text\n服务器返回多个选择:\n300 Multiple Choices\n\n客户端选择:\nLink: </index.html>; rel=alternate; hreflang=zh\nLink: </index.en.html>; rel=alternate; hreflang=en\n```\n\n### 3. 透明协商（Transparent）\n```text\n由中间代理（如CDN）进行协商\n```\n\n## 相关请求头\n\n| 头部 | 说明 | 示例 |\n|------|------|------|\n| **Accept** | 媒体类型偏好 | text/html, application/json |\n| **Accept-Language** | 语言偏好 | zh-CN, en |\n| **Accept-Encoding** | 编码偏好 | gzip, br |\n| **Accept-Charset** | 字符集偏好 | UTF-8 (已弃用) |\n\n## Vary响应头\n\n```text\nVary: Accept-Language, Accept-Encoding\n\n告诉缓存: 根据这些请求头进行缓存区分\n不同语言/编码的响应应该分别缓存\n```\n\n## 关键要点\n\n- 内容协商通常基于**Accept**系列头部\n- **Vary**头影响缓存行为\n- 服务器驱动协商是**最常用**的方式\n- 多语言网站常用**Accept-Language**进行语言切换\n\n## 面试高频追问\n\n1. Vary头部对CDN缓存有什么影响？\n2. 如何实现多语言网站的内容协商？\n3. 为什么Accept-Charset被弃用了？",
+    "tags": ["内容协商", "Accept", "Vary"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-030",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的CSP（Content Security Policy）？",
+    "answer": "## 核心概念\n\nCSP是一种安全机制，通过HTTP头部或meta标签定义页面可以加载哪些资源，防止XSS、数据注入等攻击。\n\n## CSP配置方式\n\n```text\nHTTP头部:\nContent-Security-Policy: default-src 'self'; script-src 'self' https://cdn.example.com\n\nHTML meta标签:\n<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'self'\">\n```\n\n## 常见指令\n\n| 指令 | 说明 | 示例 |\n|------|------|------|\n| **default-src** | 默认资源策略 | 'self' |\n| **script-src** | JavaScript来源 | 'self' 'unsafe-inline' |\n| **style-src** | CSS来源 | 'self' 'unsafe-inline' |\n| **img-src** | 图片来源 | 'self' data: https: |\n| **connect-src** | AJAX/WebSocket来源 | 'self' api.example.com |\n| **font-src** | 字体来源 | 'self' fonts.gstatic.com |\n| **frame-src** | iframe来源 | 'self' |\n\n## CSP值说明\n\n| 值 | 说明 |\n|------|------|\n| **'self'** | 同源 |\n| **'none'** | 不允许 |\n| **'unsafe-inline'** | 允许内联脚本/样式 |\n| **'unsafe-eval'** | 允许eval() |\n| **nonce-xxx** | 允许特定nonce的内联 |\n| **https:** | 只允许HTTPS资源 |\n\n## CSP报告\n\n```text\n报告模式:\nContent-Security-Policy-Report-Only: default-src 'self'; report-uri /csp-report\n\n→ 不阻断，只报告违规\n→ 用于测试CSP规则\n```\n\n## 关键要点\n\n- CSP是**防御XSS**的重要手段\n- **nonce**比'unsafe-inline'更安全\n- CSP可以配置**报告模式**用于测试\n- 过于严格的CSP可能**影响正常功能**\n\n## 面试高频追问\n\n1. CSP如何防止XSS攻击？\n2. 什么是nonce？如何使用？\n3. CSP和同源策略有什么关系？",
+    "tags": ["CSP", "内容安全策略", "XSS防御"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-031",
+    "module": "HTTP",
+    "difficulty": 1,
+    "question": "什么是HTTP的请求参数？查询参数和路径参数有什么区别？",
+    "answer": "## 核心概念\n\nHTTP请求参数用于向服务器传递数据，主要有路径参数、查询参数和请求体参数三种形式。\n\n## 参数类型\n\n### 路径参数（Path Parameter）\n```text\nURL路径中的变量部分:\nGET /api/users/123/orders/456\n\n路径参数:\n- userId = 123\n- orderId = 456\n\n用于标识资源\n```\n\n### 查询参数（Query Parameter）\n```text\nURL ? 后面的键值对:\nGET /api/users?page=1&size=10&sort=name\n\n查询参数:\n- page = 1\n- size = 10\n- sort = name\n\n用于过滤、排序、分页\n```\n\n### 请求体参数（Body Parameter）\n```text\n请求体中的数据:\nPOST /api/users\nContent-Type: application/json\n\n{\"name\": \"张三\", \"age\": 25}\n\n用于提交复杂数据\n```\n\n## 对比\n\n| 对比维度 | 路径参数 | 查询参数 | 请求体参数 |\n|----------|----------|----------|------------|\n| 位置 | URL路径中 | URL ? 后 | 请求体 |\n| 用途 | 标识资源 | 过滤/排序 | 提交数据 |\n| 可见性 | 可见 | 可见 | 不可见（相对） |\n| 长度限制 | 有限 | 有限 | 无限制 |\n| 缓存 | 可缓存 | 可缓存 | 默认不缓存 |\n| 适用方法 | GET/所有 | GET | POST/PUT/PATCH |\n\n## 关键要点\n\n- 路径参数用于**标识资源**（名词）\n- 查询参数用于**操作资源**（动词/修饰）\n- GET请求参数在URL中，POST请求参数在请求体中\n- 敏感数据不应放在URL参数中（会出现在日志中）\n\n## 面试高频追问\n\n1. 什么时候用路径参数，什么时候用查询参数？\n2. GET请求可以有请求体吗？\n3. URL参数有长度限制吗？",
+    "tags": ["请求参数", "路径参数", "查询参数"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-032",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的CORS预检请求（Preflight）？",
+    "answer": "## 核心概念\n\n预检请求是浏览器在发送跨域请求前自动发起的OPTIONS请求，用于检查实际请求是否安全可接受。\n\n## 何时触发预检请求\n\n```text\n非简单请求会触发预检:\n\n1. 方法不是GET/HEAD/POST\n2. Content-Type不是:\n   - text/plain\n   - multipart/form-data\n   - application/x-www-form-urlencoded\n3. 有自定义头部\n\n例如:\nPUT /api/users HTTP/1.1\nContent-Type: application/json\nAuthorization: Bearer token\n→ 触发预检请求\n```\n\n## 预检请求流程\n\n```text\n浏览器                    服务器\n   |                        |\n   |-- OPTIONS /api/users →|\n   |   Origin: https://a.com|\n   |   Access-Control-      |\n   |   Request-Method: PUT  |\n   |   Access-Control-      |\n   |   Request-Headers:     |\n   |   Content-Type,        |\n   |   Authorization        |\n   |                        |\n   |←-- 204 No Content ----|\n   |   Access-Control-      |\n   |   Allow-Origin: https://a.com\n   |   Access-Control-      |\n   |   Allow-Methods: PUT   |\n   |   Access-Control-      |\n   |   Allow-Headers: Content-Type, Authorization\n   |                        |\n   |-- PUT /api/users ----→|\n   |   (实际请求)           |\n```\n\n## 预检缓存\n\n```text\nAccess-Control-Max-Age: 86400\n\n→ 预检结果缓存86400秒（24小时）\n→ 缓存期间不再发送预检请求\n→ 减少OPTIONS请求开销\n```\n\n## 关键要点\n\n- 预检请求增加了**一个RTT**的延迟\n- **Access-Control-Max-Age**可以缓存预检结果\n- 预检请求**不携带Cookie**等认证信息\n- 服务器必须正确响应OPTIONS请求\n\n## 面试高频追问\n\n1. 如何减少预检请求的开销？\n2. 预检请求失败会怎样？\n3. 简单请求为什么不需要预检？",
+    "tags": ["预检请求", "OPTIONS", "CORS"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-033",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的分块传输编码（Chunked Transfer Encoding）？",
+    "answer": "## 核心概念\n\n分块传输编码允许服务器在不知道总内容长度的情况下分块发送数据，适用于动态生成的内容。\n\n## 工作原理\n\n```text\n响应头:\nHTTP/1.1 200 OK\nTransfer-Encoding: chunked\n\n响应体:\n4\\r\\n           ← 块大小(十六进制)\nWiki\\r\\n       ← 块内容\n6\\r\\n\ncpedia\\r\\n\n0\\r\\n           ← 最后一块(大小为0)\n\\r\\n\n每块格式:\n[十六进制大小]\\r\\n\n[数据内容]\\r\\n\n最后一块:\n0\\r\\n\\r\\n\n```\n\n## 使用场景\n\n| 场景 | 说明 |\n|------|------|\n| 动态内容 | 不知道总大小（如数据库查询结果） |\n| 大文件 | 边生成边发送 |\n| SSE | 服务器推送事件 |\n| 流式响应 | AI聊天等场景 |\n\n## 分块传输 vs Content-Length\n\n```text\nContent-Length:\n- 需要预先知道内容大小\n- 一次性发送\n- 适合静态内容\n\nTransfer-Encoding: chunked:\n- 不需要预先知道大小\n- 分块发送\n- 适合动态内容\n```\n\n## 关键要点\n\n- 分块传输使用**Transfer-Encoding: chunked**\n- 每块有**大小前缀**，便于解析\n- 最后一块大小为**0**，表示传输结束\n- 分块传输和Content-Length**不能同时使用**\n\n## 面试高频追问\n\n1. 分块传输和Content-Length有什么区别？\n2. 如何实现流式响应？\n3. 分块传输对代理服务器有什么影响？",
+    "tags": ["分块传输", "Chunked", "流式传输"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-034",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的ETag？ETag是如何生成的？",
+    "answer": "## 核心概念\n\nETag（Entity Tag）是HTTP响应头字段，用于标识资源的特定版本，是协商缓存的核心机制。\n\n## ETag工作流程\n\n```text\n首次请求:\nGET /resource HTTP/1.1\n→ 响应:\nHTTP/1.1 200 OK\nETag: \"abc123\"\nContent: [资源内容]\n\n后续请求:\nGET /resource HTTP/1.1\nIf-None-Match: \"abc123\"\n→ 服务器检查资源是否变化\n→ 未变化: 304 Not Modified\n→ 已变化: 200 OK + 新ETag + 新内容\n```\n\n## ETag生成方式\n\n```text\n常见生成策略:\n\n1. 内容Hash:\n   ETag = MD5(资源内容)\n   → 精确，但计算开销大\n\n2. 修改时间:\n   ETag = mtime\n   → 快速，但不够精确\n\n3. 版本号:\n   ETag = 版本号\n   → 适合数据库驱动的资源\n\n4. 组合:\n   ETag = hash(size + mtime)\n   → 平衡精确度和性能\n```\n\n## 强ETag vs 弱ETag\n\n```text\n强ETag (Strong ETag):\nETag: \"abc123\"\n→ 字节级别完全匹配\n→ 用于Range请求\n\n弱ETag (Weak ETag):\nETag: W/\"abc123\"\n→ 语义等价即可\n→ 用于协商缓存\n```\n\n## ETag vs Last-Modified\n\n| 对比维度 | ETag | Last-Modified |\n|----------|------|---------------|\n| 精确度 | 高（内容hash） | 低（秒级） |\n| 性能 | 需要计算 | 直接读取时间 |\n| 优先级 | 高 | 低 |\n| 适用场景 | 内容频繁变化 | 变化不频繁 |\n\n## 关键要点\n\n- ETag比**Last-Modified**更精确\n- 强ETag用于**断点续传**，弱ETag用于**缓存**\n- ETag生成策略需要**平衡精确度和性能**\n- 优先使用ETag，Last-Modified作为后备\n\n## 面试高频追问\n\n1. ETag和Last-Modified同时存在时谁优先？\n2. 如何生成高性能的ETag？\n3. 弱ETag和强ETag有什么区别？",
+    "tags": ["ETag", "协商缓存", "Last-Modified"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-035",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的Cookie属性SameSite？SameSite有哪些值？",
+    "answer": "## 核心概念\n\nSameSite是Cookie的安全属性，用于控制Cookie在跨站请求中是否发送，是防御CSRF攻击的重要机制。\n\n## SameSite值\n\n| 值 | 说明 | 跨站请求 |\n|------|------|----------|\n| **Strict** | 完全不发送 | 不发送 |\n| **Lax** | 顶级导航的GET请求发送 | 部分发送 |\n| **None** | 总是发送（需Secure） | 发送 |\n\n## 各值详解\n\n### Strict\n```text\nSet-Cookie: session=abc; SameSite=Strict\n\n从外部网站点击链接访问:\n→ 不携带Cookie\n→ 用户需要重新登录\n\n安全性最高，但用户体验差\n```\n\n### Lax（默认值）\n```text\nSet-Cookie: session=abc; SameSite=Lax\n\n跨站请求行为:\n- 顶级导航的GET请求: 发送\n- POST表单提交: 不发送\n- img/script标签: 不发送\n- AJAX请求: 不发送\n\n平衡安全和体验\n```\n\n### None\n```text\nSet-Cookie: session=abc; SameSite=None; Secure\n\n所有跨站请求都发送Cookie\n必须同时设置Secure属性\n\n用于需要跨站共享Cookie的场景\n```\n\n## SameSite的CSRF防御\n\n```text\nCSRF攻击:\n恶意网站 → 诱导用户访问 → 用户的Cookie被发送\n\nSameSite=Lax:\n- POST请求不携带Cookie → CSRF无效\n- 只有顶级导航的GET携带 → 无法修改数据\n```\n\n## 关键要点\n\n- **Lax**是现代浏览器的默认值\n- **Strict**最安全但影响用户体验\n- **None**必须配合**Secure**使用\n- SameSite是**CSRF防御**的重要手段\n\n## 面试高频追问\n\n1. SameSite的默认值是什么？\n2. SameSite=None为什么必须设置Secure？\n3. SameSite能完全防止CSRF吗？",
+    "tags": ["SameSite", "Cookie", "CSRF防御"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-036",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的CORS简单请求？什么条件才算简单请求？",
+    "answer": "## 核心概念\n\nCORS简单请求（Simple Request）是不触发预检请求的跨域请求，满足特定条件的请求可以直接发送。\n\n## 简单请求条件\n\n```text\n必须同时满足以下所有条件:\n\n1. 方法是以下之一:\n   - GET\n   - HEAD\n   - POST\n\n2. Content-Type是以下之一:\n   - text/plain\n   - multipart/form-data\n   - application/x-www-form-urlencoded\n\n3. 没有自定义头部\n   (Accept, Accept-Language, Content-Language, Content-Type除外)\n```\n\n## 简单请求 vs 非简单请求\n\n```text\n简单请求 (不触发预检):\nGET /api/data HTTP/1.1\nOrigin: https://example.com\n→ 直接发送，服务器响应CORS头\n\n非简单请求 (触发预检):\nPUT /api/data HTTP/1.1\nContent-Type: application/json\nAuthorization: Bearer token\n→ 先发OPTIONS预检，通过后再发实际请求\n```\n\n## 为什么区分简单请求\n\n```text\n历史原因:\n- 旧版浏览器不支持CORS\n- form表单可以发送POST请求\n- 为了兼容性，允许简单请求直接发送\n\n安全性考虑:\n- 简单请求不会触发预检\n- 减少服务器负担\n- 保持向后兼容\n```\n\n## 自定义头部\n\n```text\n简单请求允许的头部:\n- Accept\n- Accept-Language\n- Content-Language\n- Content-Type (限于三种值)\n\n其他头部都是自定义头部:\n- Authorization: 触发预检\n- X-Custom-Header: 触发预检\n- Cache-Control: 触发预检\n```\n\n## 关键要点\n\n- 简单请求**不触发**预检请求\n- POST请求的Content-Type受限于三种类型\n- **自定义头部**会触发预检请求\n- 简单请求的设计是为了**向后兼容**\n\n## 面试高频追问\n\n1. 为什么POST请求的Content-Type有限制？\n2. application/json为什么不是简单请求？\n3. 如何避免触发预检请求？",
+    "tags": ["简单请求", "CORS", "预检"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-037",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的Host头部？为什么Host是必须的？",
+    "answer": "## 核心概念\n\nHost头部指定请求的目标服务器，是HTTP/1.1中唯一**必须**的请求头。它使得在同一IP地址上托管多个网站（虚拟主机）成为可能。\n\n## 为什么需要Host\n\n```text\n没有Host头部 (HTTP/1.0):\n一台服务器只能托管一个网站\n→ 每个网站需要独立IP\n\n有Host头部 (HTTP/1.1):\n一台服务器可以托管多个网站\n→ 多个域名可以指向同一IP\n→ 服务器根据Host头部区分网站\n```\n\n## 虚拟主机示例\n\n```text\n服务器IP: 192.168.1.100\n托管网站:\n- www.example.com\n- www.test.com\n- api.example.com\n\n请求:\nGET /index.html HTTP/1.1\nHost: www.example.com\n→ 服务器返回example.com的内容\n\nGET /index.html HTTP/1.1\nHost: www.test.com\n→ 服务器返回test.com的内容\n```\n\n## Host头部的使用\n\n```text\n格式:\nHost: domain:port\n\n示例:\nHost: www.example.com (默认端口)\nHost: www.example.com:8080 (自定义端口)\n\n必须值:\n- HTTP/1.1: 必须包含Host\n- 缺少Host: 返回400 Bad Request\n```\n\n## 关键要点\n\n- Host是HTTP/1.1**唯一必须**的请求头\n- Host使得**虚拟主机**成为可能\n- 没有Host头部，服务器返回**400错误**\n- HTTPS的证书验证也依赖Host头部\n\n## 面试高频追问\n\n1. HTTP/1.0为什么没有Host头部？\n2. 什么是虚拟主机？\n3. Host头部和SNI有什么关系？",
+    "tags": ["Host头部", "虚拟主机", "HTTP/1.1"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-038",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的用户代理（User-Agent）？有什么作用？",
+    "answer": "## 核心概念\n\nUser-Agent是HTTP请求头，用于标识发起请求的客户端类型（浏览器、操作系统、设备等），服务器据此返回合适的内容。\n\n## User-Agent格式\n\n```text\n标准格式:\nMozilla/5.0 (平台信息) 引擎/版本 浏览器/版本\n\n示例:\nChrome (Windows):\nMozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\n\nSafari (iPhone):\nMozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1\n\n爬虫:\nGooglebot/2.1 (+http://www.google.com/bot.html)\n```\n\n## User-Agent的作用\n\n| 作用 | 说明 |\n|------|------|\n| **内容适配** | 根据设备返回移动版/桌面版 |\n| **兼容性处理** | 针对不同浏览器做兼容 |\n| **统计分析** | 分析用户使用的浏览器和设备 |\n| **反爬虫** | 检测异常User-Agent |\n| **CDN调度** | 根据设备类型选择节点 |\n\n## UA嗅探的问题\n\n```text\n问题:\n- UA字符串可以伪造\n- 过时的UA判断逻辑导致兼容问题\n- 增加服务器处理负担\n\n现代做法:\n- 使用响应式设计（CSS媒体查询）\n- 使用特性检测而非UA嗅探\n- Client Hints替代UA\n```\n\n## Client Hints\n```text\nHTTP/2引入的新机制:\nAccept-CH: DPR, Width, Viewport-Width\n\n比User-Agent更精确、更结构化\n逐步替代UA嗅探\n```\n\n## 关键要点\n\n- User-Agent是**客户端标识**，不是安全机制\n- UA可以**伪造**，不应作为安全依据\n- 现代开发应使用**响应式设计**而非UA嗅探\n- **Client Hints**是更现代的替代方案\n\n## 面试高频追问\n\n1. 为什么User-Agent字符串这么长？\n2. 如何通过UA判断移动设备？\n3. Client Hints相比UA有什么优势？",
+    "tags": ["User-Agent", "客户端检测", "响应式"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-039",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的跨源嵌入和跨源读取？",
+    "answer": "## 核心概念\n\n浏览器的跨源安全策略分为三种：跨源写（Cross-Origin Writes）、跨源嵌入（Cross-Origin Embedding）和跨源读（Cross-Origin Reads），每种有不同的规则。\n\n## 三种跨源行为\n\n| 行为 | 是否允许 | 示例 |\n|------|----------|------|\n| **跨源写** | 通常允许 | 链接、表单提交、重定向 |\n| **跨源嵌入** | 通常允许 | img、script、link、iframe |\n| **跨源读** | 通常禁止 | AJAX读取响应 |\n\n## 跨源嵌入（允许）\n\n```text\n可以跨源嵌入的资源:\n\n1. <script src=\"...\">\n   - 可以加载任何域的JS\n   - 通过JSONP利用\n\n2. <link rel=\"stylesheet\" href=\"...\">\n   - 可以加载任何域的CSS\n\n3. <img src=\"...\">\n   - 可以加载任何域的图片\n\n4. <video>/<audio>\n   - 可以加载任何域的媒体\n\n5. <iframe src=\"...\">\n   - 可以嵌入任何域的页面\n   - 但不能访问其DOM\n```\n\n## 跨源读取（禁止）\n\n```text\n同源策略禁止:\n\n1. AJAX请求:\n   fetch('https://other.com/data')\n   → 被浏览器阻止\n\n2. 读取iframe DOM:\n   iframe.contentDocument\n   → 跨源时抛出错误\n\n3. 读取Canvas数据:\n   canvas.toDataURL()\n   → 跨源图片会污染canvas\n```\n\n## 安全影响\n\n```text\n跨源嵌入的安全风险:\n- CSRF: 利用跨源写\n- XSS: 利用跨源嵌入script\n- 信息泄露: 通过时序攻击\n\n防御:\n- CSP限制可嵌入的源\n- CORS控制跨源读取\n- SameSite Cookie\n```\n\n## 关键要点\n\n- **跨源嵌入**通常是允许的（向后兼容）\n- **跨源读取**是同源策略限制的核心\n- JSONP利用了**script标签可以跨源嵌入**的特性\n- CSP可以限制**跨源嵌入**的来源\n\n## 面试高频追问\n\n1. 为什么img标签可以跨域加载图片？\n2. JSONP是如何利用script标签的？\n3. 什么是canvas跨域污染？",
+    "tags": ["跨源嵌入", "跨源读取", "同源策略"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-040",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的中间人攻击（MITM）？HTTPS如何防止MITM？",
+    "answer": "## 核心概念\n\n中间人攻击（Man-in-the-Middle Attack）是指攻击者秘密拦截和篡改通信双方的数据，而双方毫不知情。\n\n## HTTP的MITM风险\n\n```text\n明文HTTP通信:\n客户端 ←→ 攻击者 ←→ 服务器\n\n攻击者可以:\n1. 窃听: 读取所有通信内容\n2. 篡改: 修改请求和响应\n3. 冒充: 伪装成服务器\n```\n\n## HTTPS防止MITM\n\n### 1. 证书验证\n```text\n服务器发送证书 → 客户端验证:\n- 证书是否由可信CA签发\n- 证书是否过期\n- 域名是否匹配\n- 证书链是否完整\n\n攻击者无法伪造可信证书\n```\n\n### 2. 非对称加密\n```text\n客户端用服务器公钥加密预主密钥\n→ 只有服务器私钥能解密\n→ 攻击者无法获取会话密钥\n```\n\n### 3. 数据完整性\n```text\nTLS使用MAC验证数据完整性\n→ 攻击者篡改数据会被检测到\n```\n\n## 中间人攻击示例\n\n```text\n1. ARP欺骗: 同一局域网内\n2. DNS劫持: 篡改DNS响应\n3. 代理服务器: 恶意代理\n4. 证书伪造: 自签名证书\n\n防御:\n- 使用HTTPS\n- 验证证书\n- 证书固定（Certificate Pinning）\n```\n\n## 关键要点\n\n- HTTPS通过**证书验证**防止冒充\n- 通过**加密**防止窃听\n- 通过**MAC**防止篡改\n- 证书固定可以防止**CA被攻陷**\n\n## 面试高频追问\n\n1. HTTPS能完全防止MITM吗？\n2. 什么是证书固定？\n3. 什么是SSL剥离攻击？",
+    "tags": ["中间人攻击", "MITM", "HTTPS"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-041",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的服务器发送事件（SSE）？SSE和WebSocket有什么区别？",
+    "answer": "## 核心概念\n\nSSE（Server-Sent Events）是一种服务器向客户端推送数据的技术，基于HTTP协议，实现简单。\n\n## SSE工作原理\n\n```text\n客户端:\nconst source = new EventSource('/events');\nsource.onmessage = (event) => {\n    console.log(event.data);\n};\n\n服务器响应:\nHTTP/1.1 200 OK\nContent-Type: text/event-stream\nCache-Control: no-cache\nConnection: keep-alive\n\ndata: Hello\\n\\n\ndata: World\\n\\n\nevent: update\\ndata: {\"key\": \"value\"}\\n\\n\n事件格式:\nevent: 事件名 (可选)\ndata: 数据内容\nid: 事件ID (可选，用于重连)\nretry: 重连间隔 (可选)\n```\n\n## SSE vs WebSocket对比\n\n| 对比维度 | SSE | WebSocket |\n|----------|-----|----------|\n| 方向 | 服务器→客户端（单向） | 双向 |\n| 协议 | HTTP | 独立协议（ws://） |\n| 自动重连 | 内置 | 需要手动实现 |\n| 数据格式 | 文本 | 文本+二进制 |\n| 浏览器支持 | 所有现代浏览器 | 所有现代浏览器 |\n| 实现复杂度 | 简单 | 较复杂 |\n\n## SSE适用场景\n\n- **实时通知**：消息推送\n- **数据更新**：股票行情、比分\n- **AI流式输出**：ChatGPT等大模型响应\n- **日志流**：实时日志查看\n\n## 关键要点\n\n- SSE基于**HTTP协议**，无需特殊协议\n- SSE**自动重连**，简化开发\n- SSE只能**服务器→客户端**单向通信\n- 适合**数据推送**场景，不适合双向交互\n\n## 面试高频追问\n\n1. SSE如何实现自动重连？\n2. SSE和轮询有什么区别？\n3. 为什么AI聊天应用多用SSE？",
+    "tags": ["SSE", "服务器推送", "实时通信"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-042",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的API网关？API网关的作用是什么？",
+    "answer": "## 核心概念\n\nAPI网关是系统的统一入口，负责请求路由、协议转换、认证授权、限流熔断等功能。\n\n## API网关的作用\n\n| 功能 | 说明 |\n|------|------|\n| **请求路由** | 将请求转发到对应的后端服务 |\n| **协议转换** | HTTP↔gRPC、REST↔GraphQL |\n| **认证授权** | 统一的Token验证 |\n| **限流熔断** | 防止服务过载 |\n| **负载均衡** | 分发请求到多个实例 |\n| **缓存** | 缓存热点请求 |\n| **日志监控** | 统一的访问日志 |\n| **API版本管理** | 管理不同版本的API |\n\n## 架构示例\n\n```text\n客户端\n   ↓\n┌─────────────────────────────┐\n│        API网关              │\n│  认证 → 限流 → 路由 → 响应  │\n└─────────────┬───────────────┘\n              ↓\n    ┌─────────┼─────────┐\n    ↓         ↓         ↓\n 用户服务  订单服务  商品服务\n```\n\n## 常见API网关\n\n| 网关 | 特点 |\n|------|------|\n| **Nginx** | 高性能，配置灵活 |\n| **Kong** | 插件丰富，功能强大 |\n| **Spring Cloud Gateway** | Java生态，响应式 |\n| **Envoy** | 云原生，Service Mesh |\n| **APISIX** | 高性能，插件化 |\n\n## 关键要点\n\n- API网关是**微服务架构**的入口\n- 网关是**单点**，需要高可用部署\n- 网关应**尽量轻量**，避免成为性能瓶颈\n- 网关可以实现**BFF**（Backend for Frontend）模式\n\n## 面试高频追问\n\n1. API网关和服务网格有什么区别？\n2. 如何设计一个高可用的API网关？\n3. 网关的限流算法有哪些？",
+    "tags": ["API网关", "微服务", "请求路由"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-043",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的协议升级（Upgrade）机制？",
+    "answer": "## 核心概念\n\nHTTP的Upgrade机制允许客户端请求将当前HTTP连接升级到其他协议，最常见的是升级到WebSocket。\n\n## 升级流程\n\n```text\n客户端请求升级:\nGET /chat HTTP/1.1\nHost: server.example.com\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13\n\n服务器同意升级:\nHTTP/1.1 101 Switching Protocols\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Accept: s3pPLMBiTxaQ9kYGzzhZRbK+xOo=\n\n→ 连接从HTTP切换到WebSocket\n```\n\n## 101状态码\n```text\n101 Switching Protocols:\n- 服务器同意切换协议\n- 客户端和服务器开始使用新协议\n- TCP连接保持不变\n```\n\n## 常见的协议升级\n\n| 升级目标 | 说明 |\n|----------|------|\n| **WebSocket** | 全双工通信 |\n| **HTTP/2** | 通过ALPN协商 |\n| **TLS** | STARTTLS |\n| **h2c** | 明文HTTP/2 |\n\n## Upgrade vs CONNECT\n\n```text\nUpgrade:\n- 升级当前连接的协议\n- 保持同一TCP连接\n- 如: HTTP → WebSocket\n\nCONNECT:\n- 建立到目标服务器的隧道\n- 用于HTTPS代理\n- 如: 客户端 → 代理 → 目标服务器\n```\n\n## 关键要点\n\n- Upgrade是**HTTP/1.1**引入的机制\n- 升级后**TCP连接不变**，只是协议变了\n- WebSocket通过Upgrade从HTTP**切换**\n- 需要服务器**支持**才能升级成功\n\n## 面试高频追问\n\n1. WebSocket是如何通过HTTP建立的？\n2. Upgrade和CONNECT有什么区别？\n3. HTTP/2的协商是如何工作的？",
+    "tags": ["Upgrade", "协议切换", "WebSocket"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-044",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的安全头部（Security Headers）？有哪些重要的安全头部？",
+    "answer": "## 核心概念\n\nHTTP安全头部是服务器响应中用于增强Web应用安全性的头部字段，可以防御XSS、点击劫持、MIME嗅探等攻击。\n\n## 重要安全头部\n\n| 头部 | 作用 | 示例值 |\n|------|------|--------|\n| **Content-Security-Policy** | 限制资源加载源 | default-src 'self' |\n| **X-Content-Type-Options** | 防止MIME嗅探 | nosniff |\n| **X-Frame-Options** | 防止点击劫持 | DENY / SAMEORIGIN |\n| **Strict-Transport-Security** | 强制HTTPS | max-age=31536000 |\n| **X-XSS-Protection** | XSS过滤器 | 1; mode=block |\n| **Referrer-Policy** | 控制Referer信息 | strict-origin |\n| **Permissions-Policy** | 控制浏览器功能 | camera=(), microphone=() |\n\n## 各头部详解\n\n### Content-Security-Policy\n```text\n限制页面可加载的资源:\nContent-Security-Policy: default-src 'self'; script-src 'self' cdn.example.com\n→ 只允许从自身和cdn加载脚本\n→ 防止XSS注入\n```\n\n### X-Content-Type-Options\n```text\n防止浏览器猜测Content-Type:\nX-Content-Type-Options: nosniff\n→ 强制使用服务器声明的类型\n→ 防止MIME混淆攻击\n```\n\n### X-Frame-Options\n```text\n防止页面被嵌入iframe:\nX-Frame-Options: DENY\n→ 完全禁止嵌入\nX-Frame-Options: SAMEORIGIN\n→ 只允许同源嵌入\n→ 防止点击劫持\n```\n\n### Strict-Transport-Security\n```text\n强制使用HTTPS:\nStrict-Transport-Security: max-age=31536000; includeSubDomains\n→ 浏览器在有效期内只使用HTTPS\n→ 防止SSL剥离\n```\n\n## 关键要点\n\n- 安全头部是**纵深防御**的重要组成部分\n- **CSP**是防御XSS的最有效手段\n- **HSTS**可以防止SSL剥离攻击\n- 安全头部需要**根据业务场景**合理配置\n\n## 面试高频追问\n\n1. CSP和X-Frame-Options分别防御什么攻击？\n2. HSTS的includeSubDomains有什么作用？\n3. 如何测试安全头部是否生效？",
+    "tags": ["安全头部", "CSP", "HSTS"],
+    "source": "高频"
+  },
+  {
+    "id": "net-http-045",
+    "module": "HTTP",
+    "difficulty": 2,
+    "question": "什么是HTTP的GraphQL？GraphQL和REST有什么区别？",
+    "answer": "## 核心概念\n\nGraphQL是Facebook开发的API查询语言，允许客户端精确指定需要的数据，避免过度获取或不足获取。\n\n## GraphQL vs REST对比\n\n| 对比维度 | REST | GraphQL |\n|----------|------|---------|\n| 端点 | 多个端点 | 单一端点 |\n| 数据获取 | 服务器决定返回什么 | 客户端决定需要什么 |\n| 请求方式 | GET/POST/PUT/DELETE | 通常POST |\n| 版本管理 | URL版本（/v1/） | 无需版本 |\n| 学习曲线 | 低 | 较高 |\n| 工具生态 | 成熟 | 发展中 |\n\n## GraphQL示例\n\n```text\n查询:\nquery {\n  user(id: 123) {\n    name\n    email\n    orders(first: 5) {\n      id\n      total\n    }\n  }\n}\n\n响应:\n{\n  \"data\": {\n    \"user\": {\n      \"name\": \"张三\",\n      \"email\": \"zhangsan@example.com\",\n      \"orders\": [\n        {\"id\": \"order-1\", \"total\": 100},\n        {\"id\": \"order-2\", \"total\": 200}\n      ]\n    }\n  }\n}\n```\n\n## GraphQL的优势\n\n| 优势 | 说明 |\n|------|------|\n| **精确获取** | 只获取需要的字段 |\n| **减少请求** | 一次请求获取关联数据 |\n| **强类型** | Schema定义数据结构 |\n| **自省** | 可以查询API结构 |\n| **无版本** | 通过字段增减演进 |\n\n## GraphQL的挑战\n\n| 挑战 | 说明 |\n|------|------|\n| **N+1查询** | 需要DataLoader优化 |\n| **缓存复杂** | 无法利用HTTP缓存 |\n| **安全风险** | 需要限制查询深度和复杂度 |\n| **学习成本** | 需要学习新的查询语言 |\n\n## 关键要点\n\n- GraphQL适合**复杂的数据关系**和**多端**场景\n- REST适合**简单CRUD**和**资源导向**的API\n- GraphQL需要**特殊的缓存策略**\n- 两者可以**共存**，不是非此即彼\n\n## 面试高频追问\n\n1. GraphQL的N+1问题是什么？如何解决？\n2. GraphQL如何实现缓存？\n3. 什么场景适合使用GraphQL？",
+    "tags": ["GraphQL", "REST", "API设计"],
+    "source": "高频"
+  }
+]

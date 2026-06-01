@@ -1,0 +1,262 @@
+[
+  {
+    "id": "java-oop-001",
+    "module": "Java面向对象",
+    "difficulty": 1,
+    "question": "面向对象的三大特性（封装、继承、多态）分别是什么？",
+    "answer": "## 核心概念\n\n面向对象编程（OOP）的三大特性是封装、继承和多态。它们是 Java 面向对象设计的基石，共同支撑了代码复用、灵活性和可维护性。\n\n### 封装（Encapsulation）\n\n封装是将数据和操作数据的方法绑定在一起，隐藏内部实现细节，只暴露必要的接口。\n\n```java\npublic class Account {\n    private double balance;  // 私有字段，外部不可直接访问\n\n    public double getBalance() { return balance; }\n\n    public void deposit(double amount) {\n        if (amount <= 0) throw new IllegalArgumentException();\n        this.balance += amount;\n    }\n\n    public void withdraw(double amount) {\n        if (amount > balance) throw new IllegalStateException(\"余额不足\");\n        this.balance -= amount;\n    }\n}\n```\n\n### 继承（Inheritance）\n\n继承让子类复用父类的属性和方法，并可以扩展或覆写。\n\n```java\npublic class Animal {\n    protected String name;\n    public void eat() { System.out.println(name + \" eats\"); }\n}\n\npublic class Dog extends Animal {\n    public void bark() { System.out.println(name + \" barks\"); }\n    @Override\n    public void eat() { System.out.println(name + \" eats bones\"); }\n}\n```\n\n### 多态（Polymorphism）\n\n多态允许同一接口表现不同的行为，通过方法覆写和动态绑定实现。\n\n```java\nAnimal animal = new Dog();  // 父类引用指向子类对象\nanimal.eat();  // 输出 \"Dog eats bones\"（运行时决定调用哪个方法）\n// animal.bark();  // 编译错误！编译时看引用类型\n```\n\n### 关键要点\n\n| 特性 | 核心思想 | 实现机制 |\n|------|---------|----------|\n| 封装 | 隐藏实现，暴露接口 | 访问修饰符（private/public） |\n| 继承 | 代码复用，is-a 关系 | extends 关键字 |\n| 多态 | 同一接口，不同行为 | 覆写 + 动态绑定 |\n\n### 注意事项\n\n- Java 只支持单继承，但可以实现多个接口。\n- 多态的前提是继承或接口实现，以及方法覆写。\n- 构造器、static 方法、final 方法、private 方法不参与多态。",
+    "tags": [
+      "封装",
+      "继承",
+      "多态"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-002",
+    "module": "Java面向对象",
+    "difficulty": 1,
+    "question": "Java 中重载（Overload）和重写（Override）有什么区别？",
+    "answer": "## 核心概念\n\n重载是同一个类中方法名相同但参数列表不同的多个方法；重写是子类重新定义父类中已有的方法。两者是多态的不同表现形式。\n\n### 重载（Overload）\n\n```java\npublic class Calculator {\n    public int add(int a, int b) { return a + b; }\n    public double add(double a, double b) { return a + b; }\n    public int add(int a, int b, int c) { return a + b + c; }\n    // 重载：同类、同名、不同参数列表\n}\n```\n\n### 重写（Override）\n\n```java\npublic class Animal {\n    public void speak() { System.out.println(\"...\"); }\n    public Animal create() { return new Animal(); }\n}\n\npublic class Cat extends Animal {\n    @Override\n    public void speak() { System.out.println(\"Meow\"); }\n\n    @Override\n    public Cat create() { return new Cat(); }  // 协变返回类型\n}\n```\n\n### 对比\n\n| 特性 | 重载 | 重写 |\n|------|------|------|\n| 位置 | 同一个类 | 子类与父类 |\n| 方法名 | 相同 | 相同 |\n| 参数列表 | 必须不同 | 必须相同 |\n| 返回类型 | 无要求 | 相同或协变 |\n| 访问修饰符 | 无要求 | 不能更严格 |\n| 异常 | 无要求 | 不能抛出更多受检异常 |\n| 绑定时机 | 编译期（静态绑定） | 运行期（动态绑定） |\n\n### 重写的规则\n\n1. 方法签名必须相同。\n2. 返回类型相同或是协变返回类型（子类）。\n3. 访问权限不能比父类更严格（可以更宽松）。\n4. 不能抛出比父类更多的受检异常。\n5. `static` 方法不能被重写（可以被隐藏）。\n6. `final` 方法不能被重写。\n7. `private` 方法不能被重写（子类不可见）。\n\n### 关键要点\n\n- `@Override` 注解可以让编译器帮助检查是否正确重写。\n- 重载是编译时多态（静态分派），重写是运行时多态（动态分派）。\n- 重载方法的选择依据：参数类型的匹配度，优先精确匹配，然后自动提升（int → long → float → double）。",
+    "tags": [
+      "重载",
+      "重写",
+      "多态"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-003",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "抽象类和接口的区别是什么？什么时候用抽象类，什么时候用接口？",
+    "answer": "## 核心概念\n\n抽象类定义 is-a 关系的模板，可以包含状态和实现；接口定义能力契约，主要用于多态和解耦。Java 8+ 接口可以有默认方法，但状态字段仍然是区分的关键。\n\n### 对比\n\n| 特性 | 抽象类 | 接口 |\n|------|--------|------|\n| 实例化 | 不能 | 不能 |\n| 继承 | 单继承 | 多实现 |\n| 构造器 | 有 | 无 |\n| 字段 | 任意（包括实例字段） | 只能 public static final |\n| 方法 | 抽象 + 具体 | 抽象 + 默认 + 静态 |\n| 访问修饰符 | 任意 | 默认 public |\n| 设计意图 | is-a 模板 | 能力契约 |\n\n### 代码示例\n\n```java\n// 抽象类 —— 有状态、有模板\npublic abstract class AbstractRepository<T> {\n    protected DataSource dataSource;  // 状态\n\n    public AbstractRepository(DataSource ds) { this.dataSource = ds; }\n\n    public T findById(Long id) {  // 模板方法\n        Connection conn = getConnection();\n        T result = doFindById(conn, id);\n        closeConnection(conn);\n        return result;\n    }\n\n    protected abstract T doFindById(Connection conn, Long id);  // 子类实现\n}\n\n// 接口 —— 能力定义\npublic interface Cacheable {\n    String getCacheKey();\n    default Duration cacheDuration() { return Duration.ofMinutes(5); }\n}\n\n// 组合使用\nclass UserService extends AbstractRepository<User> implements Cacheable {\n    // ...\n}\n```\n\n### 选择建议\n\n使用抽象类的场景：\n- 需要共享状态（字段）\n- 需要模板方法模式\n- is-a 关系明确（如 Dog is a Animal）\n- 子类与父类有紧密的实现依赖\n\n使用接口的场景：\n- 需要多继承\n- 定义能力/行为契约（如 Comparable、Serializable）\n- 需要解耦（面向接口编程）\n- 不关心实现细节\n\n### 最佳实践\n\n- 优先使用接口，只在需要共享实现时使用抽象类。\n- 面向接口编程，降低模块间耦合。\n- 接口设计要小而专一（接口隔离原则）。",
+    "tags": [
+      "抽象类",
+      "接口",
+      "面向对象"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-004",
+    "module": "Java面向对象",
+    "difficulty": 1,
+    "question": "Java 中访问修饰符有哪些？各自的可见范围是什么？",
+    "answer": "## 核心概念\n\nJava 有四种访问修饰符：`private`、默认（包级私有）、`protected`、`public`，控制类、字段、方法的可见范围。\n\n### 可见范围\n\n| 修饰符 | 同类 | 同包子类 | 同包非子类 | 不同包子类 | 不同包非子类 |\n|--------|------|----------|-----------|-----------|-------------|\n| `private` | 可见 | 不可见 | 不可见 | 不可见 | 不可见 |\n| 默认（无） | 可见 | 可见 | 可见 | 不可见 | 不可见 |\n| `protected` | 可见 | 可见 | 可见 | 可见 | 不可见 |\n| `public` | 可见 | 可见 | 可见 | 可见 | 可见 |\n\n### 代码示例\n\n```java\npackage com.example.base;\npublic class Parent {\n    private int a;         // 仅本类\n    int b;                 // 同包\n    protected int c;       // 同包 + 不同包子类\n    public int d;          // 所有地方\n}\n\npackage com.example.sub;\nimport com.example.base.Parent;\npublic class Child extends Parent {\n    public void test() {\n        // a = 1;  // 不可见\n        // b = 2;  // 不可见（不同包非子类/子类都不行，只有同包能访问默认权限）\n        c = 3;     // 可见（protected，子类可访问）\n        d = 4;     // 可见（public）\n    }\n}\n```\n\n### protected 的特殊性\n\n`protected` 在不同包中只能通过继承关系访问，不能通过实例访问：\n\n```java\npackage com.example.sub;\npublic class Test {\n    public void test(Parent p) {\n        // p.c = 1;  // 不可见！不能通过实例访问其他包的 protected\n        // 只能在 Child 类内部通过 this 或 super 访问\n    }\n}\n```\n\n### 关键要点\n\n- 类的访问修饰符只有 `public` 和默认（包级私有）。\n- 内部类可以使用所有四种修饰符。\n- 接口的方法默认是 `public`，字段默认是 `public static final`。\n- 局部变量不能使用访问修饰符。\n\n### 最佳实践\n\n- 字段用 `private`，通过 getter/setter 暴露（封装）。\n- 工具方法如果只在类内部使用，声明为 `private`。\n- 需要包级协作时使用默认权限。\n- 模块系统（Java 9+）提供了更细粒度的访问控制（`exports`）。",
+    "tags": [
+      "访问修饰符",
+      "封装",
+      "可见性"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-005",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Object 类有哪些常用方法？各自的作用是什么？",
+    "answer": "## 核心概念\n\n`Object` 是所有类的根类，提供了对象通用的基本方法。理解这些方法是 Java 编程的基础。\n\n### 常用方法\n\n```java\npublic class Object {\n    // 比较：默认比较地址\n    public boolean equals(Object obj) { return this == obj; }\n\n    // 哈希码：默认由对象地址计算\n    public int hashCode() { /* native */ }\n\n    // 字符串表示：默认 类名@hashCode十六进制\n    public String toString() {\n        return getClass().getName() + \"@\" + Integer.toHexString(hashCode());\n    }\n\n    // 获取 Class 对象\n    public final Class<?> getClass() { /* native */ }\n\n    // 唤醒等待此对象锁的线程\n    public final void notify() { /* native */ }\n    public final void notifyAll() { /* native */ }\n\n    // 线程等待\n    public final void wait() throws InterruptedException { /* native */ }\n    public final void wait(long timeout) throws InterruptedException { /* native */ }\n    public final void wait(long timeout, int nanos) throws InterruptedException { /* native */ }\n\n    // GC 前调用（已弃用）\n    protected void finalize() throws Throwable { }\n\n    // 浅拷贝\n    protected native Object clone() throws CloneNotSupportedException;\n}\n```\n\n### 覆写规范\n\n```java\n@Override\npublic boolean equals(Object o) {\n    if (this == o) return true;\n    if (o == null || getClass() != o.getClass()) return false;\n    User user = (User) o;\n    return age == user.age && Objects.equals(name, user.name);\n}\n\n@Override\npublic int hashCode() {\n    return Objects.hash(name, age);\n}\n\n@Override\npublic String toString() {\n    return \"User{name='\" + name + \"', age=\" + age + \"}\";\n}\n```\n\n### 关键要点\n\n| 方法 | 覆写建议 |\n|------|----------|\n| `equals` | 内容比较时覆写 |\n| `hashCode` | 覆写 equals 时必须同时覆写 |\n| `toString` | 建议覆写，方便调试和日志 |\n| `clone` | 不推荐，用拷贝构造器或工具类替代 |\n| `finalize` | 已弃用，不要使用 |\n\n### 注意事项\n\n- `equals` 必须满足自反性、对称性、传递性、一致性和非 null 性。\n- `wait`/`notify` 必须在同步块内调用，否则抛出 `IllegalMonitorStateException`。\n- `getClass()` 在 equals 中用于精确类型检查，`instanceof` 用于兼容子类。\n- `Objects` 工具类提供了 null 安全的 `equals`、`hashCode`、`toString` 等方法。",
+    "tags": [
+      "Object",
+      "equals",
+      "hashCode"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-006",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Java 中有哪些内部类？各自的使用场景是什么？",
+    "answer": "## 核心概念\n\nJava 支持四种内部类：成员内部类、静态内部类、局部内部类和匿名内部类。它们各有特点和适用场景。\n\n### 四种内部类\n\n```java\npublic class Outer {\n    private int x = 10;\n    private static int y = 20;\n\n    // 1. 成员内部类 —— 可以访问外部类的所有成员\n    public class MemberInner {\n        public void show() {\n            System.out.println(x);      // 访问外部实例变量\n            System.out.println(y);      // 访问外部静态变量\n            System.out.println(Outer.this.x);  // 显式引用外部类\n        }\n    }\n\n    // 2. 静态内部类 —— 只能访问外部类的静态成员\n    public static class StaticInner {\n        public void show() {\n            // System.out.println(x);  // 不可访问实例变量\n            System.out.println(y);     // 可以访问静态变量\n        }\n    }\n\n    // 3. 局部内部类 —— 定义在方法中\n    public void method() {\n        int localVar = 30;  // effectively final\n\n        class LocalInner {\n            public void show() {\n                System.out.println(x);        // 访问外部实例变量\n                System.out.println(localVar);  // 访问局部变量（必须 effectively final）\n            }\n        }\n        new LocalInner().show();\n    }\n\n    // 4. 匿名内部类 —— 没有名字的局部内部类\n    public Runnable getTask() {\n        return new Runnable() {\n            @Override\n            public void run() {\n                System.out.println(\"Running\");\n            }\n        };\n    }\n}\n\n// 使用\nOuter outer = new Outer();\nOuter.MemberInner mi = outer.new MemberInner();  // 成员内部类需要外部类实例\nOuter.StaticInner si = new Outer.StaticInner();  // 静态内部类不需要\n```\n\n### 对比\n\n| 类型 | 持有外部引用 | 可定义静态成员 | 使用场景 |\n|------|------------|--------------|----------|\n| 成员内部类 | 是 | 否 | 访问外部实例状态 |\n| 静态内部类 | 否 | 是 | 与外部类逻辑关联但独立 |\n| 局部内部类 | 是 | 否 | 方法内复用逻辑 |\n| 匿名内部类 | 是 | 否 | 一次性使用、回调、Lambda |\n\n### 最佳实践\n\n- Builder 模式、Entry 节点等场景用静态内部类。\n- 匿名内部类可用 Lambda 替代（函数式接口）。\n- 成员内部类持有外部引用可能导致内存泄漏，谨慎使用。\n- Android 中 Handler 使用静态内部类 + WeakReference 避免泄漏。",
+    "tags": [
+      "内部类",
+      "静态内部类",
+      "匿名内部类"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-007",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Java 枚举（enum）是什么？有哪些高级用法？",
+    "answer": "## 核心概念\n\n枚举是 Java 5 引入的特殊类，用于定义固定常量集合。枚举本质上是继承自 `java.lang.Enum` 的 final 类，每个枚举常量是该类的一个实例。\n\n### 基本用法\n\n```java\n// 基本枚举\npublic enum Color {\n    RED, GREEN, BLUE\n}\n\n// 带属性和方法的枚举\npublic enum Planet {\n    MERCURY(3.303e+23, 2.4397e6),\n    VENUS(4.869e+24, 6.0518e6),\n    EARTH(5.976e+24, 6.37814e6);\n\n    private final double mass;\n    private final double radius;\n\n    Planet(double mass, double radius) {\n        this.mass = mass;\n        this.radius = radius;\n    }\n\n    public double surfaceGravity() {\n        final double G = 6.67300E-11;\n        return G * mass / (radius * radius);\n    }\n}\n\n// 枚举方法\nColor red = Color.RED;\nString name = red.name();           // \"RED\"\nint ordinal = red.ordinal();        // 0（序号）\nColor g = Color.valueOf(\"GREEN\");   // 从字符串获取\nColor[] all = Color.values();       // 所有值\n```\n\n### 高级用法\n\n```java\n// 1. 枚举实现接口\npublic enum Operation implements Calculator {\n    PLUS {\n        @Override public int apply(int x, int y) { return x + y; }\n    },\n    MINUS {\n        @Override public int apply(int x, int y) { return x - y; }\n    };\n}\n\n// 2. 枚举实现策略模式\npublic enum PayType {\n    ALIPAY {\n        @Override public void pay(double amount) { /* 支付宝支付 */ }\n    },\n    WECHAT {\n        @Override public void pay(double amount) { /* 微信支付 */ }\n    };\n\n    public abstract void pay(double amount);\n}\n\n// 3. 枚举实现单例（推荐方式）\npublic enum Singleton {\n    INSTANCE;\n    public void doSomething() { }\n}\n```\n\n### 枚举与 switch\n\n```java\nColor color = Color.RED;\nswitch (color) {\n    case RED:   System.out.println(\"红色\"); break;\n    case GREEN: System.out.println(\"绿色\"); break;\n    case BLUE:  System.out.println(\"蓝色\"); break;\n}\n```\n\n### 关键要点\n\n- 枚举是线程安全的，由 JVM 保证唯一实例。\n- 枚举可以有字段、方法、构造器（私有）、实现接口。\n- 枚举不能继承其他类（已隐式继承 Enum），但可以实现接口。\n- 枚举常量自动具有 `static` 和 `final` 属性。\n- 枚举可以作为 Map 的 key（天然适合 `EnumMap`）。\n\n### 最佳实践\n\n- 用枚举替代常量类（`public static final int`）。\n- 枚举单例是最安全的单例实现（防反射、防序列化破坏）。\n- `EnumSet` 和 `EnumMap` 针对枚举优化，性能优于通用集合。\n- 枚举的 `ordinal()` 不应被用于业务逻辑，只用于内部实现。",
+    "tags": [
+      "枚举",
+      "enum",
+      "单例"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-008",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "设计模式中单例模式有几种实现方式？各有什么优缺点？",
+    "answer": "## 核心概念\n\n单例模式确保一个类只有一个实例，并提供全局访问点。常见的实现方式有饿汉式、懒汉式、双重检查锁、静态内部类和枚举。\n\n### 实现方式\n\n```java\n// 1. 饿汉式 —— 类加载时就创建\npublic class Singleton1 {\n    private static final Singleton1 INSTANCE = new Singleton1();\n    private Singleton1() {}\n    public static Singleton1 getInstance() { return INSTANCE; }\n}\n\n// 2. 懒汉式 —— 线程不安全\npublic class Singleton2 {\n    private static Singleton2 instance;\n    private Singleton2() {}\n    public static Singleton2 getInstance() {  // 非线程安全！\n        if (instance == null) instance = new Singleton2();\n        return instance;\n    }\n}\n\n// 3. 双重检查锁（DCL）—— 推荐\npublic class Singleton3 {\n    private static volatile Singleton3 instance;  // volatile 必须！\n    private Singleton3() {}\n    public static Singleton3 getInstance() {\n        if (instance == null) {\n            synchronized (Singleton3.class) {\n                if (instance == null) {\n                    instance = new Singleton3();\n                }\n            }\n        }\n        return instance;\n    }\n}\n\n// 4. 静态内部类 —— 推荐\npublic class Singleton4 {\n    private Singleton4() {}\n    private static class Holder {\n        private static final Singleton4 INSTANCE = new Singleton4();\n    }\n    public static Singleton4 getInstance() { return Holder.INSTANCE; }\n}\n\n// 5. 枚举 —— 最安全\npublic enum Singleton5 {\n    INSTANCE;\n    public void doSomething() { }\n}\n```\n\n### 对比\n\n| 方式 | 线程安全 | 懒加载 | 防反射 | 防序列化 |\n|------|---------|--------|--------|----------|\n| 饿汉式 | 是 | 否 | 否 | 否 |\n| DCL | 是 | 是 | 否 | 否 |\n| 静态内部类 | 是 | 是 | 否 | 否 |\n| 枚举 | 是 | 否 | 是 | 是 |\n\n### 关键要点\n\n- DCL 中 `volatile` 防止指令重排序（创建对象不是原子操作）。\n- 静态内部类利用 JVM 类加载机制保证线程安全和懒加载。\n- 枚举是最安全的方式，但不能继承其他类。\n- 反射可以破坏除枚举外的所有单例（可在构造器中检查）。\n- `readResolve()` 可以防止反序列化破坏单例。\n\n### 最佳实践\n\n- 枚举单例是 Effective Java 推荐的方式。\n- 需要懒加载时用静态内部类。\n- 需要继承时用 DCL 或静态内部类。",
+    "tags": [
+      "单例",
+      "设计模式",
+      "线程安全"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-009",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "工厂模式有几种？简单工厂、工厂方法和抽象工厂有什么区别？",
+    "answer": "## 核心概念\n\n工厂模式将对象的创建与使用分离，提供灵活的对象创建机制。分为简单工厂、工厂方法和抽象工厂三种形式。\n\n### 简单工厂\n\n```java\npublic class ShapeFactory {\n    public static Shape createShape(String type) {\n        switch (type) {\n            case \"circle\": return new Circle();\n            case \"rectangle\": return new Rectangle();\n            default: throw new IllegalArgumentException(\"Unknown type: \" + type);\n        }\n    }\n}\n// 使用\nShape shape = ShapeFactory.createShape(\"circle\");\n```\n\n### 工厂方法\n\n```java\n// 抽象工厂接口\npublic interface ShapeFactory {\n    Shape createShape();\n}\n\n// 具体工厂\nclass CircleFactory implements ShapeFactory {\n    @Override public Shape createShape() { return new Circle(); }\n}\n\nclass RectangleFactory implements ShapeFactory {\n    @Override public Shape createShape() { return new Rectangle(); }\n}\n// 使用\nShapeFactory factory = new CircleFactory();\nShape shape = factory.createShape();\n```\n\n### 抽象工厂\n\n```java\n// 抽象工厂 —— 创建一族相关产品\npublic interface UIFactory {\n    Button createButton();\n    TextBox createTextBox();\n}\n\nclass WindowsUIFactory implements UIFactory {\n    @Override public Button createButton() { return new WindowsButton(); }\n    @Override public TextBox createTextBox() { return new WindowsTextBox(); }\n}\n\nclass MacUIFactory implements UIFactory {\n    @Override public Button createButton() { return new MacButton(); }\n    @Override public TextBox createTextBox() { return new MacTextBox(); }\n}\n```\n\n### 对比\n\n| 模式 | 特点 | 适用场景 |\n|------|------|----------|\n| 简单工厂 | 一个工厂类，根据参数创建 | 产品种类少且固定 |\n| 工厂方法 | 每个产品一个工厂类 | 单一产品等级结构 |\n| 抽象工厂 | 创建一族相关产品 | 多个产品等级结构 |\n\n### 关键要点\n\n- 简单工厂违反开闭原则（新增产品需修改工厂）。\n- 工厂方法符合开闭原则（新增产品只需新增工厂类）。\n- 抽象工厂适合产品族场景（如跨平台 UI）。\n- Spring 的 BeanFactory 是典型的工厂模式应用。\n\n### 最佳实践\n\n- 产品简单且不常变化时用简单工厂。\n- 需要扩展性时用工厂方法。\n- 多个相关产品组合时用抽象工厂。\n- 实际项目中常用反射 + 配置实现工厂。",
+    "tags": [
+      "工厂模式",
+      "设计模式",
+      "创建型"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-010",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "策略模式是什么？在 Java 中如何实现？",
+    "answer": "## 核心概念\n\n策略模式定义一系列算法，将每个算法封装起来，使它们可以互相替换。策略模式让算法独立于使用它的客户端而变化。\n\n### 代码示例\n\n```java\n// 策略接口\npublic interface SortStrategy {\n    void sort(int[] array);\n}\n\n// 具体策略\nclass BubbleSort implements SortStrategy {\n    @Override\n    public void sort(int[] array) {\n        // 冒泡排序实现\n        for (int i = 0; i < array.length - 1; i++) {\n            for (int j = 0; j < array.length - 1 - i; j++) {\n                if (array[j] > array[j + 1]) {\n                    int temp = array[j];\n                    array[j] = array[j + 1];\n                    array[j + 1] = temp;\n                }\n            }\n        }\n    }\n}\n\nclass QuickSort implements SortStrategy {\n    @Override\n    public void sort(int[] array) {\n        // 快速排序实现\n    }\n}\n\n// 上下文\nclass Sorter {\n    private SortStrategy strategy;\n\n    public Sorter(SortStrategy strategy) { this.strategy = strategy; }\n    public void setStrategy(SortStrategy strategy) { this.strategy = strategy; }\n    public void sort(int[] array) { strategy.sort(array); }\n}\n\n// 使用\nSorter sorter = new Sorter(new BubbleSort());\nsorter.sort(data);\nsorter.setStrategy(new QuickSort());  // 运行时切换策略\nsorter.sort(data);\n```\n\n### Lambda 简化\n\n```java\n// 函数式接口作为策略\n@FunctionalInterface\npublic interface PriceStrategy {\n    double calculate(double price);\n}\n\n// 直接用 Lambda\nPriceStrategy vipDiscount = price -> price * 0.8;\nPriceStrategy holidayDiscount = price -> price - 50;\nPriceStrategy noDiscount = price -> price;\n\nclass Order {\n    public double calculatePrice(double price, PriceStrategy strategy) {\n        return strategy.calculate(price);\n    }\n}\n```\n\n### 关键要点\n\n- 策略模式的核心是将算法的定义和使用分离。\n- 使用接口定义策略，具体策略实现接口。\n- Java 8+ 可以用 Lambda 简化策略的定义。\n- 策略模式遵循开闭原则：新增策略无需修改已有代码。\n\n### 应用场景\n\n- 排序算法选择\n- 支付方式选择\n- 折扣/优惠计算\n- 文件解析（不同格式用不同策略）\n- Spring 中的 Resource 接口（ClassPathResource、FileSystemResource 等）\n\n### 与 if-else 对比\n\n策略模式消除了大量的 if-else 或 switch 分支，使代码更易维护和扩展。",
+    "tags": [
+      "策略模式",
+      "设计模式",
+      "行为型"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-011",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "观察者模式是什么？Java 中如何实现事件驱动？",
+    "answer": "## 核心概念\n\n观察者模式定义了一种一对多的依赖关系，当被观察者状态改变时，所有观察者都会被通知并自动更新。这是事件驱动编程的基础。\n\n### 代码示例\n\n```java\n// 观察者接口\npublic interface Observer {\n    void update(String event, Object data);\n}\n\n// 被观察者（事件源）\npublic class EventBus {\n    private Map<String, List<Observer>> listeners = new HashMap<>();\n\n    public void subscribe(String event, Observer observer) {\n        listeners.computeIfAbsent(event, k -> new ArrayList<>()).add(observer);\n    }\n\n    public void unsubscribe(String event, Observer observer) {\n        List<Observer> obs = listeners.get(event);\n        if (obs != null) obs.remove(observer);\n    }\n\n    public void publish(String event, Object data) {\n        List<Observer> obs = listeners.get(event);\n        if (obs != null) {\n            for (Observer o : obs) {\n                o.update(event, data);\n            }\n        }\n    }\n}\n\n// 使用\nEventBus bus = new EventBus();\nbus.subscribe(\"orderCreated\", (event, data) -> {\n    System.out.println(\"发送通知: \" + data);\n});\nbus.subscribe(\"orderCreated\", (event, data) -> {\n    System.out.println(\"记录日志: \" + data);\n});\nbus.publish(\"orderCreated\", new Order(\"001\"));\n```\n\n### Java 内置观察者\n\n```java\n// Java 内置 Observer（已弃用，了解即可）\npublic class WeatherStation extends Observable {\n    private float temperature;\n\n    public void setTemperature(float temp) {\n        this.temperature = temp;\n        setChanged();\n        notifyObservers(temperature);\n    }\n}\n```\n\n### 关键要点\n\n- 观察者模式实现了被观察者和观察者的解耦。\n- 支持动态添加和移除观察者。\n- 事件驱动架构（如消息队列）是观察者模式的扩展。\n- Java 中常用 `EventListener` 接口和 `Consumer<T>` 函数式接口。\n\n### 应用场景\n\n- GUI 事件处理\n- 消息通知系统\n- 发布-订阅模式\n- Spring 事件机制（ApplicationEvent + ApplicationListener）\n- 响应式编程（Reactor、RxJava）\n\n### 注意事项\n\n- 避免循环依赖（观察者触发被观察者更新）。\n- 注意线程安全问题。\n- 通知顺序不可控时不应依赖顺序。\n- 观察者过多时考虑异步通知。",
+    "tags": [
+      "观察者模式",
+      "设计模式",
+      "事件驱动"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-012",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "模板方法模式是什么？在框架中有哪些应用？",
+    "answer": "## 核心概念\n\n模板方法模式在父类中定义算法骨架，将某些步骤延迟到子类实现。子类可以覆写特定步骤，但不改变算法的整体结构。\n\n### 代码示例\n\n```java\n// 抽象模板\npublic abstract class AbstractExporter {\n    // 模板方法 —— 定义算法骨架\n    public final void export(String data) {\n        List<Record> records = parse(data);      // 步骤1：解析\n        records = validate(records);              // 步骤2：校验\n        records = transform(records);             // 步骤3：转换\n        output(records);                          // 步骤4：输出\n    }\n\n    // 抽象方法 —— 子类必须实现\n    protected abstract List<Record> parse(String data);\n    protected abstract void output(List<Record> records);\n\n    // 钩子方法 —— 子类可选择覆写\n    protected List<Record> validate(List<Record> records) {\n        return records.stream().filter(Record::isValid).collect(Collectors.toList());\n    }\n\n    protected List<Record> transform(List<Record> records) {\n        return records;  // 默认不做转换\n    }\n}\n\n// 具体实现\nclass CSVExporter extends AbstractExporter {\n    @Override\n    protected List<Record> parse(String data) { /* CSV 解析逻辑 */ }\n    @Override\n    protected void output(List<Record> records) { /* 输出到 CSV 文件 */ }\n}\n\nclass JSONExporter extends AbstractExporter {\n    @Override\n    protected List<Record> parse(String data) { /* JSON 解析逻辑 */ }\n    @Override\n    protected void output(List<Record> records) { /* 输出为 JSON */ }\n}\n```\n\n### 钩子方法\n\n```java\npublic abstract class Game {\n    // 模板方法\n    public final void play() {\n        initialize();\n        startPlay();\n        if (isRepeatable()) {  // 钩子方法控制流程\n            repeat();\n        }\n        endPlay();\n    }\n\n    protected abstract void initialize();\n    protected abstract void startPlay();\n    protected abstract void endPlay();\n\n    // 钩子方法 —— 默认行为，子类可选覆写\n    protected boolean isRepeatable() { return false; }\n    protected void repeat() { }\n}\n```\n\n### 关键要点\n\n- 模板方法用 `final` 修饰，防止子类改变算法骨架。\n- 抽象方法由子类实现，钩子方法提供默认行为。\n- 符合好莱坞原则：\"Don't call us, we'll call you\"。\n- 框架中大量使用：Servlet 的 `doGet`/`doPost`、JUnit 的生命周期方法。\n\n### 框架应用\n\n| 框架 | 模板 |\n|------|------|\n| Servlet | HttpServlet.service() → doGet/doPost |\n| Spring | JdbcTemplate、RestTemplate |\n| JUnit | setUp/tearDown |\n| AbstractList | get/size → iterator/add/remove |\n\n### 与策略模式的区别\n\n模板方法通过继承改变算法的一部分，策略模式通过组合替换整个算法。模板方法是类级别的，策略模式是对象级别的。",
+    "tags": [
+      "模板方法",
+      "设计模式",
+      "行为型"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-013",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "SOLID 原则分别是什么？在实际开发中如何应用？",
+    "answer": "## 核心概念\n\nSOLID 是面向对象设计的五大原则，指导开发者编写可维护、可扩展的代码。\n\n### S — 单一职责原则（SRP）\n\n一个类只负责一个功能领域。\n\n```java\n// 违反 SRP\nclass User {\n    void save() { /* 数据库操作 */ }\n    void sendEmail() { /* 邮件发送 */ }\n    String toJson() { /* 序列化 */ }\n}\n\n// 遵循 SRP\nclass User { /* 只有用户数据 */ }\nclass UserRepository { void save(User u) { } }\nclass EmailService { void send(User u, String msg) { } }\n```\n\n### O — 开闭原则（OCP）\n\n对扩展开放，对修改关闭。\n\n```java\n// 违反 OCP：新增形状需修改 AreaCalculator\nclass AreaCalculator {\n    double calculate(Object shape) {\n        if (shape instanceof Circle) { /*...*/ }\n        else if (shape instanceof Rectangle) { /*...*/ }\n    }\n}\n\n// 遵循 OCP\ninterface Shape { double area(); }\nclass Circle implements Shape { public double area() { return Math.PI * r * r; } }\nclass Rectangle implements Shape { public double area() { return w * h; } }\n```\n\n### L — 里氏替换原则（LSP）\n\n子类必须能够替换父类而不影响程序正确性。\n\n```java\n// 违反 LSP：正方形覆写 setWidth 影响 setHeight\nclass Rectangle {\n    void setWidth(int w) { this.width = w; }\n    void setHeight(int h) { this.height = h; }\n}\nclass Square extends Rectangle {\n    @Override void setWidth(int w) { this.width = w; this.height = w; }\n}\n```\n\n### I — 接口隔离原则（ISP）\n\n客户端不应被迫依赖它不使用的接口。\n\n```java\n// 违反 ISP\ninterface Animal {\n    void eat();\n    void fly();  // Fish 不会飞\n    void swim(); // Bird 不游泳\n}\n\n// 遵循 ISP\ninterface Eatable { void eat(); }\ninterface Flyable { void fly(); }\ninterface Swimmable { void swim(); }\n```\n\n### D — 依赖倒置原则（DIP）\n\n依赖抽象而非具体实现。\n\n```java\n// 违反 DIP\nclass OrderService {\n    private MySQLDatabase db = new MySQLDatabase();  // 依赖具体实现\n}\n\n// 遵循 DIP\nclass OrderService {\n    private final Database db;  // 依赖接口\n    public OrderService(Database db) { this.db = db; }\n}\n```\n\n### 关键要点\n\n| 原则 | 核心 |\n|------|------|\n| SRP | 一个类只做一件事 |\n| OCP | 扩展而非修改 |\n| LSP | 子类可以安全替换父类 |\n| ISP | 接口要小而专一 |\n| DIP | 依赖抽象 |\n\n### 最佳实践\n\n- SOLID 不是教条，需要根据实际场景权衡。\n- 过度设计比设计不足更危险。\n- 重构时逐步引入 SOLID 原则。\n- Spring 框架大量应用了这些原则（IoC 容器实现了 DIP）。",
+    "tags": [
+      "SOLID",
+      "设计原则",
+      "面向对象"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-014",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "组合和继承的区别是什么？什么时候用组合，什么时候用继承？",
+    "answer": "## 核心概念\n\n组合（Composition）和继承（Inheritance）都是代码复用机制。组合通过持有对象引用来复用功能，继承通过类层次结构复用。\"组合优于继承\" 是重要的设计原则。\n\n### 继承\n\n```java\nclass ArrayList<E> extends AbstractList<E> {\n    // 复用 AbstractList 的方法\n    // 可以覆写、扩展\n}\n```\n\n### 组合\n\n```java\nclass OrderService {\n    private final UserRepository userRepo;   // 组合\n    private final OrderRepository orderRepo; // 组合\n    private final EmailService emailService; // 组合\n\n    public OrderService(UserRepository userRepo, OrderRepository orderRepo,\n                        EmailService emailService) {\n        this.userRepo = userRepo;\n        this.orderRepo = orderRepo;\n        this.emailService = emailService;\n    }\n\n    public void createOrder(Long userId, Order order) {\n        User user = userRepo.findById(userId);\n        order.setUser(user);\n        orderRepo.save(order);\n        emailService.sendOrderConfirmation(user, order);\n    }\n}\n```\n\n### 对比\n\n| 特性 | 继承 | 组合 |\n|------|------|------|\n| 关系 | is-a | has-a |\n| 耦合度 | 强耦合 | 弱耦合 |\n| 灵活性 | 编译期确定 | 运行时可替换 |\n| 白盒/黑盒 | 白盒（可见内部） | 黑盒（只知接口） |\n| 多态 | 支持 | 通过接口支持 |\n| 代码复用 | 复用父类实现 | 复用组件功能 |\n\n### 继承的问题\n\n```java\n// 继承打破了封装性\nclass Stack<E> extends ArrayList<E> {\n    public void push(E item) { add(item); }\n    public E pop() { return remove(size() - 1); }\n    // 问题：ArrayList 的 add(index, element) 也被暴露\n    // 调用者可以绕过 Stack 的接口直接操作内部\n}\n```\n\n### 选择建议\n\n使用继承：\n- 真正的 is-a 关系（Dog is a Animal）\n- 需要多态\n- 子类是父类的特化\n- 框架要求（如 Exception 体系）\n\n使用组合：\n- has-a 关系（Order has a User）\n- 需要运行时灵活性\n- 复用功能但不想暴露内部\n- 需要复用多个组件的能力\n\n### 最佳实践\n\n- 优先考虑组合，继承是最后的选择。\n- 继承时用 `final` 限制子类，或用 `sealed` 限制继承范围。\n- 接口 + 组合 = 更灵活的设计。\n- Java 集合框架中大量使用组合（如 Collections.unmodifiableList 包装了 List）。",
+    "tags": [
+      "组合",
+      "继承",
+      "设计原则"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-015",
+    "module": "Java面向对象",
+    "difficulty": 1,
+    "question": "Java 中对象创建的过程是怎样的？",
+    "answer": "## 核心概念\n\nJava 对象的创建涉及类加载、内存分配、初始化等多个步骤。理解这个过程有助于排查问题和优化性能。\n\n### 创建过程\n\n```java\nUser user = new User(\"Alice\", 25);\n```\n\n1. **检查类加载**：检查 `User` 类是否已加载，未加载则触发类加载（加载 → 链接 → 初始化）。\n2. **分配内存**：在堆中分配对象所需内存（指针碰撞或空闲列表）。\n3. **内存初始化**：将分配的内存初始化为零值（0、null、false）。\n4. **设置对象头**：设置 Mark Word（哈希码、GC 分代年龄、锁状态）和类型指针。\n5. **执行构造器**：执行 `<init>` 方法，包括实例初始化块和构造函数。\n\n### 代码示例\n\n```java\npublic class User {\n    private String name;\n    private int age;\n\n    // 实例初始化块 —— 编译后合并到构造器中\n    {\n        System.out.println(\"Instance init block\");\n    }\n\n    // 构造器\n    public User(String name, int age) {\n        super();  // 第一步：调用父类构造器\n        this.name = name;  // 第二步：执行构造器体\n        this.age = age;\n    }\n}\n```\n\n### 对象内存布局\n\n```\n+------------------+\n|   对象头 (12B)    |  Mark Word (8B) + 类型指针 (4B，压缩指针)\n+------------------+\n|   实例数据        |  name 引用 (4B) + age int (4B)\n+------------------+\n|   对齐填充        |  凑齐 8 字节倍数\n+------------------+\n```\n\n### 构造器执行顺序\n\n```java\nclass Parent {\n    { System.out.println(\"Parent init block\"); }\n    Parent() { System.out.println(\"Parent constructor\"); }\n}\n\nclass Child extends Parent {\n    { System.out.println(\"Child init block\"); }\n    Child() { super(); System.out.println(\"Child constructor\"); }\n}\n\n// new Child() 输出：\n// Parent init block\n// Parent constructor\n// Child init block\n// Child constructor\n```\n\n### 关键要点\n\n- `super()` 必须是构造器的第一条语句。\n- 如果没有显式调用 `super()`，编译器自动插入无参 `super()`。\n- 静态初始化块在类加载时执行，只执行一次。\n- 实例初始化块在每次创建对象时执行，在 `super()` 之后、构造器体之前。\n\n### 注意事项\n\n- 对象创建的开销不仅仅是 `new` 语句，还包括类加载检查和初始化。\n- 小对象分配在 TLAB（线程本地分配缓冲区）中，无需加锁。\n- 频繁创建小对象可以考虑对象池（但现代 GC 已经非常高效）。",
+    "tags": [
+      "对象创建",
+      "初始化",
+      "内存布局"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-016",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Java 中的 `this` 和 `super` 关键字分别是什么？有什么使用限制？",
+    "answer": "## 核心概念\n\n`this` 代表当前对象的引用，`super` 代表父类的引用。两者用于解决命名冲突、调用构造器和访问被隐藏的成员。\n\n### this 的用法\n\n```java\npublic class User {\n    private String name;\n    private int age;\n\n    // 1. 区分同名变量（参数 vs 字段）\n    public User(String name, int age) {\n        this.name = name;\n        this.age = age;\n    }\n\n    // 2. 调用其他构造器（必须是第一条语句）\n    public User() {\n        this(\"Unknown\", 0);  // 调用 User(String, int)\n    }\n\n    // 3. 传递当前对象引用\n    public void register(EventBus bus) {\n        bus.subscribe(\"update\", this::onUpdate);\n    }\n\n    // 4. 返回当前对象（链式调用）\n    public User setName(String name) {\n        this.name = name;\n        return this;\n    }\n}\n```\n\n### super 的用法\n\n```java\npublic class Employee extends User {\n    private String department;\n\n    // 1. 调用父类构造器\n    public Employee(String name, int age, String dept) {\n        super(name, age);  // 调用父类构造器，必须是第一条语句\n        this.department = dept;\n    }\n\n    // 2. 访问父类被覆写的方法\n    @Override\n    public String toString() {\n        return super.toString() + \", dept=\" + department;\n    }\n\n    // 3. 访问父类被隐藏的字段\n    // （字段隐藏很少见，不推荐）\n}\n```\n\n### 使用限制\n\n| 限制 | this | super |\n|------|------|-------|\n| 静态方法中 | 不能使用 | 不能使用 |\n| 构造器调用 | `this()` 必须第一条 | `super()` 必须第一条 |\n| 不能同时使用 | `this()` 和 `super()` 不能同时出现 |\n| final 类 | 可以使用 | 不能有子类所以不会出现 |\n\n### 关键要点\n\n- `this()` 和 `super()` 不能在同一个构造器中使用。\n- 编译器会自动插入 `super()` 如果父类有无参构造器。\n- 静态上下文中不能使用 `this` 和 `super`（没有实例）。\n- `this` 可以作为参数传递，`super` 不行。\n- `super` 不能用于访问父类的 `private` 成员。",
+    "tags": [
+      "this",
+      "super",
+      "构造器"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-017",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Java 中的类型转换有哪些？向上转型和向下转型有什么区别？",
+    "answer": "## 核心概念\n\nJava 中的类型转换分为基本类型转换（自动拓宽/强制缩窄）和引用类型转换（向上转型/向下转型）。引用类型转换涉及多态和类型安全。\n\n### 向上转型（Upcasting）\n\n子类引用赋值给父类引用，自动完成，安全。\n\n```java\nDog dog = new Dog();\nAnimal animal = dog;  // 向上转型，自动\nAnimal animal2 = new Dog();  // 向上转型\n\n// 向上转型后只能访问父类的方法和字段\nanimal.eat();   // 可以\n// animal.bark(); // 编译错误，Animal 没有 bark()\n```\n\n### 向下转型（Downcasting）\n\n父类引用赋值给子类引用，需要显式转换，可能失败。\n\n```java\nAnimal animal = new Dog();\nDog dog = (Dog) animal;  // 向下转型，显式\n// animal.bark();  // 向下转型后可以访问子类方法\n\n// 危险的向下转型\nAnimal cat = new Cat();\nDog d = (Dog) cat;  // ClassCastException！\n```\n\n### 安全的向下转型\n\n```java\n// 使用 instanceof 检查\nif (animal instanceof Dog) {\n    Dog dog = (Dog) animal;  // 安全\n    dog.bark();\n}\n\n// Java 16+ 模式匹配\nif (animal instanceof Dog dog) {\n    dog.bark();  // 直接使用\n}\n```\n\n### 基本类型转换\n\n```java\n// 自动拓宽（安全）\nint i = 100;\nlong l = i;      // int → long，自动\ndouble d = i;    // int → double，自动\n\n// 强制缩窄（可能丢失精度）\ndouble d = 3.14;\nint i = (int) d;  // 3，截断小数\n\nbyte b = (byte) 128;  // -128，溢出\n```\n\n### 关键要点\n\n- 向上转型总是安全的，不需要显式转换。\n- 向下转型必须用 `instanceof` 检查，否则可能 `ClassCastException`。\n- 接口之间不能相互转换（除非有继承关系）。\n- `ClassCastException` 是运行时异常，编译器无法检查。\n- 数组协变：`String[]` 可以赋值给 `Object[]`，但存储非 String 元素会抛异常。\n\n### 最佳实践\n\n- 优先使用多态而非向下转型。\n- 必须向下转型时先用 `instanceof` 检查。\n- Java 16+ 使用模式匹配简化类型检查和转换。\n- 考虑用泛型替代类型转换。",
+    "tags": [
+      "类型转换",
+      "向上转型",
+      "向下转型"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-018",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Java 中接口的默认方法（default method）是什么？会带来什么问题？",
+    "answer": "## 核心概念\n\nJava 8 引入接口默认方法，允许在接口中提供方法的默认实现。这是为了在不破坏现有实现的情况下向接口添加新方法。\n\n### 代码示例\n\n```java\n// 默认方法\npublic interface List<E> {\n    // 抽象方法\n    int size();\n    E get(int index);\n\n    // Java 8 新增的默认方法\n    default void sort(Comparator<? super E> c) {\n        Object[] a = this.toArray();\n        Arrays.sort(a, (Comparator) c);\n        ListIterator<E> i = this.listIterator();\n        for (Object e : a) {\n            i.next();\n            i.set((E) e);\n        }\n    }\n\n    default Spliterator<E> spliterator() {\n        return Spliterators.spliterator(this, Spliterator.ORDERED);\n    }\n}\n\n// 自定义默认方法\npublic interface Loggable {\n    String getLogTag();\n\n    default void log(String message) {\n        System.out.println(\"[\" + getLogTag() + \"] \" + message);\n    }\n\n    default void logError(String message, Throwable t) {\n        System.err.println(\"[\" + getLogTag() + \"] ERROR: \" + message);\n        t.printStackTrace();\n    }\n}\n\nclass UserService implements Loggable {\n    @Override\n    public String getLogTag() { return \"UserService\"; }\n\n    // 自动拥有 log() 和 logError() 方法\n}\n```\n\n### 菱形问题（Diamond Problem）\n\n```java\ninterface A {\n    default void hello() { System.out.println(\"A\"); }\n}\n\ninterface B {\n    default void hello() { System.out.println(\"B\"); }\n}\n\n// 必须解决冲突\nclass C implements A, B {\n    @Override\n    public void hello() {\n        A.super.hello();  // 选择 A 的实现\n        // 或者 B.super.hello();\n        // 或者自己的实现\n    }\n}\n```\n\n### 冲突解决规则\n\n1. 类中的方法优先于接口中的默认方法。\n2. 子接口的默认方法优先于父接口。\n3. 以上规则无法解决时，必须显式覆写。\n\n### 关键要点\n\n- 默认方法不会被 `Object` 类的方法匹配（`toString`、`equals` 等）。\n- 默认方法可以被实现类覆写。\n- 接口中的静态方法不能被实现类继承。\n- 默认方法让接口有了类似抽象类的能力，但仍然没有状态（字段）。\n\n### 最佳实践\n\n- 默认方法用于接口的向后兼容扩展。\n- 不要过度使用默认方法，避免接口变成 \"胖接口\"。\n- 设计 API 时考虑默认方法的冲突风险。\n- 函数式接口（一个抽象方法）可以有多个默认方法。",
+    "tags": [
+      "默认方法",
+      "接口",
+      "Java8"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-019",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Java 中的 `instanceof` 是什么？Java 16+ 的模式匹配有什么改进？",
+    "answer": "## 核心概念\n\n`instanceof` 用于在运行时检查对象是否是某个类型或其子类型的实例。Java 16 引入了模式匹配，将类型检查和类型转换合并为一步。\n\n### 传统用法\n\n```java\n// 传统 instanceof + 强转\nif (obj instanceof String) {\n    String s = (String) obj;  // 冗余的强转\n    System.out.println(s.length());\n}\n\n// 链式检查\nif (obj instanceof String) {\n    String s = (String) obj;\n    // ...\n} else if (obj instanceof Integer) {\n    Integer i = (Integer) obj;\n    // ...\n}\n```\n\n### Java 16+ 模式匹配\n\n```java\n// 类型模式匹配\nif (obj instanceof String s) {\n    System.out.println(s.length());  // 直接使用 s\n}\n\n// 变量在 && 条件中可见\nif (obj instanceof String s && s.length() > 3) {\n    System.out.println(s.toUpperCase());\n}\n\n// 注意：|| 条件中不可见\n// if (obj instanceof String s || s.length() > 0) { } // 编译错误\n\n// switch 模式匹配 (Java 21+)\nString result = switch (obj) {\n    case String s && s.length() > 5 -> \"长字符串: \" + s;\n    case String s -> \"短字符串: \" + s;\n    case Integer i -> \"整数: \" + i;\n    case null -> \"null\";\n    default -> \"其他\";\n};\n```\n\n### null 处理\n\n```java\n// instanceof 对 null 返回 false\nSystem.out.println(null instanceof String);  // false\n\n// Java 21 switch 可以显式处理 null\nswitch (obj) {\n    case null -> System.out.println(\"null\");\n    case String s -> System.out.println(s);\n    default -> System.out.println(\"other\");\n}\n```\n\n### 关键要点\n\n- `instanceof` 对 `null` 返回 `false`，不会抛异常。\n- 模式匹配变量在条件为 true 的代码块内有效。\n- 结合密封类（Sealed Classes），编译器可以检查 switch 的穷尽性。\n- 模式匹配减少了样板代码和出错机会。\n\n### 最佳实践\n\n- Java 16+ 优先使用模式匹配替代传统的 instanceof + 强转。\n- 结合 Records 和 Sealed Classes 实现类型安全的分支处理。\n- 过多的 instanceof 检查可能是设计问题，考虑用多态替代。",
+    "tags": [
+      "instanceof",
+      "模式匹配",
+      "类型检查"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "java-oop-020",
+    "module": "Java面向对象",
+    "difficulty": 2,
+    "question": "Builder 模式是什么？在 Java 中如何实现？",
+    "answer": "## 核心概念\n\nBuilder 模式将复杂对象的构建过程与其表示分离，允许用同样的构建过程创建不同的表示。特别适合参数多、部分可选的对象创建。\n\n### 代码示例\n\n```java\npublic class HttpRequest {\n    private final String url;\n    private final String method;\n    private final Map<String, String> headers;\n    private final String body;\n    private final int timeout;\n    private final boolean followRedirects;\n\n    private HttpRequest(Builder builder) {\n        this.url = builder.url;\n        this.method = builder.method;\n        this.headers = Map.copyOf(builder.headers);\n        this.body = builder.body;\n        this.timeout = builder.timeout;\n        this.followRedirects = builder.followRedirects;\n    }\n\n    // Getter 方法\n    public String getUrl() { return url; }\n    public String getMethod() { return method; }\n    // ...\n\n    public static class Builder {\n        private final String url;           // 必选参数\n        private String method = \"GET\";      // 可选参数，有默认值\n        private Map<String, String> headers = new HashMap<>();\n        private String body;\n        private int timeout = 30000;\n        private boolean followRedirects = true;\n\n        public Builder(String url) {\n            this.url = Objects.requireNonNull(url);\n        }\n\n        public Builder method(String method) { this.method = method; return this; }\n        public Builder header(String key, String value) { headers.put(key, value); return this; }\n        public Builder body(String body) { this.body = body; return this; }\n        public Builder timeout(int timeout) { this.timeout = timeout; return this; }\n        public Builder followRedirects(boolean follow) { this.followRedirects = follow; return this; }\n\n        public HttpRequest build() {\n            return new HttpRequest(this);\n        }\n    }\n}\n\n// 使用\nHttpRequest request = new HttpRequest.Builder(\"https://api.example.com\")\n    .method(\"POST\")\n    .header(\"Content-Type\", \"application/json\")\n    .body(\"{\\\"key\\\": \\\"value\\\"}\")\n    .timeout(5000)\n    .build();\n```\n\n### Lombok 简化\n\n```java\n@Builder\npublic class HttpRequest {\n    private String url;\n    private String method;\n    private Map<String, String> headers;\n    private String body;\n    private int timeout;\n    private boolean followRedirects;\n}\n```\n\n### 关键要点\n\n- Builder 通常作为静态内部类。\n- `build()` 方法可以做参数校验。\n- 链式调用（Fluent API）提高可读性。\n- 构建完成后对象通常是不可变的。\n\n### 适用场景\n\n- 构造函数参数超过 4 个，尤其是部分参数可选。\n- 需要创建不可变对象。\n- 需要灵活组合配置（如 HTTP 请求、SQL 查询构建）。\n- telescoping constructor 反模式的替代方案。\n\n### 与其他方式对比\n\n| 方式 | 优点 | 缺点 |\n|------|------|------|\n| 构造函数 | 简单 | 参数多时不可读 |\n| JavaBeans (setter) | 灵活 | 可变、不安全 |\n| Builder | 可读、不可变、安全 | 代码量大 |",
+    "tags": [
+      "Builder模式",
+      "设计模式",
+      "创建型"
+    ],
+    "source": "高频"
+  }
+]

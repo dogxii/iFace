@@ -1,0 +1,510 @@
+[
+  {
+    "id": "ai-app-001",
+    "module": "AI应用实践",
+    "difficulty": 1,
+    "question": "什么是多轮对话中的上下文窗口？它对LLM应用有什么影响？",
+    "answer": "## 核心概念\n\n上下文窗口(Context Window)是指LLM在一次推理过程中能够处理的最大Token数量，包括输入（系统提示、历史对话、用户当前消息）和输出（模型回复）。不同模型的上下文窗口大小不同，如GPT-4支持128K tokens，Claude支持200K tokens。\n\n## 原理与影响\n\n当对话轮次增多，历史消息累积会逐渐逼近甚至超出上下文窗口限制：\n\n- **成本增加**：Token数越多，API调用费用越高\n- **延迟增大**：处理更长的输入需要更多计算时间\n- **注意力稀释**：模型对中间部分信息的注意力可能下降（Lost in the Middle现象）\n- **截断风险**：超出窗口限制会导致早期对话内容丢失\n\n```python\n# 示例：检查Token用量\ndef check_context_usage(messages, model_limit=128000):\n    total_tokens = count_tokens(messages)\n    usage_ratio = total_tokens / model_limit\n    if usage_ratio > 0.8:\n        return \"WARNING\", f\"上下文使用率 {usage_ratio:.0%}，建议压缩\"\n    return \"OK\", f\"上下文使用率 {usage_ratio:.0%}\"\n```\n\n## 关键要点\n\n1. 上下文窗口是硬限制，超出会导致API报错\n2. 不同模型的定价策略不同，长上下文通常更贵\n3. 需要在信息保留和成本之间做权衡\n4. 系统提示和工具定义也会占用上下文空间\n\n## 工程实践\n\n建议在生产系统中：实时监控Token用量，设置阈值（如80%）触发上下文压缩；将系统提示、工具定义等固定内容单独计算；预留足够的输出空间（一般预留2000-4000 tokens）。",
+    "tags": [
+      "多轮对话",
+      "上下文窗口",
+      "Token管理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-002",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "如何实现滑动窗口策略来管理多轮对话历史？",
+    "answer": "## 核心概念\n\n滑动窗口(Sliding Window)是一种对话历史管理策略，通过维护固定长度的近期对话记录，当对话超出窗口大小时，丢弃最早的对话轮次，保留最新的上下文信息。\n\n## 实现原理\n\n```python\nfrom collections import deque\n\nclass SlidingWindowMemory:\n    def __init__(self, max_turns=10, max_tokens=8000):\n        self.messages = deque()\n        self.max_turns = max_turns\n        self.max_tokens = max_tokens\n        self.system_prompt = None\n\n    def add_message(self, role, content):\n        self.messages.append({\"role\": role, \"content\": content})\n        # 优先按轮次裁剪\n        while len(self.messages) > self.max_turns * 2:\n            self.messages.popleft()\n        # 再按Token裁剪\n        while self._count_tokens() > self.max_tokens:\n            self.messages.popleft()\n\n    def get_messages(self):\n        if self.system_prompt:\n            return [self.system_prompt] + list(self.messages)\n        return list(self.messages)\n```\n\n滑动窗口的核心优势是实现简单、行为可预测，但可能丢失早期重要信息。\n\n## 关键要点\n\n1. 窗口大小需要根据业务场景调整（客服场景可能需要更长窗口）\n2. 建议始终保留系统提示，不参与滑动\n3. 可以结合\"锚点消息\"机制，在窗口滑动时保留关键事实\n4. Token计数需要考虑不同模型的Tokenizer差异\n\n## 工程实践\n\n生产环境中推荐：使用Token数而非轮次作为窗口边界；实现双向滑动，既能向前裁剪也能按重要性裁剪；配合消息摘要机制，在丢弃前生成摘要保留关键信息。",
+    "tags": [
+      "多轮对话",
+      "滑动窗口",
+      "对话管理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-003",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "对话历史摘要压缩有哪些策略？如何实现渐进式摘要？",
+    "answer": "## 核心概念\n\n对话摘要压缩是在上下文窗口不足时，将较长的对话历史压缩为更短的摘要，保留关键信息的同时减少Token占用。主要策略包括：\n\n- **一次性摘要**：将整段历史用LLM压缩为一段摘要\n- **渐进式摘要**：随着对话进行，持续更新和合并摘要\n- **分层摘要**：对不同时段的对话分别摘要后再合并\n\n## 渐进式摘要实现\n\n```python\nimport asyncio\n\nclass ProgressiveSummarizer:\n    def __init__(self, llm_client, token_threshold=6000):\n        self.llm = llm_client\n        self.token_threshold = token_threshold\n        self.summary = \"\"\n        self.recent_messages = []\n\n    async def add_and_maybe_summarize(self, role, content):\n        self.recent_messages.append({\"role\": role, \"content\": content})\n        if count_tokens(self.recent_messages) > self.token_threshold:\n            await self._compress()\n\n    async def _compress(self):\n        # 取前半部分进行摘要\n        half = len(self.recent_messages) // 2\n        to_summarize = self.recent_messages[:half]\n        self.recent_messages = self.recent_messages[half:]\n\n        prompt = f\"\"\"请将以下对话历史压缩为简洁摘要，保留关键事实、\n用户意图和重要决策。已有摘要：{self.summary}\n\n对话内容：{format_messages(to_summarize)}\"\"\"\n        self.summary = await self.llm.generate(prompt)\n\n    def get_context(self):\n        result = []\n        if self.summary:\n            result.append({\"role\": \"system\",\n                          \"content\": f\"历史摘要：{self.summary}\"})\n        result.extend(self.recent_messages)\n        return result\n```\n\n## 关键要点\n\n1. 摘要压缩会引入信息损失，需要评估关键信息保留率\n2. 渐进式摘要比一次性摘要更平滑，避免突然的大规模压缩\n3. 摘要质量取决于LLM能力，建议使用较强的模型做摘要\n4. 可以为不同类型的信息设置不同的保留优先级\n\n## 工程实践\n\n推荐方案：设置多级阈值（如60%触发轻量压缩、80%触发深度压缩）；对结构化信息（如用户偏好、订单号）提取到独立存储而非放入摘要；定期评估摘要质量，监控信息丢失情况。",
+    "tags": [
+      "多轮对话",
+      "摘要压缩",
+      "渐进式摘要"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-004",
+    "module": "AI应用实践",
+    "difficulty": 1,
+    "question": "什么是Function Calling？它在LLM应用中的作用是什么？",
+    "answer": "## 核心概念\n\nFunction Calling是LLM的一项能力，允许模型在对话过程中识别何时需要调用外部工具或函数，并生成结构化的调用参数。模型本身不执行函数，而是输出调用意图，由应用程序负责实际执行并将结果返回给模型。\n\n## 工作原理\n\n```json\n// 1. 定义工具\n{\n  \"tools\": [{\n    \"type\": \"function\",\n    \"function\": {\n      \"name\": \"get_weather\",\n      \"description\": \"获取指定城市的天气信息\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"city\": {\"type\": \"string\", \"description\": \"城市名称\"},\n          \"unit\": {\"type\": \"string\", \"enum\": [\"celsius\", \"fahrenheit\"]}\n        },\n        \"required\": [\"city\"]\n      }\n    }\n  }]\n}\n\n// 2. 模型返回调用意图\n{\n  \"tool_calls\": [{\n    \"function\": {\n      \"name\": \"get_weather\",\n      \"arguments\": \"{\\\"city\\\": \\\"北京\\\"}\"\n    }\n  }]\n}\n```\n\n## 关键要点\n\n1. Function Calling将LLM从纯文本生成器变为可与外部系统交互的智能体\n2. 工具定义的质量直接影响模型调用的准确性\n3. 模型生成的参数需要验证后再执行，防止注入攻击\n4. 返回结果的格式需要精心设计，平衡信息量和Token消耗\n\n## 工程实践\n\n建议：为每个工具编写清晰的描述和参数说明；实现参数校验层防止非法输入；设置超时和重试机制处理函数执行失败；记录所有调用日志用于调试和审计。",
+    "tags": [
+      "Function Calling",
+      "工具调用",
+      "LLM能力"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-005",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "Function Calling的完整调用流程是怎样的？如何实现工具注册和调度？",
+    "answer": "## 核心概念\n\nFunction Calling的完整流程包括：工具注册 -> 用户消息发送 -> 模型决策 -> 参数解析 -> 函数执行 -> 结果回传 -> 模型总结。这是一个多步交互过程，需要应用层精心编排。\n\n## 完整实现\n\n```python\nclass ToolRegistry:\n    def __init__(self):\n        self.tools = {}\n        self.schemas = []\n\n    def register(self, name, func, schema):\n        self.tools[name] = func\n        self.schemas.append(schema)\n\nasync def run_conversation(user_msg, registry, llm_client):\n    messages = [{\"role\": \"user\", \"content\": user_msg}]\n\n    while True:\n        response = await llm_client.chat(\n            messages=messages,\n            tools=registry.schemas\n        )\n\n        # 模型决定直接回复，流程结束\n        if not response.tool_calls:\n            return response.content\n\n        # 执行所有工具调用\n        messages.append(response.message)\n        for call in response.tool_calls:\n            func = registry.tools[call.function.name]\n            args = json.loads(call.function.arguments)\n            try:\n                result = await func(**args)\n                messages.append({\n                    \"role\": \"tool\",\n                    \"tool_call_id\": call.id,\n                    \"content\": json.dumps(result, ensure_ascii=False)\n                })\n            except Exception as e:\n                messages.append({\n                    \"role\": \"tool\",\n                    \"tool_call_id\": call.id,\n                    \"content\": f\"错误：{str(e)}\"\n                })\n```\n\n## 关键要点\n\n1. 工具注册需要提供JSON Schema格式的参数定义\n2. 模型可能在一个回复中请求多个工具调用\n3. 工具执行结果需要正确关联到对应的tool_call_id\n4. 循环调用需要设置最大迭代次数防止无限循环\n\n## 工程实践\n\n生产环境建议：设置最大工具调用轮次（通常5-10次）；对工具执行结果进行长度截断避免上下文溢出；实现工具执行的并发控制；添加详细的日志记录每次工具调用。",
+    "tags": [
+      "Function Calling",
+      "工具注册",
+      "调用流程"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-006",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "如何实现Function Calling的并行调用？有哪些注意事项？",
+    "answer": "## 核心概念\n\n并行Function Calling是指模型在一次回复中同时请求多个独立的工具调用，应用层可以并发执行这些调用以减少总延迟。例如用户问\"北京和上海今天天气怎么样\"，模型可能同时请求两个get_weather调用。\n\n## 实现方案\n\n```python\nimport asyncio\n\nasync def execute_parallel_calls(tool_calls, registry):\n    \"\"\"并行执行多个工具调用\"\"\"\n    async def execute_single(call):\n        func = registry.tools[call.function.name]\n        args = json.loads(call.function.arguments)\n        try:\n            result = await asyncio.wait_for(\n                func(**args), timeout=30\n            )\n            return {\n                \"tool_call_id\": call.id,\n                \"content\": json.dumps(result, ensure_ascii=False)\n            }\n        except asyncio.TimeoutError:\n            return {\n                \"tool_call_id\": call.id,\n                \"content\": \"错误：工具执行超时\"\n            }\n        except Exception as e:\n            return {\n                \"tool_call_id\": call.id,\n                \"content\": f\"错误：{str(e)}\"\n            }\n\n    tasks = [execute_single(call) for call in tool_calls]\n    results = await asyncio.gather(*tasks, return_exceptions=True)\n\n    # 构建tool消息列表\n    tool_messages = []\n    for r in results:\n        if isinstance(r, Exception):\n            continue\n        tool_messages.append({\n            \"role\": \"tool\",\n            \"tool_call_id\": r[\"tool_call_id\"],\n            \"content\": r[\"content\"]\n        })\n    return tool_messages\n```\n\n## 关键要点\n\n1. 并行调用的前提是各工具调用之间没有依赖关系\n2. 需要设置合理的超时时间，避免单个慢调用拖累整体\n3. 某些工具可能有速率限制，需要做并发控制\n4. 部分模型对并行调用的支持程度不同\n\n## 工程实践\n\n建议：使用信号量限制最大并发数；对每个工具调用设置独立超时；实现降级策略，单个工具失败时返回部分结果；记录每个工具的执行耗时用于性能优化。",
+    "tags": [
+      "Function Calling",
+      "并行调用",
+      "异步执行"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-007",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "Function Calling中如何进行错误处理和重试？",
+    "answer": "## 核心概念\n\nFunction Calling的错误处理涵盖多个层面：模型生成无效参数、工具执行超时、外部服务不可用、返回结果格式异常等。完善的错误处理机制是生产级Agent系统的基石。\n\n## 错误处理实现\n\n```python\nclass RobustToolExecutor:\n    def __init__(self, max_retries=2):\n        self.max_retries = max_retries\n\n    async def execute_with_retry(self, call, func):\n        args = json.loads(call.function.arguments)\n\n        # 参数校验\n        if not self._validate_args(args, call.function.name):\n            return self._format_error(call.id, \"参数校验失败\")\n\n        last_error = None\n        for attempt in range(self.max_retries + 1):\n            try:\n                result = await asyncio.wait_for(\n                    func(**args), timeout=30\n                )\n                return {\n                    \"tool_call_id\": call.id,\n                    \"content\": json.dumps(result)\n                }\n            except asyncio.TimeoutError:\n                last_error = \"执行超时\"\n            except ConnectionError:\n                last_error = \"服务连接失败\"\n            except Exception as e:\n                last_error = str(e)\n                # 某些错误不应重试\n                if \"permission\" in str(e).lower():\n                    break\n\n            if attempt < self.max_retries:\n                await asyncio.sleep(2 ** attempt)\n\n        return self._format_error(call.id, last_error)\n\n    def _format_error(self, call_id, error_msg):\n        return {\n            \"tool_call_id\": call_id,\n            \"content\": f\"工具调用失败：{error_msg}，请向用户说明情况。\"\n        }\n```\n\n## 关键要点\n\n1. 错误信息应以模型可理解的方式返回，便于模型向用户解释\n2. 区分可重试错误（超时、网络）和不可重试错误（权限、参数）\n3. 使用指数退避策略避免重试风暴\n4. 参数校验应在执行前进行，提前拦截无效调用\n\n## 工程实践\n\n推荐：实现结构化错误码体系；将详细错误信息记录到日志，但给模型返回简化的错误描述；对高频工具实现熔断机制；监控工具调用成功率，设置告警阈值。",
+    "tags": [
+      "Function Calling",
+      "错误处理",
+      "重试机制"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-008",
+    "module": "AI应用实践",
+    "difficulty": 1,
+    "question": "Agent的短期记忆和长期记忆分别是什么？如何实现？",
+    "answer": "## 核心概念\n\nAgent记忆机制借鉴了认知科学的记忆分类：\n\n- **短期记忆(Short-term Memory)**：当前对话会话中的上下文信息，存储在对话历史中，会话结束即丢失\n- **长期记忆(Long-term Memory)**：跨会话持久化的信息，如用户偏好、历史交互摘要，通常存储在数据库中\n- **工作记忆(Working Memory)**：当前任务执行过程中的中间状态和临时信息\n\n## 实现方案\n\n```python\nfrom datetime import datetime\nimport hashlib\n\nclass AgentMemory:\n    def __init__(self, vector_store, kv_store):\n        self.short_term = []  # 列表存储当前对话\n        self.vector_store = vector_store  # 向量数据库\n        self.kv_store = kv_store  # 键值存储\n\n    # 短期记忆：直接维护对话列表\n    def add_short_term(self, role, content):\n        self.short_term.append({\n            \"role\": role,\n            \"content\": content,\n            \"timestamp\": datetime.now().isoformat()\n        })\n\n    # 长期记忆：存入向量数据库\n    async def save_long_term(self, user_id, content, metadata):\n        embedding = await get_embedding(content)\n        await self.vector_store.upsert({\n            \"id\": hashlib.md5(content.encode()).hexdigest(),\n            \"vector\": embedding,\n            \"metadata\": {**metadata, \"user_id\": user_id}\n        })\n\n    # 检索相关长期记忆\n    async def recall(self, query, user_id, top_k=5):\n        embedding = await get_embedding(query)\n        results = await self.vector_store.query(\n            vector=embedding,\n            filter={\"user_id\": user_id},\n            top_k=top_k\n        )\n        return results\n```\n\n## 关键要点\n\n1. 短期记忆实现简单，但受上下文窗口限制\n2. 长期记忆需要向量检索支持，涉及Embedding和相似度计算\n3. 记忆的写入和检索时机需要根据业务场景设计\n4. 过时的长期记忆需要有淘汰机制\n\n## 工程实践\n\n建议：短期记忆配合滑动窗口和摘要机制；长期记忆按类型分区（事实、偏好、事件）；实现记忆去重避免冗余；定期清理过期记忆节省存储成本。",
+    "tags": [
+      "Agent记忆",
+      "短期记忆",
+      "长期记忆"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-009",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "如何用向量数据库实现Agent的长期记忆存储和检索？",
+    "answer": "## 核心概念\n\n向量数据库长期记忆是将Agent的历史交互、学到的知识以向量形式存储，在需要时通过语义相似度检索召回相关信息。相比关键词匹配，向量检索能捕捉语义层面的相关性。\n\n## 实现方案\n\n```python\nfrom datetime import datetime\n\nclass VectorMemoryStore:\n    def __init__(self, embedding_model, vector_db):\n        self.embedding = embedding_model\n        self.db = vector_db\n\n    async def memorize(self, content, user_id, memory_type=\"fact\"):\n        \"\"\"存储一条记忆\"\"\"\n        vector = await self.embedding.encode(content)\n        await self.db.upsert(vectors=[{\n            \"id\": generate_id(content),\n            \"values\": vector,\n            \"metadata\": {\n                \"content\": content,\n                \"user_id\": user_id,\n                \"type\": memory_type,\n                \"created_at\": datetime.now().isoformat(),\n                \"access_count\": 0\n            }\n        }])\n\n    async def recall(self, query, user_id, top_k=5, types=None):\n        \"\"\"检索相关记忆\"\"\"\n        vector = await self.embedding.encode(query)\n        filter_dict = {\"user_id\": user_id}\n        if types:\n            filter_dict[\"type\"] = {\"$in\": types}\n\n        results = await self.db.query(\n            vector=vector,\n            top_k=top_k,\n            filter=filter_dict,\n            include_metadata=True\n        )\n\n        # 更新访问计数（用于淘汰策略）\n        for r in results:\n            await self._update_access(r.id)\n\n        return [r.metadata[\"content\"] for r in results]\n```\n\n向量检索的优势在于语义理解——用户说\"我不吃辣\"和\"请推荐清淡的菜品\"能被关联起来。\n\n## 关键要点\n\n1. Embedding模型的选择直接影响检索质量\n2. 元数据过滤能大幅提高检索精度和速度\n3. 记忆的粒度需要权衡（太粗难以精确匹配，太细缺乏上下文）\n4. 访问频率可用于记忆重要性评估和淘汰决策\n\n## 工程实践\n\n推荐：对记忆内容做分段摘要后再向量化；使用混合检索（向量+关键词）提高召回率；实现记忆合并机制，避免相似记忆累积；设置存储上限和LRU淘汰策略。",
+    "tags": [
+      "Agent记忆",
+      "向量数据库",
+      "语义检索"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-010",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "什么是工作记忆(Working Memory)？它在复杂任务执行中如何发挥作用？",
+    "answer": "## 核心概念\n\n工作记忆是Agent在执行当前任务时维护的临时信息存储，类似于人类的\"心理工作台\"。它保存当前任务的目标、已完成的步骤、中间结果和待处理的子任务，任务完成后可选择性地将有价值的信息转入长期记忆。\n\n## 实现方案\n\n```python\nclass WorkingMemory:\n    def __init__(self):\n        self.goal = None          # 当前任务目标\n        self.plan = []            # 执行计划\n        self.current_step = 0     # 当前步骤\n        self.scratchpad = {}      # 临时计算结果\n        self.constraints = []     # 约束条件\n        self.context_vars = {}    # 上下文变量\n\n    def set_goal(self, goal, constraints=None):\n        self.goal = goal\n        self.constraints = constraints or []\n\n    def set_plan(self, steps):\n        self.plan = steps\n        self.current_step = 0\n\n    def record_step_result(self, step_idx, result):\n        self.scratchpad[f\"step_{step_idx}\"] = {\n            \"result\": result,\n            \"timestamp\": datetime.now().isoformat()\n        }\n        self.current_step = step_idx + 1\n\n    def get_progress_summary(self):\n        completed = len(self.scratchpad)\n        total = len(self.plan)\n        return {\n            \"goal\": self.goal,\n            \"progress\": f\"{completed}/{total}\",\n            \"current_task\": self.plan[self.current_step]\n                      if self.current_step < total else \"已完成\",\n            \"results\": self.scratchpad\n        }\n\n    def to_prompt_context(self):\n        \"\"\"转换为适合注入Prompt的格式\"\"\"\n        return f\"\"\"当前目标：{self.goal}\n进度：{self.get_progress_summary()['progress']}\n已完成结果：{json.dumps(self.scratchpad, ensure_ascii=False)}\n约束条件：{self.constraints}\"\"\"\n```\n\n## 关键要点\n\n1. 工作记忆需要快速读写，通常使用内存存储\n2. 它是实现ReAct、Plan-and-Execute等Agent架构的关键组件\n3. 工作记忆的内容需要精简地注入到Prompt中\n4. 任务结束后需要决定哪些信息持久化到长期记忆\n\n## 工程实践\n\n建议：将工作记忆序列化为结构化Prompt片段；实现记忆压缩避免占用过多上下文；对长时间任务实现检查点(checkpoint)机制；结合任务状态机管理记忆生命周期。",
+    "tags": [
+      "Agent记忆",
+      "工作记忆",
+      "任务管理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-011",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "什么是层级式(Hierarchical)多Agent协作架构？",
+    "answer": "## 核心概念\n\n层级式多Agent协作是指多个Agent按照上下级关系组织，由一个主控Agent(Orchestrator)负责任务分解、分配和结果汇总，子Agent各自负责特定领域的执行。这种架构模拟了人类组织中的管理层级结构。\n\n## 实现方案\n\n```python\nclass OrchestratorAgent:\n    def __init__(self, sub_agents, llm):\n        self.agents = {a.name: a for a in sub_agents}\n        self.llm = llm\n\n    async def execute(self, user_request):\n        # 1. 任务分解\n        plan = await self.llm.generate(f\"\"\"\n用户请求：{user_request}\n可用Agent：{list(self.agents.keys())}\n请将任务分解为子任务并分配给合适的Agent。\n返回JSON格式的执行计划。\"\"\")\n        steps = json.loads(plan)\n\n        # 2. 按序执行子任务\n        results = {}\n        for step in steps:\n            agent = self.agents[step[\"agent\"]]\n            # 将前序结果注入上下文\n            context = {\"previous_results\": results}\n            result = await agent.execute(step[\"task\"], context)\n            results[step[\"id\"]] = result\n\n        # 3. 汇总结果\n        summary = await self.llm.generate(f\"\"\"\n用户原始请求：{user_request}\n各子任务结果：{json.dumps(results, ensure_ascii=False)}\n请汇总为完整的最终回答。\"\"\")\n        return summary\n```\n\n## 关键要点\n\n1. 主控Agent的规划能力决定了整体系统的质量\n2. 子任务之间的依赖关系需要正确处理（串行vs并行）\n3. 错误传播需要有机制处理，一个子任务失败不应导致全局失败\n4. 子Agent的输出格式需要规范化，便于主控Agent理解\n\n## 工程实践\n\n建议：为主控Agent设计清晰的计划输出Schema；实现子任务超时和降级机制；子Agent之间避免直接通信，都通过主控协调；记录完整的执行轨迹用于调试和优化。",
+    "tags": [
+      "多Agent协作",
+      "层级架构",
+      "任务编排"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-012",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "对等式(Peer-to-Peer)多Agent协作如何实现？与层级式有什么区别？",
+    "answer": "## 核心概念\n\n对等式多Agent协作中，所有Agent地位平等，通过协商、讨论的方式共同完成任务。没有中央控制节点，Agent之间通过消息传递进行协调。典型应用包括多Agent辩论(Multi-Agent Debate)和协作写作。\n\n## 实现方案\n\n```python\nclass PeerAgent:\n    def __init__(self, name, role, llm):\n        self.name = name\n        self.role = role\n        self.llm = llm\n        self.message_queue = asyncio.Queue()\n\n    async def contribute(self, topic, other_messages):\n        prompt = f\"\"\"你是{self.name}，角色：{self.role}\n讨论主题：{topic}\n其他参与者的意见：{json.dumps(other_messages)}\n请给出你的观点和建议。\"\"\"\n        return await self.llm.generate(prompt)\n\nasync def peer_discussion(agents, topic, rounds=3):\n    \"\"\"对等讨论流程\"\"\"\n    history = []\n    for round_num in range(rounds):\n        round_messages = []\n        # 每个Agent依次发言\n        for agent in agents:\n            msg = await agent.contribute(topic, history)\n            round_messages.append({\n                \"agent\": agent.name,\n                \"content\": msg\n            })\n        history.append({\"round\": round_num,\n                       \"messages\": round_messages})\n    return history\n```\n\n对等式架构的核心优势是能产生多元视角，通过讨论达成更全面的结论。\n\n## 关键要点\n\n1. 对等式适合需要多角度分析的场景（如辩论、方案评审）\n2. 需要设定讨论轮次上限，避免无休止的讨论\n3. 每个Agent的角色定义需要差异化，避免观点同质化\n4. 最终需要有汇总机制形成结论\n\n## 工程实践\n\n建议：为每个Agent设定明确的专业视角；实现\"收敛检测\"，当观点不再变化时提前终止；记录每轮讨论内容用于过程分析；在讨论结束后由一个中立Agent做最终总结。",
+    "tags": [
+      "多Agent协作",
+      "对等架构",
+      "多Agent辩论"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-013",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "多Agent系统中的通信协议和消息格式如何设计？",
+    "answer": "## 核心概念\n\n多Agent通信协议定义了Agent之间交换信息的规范，包括消息格式、通信模式（同步/异步）、路由规则和序列化方式。良好的通信协议是多Agent系统可靠运行的基础。\n\n## 协议设计\n\n```python\nfrom dataclasses import dataclass\nfrom enum import Enum\nfrom typing import Any, Optional\n\nclass MessageType(Enum):\n    REQUEST = \"request\"\n    RESPONSE = \"response\"\n    BROADCAST = \"broadcast\"\n    HEARTBEAT = \"heartbeat\"\n\n@dataclass\nclass AgentMessage:\n    msg_id: str\n    msg_type: MessageType\n    sender: str\n    receiver: Optional[str]  # None表示广播\n    content: Any\n    metadata: dict\n    timestamp: float\n    reply_to: Optional[str] = None  # 关联的请求消息ID\n\nclass MessageBus:\n    def __init__(self):\n        self.subscribers = defaultdict(list)\n        self.message_log = []\n\n    async def publish(self, message: AgentMessage):\n        self.message_log.append(message)\n        if message.receiver:\n            # 定向消息\n            await self._deliver(message.receiver, message)\n        else:\n            # 广播消息\n            for agent_id in self.subscribers:\n                if agent_id != message.sender:\n                    await self._deliver(agent_id, message)\n\n    def subscribe(self, agent_id, handler):\n        self.subscribers[agent_id].append(handler)\n\n    async def _deliver(self, agent_id, message):\n        for handler in self.subscribers[agent_id]:\n            await handler(message)\n```\n\n## 关键要点\n\n1. 消息格式需要包含足够的元数据用于追踪和调试\n2. 异步通信更适合Agent间的松耦合协作\n3. 消息总线模式简化了Agent间的解耦\n4. 需要考虑消息的序列化/反序列化性能\n\n## 工程实践\n\n建议：使用JSON Schema定义消息格式规范；实现消息追踪(trace_id)支持分布式调试；设置消息TTL防止队列积压；对消息内容进行大小限制；实现死信队列处理无法投递的消息。",
+    "tags": [
+      "多Agent协作",
+      "通信协议",
+      "消息总线"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-014",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "什么是Chain-of-Thought(CoT)？它如何提升Agent的推理能力？",
+    "answer": "## 核心概念\n\nChain-of-Thought(CoT，思维链)是一种提示技术，引导LLM在给出最终答案前，先展示中间推理步骤。这类似于人类解题时\"写出解题过程\"，能显著提升复杂推理任务的准确率。\n\n## CoT实现方式\n\n```python\n# 零样本CoT：添加触发语句\nzero_shot_cot = \"\"\"\n请解答以下问题。请\"一步步思考\"(Let's think step by step)。\n\n问题：{question}\n\"\"\"\n\n# 少样本CoT：提供带推理过程的示例\nfew_shot_cot = \"\"\"\n请参考示例的推理方式解答问题。\n\n示例：\n问题：一个商店有15个苹果，卖掉了8个，又进了12个，还剩多少？\n推理：\n1. 初始苹果数量：15个\n2. 卖掉后剩余：15 - 8 = 7个\n3. 进货后总数：7 + 12 = 19个\n答案：19个\n\n问题：{question}\n推理：\n\"\"\"\n\n# Agent中的结构化CoT\nstructured_cot = \"\"\"\n请按以下结构进行推理：\n1. 观察：提取问题中的关键信息\n2. 分析：识别问题类型和适用方法\n3. 推理：按步骤进行逻辑推导\n4. 验证：检查答案的合理性\n5. 结论：给出最终答案\n\n问题：{question}\n\"\"\"\n```\n\n## 关键要点\n\n1. CoT对数学推理、逻辑推理、多步骤问题效果显著\n2. \"一步步思考\"是最简单的零样本CoT触发方式\n3. CoT会增加输出Token数量，提高成本和延迟\n4. 过度复杂的CoT可能导致推理偏离方向\n\n## 工程实践\n\n建议：根据任务复杂度决定是否启用CoT（简单问题无需CoT）；限制推理步骤数防止过度推理；将CoT中间步骤用于调试而非展示给用户；结合自一致性(Self-Consistency)多次采样取多数结果。",
+    "tags": [
+      "Agent规划",
+      "CoT",
+      "思维链"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-015",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "Tree-of-Thought(ToT)和Graph-of-Thought(GoT)是什么？与CoT有何不同？",
+    "answer": "## 核心概念\n\n- **Tree-of-Thought(ToT)**：将推理过程组织为树状结构，每个节点是一个思考步骤，允许回溯和探索多条推理路径\n- **Graph-of-Thought(GoT)**：进一步扩展为图结构，允许不同推理分支之间合并和交叉，更灵活地组织思维过程\n\n## ToT实现\n\n```python\nclass TreeOfThought:\n    def __init__(self, llm, breadth=3, max_depth=5):\n        self.llm = llm\n        self.breadth = breadth\n        self.max_depth = max_depth\n\n    async def search(self, problem):\n        root = {\"thought\": problem, \"score\": 0, \"children\": []}\n        best_path = await self._dfs(root, depth=0)\n        return best_path\n\n    async def _dfs(self, node, depth):\n        if depth >= self.max_depth:\n            return node\n\n        # 生成多个思考分支\n        thoughts = await self.llm.generate_n(\n            f\"基于当前思考：{node['thought']}\\n\"\n            f\"请给出{self.breadth}个不同的下一步推理方向。\",\n            n=self.breadth\n        )\n\n        # 评估每个分支的前景\n        for thought in thoughts:\n            score = await self._evaluate(thought)\n            child = {\"thought\": thought, \"score\": score,\n                     \"children\": []}\n            node[\"children\"].append(child)\n\n        # 选择最有前景的分支继续探索\n        best_child = max(node[\"children\"],\n                        key=lambda c: c[\"score\"])\n        await self._dfs(best_child, depth + 1)\n\n        return node\n\n    async def _evaluate(self, thought):\n        score = await self.llm.generate(\n            f\"评估以下推理步骤的质量(0-10)：{thought}\"\n        )\n        return float(score)\n```\n\n## 关键要点\n\n1. CoT是线性推理，ToT是树状搜索，GoT是图状融合\n2. ToT适合需要探索和回溯的问题（如棋类、规划）\n3. GoT适合需要综合多条推理路径的复杂问题\n4. 计算成本随分支因子和深度指数增长，需要精细控制\n\n## 工程实践\n\n建议：使用评估函数剪枝低质量分支减少计算；限制广度和深度控制成本；对明确的推理任务使用ToT，探索性任务使用GoT；将搜索过程可视化便于调试。",
+    "tags": [
+      "Agent规划",
+      "ToT",
+      "GoT",
+      "搜索策略"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-016",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "什么是ReAct框架？它如何实现推理与行动的结合？",
+    "answer": "## 核心概念\n\nReAct(Reasoning + Acting)框架让LLM交替进行\"思考\"(Thought)和\"行动\"(Action)，通过观察环境反馈来指导下一步决策。它将CoT推理与工具调用紧密结合，是现代Agent系统的基础范式。\n\n## ReAct实现\n\n```python\nclass ReActAgent:\n    def __init__(self, llm, tools, max_steps=10):\n        self.llm = llm\n        self.tools = {t.name: t for t in tools}\n        self.max_steps = max_steps\n\n    async def run(self, task):\n        prompt = f\"\"\"你是一个能思考和行动的AI助手。\n\n可用工具：{list(self.tools.keys())}\n\n请按以下格式回答：\nThought: 分析当前情况，思考下一步\nAction: 工具名称[参数]\nObservation: 工具返回结果（由系统填写）\n... (重复Thought/Action/Observation)\nThought: 我已经得到了足够的信息\nFinal Answer: 最终回答\n\n任务：{task}\"\"\"\n\n        trajectory = [prompt]\n        for step in range(self.max_steps):\n            response = await self.llm.generate(\n                \"\\n\".join(trajectory)\n            )\n            trajectory.append(response)\n\n            if \"Final Answer:\" in response:\n                return self._extract_answer(response)\n\n            action = self._parse_action(response)\n            if action:\n                result = await self.tools[action.name].execute(\n                    action.args\n                )\n                trajectory.append(\n                    f\"Observation: {result}\"\n                )\n\n        return \"达到最大步骤数限制\"\n```\n\nReAct的核心思想是让模型在行动前\"想清楚\"，在思考后\"做出来\"。\n\n## 关键要点\n\n1. Thought步骤帮助模型分解问题、制定计划\n2. Action步骤调用外部工具获取信息或执行操作\n3. Observation步骤将环境反馈注入推理过程\n4. 需要设置最大步骤数防止无限循环\n\n## 工程实践\n\n建议：为Thought和Action设计清晰的解析格式；实现工具调用的错误恢复；记录完整轨迹用于分析和优化；考虑并行执行多个独立Action提升效率。",
+    "tags": [
+      "Agent规划",
+      "ReAct",
+      "推理行动"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-017",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "Reflexion框架如何实现Agent的自我反思和改进？",
+    "answer": "## 核心概念\n\nReflexion是一种让Agent从失败中学习的框架。当Agent执行任务失败后，它会生成自我反思(Self-Reflection)，分析失败原因，并将这些反思存储在记忆中，在下次尝试时利用这些经验避免重复错误。\n\n## 实现方案\n\n```python\nclass ReflexionAgent:\n    def __init__(self, llm, tools, memory, max_trials=3):\n        self.llm = llm\n        self.tools = tools\n        self.memory = memory  # 反思记忆\n        self.max_trials = max_trials\n\n    async def run(self, task):\n        for trial in range(self.max_trials):\n            # 加载历史反思\n            reflections = await self.memory.get_reflections(task)\n\n            # 执行任务\n            result = await self._execute(task, reflections)\n\n            # 评估结果\n            evaluation = await self._evaluate(task, result)\n\n            if evaluation[\"success\"]:\n                return result\n\n            # 生成反思\n            reflection = await self._reflect(\n                task, result, evaluation\n            )\n            await self.memory.save_reflection(\n                task, reflection\n            )\n\n        return f\"经过{self.max_trials}次尝试后仍未成功\"\n\n    async def _reflect(self, task, result, evaluation):\n        prompt = f\"\"\"\n任务：{task}\n执行结果：{result}\n评估反馈：{evaluation['feedback']}\n\n请分析失败原因，总结经验教训，\n提出下次尝试的改进方案。\n格式：\n1. 失败原因：...\n2. 关键教训：...\n3. 改进策略：...\"\"\"\n        return await self.llm.generate(prompt)\n\n    async def _execute(self, task, reflections):\n        enhanced_prompt = f\"\"\"\n任务：{task}\n\n历史反思（请避免重复这些错误）：\n{chr(10).join(reflections)}\n\n请执行任务。\"\"\"\n        return await self.llm.run_react(enhanced_prompt, self.tools)\n```\n\n## 关键要点\n\n1. 反思的质量直接影响后续改进的效果\n2. 反思记忆需要按任务类型组织，便于相关反思的检索\n3. 评估器(AEvaluator)的准确性是反思有效的前提\n4. 最大尝试次数需要合理设置，平衡成功率和成本\n\n## 工程实践\n\n建议：使用较强的模型生成反思；实现反思的去重和合并；记录完整的尝试-反思-改进轨迹；在评估中引入外部验证（如单元测试、规则检查）。",
+    "tags": [
+      "Agent规划",
+      "Reflexion",
+      "自我反思"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-018",
+    "module": "AI应用实践",
+    "difficulty": 1,
+    "question": "RAG系统中的文档分块(Chunking)策略有哪些？如何选择？",
+    "answer": "## 核心概念\n\n文档分块是RAG流程的第一步，将长文档切分为适合向量化和检索的片段。分块质量直接影响检索精度和生成质量——块太大可能包含噪音，太小可能丢失上下文。\n\n## 常见分块策略\n\n```python\nfrom langchain.text_splitter import (\n    RecursiveCharacterTextSplitter,\n    TokenTextSplitter\n)\n\n# 1. 固定长度分块\nfixed_splitter = RecursiveCharacterTextSplitter(\n    chunk_size=500,\n    chunk_overlap=50,\n    separators=[\"\\n\\n\", \"\\n\", \"。\", \" \", \"\"]\n)\n\n# 2. 语义分块（基于Embedding相似度）\ndef semantic_chunk(text, embedding_model, threshold=0.8):\n    sentences = split_sentences(text)\n    chunks = []\n    current_chunk = [sentences[0]]\n\n    for i in range(1, len(sentences)):\n        sim = cosine_similarity(\n            embedding_model.encode(sentences[i]),\n            embedding_model.encode(current_chunk[-1])\n        )\n        if sim > threshold:\n            current_chunk.append(sentences[i])\n        else:\n            chunks.append(\" \".join(current_chunk))\n            current_chunk = [sentences[i]]\n\n    return chunks\n\n# 3. 基于文档结构的分块\n# 利用Markdown标题、HTML标签等结构边界\n```\n\n## 关键要点\n\n1. chunk_size通常设置为200-1000 tokens，需要根据模型和场景调整\n2. chunk_overlap（重叠）防止关键信息被切断，通常为chunk_size的10%-20%\n3. 语义分块质量最高但计算成本也最高\n4. 结构化文档优先使用结构感知分块\n\n## 工程实践\n\n建议：针对不同文档类型使用不同分块策略；在分块时保留来源元数据（页码、章节）；评估分块质量可以用\"给定问题能否在单个块中找到答案\"来衡量；实施分块预览功能方便调优。",
+    "tags": [
+      "RAG",
+      "文档分块",
+      "Chunking"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-019",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "RAG中的检索后重排序(Reranking)是什么？如何实现混合检索？",
+    "answer": "## 核心概念\n\n- **Reranking**：在初步检索后，使用专门的重排序模型对候选文档重新评分，提高最终返回结果的相关性\n- **混合检索**：结合向量检索(语义匹配)和关键词检索(精确匹配)，取长补短\n\n## 实现方案\n\n```python\nfrom sentence_transformers import CrossEncoder\n\nclass HybridRetrieverWithRerank:\n    def __init__(self, vector_store, bm25_index,\n                 reranker_model=\"cross-encoder/ms-marco\"):\n        self.vector_store = vector_store\n        self.bm25 = bm25_index\n        self.reranker = CrossEncoder(reranker_model)\n\n    async def retrieve(self, query, top_k=5,\n                       vector_weight=0.7):\n        # 1. 向量检索\n        vector_results = await self.vector_store.search(\n            query, top_k=top_k * 3\n        )\n\n        # 2. BM25关键词检索\n        bm25_results = self.bm25.search(query, top_k=top_k * 3)\n\n        # 3. 合并结果（Reciprocal Rank Fusion）\n        merged = self._rrf_merge(\n            vector_results, bm25_results,\n            vector_weight\n        )\n\n        # 4. Rerank重排序\n        pairs = [(query, doc.content) for doc in merged[:20]]\n        scores = self.reranker.predict(pairs)\n\n        reranked = sorted(\n            zip(merged[:20], scores),\n            key=lambda x: x[1], reverse=True\n        )\n        return [doc for doc, score in reranked[:top_k]]\n\n    def _rrf_merge(self, list1, list2, weight1,\n                   k=60):\n        \"\"\"Reciprocal Rank Fusion\"\"\"\n        scores = {}\n        for rank, doc in enumerate(list1):\n            scores[doc.id] = scores.get(doc.id, 0) \\\n                           + weight1 / (k + rank + 1)\n        for rank, doc in enumerate(list2):\n            scores[doc.id] = scores.get(doc.id, 0) \\\n                           + (1 - weight1) / (k + rank + 1)\n        sorted_docs = sorted(scores.items(),\n                           key=lambda x: x[1], reverse=True)\n        return [doc_map[doc_id] for doc_id, _ in sorted_docs]\n```\n\n## 关键要点\n\n1. 向量检索擅长语义匹配，BM25擅长精确关键词匹配\n2. Reranking比Embedding更精准但更慢，适合精排阶段\n3. RRF(Reciprocal Rank Fusion)是常用的列表融合算法\n4. 向量检索和BM25的权重需要根据场景调优\n\n## 工程实践\n\n建议：第一阶段用向量+BM25粗召回（top_k*3），第二阶段用Reranker精排；Reranker模型选择需平衡精度和速度；对检索结果设置相关性阈值过滤低质量结果。",
+    "tags": [
+      "RAG",
+      "Reranking",
+      "混合检索"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-020",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "如何评估RAG系统的效果？有哪些关键指标和评估方法？",
+    "answer": "## 核心概念\n\nRAG评估需要分别评估检索质量和生成质量。检索评估关注\"是否找到正确的文档\"，生成评估关注\"基于检索结果的回答是否准确\"。\n\n## 评估指标体系\n\n```python\nclass RAGEvaluator:\n    def evaluate_retrieval(self, queries, ground_truths,\n                          retrieved_docs):\n        \"\"\"检索质量评估\"\"\"\n        metrics = {\n            \"recall@k\": [],   # 前k个结果中包含正确文档的比例\n            \"precision@k\": [], # 前k个结果中正确文档的占比\n            \"mrr\": [],         # 平均倒数排名\n            \"ndcg\": []         # 归一化折损累积增益\n        }\n        for query, truth, docs in zip(\n            queries, ground_truths, retrieved_docs\n        ):\n            hits = [d for d in docs if d.id in truth]\n            metrics[\"recall@k\"].append(\n                len(hits) / len(truth) if truth else 0\n            )\n            metrics[\"precision@k\"].append(\n                len(hits) / len(docs) if docs else 0\n            )\n            # MRR: 第一个正确结果的排名倒数\n            for i, d in enumerate(docs):\n                if d.id in truth:\n                    metrics[\"mrr\"].append(1 / (i + 1))\n                    break\n        return {k: sum(v)/len(v) for k, v in metrics.items()}\n\n    def evaluate_generation(self, questions, answers,\n                          references, llm_judge):\n        \"\"\"生成质量评估（LLM-as-Judge）\"\"\"\n        scores = []\n        for q, a, ref in zip(questions, answers, references):\n            score = llm_judge.evaluate(f\"\"\"\n问题：{q}\n回答：{a}\n参考答案：{ref}\n\n请从以下维度评分(1-5)：\n1. 相关性：回答是否切题\n2. 准确性：信息是否正确\n3. 完整性：是否涵盖关键信息\n4. 忠实度：是否基于给定上下文\"\"\")\n            scores.append(score)\n        return scores\n```\n\n## 关键要点\n\n1. 检索召回率是最基础的指标——如果检索不到正确文档，后续无法弥补\n2. 忠实度(Faithfulness)检查回答是否\"编造\"了检索结果中没有的信息\n3. 人工评估成本高但最可靠，自动评估效率高但需校准\n4. 评估集的质量决定评估结果的可信度\n\n## 工程实践\n\n建议：构建至少100-200条高质量评估集；定期运行回归评估防止系统退化；将评估指标可视化监控趋势；对Bad Case做归因分析（检索问题还是生成问题）。",
+    "tags": [
+      "RAG",
+      "系统评估",
+      "指标体系"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-021",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "RAG系统中如何优化检索结果的相关性和准确性？",
+    "answer": "## 核心概念\n\nRAG检索优化是一个系统工程，涉及查询改写、多路召回、结果过滤和上下文压缩等多个环节。目标是确保最相关的文档片段能被检索到并传递给LLM。\n\n## 优化策略\n\n```python\n# 1. 查询改写（Query Rewriting）\nasync def rewrite_query(original_query, llm):\n    \"\"\"生成多个改写查询以提高召回率\"\"\"\n    prompt = f\"\"\"\n原始查询：{original_query}\n请生成3个不同角度的改写查询，\n用于提高文档检索的召回率。\n返回JSON数组格式。\"\"\"\n    return json.loads(await llm.generate(prompt))\n\n# 2. 查询分解（Query Decomposition）\nasync def decompose_query(complex_query, llm):\n    \"\"\"将复杂查询分解为子查询\"\"\"\n    prompt = f\"\"\"\n复杂查询：{complex_query}\n请将其分解为多个简单的子查询，\n每个子查询关注一个方面的信息。\"\"\"\n    return json.loads(await llm.generate(prompt))\n\n# 3. 上下文压缩（Contextual Compression）\nasync def compress_context(query, documents, llm):\n    \"\"\"只保留文档中与查询相关的部分\"\"\"\n    compressed = []\n    for doc in documents:\n        prompt = f\"\"\"\n查询：{query}\n文档：{doc.content}\n\n请提取与查询直接相关的部分，\n删除无关内容。\"\"\"\n        relevant = await llm.generate(prompt)\n        if relevant.strip():\n            compressed.append(relevant)\n    return compressed\n```\n\n## 关键要点\n\n1. 查询改写能显著提高召回率，特别是用户查询较短或模糊时\n2. HyDE(Hypothetical Document Embeddings)用假设性文档提升匹配度\n3. 上下文压缩减少传递给LLM的噪音，提高生成质量\n4. 元数据过滤能在检索前缩小搜索范围\n\n## 工程实践\n\n建议：对复杂查询实现自动分解；使用LLM对检索结果做相关性过滤；监控查询-文档匹配度分布；建立用户反馈闭环持续优化检索策略。",
+    "tags": [
+      "RAG",
+      "检索优化",
+      "查询改写"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-022",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "代码生成Agent如何理解和分析代码库？",
+    "answer": "## 核心概念\n\n代码生成Agent需要理解代码库的结构、依赖关系和编码规范，才能生成符合项目要求的代码。这通常涉及代码解析、AST分析、依赖图构建和上下文检索。\n\n## 实现方案\n\n```python\ncode_context_builder = \"\"\"\nclass CodebaseAnalyzer:\n    def __init__(self, repo_path):\n        self.repo_path = repo_path\n\n    def build_context(self, target_file, task):\n        \"\"\"为代码生成构建上下文\"\"\"\n        context = {\n            \"file_content\": self._read_file(target_file),\n            \"imports\": self._extract_imports(target_file),\n            \"related_files\": self._find_related(target_file),\n            \"project_structure\": self._get_structure(),\n            \"coding_conventions\": self._analyze_style(),\n            \"test_examples\": self._find_tests(target_file)\n        }\n        return context\n\n    def _find_related(self, file_path):\n        \"\"\"查找相关文件：导入关系、同目录文件\"\"\"\n        related = set()\n        # 被当前文件导入的模块\n        imports = self._extract_imports(file_path)\n        related.update(imports)\n        # 导入当前文件的模块\n        importers = self._find_importers(file_path)\n        related.update(importers)\n        # 同目录文件\n        related.update(self._same_directory_files(file_path))\n        return list(related)\n\n    def _analyze_style(self):\n        \"\"\"分析项目编码风格\"\"\"\n        return {\n            \"indentation\": self._detect_indent(),\n            \"naming_convention\": self._detect_naming(),\n            \"docstring_format\": self._detect_docstring(),\n            \"max_line_length\": self._detect_line_length()\n        }\n\"\"\"\n```\n\n## 关键要点\n\n1. 代码库的结构分析是代码生成的基础\n2. 导入关系和类型信息帮助Agent理解模块间的交互\n3. 编码规范分析确保生成的代码风格一致\n4. 测试用例是最好的\"需求文档\"\n\n## 工程实践\n\n建议：使用语言服务协议(LSP)获取精确的代码分析；构建依赖图帮助理解影响范围；提取项目的常用模式作为生成参考；将代码库索引化以支持快速检索。",
+    "tags": [
+      "代码生成",
+      "代码理解",
+      "AST分析"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-023",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "代码生成Agent如何自动生成和运行测试？",
+    "answer": "## 核心概念\n\n代码生成Agent的测试生成能力包括：为新生成的代码编写单元测试、为现有代码补充缺失的测试用例、以及自动运行测试验证代码正确性。这是一个闭环验证过程。\n\n## 实现方案\n\n```python\nclass TestGenerationAgent:\n    def __init__(self, llm, test_runner):\n        self.llm = llm\n        self.test_runner = test_runner\n\n    async def generate_and_verify(self, code, context):\n        # 1. 生成测试\n        tests = await self._generate_tests(code, context)\n\n        # 2. 运行测试\n        results = await self.test_runner.run(tests, code)\n\n        # 3. 分析结果并修复\n        if results[\"failures\"]:\n            fixed_code = await self._fix_based_on_failures(\n                code, tests, results\n            )\n            return fixed_code, tests\n\n        return code, tests\n\n    async def _generate_tests(self, code, context):\n        prompt = f\"\"\"为以下代码生成单元测试。\n\n代码：\n```python\n{code}\n```\n\n相关上下文：{context}\n\n要求：\n1. 覆盖正常路径和边界情况\n2. 包含错误输入测试\n3. 使用pytest格式\n4. Mock外部依赖\"\"\"\n        return await self.llm.generate(prompt)\n\n    async def _fix_based_on_failures(self, code, tests,\n                                     results):\n        prompt = f\"\"\"代码测试失败，请修复。\n\n原始代码：{code}\n失败的测试：{results['failures']}\n错误信息：{results['errors']}\n\n请分析失败原因并修复代码。\"\"\"\n        return await self.llm.generate(prompt)\n```\n\n## 关键要点\n\n1. 测试生成应覆盖正常路径、边界情况和错误处理\n2. 测试运行结果是代码正确性的最可靠验证\n3. 失败-修复循环是提升代码质量的关键\n4. Mock外部依赖确保测试的隔离性和可靠性\n\n## 工程实践\n\n建议：实现测试覆盖率统计；对生成的测试本身也进行质量检查；支持增量测试（只运行受影响的测试）；将测试结果作为代码审查的重要参考。",
+    "tags": [
+      "代码生成",
+      "测试生成",
+      "自动验证"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-024",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "如何构建AI驱动的代码审查(Code Review)Agent？",
+    "answer": "## 核心概念\n\nAI代码审查Agent能自动分析代码变更，识别潜在的Bug、安全漏洞、性能问题和编码规范违规，提供改进建议。它作为人工审查的补充，能提高审查效率和一致性。\n\n## 实现方案\n\n```python\nclass CodeReviewAgent:\n    def __init__(self, llm, tools):\n        self.llm = llm\n        self.analyzers = tools  # 静态分析、安全扫描等\n\n    async def review(self, diff, context):\n        # 1. 结构化分析\n        analysis_tasks = [\n            self._check_security(diff),\n            self._check_performance(diff),\n            self._check_correctness(diff, context),\n            self._check_style(diff, context)\n        ]\n        results = await asyncio.gather(*analysis_tasks)\n\n        # 2. 汇总审查意见\n        review = await self._synthesize_review(\n            diff, results, context\n        )\n        return review\n\n    async def _check_correctness(self, diff, context):\n        prompt = f\"\"\"审查以下代码变更的正确性。\n\n代码变更：\n```diff\n{diff}\n```\n\n相关上下文：\n{context}\n\n请检查：\n1. 逻辑错误\n2. 边界条件处理\n3. 空值/异常处理\n4. 并发安全\n5. 资源泄漏\n\n返回JSON格式的审查意见列表。\"\"\"\n        return await self.llm.generate(prompt)\n\n    async def _synthesize_review(self, diff, results,\n                                  context):\n        prompt = f\"\"\"汇总以下分析结果为结构化代码审查报告。\n\n各维度分析结果：{json.dumps(results)}\n\n按严重程度分类：Critical / Warning / Suggestion\n每个问题包含：位置、描述、建议修复方案\"\"\"\n        return await self.llm.generate(prompt)\n```\n\n## 关键要点\n\n1. 多维度并行分析提高审查覆盖度\n2. 区分严重程度帮助开发者优先处理关键问题\n3. 提供具体修复建议而非仅指出问题\n4. 上下文感知（了解PR目的、相关代码）提高准确性\n\n## 工程实践\n\n建议：集成到CI/CD流水线自动触发审查；与现有静态分析工具互补而非替代；设置审查置信度阈值，低置信度标记为\"建议人工复核\"；追踪审查意见的采纳率持续优化。",
+    "tags": [
+      "代码生成",
+      "Code Review",
+      "自动审查"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-025",
+    "module": "AI应用实践",
+    "difficulty": 1,
+    "question": "客服Agent如何进行意图识别？有哪些常见方法？",
+    "answer": "## 核心概念\n\n意图识别是客服Agent理解用户需求的第一步，将用户的自然语言输入映射到预定义的意图类别（如\"查询订单\"、\"退款申请\"、\"咨询产品\"等）。准确的意图识别直接决定Agent的响应质量。\n\n## 常见方法\n\n```python\nclass IntentClassifier:\n    def __init__(self, llm, intent_definitions):\n        self.llm = llm\n        self.intents = intent_definitions\n\n    async def classify(self, user_message, context=None):\n        # 方法1：LLM直接分类\n        prompt = f\"\"\"\n用户消息：{user_message}\n\n可选意图：\n{self._format_intents()}\n\n历史上下文：{context or \"无\"}\n\n请判断用户意图，返回JSON：\n{{\"intent\": \"意图名\", \"confidence\": 0.95,\n  \"slots\": {{\"关键参数\": \"值\"}}}}\"\"\"\n        return json.loads(await self.llm.generate(prompt))\n\n    # 方法2：Embedding相似度分类\n    async def classify_by_embedding(self, message):\n        msg_embedding = await get_embedding(message)\n        similarities = {}\n        for intent, examples in self.intents.items():\n            for example in examples[\"examples\"]:\n                sim = cosine_similarity(\n                    msg_embedding,\n                    await get_embedding(example)\n                )\n                similarities[intent] = max(\n                    similarities.get(intent, 0), sim\n                )\n        return max(similarities, key=similarities.get)\n\n    # 方法3：多级分类（粗分类 -> 细分类）\n    async def hierarchical_classify(self, message):\n        coarse = await self._coarse_classify(message)  # 大类\n        fine = await self._fine_classify(message, coarse)  # 细类\n        return fine\n```\n\n## 关键要点\n\n1. LLM分类灵活但延迟较高，Embedding分类快速但需要预定义示例\n2. 多级分类（粗分+细分）平衡效率和精度\n3. 上下文对意图识别至关重要——\"我要退货\"在不同上下文含义不同\n4. 需要处理多意图和意图切换的情况\n\n## 工程实践\n\n建议：维护意图-示例映射表并持续扩充；对低置信度结果主动向用户确认；实现意图路由，不同意图走不同处理流程；收集Bad Case持续优化分类效果。",
+    "tags": [
+      "客服Agent",
+      "意图识别",
+      "NLU"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-026",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "客服Agent如何设计多轮对话引导和信息收集流程？",
+    "answer": "## 核心概念\n\n多轮引导是指Agent在对话过程中，通过主动提问逐步收集完成任务所需的全部信息。例如退款流程需要收集订单号、退款原因、退款方式等。设计良好的引导流程能提升用户体验和任务完成率。\n\n## 实现方案\n\n```python\nclass DialogueFlowManager:\n    def __init__(self, llm, slot_definitions):\n        self.llm = llm\n        self.slot_defs = slot_definitions\n\n    async def process_turn(self, intent, slots,\n                           user_message):\n        # 1. 从用户消息中提取槽位\n        new_slots = await self._extract_slots(\n            user_message, intent\n        )\n        slots.update(new_slots)\n\n        # 2. 检查是否缺少必要槽位\n        required = self.slot_defs[intent][\"required\"]\n        missing = [s for s in required if s not in slots]\n\n        if missing:\n            # 3. 生成引导性提问\n            question = await self._generate_question(\n                intent, missing[0], slots\n            )\n            return {\n                \"action\": \"ask_slot\",\n                \"slot\": missing[0],\n                \"question\": question,\n                \"collected_slots\": slots\n            }\n\n        # 4. 所有信息收集完成，执行任务\n        return {\n            \"action\": \"execute\",\n            \"slots\": slots\n        }\n\n    async def _generate_question(self, intent, slot,\n                                  context):\n        prompt = f\"\"\"\n当前意图：{intent}\n需要收集：{self.slot_defs[slot]['description']}\n已收集信息：{context}\n对话历史上下文已省略\n\n请生成一个自然、友好的提问来收集该信息。\n避免重复询问已提供的信息。\"\"\"\n        return await self.llm.generate(prompt)\n```\n\n## 关键要点\n\n1. 槽位提取和提问生成应尽可能自然，避免机械式问答\n2. 支持用户一次性提供多个槽位信息\n3. 对用户拒绝提供信息的情况设计降级策略\n4. 上下文记忆避免重复询问已提供的信息\n\n## 工程实践\n\n建议：定义每个意图的槽位Schema（名称、类型、必填、验证规则）；支持槽位的自动验证（如订单号格式）；设置最大追问次数避免用户反感；将多轮流程可视化便于产品设计。",
+    "tags": [
+      "客服Agent",
+      "多轮引导",
+      "槽位填充"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-027",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "客服Agent的兜底(Fallback)策略有哪些？如何设计优雅降级？",
+    "answer": "## 核心概念\n\n兜底策略是Agent在无法理解用户意图、超出能力范围或出现异常时的处理机制。良好的兜底策略能避免用户体验\"断崖式\"下降，平滑地过渡到人工服务。\n\n## 实现方案\n\n```python\nclass FallbackManager:\n    def __init__(self, llm, human_handoff, escalation_rules):\n        self.llm = llm\n        self.human_handoff = human_handoff\n        self.rules = escalation_rules\n        self.fallback_count = {}\n\n    async def handle_fallback(self, session_id, reason,\n                              context):\n        # 更新连续失败计数\n        count = self.fallback_count.get(session_id, 0) + 1\n        self.fallback_count[session_id] = count\n\n        if count >= 3:\n            # 连续3次失败，转人工\n            return await self._transfer_to_human(\n                session_id, context\n            )\n\n        if reason == \"low_confidence\":\n            return {\n                \"type\": \"clarify\",\n                \"message\": \"抱歉，我没太理解您的意思。\"\n                \"您能换一种方式描述吗？\"\n            }\n\n        if reason == \"out_of_scope\":\n            return {\n                \"type\": \"redirect\",\n                \"message\": \"这个问题超出了我的处理范围，\"\n                \"让我为您转接人工客服。\",\n                \"transfer\": True\n            }\n\n        if reason == \"system_error\":\n            return {\n                \"type\": \"retry\",\n                \"message\": \"系统繁忙，请稍后再试。\"\n                \"您也可以拨打客服热线。\"\n            }\n\n    def reset_count(self, session_id):\n        \"\"\"成功处理后重置计数\"\"\"\n        self.fallback_count[session_id] = 0\n```\n\n## 关键要点\n\n1. 兜底不是简单的\"我不懂\"，需要根据情况选择不同策略\n2. 连续失败计数器触发人工转接，避免用户陷入循环\n3. 提供替代渠道（电话、在线客服）确保问题能被解决\n4. 记录所有兜底事件用于分析和优化\n\n## 工程实践\n\n建议：实现分级兜底（澄清 -> 重试 -> 转人工）；转人工时传递完整对话上下文；监控兜底率作为系统健康指标；定期分析兜底原因优化知识库和模型。",
+    "tags": [
+      "客服Agent",
+      "兜底策略",
+      "转人工"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-028",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "文档问答系统如何处理PDF文件？有哪些解析策略？",
+    "answer": "## 核心概念\n\nPDF解析是文档问答系统的基础挑战。PDF格式多样（纯文本、扫描件、混合），包含文字、图片、表格等多种元素，需要针对性的解析策略。\n\n## 解析方案\n\n```python\nclass PDFProcessor:\n    def __init__(self):\n        self.text_parser = TextPDFParser()  # 文本PDF\n        self.ocr_parser = OCRParser()       # 扫描PDF\n        self.table_parser = TableParser()   # 表格提取\n\n    async def process(self, pdf_path):\n        # 1. 检测PDF类型\n        pdf_type = self._detect_type(pdf_path)\n\n        # 2. 根据类型选择解析器\n        if pdf_type == \"text\":\n            content = self.text_parser.parse(pdf_path)\n        elif pdf_type == \"scanned\":\n            content = self.ocr_parser.parse(pdf_path)\n        else:  # 混合类型\n            content = await self._hybrid_parse(pdf_path)\n\n        # 3. 结构化处理\n        structured = {\n            \"title\": self._extract_title(content),\n            \"sections\": self._split_sections(content),\n            \"tables\": self.table_parser.extract(pdf_path),\n            \"images\": self._extract_images(pdf_path),\n            \"metadata\": self._extract_metadata(pdf_path)\n        }\n\n        # 4. 分块和索引\n        chunks = self._create_chunks(structured)\n        return chunks\n\n    async def _hybrid_parse(self, pdf_path):\n        \"\"\"混合解析：文本层+OCR补充\"\"\"\n        text_content = self.text_parser.parse(pdf_path)\n        # 对文本稀疏的页面使用OCR补充\n        for page_idx, page in enumerate(text_content):\n            if len(page.text.strip()) < 50:\n                ocr_text = self.ocr_parser.parse_page(\n                    pdf_path, page_idx\n                )\n                page.text = ocr_text\n        return text_content\n```\n\n## 关键要点\n\n1. 首先判断PDF是文本型还是扫描型，选择对应解析器\n2. 表格需要专门处理，普通文本解析会丢失表格结构\n3. 保留页码和章节信息用于后续引用\n4. OCR质量依赖于图像清晰度和语言\n\n## 工程实践\n\n建议：使用PyMuPDF/pdfplumber处理文本PDF，PaddleOCR/Tesseract处理扫描件；对解析结果做质量检查（如乱码检测）；保留原始PDF位置信息支持溯源；预处理阶段过滤水印、页眉页脚。",
+    "tags": [
+      "文档问答",
+      "PDF解析",
+      "OCR"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-029",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "文档问答系统如何处理表格和结构化数据？",
+    "answer": "## 核心概念\n\n表格处理是文档问答的难点——表格包含行列关系、合并单元格、多级表头等结构信息，简单的文本解析会丢失这些结构，导致问答质量下降。\n\n## 表格处理方案\n\n```python\nclass TableProcessor:\n    def extract_table(self, pdf_path, page_idx):\n        \"\"\"提取表格并保留结构\"\"\"\n        tables = camelot.read_pdf(pdf_path,\n                                  pages=str(page_idx))\n        structured_tables = []\n        for table in tables:\n            df = table.df\n            # 处理合并单元格\n            df = self._handle_merged_cells(df)\n            structured = {\n                \"headers\": df.columns.tolist(),\n                \"rows\": df.values.tolist(),\n                \"markdown\": self._to_markdown(df),\n                \"json\": df.to_dict(orient=\"records\"),\n                \"summary\": None  # 后续由LLM生成\n            }\n            structured_tables.append(structured)\n        return structured_tables\n\n    def _to_markdown(self, df):\n        \"\"\"表格转Markdown格式（对LLM更友好）\"\"\"\n        headers = \" | \".join(str(h) for h in df.columns)\n        separator = \" | \".join([\"---\"] * len(df.columns))\n        rows = []\n        for _, row in df.iterrows():\n            rows.append(\" | \".join(str(v) for v in row))\n        return f\"{headers}\\n{separator}\\n\" + \"\\n\".join(rows)\n\n    async def generate_table_summary(self, table, llm):\n        \"\"\"生成表格摘要用于检索\"\"\"\n        prompt = f\"\"\"\n请为以下表格生成简洁摘要，说明表格的内容和关键数据：\n{table['markdown']}\n\"\"\"\n        return await llm.generate(prompt)\n```\n\n## 关键要点\n\n1. Markdown格式的表格对LLM理解最友好\n2. 合并单元格需要正确处理，避免数据错位\n3. 表格摘要能显著提高表格内容的检索命中率\n4. 复杂表格可能需要分区域处理\n\n## 工程实践\n\n建议：为每个表格同时生成Markdown和JSON两种格式；用LLM生成表格摘要用于Embedding索引；支持\"表格问答\"的专用Prompt模板；对大型表格实现按需截取相关行列。",
+    "tags": [
+      "文档问答",
+      "表格处理",
+      "结构化数据"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-030",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "如何构建支持多模态（文本+图片）的文档问答系统？",
+    "answer": "## 核心概念\n\n多模态文档问答系统能同时处理文本和图片信息，回答涉及图表、示意图、照片等视觉内容的问题。这需要视觉理解能力和跨模态信息融合。\n\n## 实现方案\n\n```python\nclass MultimodalDocQA:\n    def __init__(self, vision_llm, text_llm,\n                 vector_store):\n        self.vision_llm = vision_llm\n        self.text_llm = text_llm\n        self.vector_store = vector_store\n\n    async def process_document(self, doc_path):\n        # 1. 提取文本和图片\n        text_pages = extract_text(doc_path)\n        images = extract_images(doc_path)\n\n        # 2. 图片理解：生成图片描述\n        image_descriptions = []\n        for img in images:\n            desc = await self.vision_llm.generate(\n                prompt=\"请详细描述这张图片的内容，\"\n                       \"包括图表数据、文字、关键信息。\",\n                images=[img]\n            )\n            image_descriptions.append({\n                \"image_id\": img.id,\n                \"page\": img.page,\n                \"description\": desc,\n                \"type\": self._classify_image(img)\n            })\n\n        # 3. 合并文本和图片描述，建立索引\n        all_chunks = []\n        for page in text_pages:\n            page_images = [\n                d for d in image_descriptions\n                if d[\"page\"] == page.number\n            ]\n            chunk = {\n                \"text\": page.text,\n                \"image_descriptions\": page_images,\n                \"page\": page.number\n            }\n            all_chunks.append(chunk)\n\n        await self.vector_store.index(all_chunks)\n        return all_chunks\n\n    async def answer(self, question, images=None):\n        # 检索相关上下文\n        context = await self.vector_store.search(question)\n\n        # 如果用户提供了图片，使用视觉模型\n        if images:\n            return await self.vision_llm.generate(\n                prompt=f\"基于以下文档内容和用户上传的图片\"\n                       f\"回答问题。\\n\\n文档：{context}\"\n                       f\"\\n\\n问题：{question}\",\n                images=images\n            )\n        return await self.text_llm.generate(\n            f\"文档：{context}\\n问题：{question}\"\n        )\n```\n\n## 关键要点\n\n1. 图片描述(Image Captioning)是将视觉信息转化为可检索文本的关键\n2. 不同类型图片（图表、照片、示意图）需要不同的理解策略\n3. 用户可能上传图片作为问题的一部分，需要支持多模态输入\n4. 图片描述的质量直接影响检索效果\n\n## 工程实践\n\n建议：使用GPT-4V/Claude Vision等多模态模型处理图片；为图表类型图片生成结构化数据（表格、数值）；图片描述和文本分别建立索引支持混合检索；监控图片OCR和描述质量。",
+    "tags": [
+      "文档问答",
+      "多模态",
+      "视觉理解"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-031",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "如何用LLM-as-Judge方法自动评估AI应用的输出质量？",
+    "answer": "## 核心概念\n\nLLM-as-Judge是使用一个较强的LLM作为\"评判官\"，自动评估另一个LLM（或同一个LLM）输出的质量。相比人工评估，它成本低、速度快、可规模化，但需要注意评估偏差。\n\n## 实现方案\n\n```python\nclass LLMJudge:\n    def __init__(self, judge_llm):\n        self.judge = judge_llm\n\n    async def evaluate(self, question, answer,\n                       reference=None):\n        # 带参考答案的评估\n        if reference:\n            prompt = f\"\"\"\n请评估AI回答的质量。\n\n问题：{question}\nAI回答：{answer}\n参考答案：{reference}\n\n请从以下维度评分(1-5)：\n1. 准确性：与参考答案的事实是否一致\n2. 完整性：是否涵盖关键信息\n3. 相关性：是否切题\n4. 清晰度：表达是否清楚\n\n返回JSON格式：\n{{\"accuracy\": N, \"completeness\": N,\n  \"relevance\": N, \"clarity\": N,\n  \"overall\": N, \"reasoning\": \"评分理由\"}}\"\"\"\n        else:\n            # 无参考答案的评估\n            prompt = f\"\"\"\n请评估AI回答的质量。\n问题：{question}\nAI回答：{answer}\n\n评分维度(1-5)：有用性、准确性、安全性\n返回JSON格式的评分和理由。\"\"\"\n\n        result = await self.judge.generate(prompt)\n        return json.loads(result)\n\n    async def pairwise_compare(self, question,\n                                answer_a, answer_b):\n        \"\"\"对比评估两个回答\"\"\"\n        prompt = f\"\"\"\n问题：{question}\n回答A：{answer_a}\n回答B：{answer_b}\n\n哪个回答更好？返回：\n{{\"winner\": \"A\"或\"B\"或\"tie\",\n  \"reasoning\": \"判断理由\"}}\"\"\"\n        return json.loads(await self.judge.generate(prompt))\n```\n\n## 关键要点\n\n1. 评估模型应强于被评估模型，否则评估结果不可靠\n2. 评分标准需要明确定义，减少主观性\n3. Pairwise比较通常比绝对评分更稳定\n4. 位置偏差(position bias)需要通过交换顺序来消除\n\n## 工程实践\n\n建议：定期校准自动评估与人工评估的相关性；使用多个评估维度的加权综合分数；对边界分数（如3分）进行人工复核；评估Prompt也需要迭代优化。",
+    "tags": [
+      "AI评估",
+      "LLM-as-Judge",
+      "自动评估"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-032",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "AI应用的A/B测试如何设计和实施？",
+    "answer": "## 核心概念\n\nA/B测试是对比两个或多个AI系统版本在真实用户场景下表现的实验方法。通过随机分流和统计检验，科学地评估模型/Prompt/策略变更的效果。\n\n## 实现方案\n\n```python\nimport hashlib\nimport numpy as np\nfrom scipy import stats\n\nclass ABTestManager:\n    def __init__(self, experiments):\n        self.experiments = experiments\n        self.results = defaultdict(list)\n\n    def assign_variant(self, user_id, experiment_name):\n        \"\"\"基于用户ID确定性分流\"\"\"\n        hash_val = hashlib.md5(\n            f\"{user_id}:{experiment_name}\".encode()\n        ).hexdigest()\n        ratio = int(hash_val[:8], 16) / 0xFFFFFFFF\n\n        experiment = self.experiments[experiment_name]\n        cumulative = 0\n        for variant, weight in experiment[\"variants\"].items():\n            cumulative += weight\n            if ratio < cumulative:\n                return variant\n        return list(experiment[\"variants\"].keys())[-1]\n\n    async def record_outcome(self, experiment, variant,\n                             metric, value):\n        self.results[f\"{experiment}:{variant}\"].append(value)\n\n    def analyze(self, experiment_name):\n        \"\"\"统计分析实验结果\"\"\"\n        exp = self.experiments[experiment_name]\n        variants = list(exp[\"variants\"].keys())\n\n        groups = {}\n        for v in variants:\n            key = f\"{experiment_name}:{v}\"\n            groups[v] = self.results.get(key, [])\n\n        # t检验比较\n        if len(variants) == 2:\n            t_stat, p_value = stats.ttest_ind(\n                groups[variants[0]], groups[variants[1]]\n            )\n            return {\n                \"p_value\": p_value,\n                \"significant\": p_value < 0.05,\n                \"control_mean\": np.mean(groups[variants[0]]),\n                \"treatment_mean\": np.mean(groups[variants[1]])\n            }\n```\n\n## 关键要点\n\n1. 分流需要确定性（同一用户始终看到同一版本）和随机性\n2. 样本量需要足够大才能得出统计显著的结论\n3. 评估指标需要预先定义，避免\"p值操纵\"\n4. 实验周期要足够长，覆盖不同时间段的用户行为\n\n## 工程实践\n\n建议：先在小流量（如5%）验证无明显问题再扩大；设置安全回滚机制；监控核心业务指标防退化；记录实验全流程便于复盘和论文撰写。",
+    "tags": [
+      "AI评估",
+      "A/B测试",
+      "实验设计"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-033",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "AI应用评估中的人工评估流程如何设计？",
+    "answer": "## 核心概念\n\n人工评估是AI应用质量评估的金标准。它通过训练有素的标注员对AI输出进行多维度打分，提供最可靠的评估结果。设计良好的人工评估流程需要关注标注规范、标注员一致性和质量控制。\n\n## 评估流程设计\n\n```python\nclass HumanEvalPipeline:\n    def __init__(self, annotation_tool):\n        self.tool = annotation_tool\n        self.guidelines = None\n\n    def setup_evaluation(self, task_name, criteria):\n        \"\"\"配置评估任务\"\"\"\n        self.guidelines = {\n            \"task\": task_name,\n            \"criteria\": criteria,  # 评估维度和标准\n            \"scale\": \"1-5 Likert\",\n            \"examples\": {\n                \"5\": \"完美回答...\",\n                \"3\": \"基本正确但有遗漏...\",\n                \"1\": \"完全错误...\"\n            },\n            \"required_annotations_per_item\": 3,\n            \"qualified_annotators\": []\n        }\n\n    async def run_evaluation(self, samples):\n        # 1. 分配标注任务（每人标注部分样本）\n        assignments = self._assign_tasks(\n            samples,\n            n_annotators=self.guidelines[\n                \"required_annotations_per_item\"\n            ]\n        )\n\n        # 2. 收集标注结果\n        annotations = await self.tool.collect(assignments)\n\n        # 3. 计算标注一致性（Kappa系数）\n        agreement = self._calculate_agreement(annotations)\n\n        # 4. 处理分歧（讨论或仲裁）\n        if agreement < 0.6:  # 一致性较低\n            annotations = await self._resolve_conflicts(\n                annotations\n            )\n\n        return {\n            \"scores\": self._aggregate(annotations),\n            \"agreement\": agreement,\n            \"details\": annotations\n        }\n\n    def _calculate_agreement(self, annotations):\n        \"\"\"计算Cohen's Kappa或Fleiss' Kappa\"\"\"\n        # ... 标注一致性计算\n        return kappa_score\n```\n\n## 关键要点\n\n1. 标注规范(Guidelines)是评估质量的基础，需要清晰、具体、有示例\n2. 每个样本建议至少3人标注以计算一致性\n3. Cohen's Kappa > 0.6认为一致性可接受\n4. 需要定期校准确保标注员理解标准不漂移\n\n## 工程实践\n\n建议：先做小规模试标注校准标准；设置\"黄金标准\"样本检测标注质量；对分歧样本引入专家仲裁；将人工评估结果用于校准自动评估指标。",
+    "tags": [
+      "AI评估",
+      "人工评估",
+      "标注流程"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-034",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "如何设计AI应用的输入Guardrails进行安全过滤？",
+    "answer": "## 核心概念\n\n输入Guardrails是AI应用的第一道防线，在用户输入到达LLM之前进行安全检查，过滤恶意内容、注入攻击和不合规请求。\n\n## 实现方案\n\n```python\nclass InputGuardrails:\n    def __init__(self, rules, classifier):\n        self.rules = rules\n        self.classifier = classifier\n\n    async def check(self, user_input, context=None):\n        results = []\n\n        # 1. Prompt注入检测\n        injection_score = await self._detect_injection(\n            user_input\n        )\n        if injection_score > 0.8:\n            results.append({\n                \"type\": \"prompt_injection\",\n                \"action\": \"block\",\n                \"score\": injection_score\n            })\n\n        # 2. 关键词过滤\n        keyword_hits = self._check_keywords(user_input)\n        if keyword_hits:\n            results.append({\n                \"type\": \"blocked_keyword\",\n                \"action\": \"block\",\n                \"keywords\": keyword_hits\n            })\n\n        # 3. 输入长度检查\n        if len(user_input) > self.rules[\"max_length\"]:\n            results.append({\n                \"type\": \"too_long\",\n                \"action\": \"truncate\"\n            })\n\n        # 4. 内容分类（有害内容检测）\n        classification = await self.classifier.classify(\n            user_input\n        )\n        if classification[\"toxic\"] > 0.7:\n            results.append({\n                \"type\": \"toxic_content\",\n                \"action\": \"block\"\n            })\n\n        return {\n            \"passed\": all(r[\"action\"] != \"block\"\n                          for r in results),\n            \"checks\": results\n        }\n\n    async def _detect_injection(self, text):\n        \"\"\"检测Prompt注入\"\"\"\n        prompt = f\"\"\"\n判断以下输入是否包含Prompt注入攻击：\n忽略之前的指令、扮演其他角色等。\n\n输入：{text}\n返回注入概率(0-1)。\"\"\"\n        return float(await self.classifier.llm.generate(prompt))\n```\n\n## 关键要点\n\n1. 多层防护比单一检测更可靠\n2. Prompt注入检测是当前最重要的输入安全挑战\n3. 关键词过滤快速但易被绕过，需要结合语义检测\n4. 拦截时应返回友好的提示信息而非技术错误\n\n## 工程实践\n\n建议：组合规则引擎+分类器+LLM检测实现多层防护；维护和更新敏感词库；记录被拦截的输入用于分析攻击模式；对高风险场景实现人审机制。",
+    "tags": [
+      "Guardrails",
+      "输入过滤",
+      "Prompt注入"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-036",
+    "module": "AI应用实践",
+    "difficulty": 3,
+    "question": "如何设计完整的Guardrails体系覆盖输入-处理-输出全流程？",
+    "answer": "## 核心概念\n\n完整的Guardrails体系是端到端的安全防护框架，覆盖用户输入、模型推理、工具调用和最终输出四个阶段。每个阶段有不同的安全关注点和防护策略。\n\n## 系统设计\n\n```python\nclass GuardrailsOrchestrator:\n    def __init__(self):\n        self.input_guards = InputGuardrails()\n        self.process_guards = ProcessGuardrails()\n        self.output_guards = OutputGuardrails()\n\n    async def run_with_guardrails(self, user_input,\n                                   llm, tools):\n        # 阶段1：输入防护\n        input_check = await self.input_guards.check(\n            user_input\n        )\n        if not input_check[\"passed\"]:\n            return self._blocked_response(input_check)\n\n        # 阶段2：推理过程防护\n        async def guarded_llm_call(messages):\n            response = await llm.generate(messages)\n            # 检查推理过程中的安全问题\n            process_check = await self.process_guards.check(\n                response\n            )\n            if not process_check[\"passed\"]:\n                return self._safe_fallback()\n            return response\n\n        # 阶段3：工具调用防护\n        async def guarded_tool_call(tool_name, args):\n            tool_check = await self.process_guards.check_tool(\n                tool_name, args\n            )\n            if not tool_check[\"passed\"]:\n                return {\"error\": \"工具调用被安全策略拦截\"}\n            return await tools[tool_name].execute(args)\n\n        # 执行主流程\n        result = await self._run_agent_loop(\n            user_input, guarded_llm_call, guarded_tool_call\n        )\n\n        # 阶段4：输出防护\n        output_check = await self.output_guards.process(\n            result, context=user_input\n        )\n        if not output_check[\"passed\"]:\n            return \"抱歉，我无法提供该回答。请尝试其他问题。\"\n\n        return output_check[\"output\"]\n\n    def _blocked_response(self, check_result):\n        reasons = [c[\"type\"] for c in check_result[\"checks\"]]\n        return f\"您的请求因安全原因被拒绝：{reasons}\"\n```\n\n## 关键要点\n\n1. 每个阶段的Guardrails应独立运作，避免相互影响\n2. 工具调用防护常被忽视，但同样重要\n3. 拦截策略需要分级：轻度修改 -> 重新生成 -> 拒绝回答\n4. 所有安全事件需要完整记录用于审计\n\n## 工程实践\n\n建议：将Guardrails做成可插拔的中间件；不同安全等级的场景配置不同防护策略；实现\"安全开关\"支持紧急情况下的快速响应；定期进行红队测试评估防护效果。",
+    "tags": [
+      "Guardrails",
+      "全流程防护",
+      "安全架构"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-037",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "什么是Human-in-the-Loop？在AI应用中如何实现审批流程？",
+    "answer": "## 核心概念\n\nHuman-in-the-Loop(HITL)是指在AI系统的决策流程中引入人工审核环节，让人类对AI的关键决策进行审批、修正或确认。这在高风险场景（如金融交易、医疗诊断、内容发布）中尤为重要。\n\n## 实现方案\n\n```python\nclass HITLApprovalFlow:\n    def __init__(self, notification_service, db):\n        self.notifier = notification_service\n        self.db = db\n\n    async def submit_for_approval(self, action,\n                                   ai_decision, risk_level):\n        # 低风险自动通过\n        if risk_level == \"low\":\n            return {\"approved\": True, \"by\": \"auto\"}\n\n        # 创建审批请求\n        request = {\n            \"id\": generate_id(),\n            \"action\": action,\n            \"ai_decision\": ai_decision,\n            \"risk_level\": risk_level,\n            \"status\": \"pending\",\n            \"created_at\": datetime.now()\n        }\n        await self.db.save(request)\n\n        # 通知审批人\n        await self.notifier.notify(\n            role=self._get_approver_role(risk_level),\n            message=f\"待审批：{action['summary']}\",\n            request_id=request[\"id\"]\n        )\n\n        # 等待审批结果（带超时）\n        result = await self._wait_for_decision(\n            request[\"id\"], timeout=3600\n        )\n        return result\n\n    async def approve(self, request_id, approver,\n                      comments=None):\n        await self.db.update(request_id, {\n            \"status\": \"approved\",\n            \"approver\": approver,\n            \"comments\": comments,\n            \"approved_at\": datetime.now()\n        })\n        # 触发后续执行\n        await self._execute_approved_action(request_id)\n\n    async def reject(self, request_id, approver, reason):\n        await self.db.update(request_id, {\n            \"status\": \"rejected\",\n            \"approver\": approver,\n            \"reason\": reason\n        })\n```\n\n## 关键要点\n\n1. 不是所有决策都需要人工审批——根据风险等级分级处理\n2. 审批流程需要异步化，不阻塞主流程\n3. 超时策略很重要——避免长时间等待\n4. 审批决策需要记录完整审计日志\n\n## 工程实践\n\n建议：实现多级审批（低风险自动通过、中风险单人审批、高风险多人审批）；支持批量审批提高效率；审批结果反馈到模型训练形成闭环。",
+    "tags": [
+      "HITL",
+      "审批流程",
+      "人机协同"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-038",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "如何设计AI应用中的反馈循环(Feedback Loop)机制？",
+    "answer": "## 核心概念\n\n反馈循环是收集用户对AI输出的评价（满意/不满意、纠正、补充），并将这些反馈用于持续改进系统的过程。它是AI应用从\"能用\"到\"好用\"的关键机制。\n\n## 实现方案\n```python\nclass FeedbackLoop:\n    def __init__(self, feedback_db, retrain_pipeline):\n        self.db = feedback_db\n        self.retrain = retrain_pipeline\n\n    async def collect_feedback(self, interaction_id,\n                               feedback_type, details):\n        \"\"\"收集用户反馈\"\"\"\n        feedback = {\n            \"interaction_id\": interaction_id,\n            \"type\": feedback_type,  # thumbs_up/down, correction, rating\n            \"details\": details,\n            \"timestamp\": datetime.now()\n        }\n        await self.db.save(feedback)\n\n        # 实时处理负面反馈\n        if feedback_type == \"thumbs_down\":\n            await self._handle_negative_feedback(feedback)\n\n    async def _handle_negative_feedback(self, feedback):\n        \"\"\"处理负面反馈\"\"\"\n        # 1. 分析失败原因\n        analysis = await self._analyze_failure(\n            feedback[\"interaction_id\"]\n        )\n\n        # 2. 归类问题类型\n        category = analysis[\"category\"]  # retrieval / generation / intent\n\n        # 3. 根据类型采取不同改进措施\n        if category == \"retrieval\":\n            await self._improve_retrieval(analysis)\n        elif category == \"generation\":\n            await self._add_to_training_data(analysis)\n\n    async def get_improvement_insights(self):\n        \"\"\"从反馈中提取改进洞察\"\"\"\n        feedbacks = await self.db.get_recent(days=30)\n        prompt = f\"\"\"\n分析以下用户反馈数据，\n识别系统的主要问题和改进方向：\n{json.dumps(feedbacks, ensure_ascii=False)}\n\n返回：\n1. Top 5 问题类型及频率\n2. 每类问题的根本原因\n3. 优先改进建议\"\"\"\n        return await self.llm.generate(prompt)\n```\n\n## 关键要点\n\n1. 反馈收集要尽量无摩擦（一键点赞/点踩）\n2. 负面反馈需要优先处理并追踪\n3. 用户纠正是最有价值的反馈——直接告诉你正确答案\n4. 反馈分析需要定期批量进行，发现系统性问题\n\n## 工程实践\n\n建议：在UI层面设计简洁的反馈入口；实现反馈数据的可视化仪表盘；将高频负面反馈纳入优先修复队列；定期用反馈数据优化Prompt和RAG检索。",
+    "tags": [
+      "HITL",
+      "反馈循环",
+      "持续改进"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-039",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "什么是副驾驶(Copilot)和自主代理(Autonomous Agent)产品模式？",
+    "answer": "## 核心概念\n\n- **副驾驶(Copilot)模式**：AI作为人类的辅助工具，在人类主导的工作流中提供建议、补全和辅助决策。人类保持最终控制权。\n- **自主代理(Autonomous Agent)模式**：AI独立完成端到端任务，仅在关键决策点请求人类确认。适合重复性高、规则明确的任务。\n\n## 产品模式对比\n\n```python\n# Copilot模式示例：代码补全\nclass CopilotMode:\n    async def assist(self, user_context):\n        # AI提供建议，用户选择是否采纳\n        suggestions = await self.llm.generate_suggestions(\n            user_context\n        )\n        return {\n            \"suggestions\": suggestions,\n            \"requires_user_action\": True,\n            \"auto_execute\": False\n        }\n\n# Autonomous Agent模式示例：自动客服\nclass AutonomousMode:\n    async def handle(self, task):\n        # AI自主完成任务\n        plan = await self.llm.plan(task)\n        result = await self.execute_plan(plan)\n\n        # 仅在高风险时请求确认\n        if result[\"risk_level\"] == \"high\":\n            return {\n                \"action\": \"request_approval\",\n                \"plan\": plan,\n                \"auto_execute\": False\n            }\n        return {\n            \"action\": \"executed\",\n            \"result\": result,\n            \"auto_execute\": True\n        }\n```\n\n## 关键要点\n\n1. Copilot适合创意性、决策性工作（写作、编程、分析）\n2. Autonomous Agent适合执行性、重复性工作（客服、数据处理）\n3. 两种模式可以混合——不同任务环节使用不同模式\n4. 用户信任度是选择模式的关键因素\n\n## 工程实践\n\n建议：从Copilot模式开始建立用户信任，逐步过渡到自主模式；实现\"信任等级\"系统，随使用积累逐步放开自主权限；关键操作始终保留人工确认选项。",
+    "tags": [
+      "产品设计",
+      "Copilot",
+      "自主代理"
+    ],
+    "source": "高频"
+  },
+  {
+    "id": "ai-app-040",
+    "module": "AI应用实践",
+    "difficulty": 2,
+    "question": "AI应用的工作流(Workflow)和嵌入式(Embedded)设计模式有什么区别？",
+    "answer": "## 核心概念\n\n- **工作流模式**：AI作为流程中的一个环节，接收上游输入，处理后传递给下游。适合批处理和自动化场景。\n- **嵌入式模式**：AI能力嵌入到现有产品中，作为功能增强而非独立产品。用户可能感知不到AI的存在。\n\n## 模式实现\n\n```python\n# 工作流模式：数据处理流水线\nclass AIWorkflow:\n    def __init__(self, steps):\n        self.steps = steps  # 处理步骤列表\n\n    async def execute(self, input_data):\n        data = input_data\n        results = []\n\n        for step in self.steps:\n            result = await step.process(data)\n            results.append({\n                \"step\": step.name,\n                \"input\": data,\n                \"output\": result\n            })\n            data = result  # 传递给下一步\n\n        return {\n            \"final_output\": data,\n            \"trace\": results\n        }\n\n# 嵌入式模式：搜索引擎增强\nclass EmbeddedAI:\n    def enhance_search(self, query, results):\n        # AI能力透明地嵌入搜索流程\n        # 1. 查询理解\n        intent = self.classify_intent(query)\n        # 2. 结果重排序\n        reranked = self.rerank(query, results)\n        # 3. 摘要生成\n        summary = self.generate_summary(reranked)\n\n        return {\n            \"results\": reranked,\n            \"summary\": summary,\n            \"ai_enhanced\": True  # 可选：标记AI增强\n        }\n```\n\n## 关键要点\n\n1. 工作流模式强调可观测性和可调试性——每个步骤的输入输出都可追踪\n2. 嵌入式模式强调用户体验——AI能力无缝融入现有流程\n3. 工作流适合后台批处理，嵌入式适合前台交互\n4. 两种模式在实际产品中经常组合使用\n\n## 工程实践\n\n建议：工作流使用DAG（有向无环图）定义步骤依赖关系；嵌入式模式做好降级方案（AI不可用时产品仍可基本使用）；根据用户反馈数据决定AI功能的显隐程度；工作流实现断点重试和中间结果缓存。",
+    "tags": [
+      "产品设计",
+      "工作流",
+      "嵌入式AI"
+    ],
+    "source": "高频"
+  }
+]

@@ -1,0 +1,407 @@
+[
+  {
+    "id": "java-basics-001",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 有哪几种基本数据类型？它们的大小和取值范围分别是什么？",
+    "answer": "## 核心概念\n\nJava 提供 8 种基本数据类型（primitive types），分为四大类：整型、浮点型、字符型和布尔型。基本类型存储在栈上（局部变量时），访问速度快，不涉及对象头开销。\n\n### 类型一览\n\n| 类型 | 大小 | 取值范围 |\n|------|------|----------|\n| `byte` | 1字节 | -128 ~ 127 |\n| `short` | 2字节 | -32768 ~ 32767 |\n| `int` | 4字节 | -2^31 ~ 2^31-1 |\n| `long` | 8字节 | -2^63 ~ 2^63-1 |\n| `float` | 4字节 | 约 ±3.4E38 |\n| `double` | 8字节 | 约 ±1.7E308 |\n| `char` | 2字节 | 0 ~ 65535 |\n| `boolean` | 1位/JVM实现 | true/false |\n\n### 代码示例\n\n```java\nint age = 25;\nlong bigNum = 100_000_000L;  // long 需要 L 后缀\ndouble pi = 3.14159;\nfloat f = 3.14f;             // float 需要 f 后缀\nchar c = 'A';\nboolean flag = true;\nbyte b = 127;\n```\n\n### 关键要点\n\n- 整型默认是 `int`，浮点型默认是 `double`。\n- `long` 字面量加 `L`，`float` 字面量加 `f`。\n- `char` 采用 Unicode 编码，占 2 字节。\n- `boolean` 的大小 JVM 规范未严格定义，HotSpot 中通常用 int 存储。\n\n### 注意事项\n\n- 浮点数不适合精确计算（如金额），应使用 `BigDecimal`。\n- 自动装箱/拆箱发生在基本类型与包装类之间，注意 `Integer` 缓存池（-128~127）。\n- 不同平台上基本类型大小固定，这是 Java 跨平台的保证之一。",
+    "tags": ["基本类型", "数据类型", "Java基础"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-002",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "自动装箱和自动拆箱是什么？有哪些常见陷阱？",
+    "answer": "## 核心概念\n\n自动装箱（Autoboxing）是编译器自动将基本类型转换为对应的包装类，自动拆箱（Unboxing）是反向过程。Java 5 引入这一特性，简化了基本类型与对象之间的转换。\n\n### 代码示例\n\n```java\n// 自动装箱\nInteger a = 100;       // 编译器转为 Integer.valueOf(100)\n// 自动拆箱\nint b = a;             // 编译器转为 a.intValue()\n\n// 集合中的装箱拆箱\nList<Integer> list = new ArrayList<>();\nlist.add(42);          // 自动装箱\nint val = list.get(0); // 自动拆箱\n```\n\n### 关键要点\n\n- 装箱调用 `valueOf()`，拆箱调用 `xxxValue()`。\n- `Integer` 缓存了 -128 到 127 的对象。\n\n### 常见陷阱\n\n```java\nInteger x = 127;\nInteger y = 127;\nSystem.out.println(x == y);      // true（缓存）\n\nInteger m = 128;\nInteger n = 128;\nSystem.out.println(m == n);      // false（新对象）\nSystem.out.println(m.equals(n)); // true\n\nInteger num = null;\nint val = num;  // NullPointerException！拆箱时触发\n```\n\n### 最佳实践\n\n- 比较包装类始终使用 `equals()` 而非 `==`。\n- 集合泛型必须用包装类，但局部计算优先用基本类型以避免不必要的装箱开销。\n- 注意方法重载时基本类型和包装类型的区分，避免歧义。",
+    "tags": ["装箱拆箱", "包装类", "Integer"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-003",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "`String`、`StringBuilder` 和 `StringBuffer` 有什么区别？分别在什么场景下使用？",
+    "answer": "## 核心概念\n\n`String` 是不可变的字符序列，每次修改都会创建新对象。`StringBuilder` 和 `StringBuffer` 是可变的字符序列，内部维护一个可扩展的 `char[]`（Java 9+ 改为 `byte[]`），区别在于 `StringBuffer` 是线程安全的。\n\n### 代码示例\n\n```java\n// String 不可变\nString s = \"hello\";\ns = s + \" world\";  // 创建了新对象\n\n// StringBuilder 可变，非线程安全\nStringBuilder sb = new StringBuilder();\nsb.append(\"hello\");\nsb.append(\" world\");\nString result = sb.toString();\n\n// StringBuffer 可变，线程安全（方法加 synchronized）\nStringBuffer buf = new StringBuffer();\nbuf.append(\"hello\");\n```\n\n### 关键要点\n\n| 特性 | String | StringBuilder | StringBuffer |\n|------|--------|---------------|-------------|\n| 可变性 | 不可变 | 可变 | 可变 |\n| 线程安全 | 是（不可变） | 否 | 是 |\n| 性能 | 拼接慢 | 最快 | 较快 |\n| 使用场景 | 常量、少量操作 | 单线程大量拼接 | 多线程大量拼接 |\n\n### 注意事项\n\n- 编译器会优化 `String` 的 `+` 拼接为 `StringBuilder`，但循环中每次迭代仍会创建新的 `StringBuilder`。\n- `String` 的不可变性使其可以作为 `HashMap` 的 key，且天然线程安全。\n- `StringBuilder` 初始容量为 16，预估长度可在构造时指定以减少扩容。\n\n### 最佳实践\n\n单线程字符串拼接一律使用 `StringBuilder`；多线程共享场景用 `StringBuffer`（实际很少见）；简单拼接或常量操作用 `String`。",
+    "tags": ["String", "StringBuilder", "StringBuffer"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-004",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "`String` 的不可变性是如何实现的？为什么 `String` 要设计为不可变？",
+    "answer": "## 核心概念\n\n`String` 的不可变性由三个因素共同保证：`final char[]` 存储、`final` 类不可继承、以及没有提供修改内部数组的方法。\n\n### 代码示例\n\n```java\n// String 源码关键部分（Java 8）\npublic final class String\n    implements java.io.Serializable, Comparable<String>, CharSequence {\n    private final char value[];  // 不可变的核心\n    private int hash;            // 缓存 hashCode\n\n    // 没有 setCharAt 等修改方法\n}\n```\n\n### 不可变的保证\n\n1. `value` 数组用 `private final` 修饰，外部无法直接访问。\n2. `String` 类是 `final` 的，不能被继承覆写。\n3. 没有任何修改 `value` 内容的公开方法。\n4. `substring`、`concat`、`replace` 等方法都返回新 `String`。\n\n### 为什么设计为不可变\n\n1. **字符串常量池**：不可变性使得相同字面量可以共享同一个对象，节省内存。\n2. **线程安全**：不可变对象天然线程安全，无需同步。\n3. **hashCode 缓存**：不变的内容可以缓存 `hashCode`，适合作为 `HashMap` 的 key。\n4. **安全性**：类加载器、网络连接、文件路径等场景依赖字符串不可变来防止恶意篡改。\n\n### 注意事项\n\n- `String` 虽然不可变，但可以通过反射修改 `value` 数组（不推荐，破坏常量池）。\n- Java 9 引入 Compact Strings，Latin-1 字符用 `byte[]` 存储以节省内存。",
+    "tags": ["String", "不可变", "常量池"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-005",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "`==` 和 `equals()` 有什么区别？`hashCode()` 和 `equals()` 的关系是什么？",
+    "answer": "## 核心概念\n\n`==` 比较的是引用地址（基本类型比较值），`equals()` 默认也是比较地址，但可以被覆写为比较内容。`hashCode()` 返回对象的哈希码，与 `equals()` 有紧密的契约关系。\n\n### 代码示例\n\n```java\nString s1 = new String(\"hello\");\nString s2 = new String(\"hello\");\nSystem.out.println(s1 == s2);       // false（不同对象）\nSystem.out.println(s1.equals(s2));  // true（内容相同）\n\nString s3 = \"hello\";\nString s4 = \"hello\";\nSystem.out.println(s3 == s4);       // true（常量池复用）\n```\n\n### hashCode 与 equals 的契约\n\n1. 两个对象 `equals()` 为 `true`，则 `hashCode()` 必须相同。\n2. `hashCode()` 相同，`equals()` 不一定为 `true`（哈希冲突）。\n3. 覆写 `equals()` 必须同时覆写 `hashCode()`。\n\n### 为什么需要这个契约\n\n`HashMap` 先用 `hashCode()` 定位桶，再用 `equals()` 在桶内找精确匹配。如果只覆写 `equals()` 不覆写 `hashCode()`，两个逻辑相等的对象可能落到不同桶，导致集合行为异常。\n\n### 注意事项\n\n- 基本类型只能用 `==` 比较。\n- `Objects.equals()` 可以安全处理 `null`。\n- `equals()` 必须满足自反性、对称性、传递性、一致性和非空性。",
+    "tags": ["equals", "hashCode", "比较"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-006",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 集合框架的整体结构是怎样的？`Collection` 和 `Map` 有什么区别？",
+    "answer": "## 核心概念\n\nJava 集合框架以 `java.util` 包为核心，分为两大体系：`Collection`（单列集合）和 `Map`（键值对集合）。`Collection` 下又有 `List`、`Set`、`Queue` 三个主要子接口。\n\n### 体系结构\n\n```\nCollection\n├── List（有序，可重复）\n│   ├── ArrayList\n│   ├── LinkedList\n│   └── Vector / Stack\n├── Set（不可重复）\n│   ├── HashSet\n│   ├── LinkedHashSet\n│   └── TreeSet\n└── Queue\n    ├── PriorityQueue\n    └── Deque (ArrayDeque, LinkedList)\n\nMap（键值对）\n├── HashMap\n├── LinkedHashMap\n├── TreeMap\n├── Hashtable\n└── ConcurrentHashMap\n```\n\n### List vs Set vs Map\n\n| 特性 | List | Set | Map |\n|------|------|-----|-----|\n| 有序性 | 有序 | 无序(HashSet) | 无序(HashMap) |\n| 重复元素 | 允许 | 不允许 | key 不允许 |\n| null 值 | 允许多个 | 允许一个 | HashMap 允许一个 null key |\n| 访问方式 | 索引 | 迭代器 | key 访问 |\n\n### 关键要点\n\n- `ArrayList` 基于动态数组，随机访问 O(1)，插入删除 O(n)。\n- `LinkedList` 基于双向链表，插入删除 O(1)，随机访问 O(n)。\n- `HashSet` 底层是 `HashMap`，元素作为 key，value 统一用一个虚拟对象。\n- `TreeSet` / `TreeMap` 基于红黑树，元素有序。\n\n### 最佳实践\n\n初始化集合时尽量指定容量，避免频繁扩容。多线程场景使用 `ConcurrentHashMap`、`CopyOnWriteArrayList` 等并发集合。",
+    "tags": ["集合框架", "Collection", "Map"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-007",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "`ArrayList` 和 `LinkedList` 的区别是什么？各自适用什么场景？",
+    "answer": "## 核心概念\n\n`ArrayList` 基于动态数组实现，`LinkedList` 基于双向链表实现。数据结构的差异决定了它们在不同操作上的性能特征。\n\n### 代码示例\n\n```java\n// ArrayList 默认初始容量 10，按 1.5 倍扩容\nArrayList<String> arrayList = new ArrayList<>();\narrayList.add(\"a\");  // O(1) 均摊\narrayList.get(0);     // O(1)\n\n// LinkedList 同时实现了 List 和 Deque 接口\nLinkedList<String> linkedList = new LinkedList<>();\nlinkedList.addFirst(\"a\");  // O(1)\nlinkedList.addLast(\"b\");   // O(1)\n```\n\n### 性能对比\n\n| 操作 | ArrayList | LinkedList |\n|------|-----------|------------|\n| 随机访问 get(i) | O(1) | O(n) |\n| 尾部添加 add | O(1) 均摊 | O(1) |\n| 中间插入 add(i,e) | O(n) | O(n)（查找O(n)+插入O(1)） |\n| 中间删除 remove(i) | O(n) | O(n) |\n| 内存占用 | 紧凑，有预留空间 | 每个节点额外存储前后指针 |\n\n### 关键要点\n\n- `ArrayList` 的 `add` 在扩容时需要拷贝数组，均摊复杂度仍为 O(1)。\n- `LinkedList` 虽然插入本身是 O(1)，但定位到插入位置需要 O(n) 遍历。\n- `LinkedList` 实现了 `Deque` 接口，可以当双端队列使用。\n- CPU 缓存对 `ArrayList` 更友好（连续内存），实际性能差距比理论更大。\n\n### 最佳实践\n\n绝大多数场景优先使用 `ArrayList`。只有在频繁头部插入/删除且不需要随机访问时才考虑 `LinkedList`。如果需要双端队列，`ArrayDeque` 通常优于 `LinkedList`。",
+    "tags": ["ArrayList", "LinkedList", "集合"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-008",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "`HashMap` 的底层实现原理是什么？JDK 8 做了哪些优化？",
+    "answer": "## 核心概念\n\n`HashMap` 基于数组 + 链表 + 红黑树实现。通过 key 的 `hashCode()` 计算数组下标，哈希冲突时用链表存储，当链表长度超过阈值时转为红黑树以提高查询效率。\n\n### 存储结构\n\n```java\n// JDK 8 HashMap 核心结构\ntransient Node<K,V>[] table;  // 数组\n\nstatic class Node<K,V> {\n    final int hash;\n    final K key;\n    V value;\n    Node<K,V> next;  // 链表指针\n}\n```\n\n### 关键流程\n\n1. **计算 hash**：`(h = key.hashCode()) ^ (h >>> 16)`，高位参与运算减少冲突。\n2. **定位桶**：`(n - 1) & hash`，要求容量为 2 的幂次。\n3. **插入**：桶为空直接放入；不为空则遍历链表/红黑树，key 相同则覆盖，否则尾插。\n4. **扩容**：元素数量超过 `容量 * 负载因子(0.75)` 时，容量翻倍并重新分布。\n\n### JDK 8 的优化\n\n1. **尾插法**替代 JDK 7 的头插法，避免多线程扩容时形成环形链表。\n2. **红黑树**：链表长度 >= 8 且数组长度 >= 64 时转为红黑树，查询从 O(n) 优化到 O(log n)。\n3. **hash 扰动**：`hashCode()` 的高 16 位参与运算，利用高位信息减少冲突。\n4. **扩容优化**：利用 `hash & oldCap` 判断元素在新数组中的位置，避免重新计算。\n\n### 注意事项\n\n- `HashMap` 非线程安全，多线程使用 `ConcurrentHashMap`。\n- 默认负载因子 0.75，是时间和空间的折中。\n- 自定义对象作为 key 必须正确实现 `hashCode()` 和 `equals()`。",
+    "tags": ["HashMap", "红黑树", "哈希冲突"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-009",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "`HashMap` 的 `put` 过程是怎样的？扩容机制是什么？",
+    "answer": "## 核心概念\n\n`HashMap.put()` 涉及哈希计算、桶定位、冲突处理、可能的树化和扩容。理解这个过程是掌握 HashMap 的关键。\n\n### put 流程详解\n\n```java\npublic V put(K key, V value) {\n    return putVal(hash(key), key, value, false, true);\n}\n\nfinal V putVal(int hash, K key, V value, boolean onlyIfAbsent, boolean evict) {\n    // 1. table 为空或长度为 0，先 resize()\n    // 2. (n-1) & hash 定位桶\n    // 3. 桶为空，直接新建节点\n    // 4. 桶不为空：\n    //    a. 首节点 key 相同 → 覆盖 value\n    //    b. 首节点是 TreeNode → 红黑树插入\n    //    c. 链表遍历 → 尾插法，链表长度>=8 → 树化\n    // 5. size > threshold → resize() 扩容\n}\n```\n\n### 扩容机制\n\n```java\nfinal Node<K,V>[] resize() {\n    // 新容量 = 旧容量 * 2\n    // 新阈值 = 新容量 * loadFactor\n    // 遍历旧数组，将每个桶的节点重新分配到新数组\n    // JDK8 优化：hash & oldCap == 0 留在原位，否则移到 原位+oldCap\n}\n```\n\n### 关键要点\n\n- 扩容时容量始终翻倍，保证 `容量 - 1` 的二进制全是 1。\n- 扩容的代价很高，预估元素数量可在构造时指定初始容量：`new HashMap<>(expectedSize / 0.75 + 1)`。\n- `hash()` 方法将 key 的 `hashCode()` 高 16 位与低 16 位异或，减少低位冲突。\n\n### 注意事项\n\n- 高并发下多线程同时 put 可能导致数据丢失。\n- 如果 key 的 `hashCode()` 实现不好，所有元素可能集中在少数桶中，退化为链表。\n- 频繁扩容会导致性能抖动，提前设置合适的初始容量很重要。",
+    "tags": ["HashMap", "put", "扩容"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-010",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "`HashSet` 和 `TreeSet` 有什么区别？各自适用什么场景？",
+    "answer": "## 核心概念\n\n`HashSet` 基于 `HashMap` 实现，元素无序，增删查时间复杂度 O(1)。`TreeSet` 基于红黑树实现，元素有序，增删查时间复杂度 O(log n)。\n\n### 代码示例\n\n```java\n// HashSet —— 无序，基于 HashMap\nSet<String> hashSet = new HashSet<>();\nhashSet.add(\"banana\");\nhashSet.add(\"apple\");\nhashSet.add(\"cherry\");\n// 遍历顺序不确定\n\n// TreeSet —— 自然排序（或自定义 Comparator）\nSet<String> treeSet = new TreeSet<>();\ntreeSet.add(\"banana\");\ntreeSet.add(\"apple\");\ntreeSet.add(\"cherry\");\n// 遍历顺序：apple, banana, cherry\n\n// 自定义排序\nTreeSet<Integer> desc = new TreeSet<>(Comparator.reverseOrder());\n```\n\n### 对比\n\n| 特性 | HashSet | TreeSet |\n|------|---------|---------|\n| 底层结构 | HashMap | 红黑树 |\n| 有序性 | 无序 | 有序 |\n| null 值 | 允许一个 | 不允许（TreeMap 需要比较） |\n| 时间复杂度 | O(1) | O(log n) |\n| 元素要求 | hashCode + equals | Comparable 或 Comparator |\n\n### 注意事项\n\n- `TreeSet` 的元素必须实现 `Comparable` 接口或在构造时提供 `Comparator`，否则抛出 `ClassCastException`。\n- `TreeSet` 判断重复依据的是 `compareTo()`/`compare()` 返回 0，而非 `equals()`。\n- 需要快速去重用 `HashSet`，需要排序或范围查询用 `TreeSet`。",
+    "tags": ["HashSet", "TreeSet", "集合"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-011",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 异常体系是怎样的？`Error` 和 `Exception` 有什么区别？",
+    "answer": "## 核心概念\n\nJava 异常体系以 `Throwable` 为根，分为 `Error` 和 `Exception` 两大分支。`Error` 表示系统级错误，程序一般不处理；`Exception` 表示程序可以捕获处理的异常。\n\n### 异常体系\n\n```\nThrowable\n├── Error（系统级错误，不建议捕获）\n│   ├── OutOfMemoryError\n│   ├── StackOverflowError\n│   └── ...\n└── Exception\n    ├── RuntimeException（运行时异常，不强制处理）\n    │   ├── NullPointerException\n    │   ├── ArrayIndexOutOfBoundsException\n    │   ├── ClassCastException\n    │   └── ...\n    └── 受检异常（编译时异常，必须处理）\n        ├── IOException\n        ├── SQLException\n        └── ...\n```\n\n### Error vs Exception\n\n| 特性 | Error | Exception |\n|------|-------|-----------|\n| 严重程度 | 致命，JVM 级别 | 可恢复 |\n| 是否捕获 | 不建议 | 应当处理 |\n| 示例 | OOM、SOF | IO异常、空指针 |\n| 处理方式 | 无法处理 | try-catch 或 throws |\n\n### 关键要点\n\n- **受检异常**（Checked Exception）：编译器强制要求处理，如 `IOException`。\n- **非受检异常**（Unchecked Exception）：`RuntimeException` 及其子类，不强制处理。\n- `try-with-resources`（Java 7+）自动关闭实现 `AutoCloseable` 的资源。\n\n### 最佳实践\n\n- 不要捕获 `Error`，让 JVM 处理。\n- 优先使用具体异常类型，避免 `catch (Exception e)`。\n- `finally` 块用于资源清理，`try-with-resources` 是更优雅的替代。\n- 自定义异常应继承 `RuntimeException`（业务异常）或 `Exception`（受检异常）。",
+    "tags": ["异常处理", "Error", "Exception"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-012",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "`try-catch-finally` 的执行顺序是什么？`finally` 中的代码一定会执行吗？",
+    "answer": "## 核心概念\n\n`try-catch-finally` 是 Java 异常处理的基本结构。`try` 包裹可能抛异常的代码，`catch` 捕获并处理异常，`finally` 无论是否异常都会执行，通常用于资源清理。\n\n### 执行顺序\n\n```java\npublic static int test() {\n    try {\n        System.out.println(\"try\");\n        return 1;\n    } catch (Exception e) {\n        System.out.println(\"catch\");\n        return 2;\n    } finally {\n        System.out.println(\"finally\");\n    }\n}\n// 输出：try → finally → 返回 1\n```\n\n### finally 一定会执行吗？\n\n以下情况 `finally` 不会执行：\n1. `System.exit()` 被调用。\n2. JVM 崩溃。\n3. `finally` 所在线程被中断或杀死。\n4. 守护线程中所有前台线程已结束。\n\n### 关键要点\n\n```java\n// finally 中的 return 会覆盖 try/catch 中的 return\npublic static int test() {\n    try {\n        return 1;\n    } finally {\n        return 2;  // 最终返回 2！\n    }\n}\n```\n\n```java\n// finally 修改返回值不会影响已确定的返回值\npublic static int[] test() {\n    int[] arr = new int[]{1};\n    try {\n        return arr;\n    } finally {\n        arr[0] = 2;  // 返回的数组内容变为 [2]（引用未变，内容变了）\n    }\n}\n```\n\n### 最佳实践\n\n- `finally` 不要写 `return`，会让代码逻辑混乱。\n- 推荐使用 `try-with-resources` 替代手动 `finally` 关闭资源。\n- `finally` 中避免抛出异常，否则会覆盖 `try/catch` 中的异常。",
+    "tags": ["try-catch", "finally", "异常处理"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-013",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 泛型的作用是什么？什么是类型擦除？",
+    "answer": "## 核心概念\n\n泛型（Generics）是 Java 5 引入的参数化类型机制，允许在编译时检查类型安全，避免运行时的强制类型转换。泛型信息在编译后会被擦除，称为类型擦除（Type Erasure）。\n\n### 代码示例\n\n```java\n// 泛型类\npublic class Box<T> {\n    private T content;\n    public void set(T content) { this.content = content; }\n    public T get() { return content; }\n}\n\n// 泛型方法\npublic static <T> T getFirst(List<T> list) {\n    return list.isEmpty() ? null : list.get(0);\n}\n\n// 使用\nBox<String> box = new Box<>();\nbox.set(\"hello\");\nString s = box.get();  // 无需强转\n```\n\n### 类型擦除\n\n```java\n// 编译前\nList<String> list = new ArrayList<>();\nlist.add(\"hello\");\nString s = list.get(0);\n\n// 编译后（类型擦除）\nList list = new ArrayList();\nlist.add(\"hello\");\nString s = (String) list.get(0);\n```\n\n泛型类型参数会被擦除为其上界（未指定上界则为 `Object`）。这意味着运行时无法获取泛型的具体类型参数。\n\n### 关键要点\n\n- 泛型只在编译期存在，运行时所有 `List<String>` 和 `List<Integer>` 都是 `List`。\n- 不能创建泛型数组：`new T[]` 不合法。\n- 不能对泛型类型使用 `instanceof`：`obj instanceof List<String>` 不合法。\n- 通配符：`? extends T`（上界，只读）、`? super T`（下界，只写）。\n\n### PECS 原则\n\nProducer Extends, Consumer Super：生产者（读取）用 `extends`，消费者（写入）用 `super`。\n\n```java\npublic static <T> void copy(List<? super T> dest, List<? extends T> src) {\n    for (T item : src) dest.add(item);\n}\n```\n\n### 注意事项\n\n- 泛型不支持基本类型，需使用包装类。\n- 静态方法和静态字段不能引用类的泛型参数。\n- 桥方法（Bridge Method）是编译器为保持多态性自动生成的。",
+    "tags": ["泛型", "类型擦除", "通配符"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-014",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 注解（Annotation）是什么？元注解有哪些？如何自定义注解？",
+    "answer": "## 核心概念\n\n注解是 Java 5 引入的元数据机制，用于为代码提供额外信息。注解本身不影响代码逻辑，但可以被编译器或运行时工具读取并处理。\n\n### 元注解\n\n| 元注解 | 作用 |\n|--------|------|\n| `@Target` | 注解可以应用的位置（类、方法、字段等） |\n| `@Retention` | 注解的生命周期（SOURCE/CLASS/RUNTIME） |\n| `@Documented` | 是否包含在 Javadoc 中 |\n| `@Inherited` | 子类是否继承父类的注解 |\n| `@Repeatable` | 是否可以重复使用（Java 8+） |\n\n### 自定义注解\n\n```java\n@Target(ElementType.METHOD)\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface MyAnnotation {\n    String value() default \"\";\n    int priority() default 0;\n    String[] tags() default {};\n}\n\n// 使用\n@MyAnnotation(value = \"test\", priority = 1, tags = {\"unit\"})\npublic void doSomething() { }\n```\n\n### 注解处理\n\n```java\n// 运行时通过反射获取注解\nMethod method = MyClass.class.getMethod(\"doSomething\");\nif (method.isAnnotationPresent(MyAnnotation.class)) {\n    MyAnnotation anno = method.getAnnotation(MyAnnotation.class);\n    System.out.println(anno.value());    // \"test\"\n    System.out.println(anno.priority()); // 1\n}\n```\n\n### 关键要点\n\n- `@Retention` 三种策略：`SOURCE`（编译时丢弃）、`CLASS`（保留到class文件）、`RUNTIME`（运行时可反射获取）。\n- 注解的属性本质上是抽象方法，返回类型限于基本类型、String、Class、枚举、注解或它们的数组。\n- 标记注解（无属性）如 `@Override`。\n- 单值注解只有一个名为 `value` 的属性时可以省略属性名。\n\n### 最佳实践\n\n- 框架中常用运行时注解配合反射实现功能（如 Spring 的 `@Autowired`）。\n- 编译时注解处理可用 `AbstractProcessor` 生成代码（如 Lombok、MapStruct）。\n- 注解设计应保持简洁，属性不宜过多。",
+    "tags": ["注解", "Annotation", "元注解"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-015",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 反射机制是什么？有哪些应用场景和性能问题？",
+    "answer": "## 核心概念\n\n反射（Reflection）允许程序在运行时获取类的信息（字段、方法、构造器等），并动态创建对象、调用方法、访问字段。反射是 Java 动态能力的基础。\n\n### 代码示例\n\n```java\n// 获取 Class 对象的三种方式\nClass<?> clazz1 = Class.forName(\"java.lang.String\");\nClass<?> clazz2 = String.class;\nClass<?> clazz3 = \"hello\".getClass();\n\n// 创建对象\nObject obj = clazz1.getDeclaredConstructor().newInstance();\n\n// 获取并调用方法\nMethod method = clazz1.getMethod(\"substring\", int.class, int.class);\nString result = (String) method.invoke(\"hello\", 1, 3); // \"el\"\n\n// 访问私有字段\nField field = clazz1.getDeclaredField(\"value\");\nfield.setAccessible(true);  // 突破 private 限制\nObject value = field.get(\"hello\");\n```\n\n### 反射的核心 API\n\n| API | 作用 |\n|-----|------|\n| `Class.forName()` | 根据全限定名获取 Class |\n| `getDeclaredConstructor()` | 获取构造器 |\n| `getMethod()` / `getDeclaredMethod()` | 获取方法 |\n| `getField()` / `getDeclaredField()` | 获取字段 |\n| `setAccessible(true)` | 绕过访问控制检查 |\n\n### 关键要点\n\n- `getMethod()` 只获取 public 方法，`getDeclaredMethod()` 获取本类声明的所有方法（不含继承）。\n- 反射可以绕过泛型检查（类型擦除后泛型信息不存在）。\n- 反射是框架的基石：Spring IoC、MyBatis、JUnit 等都大量使用反射。\n\n### 性能问题与优化\n\n- 反射调用比直接调用慢 10-50 倍（涉及安全检查、方法解析等）。\n- 优化方案：缓存 `Method`/`Field` 对象、使用 `MethodHandle`（Java 7+）、字节码生成（如 cglib）。\n- JIT 编译器可以对高频反射调用做内联优化。\n\n### 最佳实践\n\n- 框架开发中反射是必要的，但业务代码应避免滥用。\n- 优先使用接口而非反射来实现灵活性。\n- Java 17+ 可通过 `--add-opens` 模块系统兼容性问题。",
+    "tags": ["反射", "Reflection", "动态代理"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-016",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 序列化和反序列化是什么？`Serializable` 接口有什么作用？",
+    "answer": "## 核心概念\n\n序列化是将对象转换为字节流的过程，反序列化是将字节流还原为对象。Java 通过 `Serializable` 标记接口实现默认的序列化机制，常用于网络传输、持久化存储和深拷贝。\n\n### 代码示例\n\n```java\n// 实现 Serializable\npublic class User implements Serializable {\n    private static final long serialVersionUID = 1L;  // 版本控制\n    private String name;\n    private transient String password;  // transient 字段不参与序列化\n    private static int count;  // static 字段不参与序列化\n}\n\n// 序列化\nUser user = new User(\"Alice\", \"123456\");\ntry (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(\"user.dat\"))) {\n    oos.writeObject(user);\n}\n\n// 反序列化\ntry (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(\"user.dat\"))) {\n    User loaded = (User) ois.readObject();\n}\n```\n\n### 关键要点\n\n- `serialVersionUID` 用于版本控制，不一致时反序列化会抛出 `InvalidClassException`。\n- `transient` 修饰的字段不参与序列化。\n- `static` 字段属于类而非对象，不参与序列化。\n- 父类没有实现 `Serializable` 时，父类字段不会被序列化（需要无参构造器）。\n\n### 注意事项\n\n- Java 原生序列化性能差、体积大、有安全漏洞（反序列化攻击）。\n- 推荐使用 JSON（Jackson/Gson）、Protobuf、Kryo 等替代方案。\n- `readObject()` / `writeObject()` 可以自定义序列化逻辑。\n- `Externalizable` 接口提供完全自定义的序列化控制。",
+    "tags": ["序列化", "Serializable", "transient"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-017",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java I/O 流的体系结构是怎样的？字节流和字符流有什么区别？",
+    "answer": "## 核心概念\n\nJava I/O 基于流（Stream）模型，按数据单位分为字节流和字符流，按流向分为输入流和输出流。字节流处理二进制数据，字符流处理文本数据。\n\n### 体系结构\n\n```\n字节流（InputStream / OutputStream）\n├── FileInputStream / FileOutputStream\n├── ByteArrayInputStream / ByteArrayOutputStream\n├── BufferedInputStream / BufferedOutputStream\n└── DataInputStream / DataOutputStream\n\n字符流（Reader / Writer）\n├── InputStreamReader / OutputStreamWriter（桥接字节流和字符流）\n├── FileReader / FileWriter\n├── BufferedReader / BufferedWriter\n├── CharArrayReader / CharArrayWriter\n└── PrintWriter\n```\n\n### 代码示例\n\n```java\n// 字节流复制文件\ntry (InputStream in = new FileInputStream(\"src.dat\");\n     OutputStream out = new FileOutputStream(\"dst.dat\")) {\n    byte[] buffer = new byte[8192];\n    int len;\n    while ((len = in.read(buffer)) != -1) {\n        out.write(buffer, 0, len);\n    }\n}\n\n// 字符流读写文本\ntry (BufferedReader br = new BufferedReader(new FileReader(\"data.txt\"));\n     BufferedWriter bw = new BufferedWriter(new FileWriter(\"out.txt\"))) {\n    String line;\n    while ((line = br.readLine()) != null) {\n        bw.write(line);\n        bw.newLine();\n    }\n}\n```\n\n### 字节流 vs 字符流\n\n| 特性 | 字节流 | 字符流 |\n|------|--------|--------|\n| 数据单位 | 8位字节 | 16位字符 |\n| 适用场景 | 二进制文件（图片、视频） | 文本文件 |\n| 编码处理 | 不处理编码 | 自动处理字符编码 |\n| 基类 | InputStream/OutputStream | Reader/Writer |\n\n### 最佳实践\n\n- 处理文本必须用字符流并指定编码（`InputStreamReader(in, \"UTF-8\")`）。\n- 使用缓冲流（`BufferedXxx`）提高性能。\n- 必须正确关闭流，推荐 `try-with-resources`。\n- 不要在循环中逐字节读写，应使用缓冲区。",
+    "tags": ["IO", "字节流", "字符流"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-018",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java NIO 是什么？与传统 I/O 有什么区别？",
+    "answer": "## 核心概念\n\nNIO（New I/O，Java 4引入）基于通道（Channel）和缓冲区（Buffer）模型，支持非阻塞 I/O 和多路复用。相比传统 I/O 的面向流、阻塞模型，NIO 提供了更高效的 I/O 处理方式。\n\n### 核心组件\n\n```java\n// Channel —— 双向数据通道\nFileChannel fileChannel = new FileInputStream(\"data.dat\").getChannel();\nSocketChannel socketChannel = SocketChannel.open();\nServerSocketChannel serverChannel = ServerSocketChannel.open();\n\n// Buffer —— 数据容器\nByteBuffer buffer = ByteBuffer.allocate(1024);\nfileChannel.read(buffer);     // 数据从 Channel 读入 Buffer\nbuffer.flip();                // 切换为读模式\nbuffer.get();                 // 从 Buffer 读取数据\nbuffer.clear();               // 清空，准备下一次写入\n\n// Selector —— 多路复用器\nSelector selector = Selector.open();\nserverChannel.register(selector, SelectionKey.OP_ACCEPT);\nwhile (selector.select() > 0) {\n    Iterator<SelectionKey> it = selector.selectedKeys().iterator();\n    while (it.hasNext()) {\n        SelectionKey key = it.next();\n        // 处理事件\n        it.remove();\n    }\n}\n```\n\n### 传统 I/O vs NIO\n\n| 特性 | 传统 I/O | NIO |\n|------|---------|-----|\n| 模型 | 面向流 | 面向缓冲区 |\n| 阻塞 | 阻塞 I/O | 非阻塞 I/O |\n| 多路复用 | 不支持 | Selector 支持 |\n| 数据方向 | 单向 | 双向（Channel） |\n| 适用场景 | 连接数少、数据量大 | 连接数多、数据量小 |\n\n### Buffer 关键要点\n\n- `capacity`：容量，创建后不可变。\n- `position`：下一个读/写的位置。\n- `limit`：读/写的边界。\n- `flip()`：将写模式切换为读模式（limit = position, position = 0）。\n- `compact()`：将未读数据移到头部，position 设到数据末尾。\n\n### 注意事项\n\n- NIO 编程复杂度高，实际项目中常使用 Netty 等框架封装。\n- 直接缓冲区（`allocateDirect`）减少一次内存拷贝，但分配/回收成本高。\n- 文件复制最佳实践：`FileChannel.transferTo()`，利用操作系统零拷贝。",
+    "tags": ["NIO", "Channel", "Selector"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-019",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `final`、`finally`、`finalize` 分别是什么？有什么区别？",
+    "answer": "## 核心概念\n\n三者虽然名称相似，但用途完全不同：`final` 是修饰符，`finally` 是异常处理关键字，`finalize` 是 Object 类的方法（已弃用）。\n\n### final\n\n```java\n// 修饰类：不可被继承\nfinal class ImmutableClass { }\n\n// 修饰方法：不可被覆写\nclass Base {\n    final void doSomething() { }\n}\n\n// 修饰变量：引用不可变（基本类型值不可变，对象引用不可变但内容可变）\nfinal int x = 10;\nfinal List<String> list = new ArrayList<>();\nlist.add(\"ok\");   // 可以修改内容\n// list = null;    // 不能修改引用\n```\n\n### finally\n\n```java\ntry {\n    // 可能抛异常的代码\n} catch (Exception e) {\n    // 处理异常\n} finally {\n    // 无论是否异常都会执行\n}\n```\n\n### finalize（已弃用）\n\n```java\n@Override\nprotected void finalize() throws Throwable {\n    try {\n        // 资源清理\n    } finally {\n        super.finalize();\n    }\n}\n```\n\n### 对比总结\n\n| 特性 | final | finally | finalize |\n|------|-------|---------|----------|\n| 类型 | 修饰符 | 关键字 | 方法 |\n| 作用 | 不可变/不可继承/不可覆写 | 异常清理 | GC 前回调 |\n| 使用频率 | 高 | 高 | 已弃用 |\n\n### 关键要点\n\n- `final` 提高安全性和可能的编译优化（内联常量）。\n- `finally` 中的代码几乎总是会执行（除 `System.exit()` 等极端情况）。\n- `finalize()` 在 Java 9 被标记为弃用，因为执行时机不确定、可能性能问题，推荐使用 `try-with-resources` 或 `Cleaner`。",
+    "tags": ["final", "finally", "finalize"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-020",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "`interface` 和 `abstract class` 有什么区别？什么时候用哪个？",
+    "answer": "## 核心概念\n\n接口（interface）定义行为契约，抽象类（abstract class）定义部分实现的模板。Java 8 之后接口可以有默认方法，两者的界限有所模糊，但设计意图不同。\n\n### 对比\n\n| 特性 | 接口 | 抽象类 |\n|------|------|--------|\n| 实例化 | 不能 | 不能 |\n| 继承 | 多实现 | 单继承 |\n| 构造器 | 无 | 有 |\n| 字段 | 只能 public static final | 任意修饰符 |\n| 方法 | 抽象方法 + 默认方法 + 静态方法 | 抽象方法 + 具体方法 |\n| 设计意图 | 能力/行为契约 | is-a 关系的模板 |\n\n### 代码示例\n\n```java\n// 接口 —— 定义能力\npublic interface Flyable {\n    void fly();  // 抽象方法\n    default void land() {  // 默认方法 (Java 8+)\n        System.out.println(\"landing\");\n    }\n    static void info() {  // 静态方法\n        System.out.println(\"Flyable interface\");\n    }\n}\n\n// 抽象类 —— 定义模板\npublic abstract class Animal {\n    protected String name;\n    public Animal(String name) { this.name = name; }\n    public abstract void speak();  // 抽象方法\n    public void sleep() {          // 具体方法\n        System.out.println(name + \" is sleeping\");\n    }\n}\n\n// 组合使用\nclass Bird extends Animal implements Flyable {\n    public Bird(String name) { super(name); }\n    @Override public void speak() { System.out.println(\"Tweet\"); }\n    @Override public void fly() { System.out.println(\"Flying\"); }\n}\n```\n\n### 选择建议\n\n- 定义能力/行为、需要多实现时用接口（如 `Comparable`、`Serializable`）。\n- 需要共享代码实现、定义 is-a 关系的模板时用抽象类（如 `AbstractList`）。\n- Java 8+ 接口可以有默认方法，但状态（字段）仍然是区分的关键。",
+    "tags": ["接口", "抽象类", "面向对象"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-021",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "`List`、`Set`、`Map` 的常用实现类有哪些？各自的特点是什么？",
+    "answer": "## 核心概念\n\nJava 集合框架提供多种实现类，针对不同场景优化。选择合适的实现类对性能至关重要。\n\n### List 实现类\n\n```java\n// ArrayList —— 动态数组，随机访问 O(1)\nList<String> arrayList = new ArrayList<>();\n\n// LinkedList —— 双向链表，头部操作 O(1)\nList<String> linkedList = new LinkedList<>();\n\n// Vector —— 线程安全的 ArrayList（不推荐，用 Collections.synchronizedList）\nList<String> vector = new Vector<>();\n\n// CopyOnWriteArrayList —— 写时复制，适合读多写少\nList<String> cowList = new CopyOnWriteArrayList<>();\n```\n\n### Set 实现类\n\n```java\n// HashSet —— 基于 HashMap，无序，O(1)\nSet<String> hashSet = new HashSet<>();\n\n// LinkedHashSet —— 维护插入顺序\nSet<String> linkedHashSet = new LinkedHashSet<>();\n\n// TreeSet —— 红黑树，有序，O(log n)\nSet<String> treeSet = new TreeSet<>();\n\n// EnumSet —— 枚举专用，位向量实现，极高效\nSet<Day> enumSet = EnumSet.of(Day.MON, Day.FRI);\n```\n\n### Map 实现类\n\n```java\n// HashMap —— 数组+链表+红黑树\nMap<String, Integer> hashMap = new HashMap<>();\n\n// LinkedHashMap —— 维护插入/访问顺序\nMap<String, Integer> linkedHashMap = new LinkedHashMap<>();\n\n// TreeMap —— 红黑树，key 有序\nMap<String, Integer> treeMap = new TreeMap<>();\n\n// ConcurrentHashMap —— 分段锁/CAS，线程安全\nMap<String, Integer> concurrentMap = new ConcurrentHashMap<>();\n\n// Hashtable —— 全表锁，不推荐\n```\n\n### 选择指南\n\n| 需求 | 推荐实现 |\n|------|----------|\n| 随机访问 | ArrayList |\n| 频繁增删 | LinkedList / ArrayDeque |\n| 去重无序 | HashSet |\n| 去重有序 | TreeSet |\n| 键值对无序 | HashMap |\n| 键值对有序 | TreeMap / LinkedHashMap |\n| 线程安全Map | ConcurrentHashMap |\n| 读多写少 | CopyOnWriteArrayList |",
+    "tags": ["集合实现", "ArrayList", "HashMap"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-022",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `Iterator` 和 `Iterable` 有什么区别？`fail-fast` 和 `fail-safe` 是什么？",
+    "answer": "## 核心概念\n\n`Iterable` 接口表示可迭代的对象（有 `iterator()` 方法），`Iterator` 接口定义遍历逻辑（`hasNext()`、`next()`、`remove()`）。`for-each` 循环底层就是调用 `iterator()`。\n\n### 代码示例\n\n```java\n// Iterable —— 让类支持 for-each\npublic class MyList<T> implements Iterable<T> {\n    private T[] data;\n    @Override\n    public Iterator<T> iterator() {\n        return new Iterator<T>() {\n            int index = 0;\n            @Override public boolean hasNext() { return index < data.length; }\n            @Override public T next() { return data[index++]; }\n        };\n    }\n}\n\n// 使用 for-each\nfor (String s : myList) {\n    System.out.println(s);\n}\n```\n\n### fail-fast vs fail-safe\n\n| 特性 | fail-fast | fail-safe |\n|------|-----------|----------|\n| 代表 | ArrayList, HashMap | CopyOnWriteArrayList, ConcurrentHashMap |\n| 检测机制 | modCount 版本号 | 遍历的是快照或副本 |\n| 行为 | 抛出 ConcurrentModificationException | 不抛异常，但可能数据不一致 |\n| 适用场景 | 单线程 | 多线程 |\n\n```java\n// fail-fast 示例\nList<String> list = new ArrayList<>(Arrays.asList(\"a\", \"b\", \"c\"));\nfor (String s : list) {\n    list.remove(s);  // 抛出 ConcurrentModificationException\n}\n\n// 正确做法：使用 Iterator 的 remove()\nIterator<String> it = list.iterator();\nwhile (it.hasNext()) {\n    it.next();\n    it.remove();  // 安全\n}\n```\n\n### 关键要点\n\n- `fail-fast` 通过维护 `modCount` 计数器，检测遍历期间的结构性修改。\n- `fail-safe` 通过创建副本或利用快照保证遍历安全，但内存开销更大。\n- Java 8+ 的 `removeIf()` 方法可以安全地批量删除元素。",
+    "tags": ["Iterator", "fail-fast", "fail-safe"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-023",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 的 `Comparable` 和 `Comparator` 有什么区别？",
+    "answer": "## 核心概念\n\n`Comparable` 是自然排序接口，由类自身实现；`Comparator` 是定制排序接口，可以在外部定义多种排序策略。两者都用于对象比较和排序。\n\n### 代码示例\n\n```java\n// Comparable —— 自然排序，类内部实现\npublic class Student implements Comparable<Student> {\n    private String name;\n    private int age;\n\n    @Override\n    public int compareTo(Student other) {\n        return Integer.compare(this.age, other.age);\n    }\n}\n\n// Comparator —— 外部定制排序\n// Lambda 写法\nComparator<Student> byName = Comparator.comparing(Student::getName);\nComparator<Student> byAgeDesc = Comparator.comparingInt(Student::getAge).reversed();\nComparator<Student> complex = Comparator\n    .comparing(Student::getAge)\n    .thenComparing(Student::getName);\n\n// 使用\nList<Student> list = new ArrayList<>();\nCollections.sort(list);              // 使用 Comparable\nlist.sort(byName);                   // 使用 Comparator\nlist.sort(Comparator.reverseOrder()); // 逆序\n```\n\n### 对比\n\n| 特性 | Comparable | Comparator |\n|------|------------|------------|\n| 位置 | 类内部 | 类外部 |\n| 方法 | `compareTo(T o)` | `compare(T o1, T o2)` |\n| 排序策略 | 只有一种自然排序 | 可定义多种 |\n| 修改源码 | 需要修改类 | 不需要 |\n| 包 | java.lang | java.util |\n\n### 关键要点\n\n- `Comparable` 适合类有明确自然排序的场景（如按年龄、按字母顺序）。\n- `Comparator` 适合需要多种排序方式、或无法修改源码的场景。\n- Java 8 的 `Comparator` 工具方法（`comparing`、`thenComparing`、`reversed`）大幅简化代码。\n- `TreeSet` / `TreeMap` 构造时可传入 `Comparator`。\n\n### 最佳实践\n\n实现 `Comparable` 时保持与 `equals()` 一致的语义。排序逻辑复杂时优先用 `Comparator` 的链式调用。",
+    "tags": ["Comparable", "Comparator", "排序"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-024",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 8 的 Lambda 表达式和函数式接口是什么？",
+    "answer": "## 核心概念\n\nLambda 表达式是 Java 8 引入的匿名函数简写，用于简洁地实现函数式接口。函数式接口是只有一个抽象方法的接口，可用 `@FunctionalInterface` 标注。\n\n### 代码示例\n\n```java\n// 函数式接口\n@FunctionalInterface\npublic interface MyFunction<T, R> {\n    R apply(T t);\n    // 可以有多个 default 方法\n    default void extra() { }\n}\n\n// Lambda 表达式\nMyFunction<String, Integer> strLen = s -> s.length();\nMyFunction<String, Integer> strLen2 = (String s) -> { return s.length(); };\n\n// 常用函数式接口\n// Predicate<T> —— T → boolean\nPredicate<String> isEmpty = String::isEmpty;\n\n// Function<T, R> —— T → R\nFunction<String, Integer> toInt = Integer::parseInt;\n\n// Consumer<T> —— T → void\nConsumer<String> print = System.out::println;\n\n// Supplier<T> —— () → T\nSupplier<List<String>> listFactory = ArrayList::new;\n\n// UnaryOperator<T> —— T → T\nUnaryOperator<String> upper = String::toUpperCase;\n\n// BinaryOperator<T> —— (T, T) → T\nBinaryOperator<Integer> sum = Integer::sum;\n```\n\n### 方法引用\n\n```java\n// 静态方法引用\nFunction<String, Integer> parseInt = Integer::parseInt;\n\n// 实例方法引用\nString str = \"hello\";\nSupplier<Integer> len = str::length;\n\n// 构造方法引用\nSupplier<ArrayList> newList = ArrayList::new;\n```\n\n### 关键要点\n\n- Lambda 只能用于函数式接口（一个抽象方法）。\n- Lambda 可以捕获外部变量，但变量必须是 effectively final。\n- 方法引用是 Lambda 的简写形式，有四种形式：`类::静态方法`、`对象::实例方法`、`类::实例方法`、`类::new`。\n- Lambda 的类型由目标类型（Target Type）推断，通常在赋值、方法参数或返回值处使用。\n\n### 注意事项\n\n- Lambda 中不能修改外部局部变量（effectively final 限制）。\n- `this` 在 Lambda 中指向外围类实例，不是 Lambda 自身。\n- Lambda 不能抛出受检异常，除非函数式接口声明了该异常。",
+    "tags": ["Lambda", "函数式接口", "Java8"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-025",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java Stream API 是什么？常用操作有哪些？",
+    "answer": "## 核心概念\n\nStream API 是 Java 8 引入的声明式数据处理框架，支持对集合数据进行 filter、map、reduce 等操作，代码更简洁、可读性更强，且支持并行处理。\n\n### 代码示例\n\n```java\nList<String> names = Arrays.asList(\"Alice\", \"Bob\", \"Charlie\", \"David\");\n\n// 基本操作\nList<String> result = names.stream()\n    .filter(name -> name.length() > 3)    // 过滤\n    .map(String::toUpperCase)              // 映射\n    .sorted()                              // 排序\n    .collect(Collectors.toList());         // 收集\n// [ALICE, CHARLIE, DAVID]\n\n// 聚合操作\nint sum = IntStream.rangeClosed(1, 100).sum();  // 5050\nOptional<String> longest = names.stream()\n    .max(Comparator.comparingInt(String::length));\n\n// 分组\nMap<Integer, List<String>> grouped = names.stream()\n    .collect(Collectors.groupingBy(String::length));\n\n// 统计\nIntSummaryStatistics stats = names.stream()\n    .mapToInt(String::length)\n    .summaryStatistics();\n// stats.getMax(), stats.getAverage(), ...\n\n// 并行流\nlong count = names.parallelStream()\n    .filter(name -> name.startsWith(\"A\"))\n    .count();\n```\n\n### 操作分类\n\n| 类型 | 操作 | 特点 |\n|------|------|------|\n| 中间操作 | filter, map, flatMap, distinct, sorted, limit, skip, peek | 惰性求值，返回 Stream |\n| 终端操作 | collect, forEach, reduce, count, findFirst, anyMatch, allMatch | 触发计算，产生结果 |\n\n### 关键要点\n\n- Stream 只能消费一次，重复使用会抛出 `IllegalStateException`。\n- 中间操作是惰性的，只有终端操作才会触发实际计算。\n- 有状态操作（如 `sorted`、`distinct`）需要缓存所有数据，注意内存。\n- `flatMap` 将每个元素映射为一个 Stream 并合并。\n\n### 最佳实践\n\n- 简单遍历不必用 Stream，`for` 循环更清晰。\n- 避免在 Stream 中产生副作用（如修改外部变量）。\n- 大数据量并行流要评估线程开销。\n- `Collectors` 提供丰富的收集策略：`toList`、`toSet`、`groupingBy`、`joining` 等。",
+    "tags": ["Stream", "函数式编程", "Java8"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-026",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `static` 关键字有哪些用法？静态方法能否被覆写？",
+    "answer": "## 核心概念\n\n`static` 表示属于类而非实例。可以修饰字段、方法、代码块和内部类。静态成员在类加载时初始化，所有实例共享。\n\n### 代码示例\n\n```java\npublic class MyClass {\n    // 静态字段 —— 所有实例共享\n    private static int count = 0;\n\n    // 静态方法 —— 通过类名调用\n    public static int getCount() { return count; }\n\n    // 静态代码块 —— 类加载时执行一次\n    static {\n        System.out.println(\"Class loaded\");\n        count = 100;\n    }\n\n    // 静态内部类\n    public static class Inner {\n        public void show() { }\n    }\n\n    public MyClass() { count++; }\n}\n\n// 使用\nMyClass.getCount();     // 无需实例化\nMyClass.Inner inner = new MyClass.Inner();\n```\n\n### 静态方法能否被覆写？\n\n**不能被覆写，但可以被隐藏（hide）**。子类定义与父类签名相同的静态方法，会隐藏父类的方法，而非多态覆写。\n\n```java\nclass Parent {\n    static void show() { System.out.println(\"Parent\"); }\n}\nclass Child extends Parent {\n    static void show() { System.out.println(\"Child\"); }  // 隐藏，非覆写\n}\n\nParent p = new Child();\np.show();  // 输出 \"Parent\"（静态绑定，看引用类型）\n```\n\n### 关键要点\n\n- 静态方法属于类，通过类名调用，不依赖实例。\n- 静态方法不能使用 `this`、`super`，不能直接访问实例成员。\n- 静态方法在编译期绑定（静态绑定），不参与多态。\n- 静态代码块按顺序执行，先于构造器。\n- 静态导入（`import static`）可以简化工具方法的调用。\n\n### 注意事项\n\n- 静态字段容易导致内存泄漏（尤其引用集合或缓存时）。\n- 静态方法不利于测试和替换，过度使用会降低代码灵活性。\n- 单例模式中常使用静态内部类实现线程安全的延迟初始化。",
+    "tags": ["static", "静态方法", "静态变量"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-027",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `==` 和 `equals()` 的区别是什么？String 的 `==` 比较有何特殊之处？",
+    "answer": "## 核心概念\n\n`==` 对于基本类型比较值，对于引用类型比较内存地址。`equals()` 默认行为与 `==` 相同（Object 的实现），但可以被覆写为比较内容。\n\n### 代码示例\n\n```java\n// 基本类型：== 比较值\nint a = 10;\nint b = 10;\nSystem.out.println(a == b);  // true\n\n// 引用类型：== 比较地址\nString s1 = new String(\"hello\");\nString s2 = new String(\"hello\");\nSystem.out.println(s1 == s2);       // false\nSystem.out.println(s1.equals(s2));  // true\n\n// String 常量池的特殊之处\nString s3 = \"hello\";\nString s4 = \"hello\";\nSystem.out.println(s3 == s4);  // true（常量池复用同一对象）\n\nString s5 = \"hello\";\nString s6 = \"hel\" + \"lo\";  // 编译期优化为 \"hello\"\nSystem.out.println(s5 == s6);  // true\n\nString s7 = \"hel\";\nString s8 = s7 + \"lo\";  // 运行时拼接，创建新对象\nSystem.out.println(s5 == s8);  // false\n```\n\n### String 常量池机制\n\n- 字面量字符串在编译期进入常量池，相同内容共享同一对象。\n- `new String(\"hello\")` 每次都创建新对象。\n- `String.intern()` 将字符串放入常量池并返回池中引用。\n\n### 最佳实践\n\n- 比较对象内容始终使用 `equals()`。\n- 比较 String 时避免用 `==`，除非确定都是字面量。\n- 覆写 `equals()` 必须同时覆写 `hashCode()`。\n- 使用 `Objects.equals(a, b)` 安全处理 null 值。",
+    "tags": ["==", "equals", "常量池"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-028",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 的 `Optional` 类是什么？如何正确使用？",
+    "answer": "## 核心概念\n\n`Optional<T>` 是 Java 8 引入的容器类，用于优雅地处理可能为 null 的值，减少 `NullPointerException`。它强制调用者显式处理值缺失的情况。\n\n### 代码示例\n\n```java\n// 创建 Optional\nOptional<String> empty = Optional.empty();\nOptional<String> opt = Optional.of(\"hello\");  // 值不能为 null\nOptional<String> nullable = Optional.ofNullable(getNullable());  // 可以为 null\n\n// 获取值\nString val = opt.get();  // 值不存在时抛 NoSuchElementException\n\n// 安全的使用方式\nString result = opt.orElse(\"default\");\nString result2 = opt.orElseGet(() -> computeDefault());  // 惰性求值\nString result3 = opt.orElseThrow(() -> new RuntimeException(\"missing\"));\n\n// 链式操作\nOptional<String> upper = opt\n    .filter(s -> s.length() > 3)\n    .map(String::toUpperCase)\n    .flatMap(s -> Optional.of(s + \"!\"));\n\n// 实际应用\npublic String getCity(User user) {\n    return Optional.ofNullable(user)\n        .map(User::getAddress)\n        .map(Address::getCity)\n        .orElse(\"Unknown\");\n}\n```\n\n### 常用方法\n\n| 方法 | 作用 |\n|------|------|\n| `isPresent()` | 值是否存在 |\n| `ifPresent(Consumer)` | 值存在时执行操作 |\n| `orElse(T)` | 不存在时返回默认值 |\n| `orElseGet(Supplier)` | 不存在时惰性计算默认值 |\n| `map(Function)` | 对值进行转换 |\n| `flatMap(Function)` | 转换并解包嵌套 Optional |\n| `filter(Predicate)` | 按条件过滤 |\n\n### 最佳实践\n\n- `Optional` 不要作为方法参数、类字段或集合元素。\n- 不要对 `Optional` 做 null 检查（`if (opt != null)`），违背设计意图。\n- 优先使用 `orElseGet` 而非 `orElse`，避免不必要的计算。\n- 不要直接 `get()` 先检查 `isPresent()`，应使用 `orElse` / `orElseThrow`。\n- Stream 中配合 `flatMap` 处理可能为 null 的元素。",
+    "tags": ["Optional", "空值处理", "Java8"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-029",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中有哪些创建对象的方式？",
+    "answer": "## 核心概念\n\nJava 中创建对象的方式有多种，每种方式在不同场景下有各自的优势。理解所有方式有助于选择最合适的方案。\n\n### 创建方式汇总\n\n```java\n// 1. new 关键字 —— 最常用\nUser user = new User(\"Alice\");\n\n// 2. 反射 —— 框架中常用\nClass<?> clazz = Class.forName(\"com.example.User\");\nUser user2 = (User) clazz.getDeclaredConstructor().newInstance();\n\n// 3. clone() —— 基于现有对象复制\nUser original = new User(\"Bob\");\nUser copy = (User) original.clone();  // 需要实现 Cloneable\n\n// 4. 反序列化 —— 从字节流恢复\nObjectInputStream ois = new ObjectInputStream(new FileInputStream(\"user.dat\"));\nUser loaded = (User) ois.readObject();  // 需要实现 Serializable\n\n// 5. 工厂方法 —— 封装创建逻辑\nList<String> list = List.of(\"a\", \"b\");  // Java 9+\nLocalDate date = LocalDate.of(2024, 1, 1);\n\n// 6. Builder 模式\nUser user3 = User.builder()\n    .name(\"Charlie\")\n    .age(30)\n    .build();\n\n// 7. Unsafe（不推荐，底层方式）\n// Unsafe.getUnsafe().allocateInstance(User.class); // 不调用构造器\n```\n\n### 对比\n\n| 方式 | 是否调用构造器 | 适用场景 |\n|------|---------------|----------|\n| new | 是 | 常规创建 |\n| 反射 | 是 | 框架动态创建 |\n| clone | 否 | 对象复制 |\n| 反序列化 | 否 | 网络传输/持久化 |\n| 工厂方法 | 内部通常用new | 封装创建细节 |\n| Builder | 是 | 参数复杂的对象构建 |\n\n### 关键要点\n\n- `clone()` 是浅拷贝，引用类型字段需要深拷贝时需自行处理。\n- 反序列化绕过构造器，`readResolve()` 可以控制返回对象（单例模式防破坏）。\n- 工厂方法和 Builder 模式是更灵活的对象创建方式。\n- 枚举实例由 JVM 在类加载时创建。\n\n### 注意事项\n\n- `clone()` 实践中问题较多（浅拷贝、Cloneable 接口的缺陷），推荐使用拷贝构造器或工具类。\n- 反射创建对象效率较低，高频调用场景需注意性能。",
+    "tags": ["对象创建", "clone", "反射"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-030",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `BigDecimal` 如何使用？为什么不用 `double` 表示金额？",
+    "answer": "## 核心概念\n\n浮点数（float/double）采用 IEEE 754 二进制浮点表示，无法精确表示某些十进制小数，导致精度丢失。`BigDecimal` 使用任意精度的十进制表示，适合需要精确计算的场景（如金融）。\n\n### 代码示例\n\n```java\n// double 的精度问题\nSystem.out.println(0.1 + 0.2);  // 0.30000000000000004\nSystem.out.println(1.0 - 0.9);  // 0.09999999999999998\n\n// BigDecimal 正确用法\nBigDecimal a = new BigDecimal(\"0.1\");  // 推荐字符串构造器\nBigDecimal b = new BigDecimal(\"0.2\");\nSystem.out.println(a.add(b));          // 0.3\n\n// 不推荐：BigDecimal(double) 也会有精度问题\nBigDecimal bad = new BigDecimal(0.1);  // 0.1000000000000000055511151231257827021181583404541015625\nBigDecimal good = BigDecimal.valueOf(0.1);  // 使用 Double.toString，精确\n\n// 设置精度和舍入模式\nBigDecimal result = a.divide(b, 2, RoundingMode.HALF_UP);  // 保留2位小数\n\n// 常用操作\nBigDecimal sum = a.add(b);           // 加\nBigDecimal diff = a.subtract(b);     // 减\nBigDecimal product = a.multiply(b);  // 乘\nBigDecimal quotient = a.divide(b, 10, RoundingMode.HALF_UP);  // 除\nint cmp = a.compareTo(b);           // 比较（不用 equals）\n```\n\n### 关键要点\n\n- 创建 `BigDecimal` 优先使用 `new BigDecimal(\"0.1\")` 或 `BigDecimal.valueOf(0.1)`。\n- 除法必须指定精度和舍入模式，否则除不尽时抛出 `ArithmeticException`。\n- `equals()` 比较值和精度（`2.0` 不等于 `2.00`），比较值应使用 `compareTo()`。\n- 常用舍入模式：`HALF_UP`（四舍五入）、`DOWN`（截断）、`UP`（进位）。\n\n### 最佳实践\n\n- 金额计算统一使用 `BigDecimal`，存储为最小单位（分）也是一种选择。\n- 工具类封装常用操作，避免到处写 `RoundingMode`。\n- 注意 `BigDecimal` 是不可变的，所有操作返回新对象。\n- 数据库中金额字段使用 `DECIMAL` 类型。",
+    "tags": ["BigDecimal", "精度", "浮点数"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-031",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `switch` 语句支持哪些数据类型？Java 14+ 的 switch 有什么改进？",
+    "answer": "## 核心概念\n\n传统 `switch` 支持 `int`、`short`、`byte`、`char` 及其包装类，以及 `String` 和枚举。Java 14 引入了 switch 表达式，支持箭头语法和 `yield` 关键字。\n\n### 代码示例\n\n```java\n// 传统 switch\nString day = \"MON\";\nswitch (day) {\n    case \"MON\":\n    case \"TUE\":\n    case \"WED\":\n        System.out.println(\"工作日\");\n        break;\n    case \"SAT\":\n    case \"SUN\":\n        System.out.println(\"周末\");\n        break;\n    default:\n        System.out.println(\"未知\");\n}\n\n// Java 14+ switch 表达式\nString result = switch (day) {\n    case \"MON\", \"TUE\", \"WED\", \"THU\", \"FRI\" -> \"工作日\";\n    case \"SAT\", \"SUN\" -> \"周末\";\n    default -> \"未知\";\n};\n\n// 需要多条语句时用 yield\nint numLetters = switch (day) {\n    case \"MON\", \"FRI\", \"SUN\" -> {\n        System.out.println(\"Processing...\");\n        yield 6;\n    }\n    case \"TUE\" -> 7;\n    default -> {\n        String s = day;\n        yield s.length();\n    }\n};\n```\n\n### Java 14+ 改进\n\n| 特性 | 说明 |\n|------|------|\n| 箭头语法 `->` | 无需 `break`，不会穿透 |\n| 多值匹配 | `case \"A\", \"B\" ->` |\n| switch 表达式 | 可以作为赋值语句 |\n| yield | 多语句分支返回值 |\n| 模式匹配 | Java 17+ `case String s && s.length() > 3` |\n\n### 注意事项\n\n- 箭头语法不会穿透（fall-through），逗号分隔多个值。\n- switch 表达式必须覆盖所有可能值（枚举类型可省略 default）。\n- `null` 值会导致 `NullPointerException`，需提前处理。\n- Java 21 进一步支持 switch 模式匹配（Pattern Matching for switch）。",
+    "tags": ["switch", "switch表达式", "Java14"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-032",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `Records` 是什么？解决了什么问题？",
+    "answer": "## 核心概念\n\nRecords 是 Java 14 正式引入的特殊类，用于简洁地定义不可变数据载体。它自动生成 `equals()`、`hashCode()`、`toString()` 和访问器方法，大幅减少样板代码。\n\n### 代码示例\n\n```java\n// Record 定义\npublic record Point(int x, int y) { }\n\n// 等价于以下完整类：\npublic final class Point {\n    private final int x;\n    private final int y;\n\n    public Point(int x, int y) { this.x = x; this.y = y; }\n\n    public int x() { return x; }  // 注意：不是 getX()\n    public int y() { return y; }\n\n    @Override public boolean equals(Object o) { /*...*/ }\n    @Override public int hashCode() { /*...*/ }\n    @Override public String toString() { return \"Point[x=\" + x + \", y=\" + y + \"]\"; }\n}\n\n// 使用\nPoint p = new Point(1, 2);\nSystem.out.println(p.x());       // 1\nSystem.out.println(p);           // Point[x=1, y=2]\n\n// 自定义方法和紧凑构造器\npublic record Range(int start, int end) {\n    // 紧凑构造器 —— 参数校验\n    public Range {\n        if (start > end) throw new IllegalArgumentException();\n    }\n\n    // 自定义方法\n    public int length() { return end - start; }\n}\n```\n\n### Record 特性\n\n| 特性 | 说明 |\n|------|------|\n| 不可变 | 所有字段 private final |\n| 不可继承 | 隐式 final，不能 extends |\n| 可以实现接口 | `record Point(int x, int y) implements Comparable<Point>` |\n| 可以有静态成员 | 静态字段、静态方法 |\n| 不允许实例字段 | 除组件外不能声明实例字段 |\n| 支持泛型 | `record Pair<A, B>(A first, B second)` |\n\n### 适用场景\n\n- DTO（数据传输对象）\n- 方法返回多个值\n- Map 的 key（自动 equals/hashCode）\n- 临时数据聚合\n\n### 注意事项\n\n- Record 不是 JavaBean，访问器是 `x()` 而非 `getX()`，部分框架（如 Jackson）需要适配。\n- Record 的字段都是 final 的，需要修改时应创建新实例。\n- Record 不适合需要可变状态的场景。\n- Java 16 正式定稿（预览阶段从 Java 14 开始）。",
+    "tags": ["Records", "不可变", "Java14"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-033",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 的 `Sealed Classes`（密封类）是什么？有什么用途？",
+    "answer": "## 核心概念\n\n密封类（Sealed Classes）是 Java 17 正式引入的特性，允许类通过 `permits` 关键字明确指定哪些子类可以继承它，从而在编译期控制继承层次。\n\n### 代码示例\n\n```java\n// 密封类\npublic sealed class Shape permits Circle, Rectangle, Triangle {\n}\n\n// 允许的子类必须是以下三种之一：final、sealed、non-sealed\npublic final class Circle extends Shape {\n    double radius;\n}\n\npublic sealed class Rectangle extends Shape permits Square {\n    double width, height;\n}\n\npublic final class Square extends Rectangle {\n    Square(double side) { super(side, side); }\n}\n\npublic non-sealed class Triangle extends Shape {\n    double a, b, c;  // 允许任意继承\n}\n```\n\n### 配合模式匹配\n\n```java\n// Java 21+ switch 模式匹配\ndouble area = switch (shape) {\n    case Circle c -> Math.PI * c.radius() * c.radius();\n    case Square s -> s.width() * s.width();\n    case Rectangle r -> r.width() * r.height();\n    case Triangle t -> {\n        double s = (t.a() + t.b() + t.c()) / 2;\n        yield Math.sqrt(s * (s - t.a()) * (s - t.b()) * (s - t.c()));\n    }\n    // 不需要 default —— 编译器知道已穷尽所有子类\n};\n```\n\n### 三种子类修饰\n\n| 修饰 | 含义 |\n|------|------|\n| `final` | 不能再被继承 |\n| `sealed` | 继续限制子类 |\n| `non-sealed` | 打开继承限制 |\n\n### 关键要点\n\n- 密封类限制了继承层次，编译器可以在 switch 中检查是否穷尽所有情况。\n- `permits` 子句可以省略（同一文件内定义所有子类时）。\n- 密封类可以是 `abstract` 或普通类，不能是 `interface`（但接口可以是 sealed 的）。\n- 密封类 + Records + 模式匹配 = 更安全的代数数据类型（ADT）。\n\n### 适用场景\n\n- AST（抽象语法树）节点定义\n- 状态机的状态\n- API 的返回类型（限定可能的实现）\n- 替代枚举（当每个变体需要不同字段和行为时）",
+    "tags": ["密封类", "Sealed", "Java17"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-034",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 的模式匹配（Pattern Matching）是什么？有哪些应用场景？",
+    "answer": "## 核心概念\n\n模式匹配是 Java 逐步引入的特性，允许在类型检查的同时进行类型转换和变量绑定，减少样板代码。主要包括 `instanceof` 模式匹配（Java 16）和 switch 模式匹配（Java 21）。\n\n### 代码示例\n\n```java\n// 传统 instanceof\nif (obj instanceof String) {\n    String s = (String) obj;\n    System.out.println(s.length());\n}\n\n// Java 16+ instanceof 模式匹配\nif (obj instanceof String s) {\n    System.out.println(s.length());  // 直接使用 s\n}\n\n// 可以在条件中直接使用绑定变量\nif (obj instanceof String s && s.length() > 3) {\n    System.out.println(s.toUpperCase());\n}\n\n// Java 21+ switch 模式匹配\nstatic String format(Object obj) {\n    return switch (obj) {\n        case Integer i -> \"int: \" + i;\n        case Long l    -> \"long: \" + l;\n        case String s  -> \"str: \" + s;\n        case int[] arr -> \"array of length \" + arr.length;\n        case null      -> \"null\";\n        default        -> \"other: \" + obj;\n    };\n}\n\n// Guarded patterns（守卫模式）\nreturn switch (shape) {\n    case Circle c && c.radius() > 10 -> \"大圆\";\n    case Circle c -> \"小圆\";\n    case Rectangle r && r.width() == r.height() -> \"正方形\";\n    default -> \"其他\";\n};\n\n// Record 解构模式（Java 21+ 预览）\nrecord Point(int x, int y) {}\nreturn switch (obj) {\n    case Point(var x, var y) -> \"点: \" + x + \", \" + y;\n    default -> \"未知\";\n};\n```\n\n### 版本演进\n\n| 版本 | 特性 |\n|------|------|\n| Java 14 | switch 表达式（预览） |\n| Java 16 | instanceof 模式匹配（正式） |\n| Java 17 | Sealed Classes（正式） |\n| Java 21 | switch 模式匹配（正式） |\n| Java 21 | Record 解构模式（预览） |\n\n### 关键要点\n\n- 模式变量在模式匹配成功后的逻辑作用域内有效。\n- `instanceof` 模式匹配只适用于非 null 值。\n- switch 模式匹配支持 `null` 分支。\n- 编译器检查 switch 的穷尽性，密封类可以省略 default。\n\n### 最佳实践\n\n- 用模式匹配替代 `instanceof` + 强转的传统写法。\n- 结合密封类和 Records 实现代数数据类型（ADT）。\n- 过多的类型分支可能是设计问题，考虑用多态替代。",
+    "tags": ["模式匹配", "instanceof", "Java21"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-035",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `var` 关键字（局部变量类型推断）是什么？有什么限制？",
+    "answer": "## 核心概念\n\n`var` 是 Java 10 引入的局部变量类型推断关键字，编译器根据初始化表达式自动推断变量类型，减少冗余类型声明。\n\n### 代码示例\n\n```java\n// 传统写法\nMap<String, List<Integer>> map = new HashMap<String, List<Integer>>();\n\n// 使用 var 简化\nvar map = new HashMap<String, List<Integer>>();\n\n// 更多示例\nvar list = List.of(\"a\", \"b\", \"c\");          // List<String>\nvar stream = list.stream();                    // Stream<String>\nvar name = \"Alice\";                            // String\nvar number = 42;                               // int\nvar connection = DriverManager.getConnection(url); // Connection\n\n// for 循环中使用\nfor (var entry : map.entrySet()) {\n    System.out.println(entry.getKey() + \": \" + entry.getValue());\n}\n\nfor (var i = 0; i < 10; i++) {\n    System.out.println(i);\n}\n```\n\n### 使用限制\n\n```java\n// 合法\nvar x = 10;\nvar s = \"hello\";\n\n// 不合法 —— 必须有初始化\nvar a;                    // 编译错误：无法推断\nvar b = null;             // 编译错误：null 没有类型\n\n// 不合法 —— 不能用于字段、参数、返回类型\nclass Foo {\n    var field = 10;       // 编译错误\n    void method(var p) {} // 编译错误\n    var getResult() { }   // 编译错误\n}\n\n// 不合法 —— Lambda 和方法引用\nvar fn = (x) -> x + 1;   // 编译错误：目标类型不明确\n```\n\n### 使用限制总结\n\n| 场景 | 是否可用 |\n|------|----------|\n| 局部变量 | 可以 |\n| for 循环变量 | 可以 |\n| try-with-resources | 可以 |\n| 类字段 | 不可以 |\n| 方法参数 | 不可以 |\n| 返回类型 | 不可以 |\n| Lambda 初始化 | 不可以 |\n| null 初始化 | 不可以 |\n\n### 最佳实践\n\n- 类型显而易见时使用 `var`（如 `var list = new ArrayList<String>()`）。\n- 类型不明显时避免使用（如 `var result = service.process(data)`），影响可读性。\n- `var` 不是动态类型，仍然是强类型，编译后类型确定。\n- 注意 `var` 不能与 `final` 同时修饰（但可以通过 `final var`，Java 11+暂未支持）。",
+    "tags": ["var", "类型推断", "Java10"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-036",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `String.intern()` 方法是什么？常量池的工作机制是怎样的？",
+    "answer": "## 核心概念\n\n`String.intern()` 将字符串放入常量池（String Pool），返回常量池中的引用。如果常量池中已存在相同内容的字符串，直接返回已有引用。常量池位于堆内存中（Java 7+）。\n\n### 代码示例\n\n```java\nString s1 = new String(\"hello\");  // 堆上新对象\nString s2 = s1.intern();           // 返回常量池中的引用\nString s3 = \"hello\";               // 直接引用常量池\n\nSystem.out.println(s1 == s2);  // false（s1 是堆对象，s2 是常量池引用）\nSystem.out.println(s2 == s3);  // true（都是常量池引用）\nSystem.out.println(s1 == s3);  // false\n\n// 编译期确定的字面量自动进入常量池\nString s4 = \"hel\" + \"lo\";     // 编译期优化为 \"hello\"\nSystem.out.println(s3 == s4);  // true\n\n// 运行时拼接不会自动进入常量池\nString prefix = \"hel\";\nString s5 = prefix + \"lo\";     // StringBuilder 拼接\nSystem.out.println(s3 == s5);  // false\nSystem.out.println(s3.equals(s5));  // true\n```\n\n### 常量池位置变化\n\n| JDK版本 | 常量池位置 | 说明 |\n|---------|-----------|------|\n| JDK 6 及以前 | 永久代（PermGen） | 空间有限，默认约 1000 |\n| JDK 7+ | 堆内存 | 可用 `-XX:StringTableSize` 调整桶数 |\n\n### 关键要点\n\n- 字面量自动进入常量池，`new String(\"hello\")` 会创建两个对象（常量池 + 堆）。\n- `intern()` 在堆中没有相同字符串时，直接引用堆中的字符串放入常量池（Java 7+）。\n- 常量池底层是一个固定大小的 HashTable，桶数可通过 JVM 参数调整。\n- 高频使用 `intern()` 但桶数不足会导致哈希碰撞，性能退化为链表遍历。\n\n### 注意事项\n\n- 大量使用 `intern()` 可能导致常量池占用过多内存。\n- 面试中常考 `new String(\"abc\")` 创建了几个对象：2个（常量池 + 堆），但如果常量池已有则只有 1 个堆对象。\n- Java 9+ Compact Strings 改变了内部存储方式，但常量池逻辑不变。",
+    "tags": ["intern", "常量池", "String"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-037",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中的 `Date`、`Calendar` 和 Java 8 的 `java.time` API 有什么区别？",
+    "answer": "## 核心概念\n\nJava 8 之前使用 `Date` 和 `Calendar` 处理日期时间，存在可变性、线程不安全、API 不直观等问题。Java 8 引入 `java.time` 包（JSR-310），提供不可变、线程安全的日期时间 API。\n\n### 旧 API 的问题\n\n```java\n// Date 问题：可变、年份从1900起算、月份从0起算\nDate date = new Date(124, 0, 15);  // 2024年1月15日\n\ndate.setTime(0);  // 可以随意修改\n\n// Calendar 问题：可变、API 笨拙\nCalendar cal = Calendar.getInstance();\ncal.set(2024, Calendar.JANUARY, 15);\nint year = cal.get(Calendar.YEAR);\n```\n\n### Java 8+ 新 API\n\n```java\n// 日期\nLocalDate today = LocalDate.now();\nLocalDate date = LocalDate.of(2024, 1, 15);\nLocalDate parsed = LocalDate.parse(\"2024-01-15\");\n\n// 时间\nLocalTime time = LocalTime.of(14, 30, 0);\nLocalTime now = LocalTime.now();\n\n// 日期时间\nLocalDateTime dateTime = LocalDateTime.of(2024, 1, 15, 14, 30);\n\n// 带时区\nZonedDateTime shanghai = ZonedDateTime.now(ZoneId.of(\"Asia/Shanghai\"));\n\n// 时间段\nPeriod period = Period.of(1, 2, 3);  // 1年2月3日\nDuration duration = Duration.ofHours(2);\n\n// 格式化\nDateTimeFormatter fmt = DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\");\nString formatted = dateTime.format(fmt);\nLocalDateTime parsed = LocalDateTime.parse(\"2024-01-15 14:30:00\", fmt);\n\n// 计算\nLocalDate nextWeek = today.plusWeeks(1);\nLocalDate lastMonth = today.minusMonths(1);\nlong daysBetween = ChronoUnit.DAYS.between(date1, date2);\n```\n\n### 对比\n\n| 特性 | Date/Calendar | java.time |\n|------|---------------|----------|\n| 可变性 | 可变 | 不可变 |\n| 线程安全 | 否 | 是 |\n| 月份起始 | 0-based | 1-based |\n| 时区 | 复杂 | 清晰（ZonedDateTime） |\n| API | 笨拙 | 流畅 |\n\n### 最佳实践\n\n- 新项目一律使用 `java.time`。\n- 数据库映射使用 `LocalDateTime` 或 `Instant`。\n- JSON 序列化配合 `@JsonFormat` 注解。\n- 旧代码通过 `Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant())` 转换。",
+    "tags": ["java.time", "日期时间", "LocalDate"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-038",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `WeakReference`、`SoftReference`、`PhantomReference` 有什么区别？",
+    "answer": "## 核心概念\n\nJava 提供四种引用类型，强度从强到弱：强引用 > 软引用 > 弱引用 > 虚引用。不同引用类型决定了对象被垃圾回收的时机。\n\n### 四种引用类型\n\n```java\n// 强引用 —— 永不回收（除非置 null）\nObject strong = new Object();\n\n// 软引用 —— 内存不足时回收，适合缓存\nSoftReference<Object> soft = new SoftReference<>(new Object());\nObject obj = soft.get();  // 内存充足时返回对象，否则返回 null\n\n// 弱引用 —— 下次 GC 时回收\nWeakReference<Object> weak = new WeakReference<>(new Object());\nSystem.gc();\nObject obj2 = weak.get();  // 可能返回 null\n\n// 虚引用 —— 随时回收，仅用于跟踪回收事件\nPhantomReference<Object> phantom = new PhantomReference<>(new Object(), referenceQueue);\nphantom.get();  // 永远返回 null\n```\n\n### 对比\n\n| 类型 | 回收时机 | get() | 用途 |\n|------|---------|-------|------|\n| 强引用 | 不回收 | 正常 | 普通引用 |\n| 软引用 | 内存不足时 | 内存充足时返回 | 缓存 |\n| 弱引用 | 下次 GC | 对象存活时返回 | WeakHashMap |\n| 虚引用 | 随时 | 永远返回 null | 跟踪回收事件 |\n\n### ReferenceQueue\n\n```java\nReferenceQueue<Object> queue = new ReferenceQueue<>();\nWeakReference<Object> ref = new WeakReference<>(new Object(), queue);\n\n// GC 后，ref 会被加入 queue\nReference<?> polled = queue.poll();  // 非阻塞获取\nReference<?> removed = queue.remove(); // 阻塞获取\n```\n\n### 应用场景\n\n- **软引用**：内存敏感的缓存（如图片缓存），内存不足时自动释放。\n- **弱引用**：`WeakHashMap`（key 被 GC 后自动移除 entry）、ThreadLocal 的 Entry。\n- **虚引用**：NIO 的 DirectByteBuffer 通过 Cleaner（替代 finalize）释放堆外内存。\n\n### 最佳实践\n\n- 缓存优先考虑 `SoftReference`，但更推荐使用 Caffeine、Guava Cache 等成熟缓存库。\n- `WeakHashMap` 的 key 被 GC 后 entry 不会立即移除，下次操作时才清理。\n- 避免在 `SoftReference`/`WeakReference` 构造时使用匿名内部类，会隐式持有外部引用。",
+    "tags": ["弱引用", "软引用", "GC"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-039",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `==`、`equals()` 和 `hashCode()` 三者的关系是什么？",
+    "answer": "## 核心概念\n\n`==` 比较引用地址，`equals()` 默认也是比较地址（可覆写为内容比较），`hashCode()` 返回对象的哈希码。三者配合工作，尤其在 HashMap 等哈希容器中。\n\n### 核心契约\n\n```java\n// 1. equals 相等 → hashCode 必须相等\n// 2. hashCode 相等 → equals 不一定相等（哈希冲突）\n// 3. 覆写 equals 必须同时覆写 hashCode\n\nclass User {\n    String name;\n    int age;\n\n    @Override\n    public boolean equals(Object o) {\n        if (this == o) return true;\n        if (o == null || getClass() != o.getClass()) return false;\n        User user = (User) o;\n        return age == user.age && Objects.equals(name, user.name);\n    }\n\n    @Override\n    public int hashCode() {\n        return Objects.hash(name, age);  // 保证 equals 相等时 hashCode 相等\n    }\n}\n```\n\n### 为什么需要 hashCode\n\n```java\n// HashMap 的查找过程：\n// 1. 计算 key 的 hashCode → 定位桶\n// 2. 在桶中用 equals 找精确匹配\n\nMap<User, String> map = new HashMap<>();\nUser u1 = new User(\"Alice\", 25);\nUser u2 = new User(\"Alice\", 25);\n\nmap.put(u1, \"engineer\");\n\n// 如果只覆写 equals 不覆写 hashCode：\n// u1 和 u2 的 hashCode 可能不同 → 落到不同桶 → map.get(u2) 返回 null！\nSystem.out.println(map.get(u2));  // 如果正确实现了，返回 \"engineer\"\n```\n\n### 违反契约的后果\n\n| 违反情况 | 后果 |\n|---------|------|\n| equals 相等但 hashCode 不等 | HashMap 中逻辑相等的 key 被认为是不同的 |\n| 只覆写 equals 不覆写 hashCode | HashMap、HashSet 行为异常 |\n| hashCode 相等但 equals 不等 | 哈希冲突，性能下降但功能正常 |\n\n### 最佳实践\n\n- 覆写 `equals()` 必须同时覆写 `hashCode()`。\n- 使用 `Objects.hash()` 简化 hashCode 计算。\n- `equals()` 必须满足自反性、对称性、传递性、一致性和非 null 性。\n- 用 IDE 自动生成 equals/hashCode 以避免遗漏。",
+    "tags": ["equals", "hashCode", "契约"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-040",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `Deque` 接口是什么？`ArrayDeque` 和 `LinkedList` 作为队列/栈有什么区别？",
+    "answer": "## 核心概念\n\n`Deque`（Double-Ended Queue）是双端队列接口，支持在两端插入和删除元素。既可以当队列（FIFO）使用，也可以当栈（LIFO）使用。\n\n### 代码示例\n\n```java\n// 作为栈使用（替代 Stack 类）\nDeque<String> stack = new ArrayDeque<>();\npush(\"a\");\npush(\"b\");\npop();    // \"b\"\npeek();   // \"a\"\n\n// 作为队列使用（替代 Queue）\nDeque<String> queue = new ArrayDeque<>();\noffer(\"a\");   // 尾部入\noffer(\"b\");\npoll();        // 头部出 → \"a\"\npeek();        // 头部查看 → \"b\"\n\n// 双端操作\nDeque<String> deque = new ArrayDeque<>();\ndeque.offerFirst(\"a\");  // 头部入\ndeque.offerLast(\"b\");   // 尾部入\ndeque.pollFirst();       // 头部出\ndeque.pollLast();        // 尾部出\n```\n\n### ArrayDeque vs LinkedList\n\n| 特性 | ArrayDeque | LinkedList |\n|------|------------|------------|\n| 底层结构 | 循环数组 | 双向链表 |\n| 内存 | 紧凑，缓存友好 | 每个节点额外开销 |\n| 性能 | 均摊 O(1)，实际更快 | O(1) 但常数大 |\n| null 元素 | 不允许 | 允许 |\n| 实现接口 | Deque | List + Deque |\n\n### 关键要点\n\n- `ArrayDeque` 作为栈比 `Stack` 更快（`Stack` 继承自 `Vector`，有同步开销）。\n- `ArrayDeque` 作为队列比 `LinkedList` 更快（更好的缓存局部性）。\n- `ArrayDeque` 初始容量为 16，自动扩容为 2 的幂次。\n- 不允许插入 `null` 元素。\n\n### 最佳实践\n\n- 需要栈时优先使用 `ArrayDeque` 而非 `Stack`。\n- 需要队列时优先使用 `ArrayDeque` 而非 `LinkedList`。\n- 只有需要 `List` + `Deque` 双重功能时才用 `LinkedList`。\n- `PriorityQueue` 用于优先级队列场景。",
+    "tags": ["Deque", "ArrayDeque", "队列"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-041",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `ConcurrentModificationException` 是什么？如何避免？",
+    "answer": "## 核心概念\n\n`ConcurrentModificationException` 是 fail-fast 机制在检测到集合在遍历期间被结构性修改时抛出的异常。它不是并发独有的，单线程中也会出现。\n\n### 触发场景\n\n```java\n// 单线程中触发\nList<String> list = new ArrayList<>(Arrays.asList(\"a\", \"b\", \"c\"));\nfor (String s : list) {\n    if (\"b\".equals(s)) {\n        list.remove(s);  // ConcurrentModificationException!\n    }\n}\n\n// 同样触发\nIterator<String> it = list.iterator();\nlist.add(\"d\");  // 结构性修改\nit.next();       // ConcurrentModificationException!\n```\n\n### 正确的删除方式\n\n```java\n// 方式1：Iterator 的 remove()\nIterator<String> it = list.iterator();\nwhile (it.hasNext()) {\n    String s = it.next();\n    if (\"b\".equals(s)) {\n        it.remove();  // 安全\n    }\n}\n\n// 方式2：removeIf (Java 8+)\nlist.removeIf(s -> \"b\".equals(s));\n\n// 方式3：CopyOnWriteArrayList（遍历时复制底层数组）\nList<String> cowList = new CopyOnWriteArrayList<>(list);\nfor (String s : cowList) {\n    cowList.remove(s);  // 不抛异常（遍历的是快照）\n}\n\n// 方式4：并发场景使用 ConcurrentHashMap\nMap<String, Integer> map = new ConcurrentHashMap<>();\nfor (Map.Entry<String, Integer> entry : map.entrySet()) {\n    if (entry.getValue() < 0) {\n        map.remove(entry.getKey());  // 安全\n    }\n}\n```\n\n### 原理\n\nArrayList 维护一个 `modCount` 计数器，每次结构性修改（add/remove/clear）时递增。迭代器创建时记录 `expectedModCount`，每次操作前检查两者是否一致。\n\n### 最佳实践\n\n- 遍历中删除元素用 `Iterator.remove()` 或 `removeIf()`。\n- 多线程环境用并发集合（`ConcurrentHashMap`、`CopyOnWriteArrayList`）。\n- `CopyOnWriteArrayList` 适合读多写少的场景。\n- 不要在增强 for 循环中直接修改集合。",
+    "tags": ["ConcurrentModificationException", "fail-fast", "集合遍历"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-042",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中 `varargs`（可变参数）是什么？有什么注意事项？",
+    "answer": "## 核心概念\n\n可变参数（varargs）允许方法接受零个或多个指定类型的参数，语法为 `Type... args`。本质上是语法糖，编译后转换为数组参数。\n\n### 代码示例\n\n```java\n// 基本用法\npublic static int sum(int... numbers) {\n    int total = 0;\n    for (int n : numbers) {\n        total += n;\n    }\n    return total;\n}\n\nsum();           // 0\nsum(1);          // 1\nsum(1, 2, 3);    // 6\nsum(new int[]{1, 2, 3});  // 也可以传数组\n\n// 混合使用\npublic void log(String prefix, Object... args) {\n    System.out.println(prefix + \": \" + Arrays.toString(args));\n}\nlog(\"Info\", \"hello\", 42, 3.14);\n```\n\n### 注意事项\n\n```java\n// 1. 可变参数必须是最后一个参数\nvoid method(int... nums, String s) {}   // 编译错误\nvoid method(String s, int... nums) {}   // 正确\n\n// 2. 一个方法只能有一个可变参数\nvoid method(int... a, String... b) {}   // 编译错误\n\n// 3. 重载歧义\nstatic void method(Object... args) { System.out.println(\"varargs\"); }\nstatic void method(Object o1, Object o2) { System.out.println(\"two\"); }\n\nmethod(\"a\", \"b\");  // 调用哪个？Java 选择更具体的 method(Object, Object)\n\n// 4. 传 null 会导致歧义\nstatic void method(String... args) { }\nstatic void method(Integer... args) { }\nmethod(null);  // 编译错误：歧义\n\n// 5. 数组与可变参数等价\nvoid method(String... args) { }\nmethod(new String[]{\"a\", \"b\"});  // OK\n```\n\n### 关键要点\n\n- 可变参数在方法内部就是一个数组。\n- 零个参数时传入的是空数组。\n- 使用 `@SafeVarargs` 抑制堆污染警告（Java 7+）。\n- 可变参数与泛型混合使用时需注意类型安全。\n\n### 最佳实践\n\n- 工具方法的参数列表不确定时使用可变参数。\n- 性能敏感场景考虑使用数组参数（避免创建临时数组）。\n- 重载方法中包含可变参数时要小心歧义。",
+    "tags": ["varargs", "可变参数", "语法糖"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-043",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `Collections.unmodifiableXxx` 和 `List.of()` 有什么区别？",
+    "answer": "## 核心概念\n\n两者都创建不可修改的集合，但实现方式不同。`unmodifiableXxx` 创建的是包装器视图，底层集合仍可被修改；`List.of()`（Java 9+）创建的是真正不可变的集合。\n\n### 代码示例\n\n```java\n// unmodifiableList —— 包装器视图\nList<String> mutable = new ArrayList<>(Arrays.asList(\"a\", \"b\"));\nList<String> unmodifiable = Collections.unmodifiableList(mutable);\n// unmodifiable.add(\"c\");  // UnsupportedOperationException\nmutable.add(\"c\");          // 底层集合可以修改！\nSystem.out.println(unmodifiable);  // [a, b, c] —— 视图反映了变化\n\n// List.of —— 真正不可变\nList<String> immutable = List.of(\"a\", \"b\", \"c\");\n// immutable.add(\"d\");     // UnsupportedOperationException\n// List.of(null);           // NullPointerException —— 不允许 null\n```\n\n### 对比\n\n| 特性 | Collections.unmodifiableXxx | List.of() / Set.of() / Map.of() |\n|------|---------------------------|--------------------------------|\n| JDK版本 | 1.2+ | 9+ |\n| null 元素 | 取决于底层集合 | 不允许 |\n| 底层可变 | 是（视图） | 否（真正不可变） |\n| 序列化 | 序列化底层集合 | 特殊序列化实现 |\n| 内存 | 轻量包装器 | 紧凑实现 |\n| 去重 | 不检查 | Set.of/Map.of 检查重复 |\n\n### 不可变集合全景\n\n```java\n// Java 9+ 工厂方法\nList<String> list = List.of(\"a\", \"b\", \"c\");\nSet<String> set = Set.of(\"a\", \"b\", \"c\");\nMap<String, Integer> map = Map.of(\"a\", 1, \"b\", 2);\n\n// 超过10个元素的 Map\nMap<String, Integer> bigMap = Map.ofEntries(\n    Map.entry(\"a\", 1),\n    Map.entry(\"b\", 2),\n    Map.entry(\"c\", 3)\n);\n\n// Guava 的 Immutable 集合\nImmutableList<String> guavaList = ImmutableList.of(\"a\", \"b\", \"c\");\nImmutableMap<String, Integer> guavaMap = ImmutableMap.of(\"a\", 1, \"b\", 2);\n```\n\n### 最佳实践\n\n- 需要真正不可变的集合用 `List.of()` / `Set.of()` / `Map.of()`。\n- 需要把已有集合变为不可修改视图用 `Collections.unmodifiableXxx()`。\n- 防御性编程：方法返回集合时返回不可变副本，防止调用者修改内部状态。\n- `List.copyOf(set)` / `Set.copyOf(list)` 可以从已有集合创建不可变副本。",
+    "tags": ["不可变集合", "List.of", "unmodifiable"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-044",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Java 中 `ThreadLocal` 是什么？有什么应用场景和内存泄漏风险？",
+    "answer": "## 核心概念\n\n`ThreadLocal` 为每个线程提供独立的变量副本，实现线程隔离。每个线程通过 `ThreadLocal` 对象访问自己的值，互不干扰。\n\n### 代码示例\n\n```java\n// 基本使用\nprivate static final ThreadLocal<Integer> userId = ThreadLocal.withInitial(() -> 0);\n\n// 设置值\nuserId.set(123);\n\n// 获取值\nint id = userId.get();  // 当前线程的值\n\n// 移除（防止内存泄漏）\nuserId.remove();\n\n// 典型场景：用户上下文\npublic class UserContext {\n    private static final ThreadLocal<User> CURRENT = new ThreadLocal<>();\n\n    public static void setUser(User user) { CURRENT.set(user); }\n    public static User getUser() { return CURRENT.get(); }\n    public static void clear() { CURRENT.remove(); }\n}\n\n// 使用\ntry {\n    UserContext.setUser(currentUser);\n    service.process();  // 任何地方都能通过 UserContext.getUser() 获取\n} finally {\n    UserContext.clear();  // 必须清理！\n}\n```\n\n### 底层原理\n\n每个 `Thread` 对象内部有一个 `ThreadLocalMap`，key 是 `ThreadLocal` 对象（弱引用），value 是实际存储的值。\n\n```\nThread → ThreadLocalMap → Entry[]\n  Entry 的 key: WeakReference<ThreadLocal>\n  Entry 的 value: 实际值\n```\n\n### 内存泄漏风险\n\n```java\n// 问题场景\nThreadLocal<byte[]> tl = new ThreadLocal<>();\ntl.set(new byte[1024 * 1024]);  // 存储大对象\n// 忘记 tl.remove()\n// tl 被 GC → key 变为 null → value 仍然存在 → 内存泄漏！\n\n// 线程池中尤为严重：线程不销毁，value 一直存在\n```\n\n### 最佳实践\n\n- 使用后必须在 `finally` 块中调用 `remove()`。\n- `ThreadLocal` 变量建议声明为 `static`（一个实例足够，避免每个对象创建 ThreadLocal）。\n- 线程池场景中使用 `remove()` 清理，否则上一个任务的数据会影响下一个任务。\n- 常见应用：数据库连接管理、Session 管理、日期格式化（SimpleDateFormat 不是线程安全的）。",
+    "tags": ["ThreadLocal", "线程隔离", "内存泄漏"],
+    "source": "高频"
+  },
+  {
+    "id": "java-basics-045",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 中如何正确地使用 `Arrays` 和 `Collections` 工具类？",
+    "answer": "## 核心概念\n\n`Arrays` 是数组工具类，`Collections` 是集合工具类，两者提供了大量静态方法用于排序、搜索、填充、转换等操作。\n\n### Arrays 常用方法\n\n```java\nint[] arr = {3, 1, 4, 1, 5, 9};\n\nArrays.sort(arr);                          // 排序\nint idx = Arrays.binarySearch(arr, 4);     // 二分查找（需先排序）\nArrays.fill(arr, 0);                       // 填充\nint[] copy = Arrays.copyOf(arr, 10);       // 复制并扩容\nint[] range = Arrays.copyOfRange(arr, 1, 4); // 范围复制\nboolean eq = Arrays.equals(arr, arr2);     // 比较\nString str = Arrays.toString(arr);         // 转字符串\nint hash = Arrays.hashCode(arr);           // 哈希码\n\n// 并行排序（大数据量）\nArrays.parallelSort(arr);\n\n// 转为 List\nList<String> list = Arrays.asList(\"a\", \"b\", \"c\");  // 固定大小，不能增删\nList<String> mutable = new ArrayList<>(Arrays.asList(\"a\", \"b\", \"c\"));\nList<String> immutable = List.of(\"a\", \"b\", \"c\");  // Java 9+\n```\n\n### Collections 常用方法\n\n```java\nList<String> list = new ArrayList<>(Arrays.asList(\"c\", \"a\", \"b\"));\n\nCollections.sort(list);                        // 排序\nCollections.reverse(list);                     // 反转\nCollections.shuffle(list);                     // 随机打乱\nCollections.swap(list, 0, 1);                  // 交换\nCollections.fill(list, \"x\");                   // 填充\nCollections.max(list);                         // 最大值\nCollections.min(list);                         // 最小值\nCollections.frequency(list, \"a\");              // 出现次数\nCollections.replaceAll(list, \"a\", \"A\");        // 替换所有\nCollections.rotate(list, 2);                   // 旋转\n\n// 创建不可变集合\nList<String> empty = Collections.emptyList();\nList<String> single = Collections.singletonList(\"only\");\nMap<String, Integer> emptyMap = Collections.emptyMap();\n\n// 同步包装器（旧方案，现在用并发集合）\nList<String> syncList = Collections.synchronizedList(list);\n```\n\n### 注意事项\n\n- `Arrays.asList()` 返回的是固定大小的 List，不能 add/remove，可以 set。\n- `Collections.sort()` 内部调用 `list.sort(null)`，使用 TimSort 算法。\n- 基本类型数组不能直接用 `Arrays.asList()` 转 List。\n- `Collections.nCopies(n, obj)` 返回 n 个相同对象的不可变 List（共享引用）。\n\n### 最佳实践\n\n- 集合排序优先使用 `list.sort(comparator)` 或 Stream 的 `sorted()`。\n- 创建小集合用 `List.of()` / `Set.of()` / `Map.of()`。\n- 需要可变集合时用 `new ArrayList<>(Arrays.asList(...))`。",
+    "tags": ["Arrays", "Collections", "工具类"],
+    "source": "高频"
+  }
+]
