@@ -72,6 +72,18 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
     ],
   },
   {
+    category: 'Python',
+    files: [
+      'python/basics.json',
+      'python/data-types.json',
+      'python/engineering.json',
+      'python/advanced.json',
+      'python/algorithms.json',
+      'python/crawler.json',
+      'python/concurrency-network.json',
+    ],
+  },
+  {
     category: 'AI Agent',
     files: [
       'ai-agent/llm.json',
@@ -100,7 +112,7 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
 
 /** Flat list of every built-in file path across all categories (for legacy compat). */
 export const BUILTIN_MODULE_FILES: readonly string[] = BUILTIN_CATEGORIES.flatMap((c) => c.files)
-export const BUILTIN_QUESTIONS_VERSION = '0.18.0'
+export const BUILTIN_QUESTIONS_VERSION = '0.19.0'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

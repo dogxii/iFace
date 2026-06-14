@@ -1,0 +1,164 @@
+[
+  {
+    "id": "python-crawler-001",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "在 requests 模块中，requests.content 和 requests.text 什么区别",
+    "answer": "requests.content 获取的是字节，requests.text 获取的是文本内容。\n\n### 面试补充\n围绕“在 requests 模块中，requests.content 和 requests.text 什么区别”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。",
+    "tags": ["Python", "爬虫", "爬虫相关", "requests"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-002",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "简要写一下 lxml 模块的使用方法框架",
+    "answer": "```python\nfrom lxml import html\nsource='''\n<div class=\"nam\"><span>中国</span></div>\nroot=html.fromstring(source)\n_content=root.xpath(\"string(//div[@class='nam'])\")\n\nif \\_content and isinstance(\\_content,list)：\ncontent=\\_content[0]\nelif isinstance(\\_content,str)：\ncontent=\\_content\nprint(content)\n```",
+    "tags": ["Python", "爬虫", "爬虫相关", "lxml"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-003",
+    "module": "Python爬虫",
+    "difficulty": 3,
+    "question": "说一说 scrapy 的工作流程",
+    "answer": "首先还是先看张图\n\n![enter image description here](https://images.gitbook.cn/47a53040-8bf4-11e9-86b6-1bdaa75635da)\n\n已 www.baidu.com 为例：\n首先需要知道的事各个模块之间调用都是通过引擎进行的。\n\n1.  spider 把百度需要下载的第一个 url：www.baidu.com 交给引擎。\n2.  引擎把 url 交给调度器排序入队处理。\n3.  调度器把处理好的 request 返回给引擎。\n4.  通过引擎调动下载器，按照下载中间件的设置下载这个 request。\n5.  下载器下载完毕结果返回给引擎（如果失败：不好意思，这个 request 下载失败，然后引擎告诉调度器，这个 request 下载失败了，你记录一下，我们待会儿再下载。）\n6.  引擎调度 spider，把按照 Spider 中间件处理过了的请求，交给 spider 处理。\n7.  spider 把处理好的 url 和 item 传给引擎。\n8.  引擎根据不同的类型调度不同的模块，调度 Item Pipeline 处理 item。\n9.  把 url 交给调度器。\n然后从第 4 步开始循环，直到获取到你需要的信息，\n\n注意！只有当调度器中不存在任何 request 了，整个程序才会停止。",
+    "tags": ["Python", "爬虫", "爬虫相关", "Scrapy"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-004",
+    "module": "Python爬虫",
+    "difficulty": 3,
+    "question": "scrapy 的去重原理",
+    "answer": "scrapy 本身自带一个去重中间件，scrapy 源码中可以找到一个 dupefilters.py 去重器。里面有个方法叫做 request_seen，它在 scheduler(发起请求的第一时间)的时候被调用。它代码里面调用了 request_fingerprint 方法（就是给 request 生成一个指纹）。\n\n就是给每一个传递过来的 url 生成一个固定长度的唯一的哈希值。但是这种量级千万到亿的级别内存是可以应付的。",
+    "tags": ["Python", "爬虫", "爬虫相关", "Scrapy"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-005",
+    "module": "Python爬虫",
+    "difficulty": 3,
+    "question": "scrapy 中间件有几种类，你用过哪些中间件",
+    "answer": "scrapy 的中间件理论上有三种(Schduler Middleware,Spider Middleware,Downloader Middleware)。在应用上一般有以下两种\n\n1.  爬虫中间件 Spider Middleware：主要功能是在爬虫运行过程中进行一些处理。\n2.  下载器中间件 Downloader Middleware：这个中间件可以实现修改 User-Agent 等 headers 信息，处理重定向，设置代理，失败重试，设置 cookies 等功能。",
+    "tags": ["Python", "爬虫", "爬虫相关", "Scrapy"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-006",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "你写爬虫的时候都遇到过什么？反爬虫措施，你是怎么解决的？",
+    "answer": "*   Headers：\n从用户的 headers 进行反爬是最常见的反爬虫策略。Headers 是一种区分浏览器行为和机器行为中最简单的方法，还有一些网站会对 Referer （上级链接）进行检测（机器行为不太可能通过链接跳转实现）从而实现爬虫。\n相应的解决措施：通过审查元素或者开发者工具获取相应的 headers 然后把相应的 headers 传输给 Python 的 requests，这样就能很好地绕过。\n*   IP 限制\n一些网站会根据你的 IP 地址访问的频率，次数进行反爬。也就是说如果你用单一的 IP 地址访问频率过高，那么服务器会在短时间内禁止这个 IP 访问。\n\n解决措施：构造自己的 IP 代理池，然后每次访问时随机选择代理（但一些 IP 地址不是非常稳定，需要经常检查更新）。\n\n*   UA 限制\nUA 是用户访问网站时候的浏览器标识，其反爬机制与 ip 限制类似。\n\n解决措施：使用随机 UA\n\n*   验证码反爬虫或者模拟登陆\n验证码：这个办法也是相当古老并且相当的有效果，如果一个爬虫要解释一个验证码中的内容，这在以前通过简单的图像识别是可以完成的，但是就现在来讲，验证码的干扰线，噪点都很多，甚至还出现了人类都难以认识的验证码。\n\n相应的解决措施：验证码识别的基本方法：截图，二值化、中值滤波去噪、分割、紧缩重排（让高矮统一）、字库特征匹配识别。（Python 的 PIL 库或者其他），复杂的情况需求接入打码平台。\n\n*   Ajax 动态加载\n网页的不希望被爬虫拿到的数据使用 Ajax 动态加载，这样就为爬虫造成了绝大的麻烦，如果一个爬虫不具备 js 引擎，或者具备 js 引擎，但是没有处理 js 返回的方案，或者是具备了 js 引擎，但是没办法让站点显示启用脚本设置。基于这些情况，ajax 动态加载反制爬虫还是相当有效的。\n\nAjax 动态加载的工作原理是：从网页的 url 加载网页的源代码之后，会在浏览器里执行 JavaScript 程序。这些程序会加载出更多的内容，并把这些内容传输到网页中。这就是为什么有些网页直接爬它的 URL 时却没有数据的原因。\n\n处理方法：找对应的 ajax 接口，一般数据返回类型为 json。\n\n*   cookie 限制\n一次打开网页会生成一个随机 cookie，如果再次打开网页这个 cookie 不存在，那么再次设置，第三次打开仍然不存在，这就非常有可能是爬虫在工作了。\n\n解决措施：在 headers 挂上相应的 cookie 或者根据其方法进行构造（例如从中选取几个字母进行构造）。如果过于复杂，可以考虑使用 selenium 模块（可以完全模拟浏览器行为）。",
+    "tags": ["Python", "爬虫", "爬虫相关"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-007",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "为什么会用到代理？",
+    "answer": "如果使用同一个 ip 去不断的访问的网站的话,会很容易被封 ip，严重的永久封禁，导致当前的访问不了该网站。不只是通过程序，通过浏览器也无法访问。\n\n### 面试补充\n围绕“为什么会用到代理？”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。",
+    "tags": ["Python", "爬虫", "爬虫相关", "代理"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-008",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "代理失效了怎么处理？",
+    "answer": "一般通过大家代理池来实现代理切换等操作，来实现时时使用新的代理 ip，来避免代理失效的问题。\n\n### 面试补充\n围绕“代理失效了怎么处理？”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "爬虫", "爬虫相关", "代理"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-009",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "列出你知道 header 的内容以及信息",
+    "answer": "User-Agent：User-Agent 的内容包含发出请求的用户信息。\nAccept：指定客户端能够接收的内容类型。\nAccept-Encoding：指定浏览器可以支持的 web 服务器返回内容压缩编码类型。\nAccept-Language：浏览器可接受的语言。\nConnection：表示是否需要持久连接。（HTTP 1.1 默认进行持久连接）。\nContent-Length：请求的内容长度。\nIf-Modified-Since：如果请求的部分在指定时间之后被修改则请求成功，未被修改则返回 304 代码。\nReferer：先前网页的地址，当前请求网页紧随其后，即来路。",
+    "tags": ["Python", "爬虫", "爬虫相关"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-010",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "说一说打开浏览器访问 www.baidu.com 获取到结果，整个流程",
+    "answer": "浏览器向 DNS 服务器发送 baidu.com 域名解析请求。\nDNS 服务器返回解析后的 ip 给客户端浏览器，浏览器想该 ip 发送页面请求。\nDNS 服务器接收到请求后，查询该页面，并将页面发送给客户端浏览器。\n客户端浏览器接收到页面后，解析页面中的引用，并再次向服务器发送引用资源请求。\n服务器接收到资源请求后，查找并返回资源给客户端。\n客户端浏览器接收到资源后，渲染，输出页面展现给用户。",
+    "tags": ["Python", "爬虫", "爬虫相关"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-011",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "爬取速度过快出现了验证码怎么处理",
+    "answer": "一般在爬取过程中出现了验证码根据不同的情况，处理不一样。\n如果在一开始访问就有验证码,那么就想办法绕开验证码,比如通过 wap 端或者 app 去发现其他接口等，如果不行就得破解验证码了，复杂验证码就需要接入第三方打码平台了。\n如果开始的时候没有验证码，爬了一段时间才出现验证码，这个情况就要考虑更换代理 ip 了。\n可能因为同一个访问频率高导致的。\n\n### 面试补充\n围绕“爬取速度过快出现了验证码怎么处理”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。",
+    "tags": ["Python", "爬虫", "爬虫相关", "验证码"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-012",
+    "module": "Python爬虫",
+    "difficulty": 3,
+    "question": "scrapy 和 scrapy-redis 有什么区别？为什么选择 redis 数据库？",
+    "answer": "scrapy 是一个 Python 爬虫框架，爬取效率极高，具有高度定制性，但是不支持分布式。而 scrapy-redis 一套基于 redis 数据库、运行在 scrapy 框架之上的组件，可以让 scrapy 支持分布式策略，Slaver 端共享 Master 端 redis 数据库里的 item 队列、请求队列和请求指纹集合。\n\n为什么选择 redis 数据库，因为 redis 支持主从同步，而且数据都是缓存在内存中的，所以基于 redis 的分布式爬虫，对请求和数据的高频读取效率非常高。",
+    "tags": ["Python", "爬虫", "爬虫相关", "Scrapy", "Redis"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-013",
+    "module": "Python爬虫",
+    "difficulty": 3,
+    "question": "分布式爬虫主要解决什么问题",
+    "answer": "使用分布式主要目的就是为了给爬虫加速。解决了单个 ip 的限制，宽带的影响，以及 CPU 的使用情况和 io 等一系列操作\n\n### 面试补充\n围绕“分布式爬虫主要解决什么问题”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。",
+    "tags": ["Python", "爬虫", "爬虫相关"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-014",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "写爬虫是用多进程好？还是多线程好？ 为什么？",
+    "answer": "多线程，因为爬虫是对网络操作属于 io 密集型操作适合使用多线程或者协程。\n\n### 面试补充\n围绕“写爬虫是用多进程好？还是多线程好？ 为什么？”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "爬虫", "爬虫相关", "多线程", "多进程"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-015",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "解析网页的解析器使用最多的是哪几个",
+    "answer": "lxml，pyquery\n\n### 面试补充\n围绕“解析网页的解析器使用最多的是哪几个”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "爬虫", "爬虫相关"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-016",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "需要登录的网页，如何解决同时限制 ip，cookie,session（其中有一些是动态生成的）在不使用动态爬取的情况下？",
+    "answer": "解决限制 IP 可以搭建代理 IP 地址池、adsl 拨号使用等。\n\n不适用动态爬取的情况下可以使用反编译 JS 文件获取相应的文件，或者换用其他平台（比如手机端）看看是否可以获取相应的 json 文件，一般要学会习惯性的先找需要爬取网站的 h5 端页面，看看有没有提供接口，进而简化操作。\n\n### 面试补充\n围绕“需要登录的网页，如何解决同时限制 ip，cookie,session（其中有一些是动态生成的）在不使用动态爬取的情况下？”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。",
+    "tags": ["Python", "爬虫", "爬虫相关"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-017",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "验证码的解决?",
+    "answer": "图形验证码：干扰、杂色不是特别多的图片可以使用开源库 Tesseract 进行识别，太过复杂的需要借助第三方打码平台。\n点击和拖动滑块验证码可以借助 selenium、无图形界面浏览器（chromedirver 或者 phantomjs）和 pillow 包来模拟人的点击和滑动操作，pillow 可以根据色差识别需要滑动的位置。\n\n### 面试补充\n围绕“验证码的解决?”回答时，爬虫题建议同时覆盖请求、解析、去重、调度、存储和反爬策略。生产环境还要考虑限速、重试、代理质量、Cookie 管理、数据合法合规和失败恢复，这些比单个库的 API 更能区分经验。",
+    "tags": ["Python", "爬虫", "爬虫相关", "验证码"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-crawler-018",
+    "module": "Python爬虫",
+    "difficulty": 2,
+    "question": "使用最多的数据库（mysql，mongodb，redis 等），对他的理解？",
+    "answer": "MySQL 数据库：开源免费的关系型数据库，需要实现创建数据库、数据表和表的字段，表与表之间可以进行关联（一对多、多对多），是持久化存储。\n\nmongodb 数据库：是非关系型数据库，数据库的三元素是，数据库、集合、文档，可以进行持久化存储，也可作为内存数据库，存储数据不需要事先设定格式，数据以键值对的形式存储。\n\nredis 数据库：非关系型数据库，使用前可以不用设置格式，以键值对的方式保存，文件格式相对自由，主要用与缓存数据库，也可以进行持久化存储。",
+    "tags": ["Python", "爬虫", "爬虫相关", "Redis", "Mongo"],
+    "source": "derekramm/python-interview-questions"
+  }
+]

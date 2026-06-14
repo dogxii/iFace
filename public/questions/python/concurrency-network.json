@@ -1,0 +1,119 @@
+[
+  {
+    "id": "python-concurrency-network-001",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "TCP 和 UDP 的区别？",
+    "answer": "UDP 是面向无连接的通讯协议，UDP 数据包括目的端口号和源端口号信息。\n\n优点：UDP 速度快、操作简单、要求系统资源较少，由于通讯不需要连接，可以实现广播发送。\n\n缺点：UDP 传送数据前并不与对方建立连接，对接收到的数据也不发送确认信号，发送端不知道数据是否会正确接收，也不重复发送，不可靠。\n\nTCP 是面向连接的通讯协议，通过三次握手建立连接，通讯完成时四次挥手。\n\n优点：TCP 在数据传递时，有确认、窗口、重传、阻塞等控制机制，能保证数据正确性，较为可靠。\n\n缺点：TCP 相对于 UDP 速度慢一点，要求系统资源较多。",
+    "tags": ["Python", "并发网络", "网络编程", "TCP", "UDP"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-002",
+    "module": "Python并发网络",
+    "difficulty": 3,
+    "question": "简要介绍三次握手和四次挥手",
+    "answer": "三次握手\n第一次握手：主机 A 发送同步报文段（SYN）请求建立连接。\n第二次握手：主机 B 听到连接请求，就将该连接放入内核等待队列当中，并向主机 A 发送针对 SYN 的确认 ACK，同时主机 B 也发送自己的请求建立连接（SYN）。\n第三次握手：主机 A 针对主机 BSYN 的确认应答 ACK。\n\n四次挥手\n第一次挥手：当主机 A 发送数据完毕后，发送 FIN 结束报文段。\n第二次挥手：主机 B 收到 FIN 报文段后，向主机 A 发送一个确认序号 ACK（为了防止在这段时间内，对方重传 FIN 报文段）。\n第三次挥手：主机 B 准备关闭连接，向主机 A 发送一个 FIN 结束报文段。\n第四次挥手：主机 A 收到 FIN 结束报文段后，进入 TIME_WAIT 状态。并向主机 B 发送一个 ACK 表示连接彻底释放。\n\n除此之外经常看的问题还有，为什么 2、3 次挥手不能合在一次挥手中？\n那是因为此时 A 虽然不再发送数据了，但是还可以接收数据，B 可能还有数据要发送给 A，所以两次挥手不能合并为一次。",
+    "tags": ["Python", "并发网络", "网络编程"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-003",
+    "module": "Python并发网络",
+    "difficulty": 3,
+    "question": "什么是粘包？ socket 中造成粘包的原因是什么？ 哪些情况会发生粘包现象？",
+    "answer": "TCP 是流式协议，只有字节流，流是没有边界的，根部就不存在粘包一说，一般粘包都是业务上没处理好造成的。\n\n但是在描述这个现象的时候，可能还得说粘包。TCP 粘包通俗来讲，就是发送方发送的多个数据包，到接收方后粘连在一起，导致数据包不能完整的体现发送的数据。\n\n导致 TCP 粘包的原因，可能是发送方的原因，也有可能是接受方的原因。\n\n发送方\n由于 TCP 需要尽可能高效和可靠，所以 TCP 协议默认采用 Nagle 算法，以合并相连的小数据包，再一次性发送，以达到提升网络传输效率的目的。但是接收方并不知晓发送方合并数据包，而且数据包的合并在 TCP 协议中是没有分界线的，所以这就会导致接收方不能还原其本来的数据包。\n\n接收方\nTCP 是基于“流”的。网络传输数据的速度可能会快过接收方处理数据的速度，这时候就会导致，接收方在读取缓冲区时，缓冲区存在多个数据包。在 TCP 协议中接收方是一次读取缓冲区中的所有内容，所以不能反映原本的数据信息。\n\n一般的解决方案大概下面几种：\n\n1.  发送定长包。如果每个消息的大小都是一样的，那么在接收对等方只要累计接收数据，直到数据等于一个定长的数值就将它作为一个消息。\n2.  包尾加上\\r\\n 标记。FTP 协议正是这么做的。但问题在于如果数据正文中也含有\\r\\n，则会误判为消息的边界。\n3.  包头加上包体长度。包头是定长的 4 个字节，说明了包体的长度。接收对等方先接收包体长度，依据包体长度来接收包体。",
+    "tags": ["Python", "并发网络", "网络编程", "socket"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-004",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "举例说明 concurrent.future 的中线程池的用法",
+    "answer": "```python\nfrom concurrent.futures import ThreadPoolExecutor\nimport requests\nURLS = ['http：//www.163.com', 'https：//www.baidu.com/', 'https：//github.com/']\ndef load_url(url)：\n        req= requests.get(url, timeout=60)\n        print(f'{url} page is {len(req.content))} bytes')\nwith ThreadPoolExecutor(max_workers=3) as pool：\n        pool.map(load_url,URLS)\nprint('主线程结束')\n```",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-005",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "说一说多线程，多进程和协程的区别",
+    "answer": "概念：\n\n进程：\n\n```python\n进程是具有一定独立功能的程序关于某个数据集合上的一次运行活动,\n进程是系统进行资源分配和调度的一个独立单位。每个进程都有自己的独立内存空间，\n不同进程通过进程间通信来通信。由于进程比较重量，占据独立的内存，\n所以上下文进程间的切换开销（栈、寄存器、虚拟内存、文件句柄等）比较大，但相对比较稳定安全。\n```\n\n线程：\n\n```python\n线程是进程的一个实体,是 CPU 调度和分派的基本单位,\n它是比进程更小的能独立运行的基本单位.\n线程自己基本上不拥有系统资源,只拥有一点在运行中必不可少的资源(如程序计数器,一组寄存器和栈),\n但是它可与同属一个进程的其他的线程共享进程所拥有的全部资源。\n线程间通信主要通过共享内存，上下文切换很快，资源开销较少，但相比进程不够稳定容易丢失数据。\n```\n\n协程：\n\n```python\n协程是一种用户态的轻量级线程，协程的调度完全由用户控制。\n协程拥有自己的寄存器上下文和栈。\n协程调度切换时，将寄存器上下文和栈保存到其他地方，在切回来的时候，恢复先前保存的寄存器上下文和栈，\n直接操作栈则基本没有内核切换的开销，可以不加锁的访问全局变量，所以上下文的切换非常快。\n```\n\n区别：\n进程与线程比较：\n线程是指进程内的一个执行单元,也是进程内的可调度实体。线程与进程的区别：\n\n```python\n1) 地址空间：线程是进程内的一个执行单元，进程内至少有一个线程，它们共享进程的地址空间，\n而进程有自己独立的地址空间\n2) 资源拥有：进程是资源分配和拥有的单位,同一个进程内的线程共享进程的资源\n3) 线程是处理器调度的基本单位,但进程不是\n4) 二者均可并发执行\n5) 每个独立的线程有一个程序运行的入口、顺序执行序列和程序的出口，\n但是线程不能够独立执行，必须依存在应用程序中，由应用程序提供多个线程执行控制\n```\n\n协程与线程进行比较：\n\n```python\n1) 一个线程可以多个协程，一个进程也可以单独拥有多个协程，这样 Python 中则能使用多核 CPU。\n2) 线程进程都是同步机制，而协程则是异步\n3) 协程能保留上一次调用时的状态，每次过程重入时，就相当于进入上一次调用的状态\n```",
+    "tags": ["Python", "并发网络", "并发", "多线程", "多进程"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-006",
+    "module": "Python并发网络",
+    "difficulty": 3,
+    "question": "简述 GIL",
+    "answer": "GIL：全局解释器锁。每个线程在执行的过程都需要先获取 GIL，保证同一时刻只有一个线程可以执行代码。\n\n线程释放 GIL 锁的情况：在 IO 操作等可能会引起阻塞的 systemcall 之前,可以暂时释放 GIL，但在执行完毕后, 必须重新获取 GIL，Python3.x 使用计时器（执行时间达到阈值后，当前线程释放 GIL）或 Python2.x，tickets 计数达到 100 。\n\nPython 使用多进程是可以利用多核的 CPU 资源的。\n\n多线程爬取比单线程性能有提升，因为遇到 IO 阻塞会自动释放 GIL 锁。",
+    "tags": ["Python", "并发网络", "并发", "GIL"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-007",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "进程之间如何通信",
+    "answer": "可以通过队列的形式，示例如下\n\n```python\nfrom multiprocessing import Queue, Process\nimport time, random\n\n# 要写入的数据\n\nlist1 = [\"java\", \"Python\", \"JavaScript\"]\n\ndef write(queue)：\n\"\"\"\n向队列中添加数据\n：param queue：\n：return：\n\"\"\"\nfor value in list1：\nprint(f\"正在向队列中添加数据-->{value}\") # put_nowait 不会等待队列有空闲位置再放入数据，如果数据放入不成功就直接崩溃,比如数据满了。put 的话就会一直等待\nqueue.put_nowait(value)\ntime.sleep(random.random())\n\ndef read(queue)：\n\n    while True：\n        # 判断队列是否为空\n        if not queue.empty()：\n            # get_nowait 队列为空，取值的时候不等待，但是取不到值那么直接崩溃了\n            value = queue.get_nowait()\n            print(f'从队列中取到的数据为-->{value}')\n            time.sleep(random.random())\n        else：\n            break\n\nif __name__ == '__main__'： # 父进程创建出队列，通过参数的形式传递给子进程\n#queue = Queue(2)\nqueue = Queue()\n\n    # 创建两个进程 一个写数据 一个读数据\n    write_data = Process(target=write, args=(queue,))\n    read_data = Process(target=read, args=(queue,))\n\n    # 启动进程 写入数据\n    write_data.start()\n    # 使用 join 等待写数据结束\n    write_data.join()\n    # 启动进程  读取数据\n    print('*' * 20)\n    read_data.start()\n    # 使用 join  等待读数据结束\n    read_data.join()\n\n    print('所有的数据都写入并读取完成。。。')\n\n```",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-008",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "IO 多路复用的作用？",
+    "answer": "阻塞 I/O 只能阻塞一个 I/O 操作，而 I/O 复用模型能够阻塞多个 I/O 操作，所以才叫做多路复用。\n\nI/O 多路复用是用于提升效率，单个进程可以同时监听多个网络连接 IO。\n在 IO 密集型的系统中， 相对于线程切换的开销问题，IO 多路复用可以极大的提升系统效率。\n\n### 面试补充\n围绕“IO 多路复用的作用？”回答时，并发网络题要分清 CPU 密集、IO 密集和网络协议层问题。回答时可以从线程、进程、协程、事件循环、GIL、连接状态和系统调用角度展开，并补充适合的监控或排障思路。",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-009",
+    "module": "Python并发网络",
+    "difficulty": 3,
+    "question": "select、poll、epoll 模型的区别？",
+    "answer": "select，poll，epoll 都是 IO 多路复用的机制。I/O 多路复用就通过一种机制，可以监视多个描述符，一旦某个描述符就绪（一般是读就绪或者写就绪），能够通知程序进行相应的读写操作。\n\nselect 模型：\nselect 目前几乎在所有的平台上支持，其良好跨平台支持也是它的一个优点。select 的一 个缺点在于单个进程能够监视的文件描述符的数量存在最大限制，在 Linux 上一般为 1024，可以通过修改宏定义甚至重新编译内核的方式提升这一限制，但 是这样也会造成效率的降低。\n\npoll 模型：\npoll 和 select 的实现非常类似，本质上的区别就是存放 fd 集合的数据结构不一样。select 在一个进程内可以维持最多 1024 个连接，poll 在此基础上做了加强，可以维持任意数量的连接。\n\n但 select 和 poll 方式有一个很大的问题就是，我们不难看出来 select 是通过轮训的方式来查找是否可读或者可写，打个比方，如果同时有 100 万个连接都没有断开，而只有一个客户端发送了数据，所以这里它还是需要循环这么多次，造成资源浪费。所以后来出现了 epoll 系统调用。\n\nepoll 模型：\nepoll 是 select 和 poll 的增强版，epoll 同 poll 一样，文件描述符数量无限制。但是也并不是所有情况下 epoll 都比 select/poll 好，比如在如下场景：在大多数客户端都很活跃的情况下，系统会把所有的回调函数都唤醒，所以会导致负载较高。既然要处理这么多的连接，那倒不如 select 遍历简单有效。",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-010",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "什么是并发和并行？",
+    "answer": "“并行是指同一时刻同时做多件事情，而并发是指同一时间间隔内做多件事情”。\n\n并发与并行是两个既相似而又不相同的概念：并发性，又称共行性，是指能处理多个同时性活动的能力；并行是指同时发生的两个并发事件，具有并发的含义，而并发则不一定并行，也亦是说并发事件之间不一定要同一时刻发生。\n\n并发的实质是一个物理 CPU(也可以多个物理 CPU) 在若干道程序之间多路复用，并发性是对有限物理资源强制行使多用户共享以提高效率。 并行性指两个或两个以上事件或活动在同一时刻发生。在多道程序环境下，并行性使多个程序同一时刻可在不同 CPU 上同时执行。\n\n并行，是每个 CPU 运行一个程序。",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-011",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "一个线程 1 让线程 2 去调用一个函数怎么实现",
+    "answer": "```python\nimport threading\n\ndef func1(t2)：\nprint('正在执行函数 func1')\nt2.start()\n\ndef func2()：\nprint('正在执行函数 func2')\n\nif __name__ == '__main__'：\nt2 = threading.Thread(target=func2)\nt1 = threading.Thread(target=func1, args=(t2,))\nt1.start()\n```",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-012",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "解释什么是异步非阻塞？",
+    "answer": "异步\n异步与同步相对，当一个异步过程调用发出后，调用者在没有得到结果之前，就可以继续执行后续操作。当这个调用完成后，一般通过状态、通知和回调来通知调用者。对于异步调用，调用的返回并不受调用者控制。\n\n非阻塞\n非阻塞是这样定义的，当线程遇到 I/O 操作时，不会以阻塞的方式等待 I/O 操作的完成或数据的返回，而只是将 I/O 请求发送给操作系统，继续执行下一条语句。当操作系统完成 I/O 操作时，以事件的形式通知执行 I/O 操作的线程，线程会在特定时候处理这个事件。简答理解就是如果程序不会卡住，可以继续执行，就是说非阻塞的。",
+    "tags": ["Python", "并发网络", "并发"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-concurrency-network-013",
+    "module": "Python并发网络",
+    "difficulty": 2,
+    "question": "threading.local 的作用？",
+    "answer": "threading.local()这个方法是用来保存一个全局变量，但是这个全局变量只有在当前线程才能访问，如果你在开发多线程应用的时候，需要每个线程保存一个单独的数据供当前线程操作，可以考虑使用这个方法，简单有效。代码示例\n\n```python\nimport threading\nimport time\n\na = threading.local()#全局对象\n\ndef worker()：\na.x = 0\nfor i in range(200)：\ntime.sleep(0.01)\na.x += 1\nprint(threading.current_thread(),a.x)\n\nfor i in range(20)：\nthreading.Thread(target=worker).start()\n\n```",
+    "tags": ["Python", "并发网络", "并发", "threading.local"],
+    "source": "derekramm/python-interview-questions"
+  }
+]

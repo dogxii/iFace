@@ -1,0 +1,146 @@
+[
+  {
+    "id": "python-algorithms-001",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "已知：",
+    "answer": "```python\nAList = [1,2,3]\nBSet = {1,2,3}\n```\n\n(1) 从 AList 和 BSet 中 查找 4，最坏时间复杂度哪个大？\n(2) 从 AList 和 BSet 中 插入 4，最坏时间复杂度哪个大？\n\n(1) 对于查找，列表和集合的最坏时间复杂度都是 O(n)，所以一样的。\n(2) 列表操作插入的最坏时间复杂度为 o(n),集合为 o(1)，所以 Alist 大。\nset 是哈希表所以操作的复杂度基本上都是 o(1)。",
+    "tags": ["Python", "算法", "算法和数据结构"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-002",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "用 Python 实现一个二分查找的函数",
+    "answer": "```python\ndef binary_search(arr, target)：\n    n = len(arr)\n    left = 0\n    right = n-1\n    while left <= right ：\n        mid = (left + right)//2\n        if arr[mid] < target：\n            left = mid + 1\n        elif arr[mid] > target：\n            right = mid - 1\n        else：\n            print(f\"index：{mid},value：{arr[mid]}\")\n            return True\n    return False\n\nif __name__ == '__main__'：\nl = [1,3,4,5,6,7,8]\nbinary_search(l,8)\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "二分查找"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-003",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "Python 单例模式的实现方法",
+    "answer": "实现单例模式的方法有多种，之前再说元类的时候用 call 方法实现了一个单例模式，另外 Python 的模块就是一个天然的单例模式，这里我们使用 new 关键字来实现一个单例模式。\n\n```python\n\"\"\"\n通过 new 函数实现简单的单例模式。\n\"\"\"\nclass Book：\n    def __new__(cls, title)：\n        if not hasattr(cls, \"_ins\")：\n            cls._ins = super().__new__(cls)\n        print('in __new__')\n        return cls._ins\n\n    def __init__(self, title)：\n        print('in __init__')\n        super().__init__()\n        self.title = title\n\nif __name__ == '__main__'：\nb = Book('The Spider Book')\nb2 = Book('The Flask Book')\nprint(id(b))\nprint(id(b2))\nprint(b.title)\nprint(b2.title)\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "单例"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-004",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "使用 Python 实现一个斐波那契数列",
+    "answer": "斐波那契数列：数列从第 3 项开始，每一项都等于前两项之和。\n\n```python\ndef fibonacci(num)：\n    \"\"\"\n    获取指定位数的列表\n    ：param num：\n    ：return：\n    \"\"\"\n    a, b = 0, 1\n    l = []\n    for i in range(num)：\n        a, b = b, a + b\n        l.append(b)\n    return l\n\nif __name__ == '__main__'：\nprint(fibonacci(10))\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "斐波那契"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-005",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "找出列表中的重复数字",
+    "answer": "```python\n\"\"\"\n从头扫到尾，只要当前元素值与下标不同，就做一次判断,numbers[i]与 numbers[numbers[i]]，\n相等就认为找到了重复元素，返回 true,否则就交换两者，继续循环。直到最后还没找到认为没找到重复元素。\n\"\"\"\n\n# -_- coding：utf-8 -_-\n\nclass Solution:\ndef duplicate(self, numbers):\n\"\"\"\n\n        :param numbers:\n        :return:\n        \"\"\"\n        if numbers is None or len(numbers) <= 1:\n            return False\n        use_set = set()\n        duplication = {}\n        for index, value in enumerate(numbers):\n            if value not in use_set:\n                use_set.add(value)\n            else:\n                duplication[index] = value\n        return duplication\n\nif __name__ == '__main__':\ns = Solution()\nd = s.duplicate([1, 2, -3, 4, 4, 95, 95, 5, 2, 2, -3, 7, 7, 5])\nprint(d)\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-006",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "找出列表中的单个数字",
+    "answer": "```python\ndef find_single(l ：list)：\n    result = 0\n    for v in l：\n        result ^= v\n    if result == 0：\n        print(\"没有落单元素\")\n    else：\n        print(\"落单元素\" ,result)\n\nif __name__ == '__main__'：\nl = [1,2,3,4,5,6,2,3,4,5,6]\nfind_single(l)\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-007",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "写一个冒泡排序",
+    "answer": "```python\n\"\"\"\n冒泡排序\n\"\"\"\ndef bubble_sort(arr)：\n    n = len(arr)\n    for i in range(n - 1)：\n        for j in range(n - i - 1)：\n            if arr[j] > arr[j + 1]：\n                arr[j], arr[j + 1] = arr[j + 1], arr[j]\n\nif __name__ == '__main__'：\nl = [1, 2, 3, 4, 5, 55, 6, 3, 4, 5, 6]\nbubble_sort(l)\nprint(l)\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "排序", "冒泡排序"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-008",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "写一个快速排序",
+    "answer": "```python\n\"\"\"\n快速排序\n\"\"\"\n\ndef quick_sort(arr, first, last)：\nif first >= last：\nreturn\nmid_value = arr[first]\nlow = first\nhigh = last\n\n    while low < high：\n        while low < high and arr[high] >= mid_value：\n            high -= 1  # 游标左移\n        arr[low] = arr[high]\n\n        while low < high and arr[low] < mid_value：\n            low += 1\n        arr[high] = arr[low]\n        arr[low] = mid_value\n\n    quick_sort(arr, first, low - 1)\n    quick_sort(arr, low + 1, last)\n\nif __name__ == '__main__'：\nl = [1, 2, 3, 4, 5, 55, 6, 3, 4, 5, 6]\nquick_sort(l, 0, len(l) - 1)\nprint(l)\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "排序", "快速排序"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-009",
+    "module": "Python算法",
+    "difficulty": 3,
+    "question": "写一个拓扑排序",
+    "answer": "```python\n\"\"\"\n拓扑排序\n对应于该图的拓扑排序。每一个有向无环图都至少存在一种拓扑排序。\n\n\"\"\"\nimport pysnooper\nfrom typing import Mapping\n\n@pysnooper.snoop()\ndef topological_sort(graph： Mapping)： # in_degrees = {'a'： 0, 'b'： 0, 'c'： 0, 'd'： 0, 'e'： 0, 'f'： 0}\nin_degrees = dict((u, 0) for u in graph)\nfor u in graph：\nfor v in graph[u]： # 根据键找出值也就是下级节点\nin_degrees[v] += 1 # 对获取到的下级节点的入度加 1 # 循环结束之后的结果： {'a'： 0, 'b'： 1, 'c'： 1, 'd'： 2, 'e'： 1, 'f'： 4}\nQ = [u for u in graph if in_degrees[u] == 0] # 入度为 0 的节点\nin_degrees_zero = []\nwhile Q：\nu = Q.pop() # 默认从最后一个移除\nin_degrees_zero.append(u) # 存储入度为 0 的节点\nfor v in graph[u]：\nin_degrees[v] -= 1 # 删除入度为 0 的节点，以及移除其指向\nif in_degrees[v] == 0：\nQ.append(v)\nreturn in_degrees_zero\n\nif __name__ == '__main__'： # 用字典的键值表示图的节点之间的关系，键当前节点。值是后续节点。\ngraph_dict = {\n'a'： 'bf', # 表示 a 指向 b 和 f\n'b'： 'cdf',\n'c'： 'd',\n'd'： 'ef',\n'e'： 'f',\n'f'： ''\n}\n\n    t = topological_sort(graph_dict)\n    print(t)\n\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "排序", "拓扑排序"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-010",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "Python 实现一个二进制计算",
+    "answer": "```python\n\"\"\"\n二进制加法\n\"\"\"\ndef binary_add(a： str, b： str)：\n    return bin(int(a, 2) + int(b, 2))[2：]\n\nif __name__ == '__main__'：\nnum1 = input(\"输入第一个数，二进制格式：\\n\")\nnum2 = input(\"输入第二个数，二进制格式：\\n\")\nprint(binary_add(num1, num2))\n```",
+    "tags": ["Python", "算法", "算法和数据结构"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-011",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "有一组“+”和“-”符号，要求将“+”排到左边，“-”排到右边，写出具体的实现方法",
+    "answer": "```python\n\"\"\"\n有一组“+”和“-”符号，要求将“+”排到左边，“-”排到右边，写出具体的实现方法。\n\n如果让+等于 0，-等于 1 不就是排序了么。\n\"\"\"\nfrom collections import deque\nfrom timeit import Timer\n\ns = \"++++++----+++----\"\n\n# 方法一\n\ndef func1()：\nnew_s = s.replace(\"+\", \"0\").replace(\"-\", \"1\")\nresult = \"\".join(sorted(new_s)).replace(\"0\", \"+\").replace(\"1\", \"-\")\nreturn result\n\n# 方法二\n\ndef func2()：\nq = deque()\nleft = q.appendleft\nright = q.append\nfor i in s：\nif i == \"+\"：\nleft(\"+\")\nelif i == \"-\"：\nright(\"-\")\n\ndef func3()：\ndata = list(s)\nstart_index = 0\nend_index = 0\ncount = len(s)\nwhile start_index + end_index < count：\nif data[start_index] == '-'：\ndata[start_index], data[count - end_index - 1] = data[count - end_index - 1], data[start_index]\nend_index += 1\nelse：\nstart_index += 1\nreturn \"\".join(data)\n\nif __name__ == '__main__'：\ntimer1 = Timer(\"func1()\", \"from __main__ import func1\")\nprint(\"func1\", timer1.timeit(1000000))\ntimer2 = Timer(\"func2()\", \"from __main__ import func2\")\nprint(\"func2\", timer2.timeit(1000000))\ntimer3 = Timer(\"func3()\", \"from __main__ import func3\")\nprint(\"func3\", timer3.timeit(1000000))\n\n# 1000000 测试结果\n\n# func1 1.39003764\n\n# func2 1.593012875\n\n# func3 3.3487415590000005\n\n# func1 的方式最优，其次是 func2\n\n```",
+    "tags": ["Python", "算法", "算法和数据结构"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-012",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "单链表反转",
+    "answer": "```python\n\"\"\"\n单链表反转\n\"\"\"\n\nclass Node：\ndef __init__(self, val=None)：\nself.val = val\nself.next = None\n\nclass SingleLinkList：\ndef __init__(self, head=None)：\n\"\"\"链表的头部\"\"\"\nself.\\_head = head\n\n    def add(self, val： int)：\n        \"\"\"\n        给链表添加元素\n        ：param val： 传过来的数字\n        ：return：\n        \"\"\"\n        # 创建一个节点\n        node = Node(val)\n        if self._head is None：\n            self._head = node\n        else：\n            cur = self._head\n            while cur.next is not None：\n                cur = cur.next  # 移动游标\n            cur.next = node  # 如果 next 后面没了证明以及到最后一个节点了\n\n    def traversal(self)：\n        if self._head is None：\n            return\n        else：\n            cur = self._head\n            while cur is not None：\n                print(cur.val)\n                cur = cur.next\n\n    def size(self)：\n        \"\"\"\n        获取链表的大小\n        ：return：\n        \"\"\"\n        count = 0\n        if self._head is None：\n            return count\n        else：\n            cur = self._head\n            while cur is not None：\n                count += 1\n                cur = cur.next\n            return count\n\n    def reverse(self)：\n        \"\"\"\n        单链表反转\n        思路：\n        让 cur.next 先断开即指向 none，指向设定 pre 游标指向断开的元素，然后\n        cur.next 指向断开的元素，再把开始 self._head 再最后一个元素的时候.\n        ：return：\n        \"\"\"\n        if self._head is None or self.size() == 1：\n            return\n        else：\n            pre = None\n            cur = self._head\n            while cur is not None：\n                post = cur.next\n                cur.next = pre\n                pre = cur\n                cur = post\n            self._head = pre  # 逆向后的头节点\n\nif __name__ == '__main__'：\nsingle_link = SingleLinkList()\nsingle_link.add(3)\nsingle_link.add(5)\nsingle_link.add(6)\nsingle_link.add(7)\nsingle_link.add(8)\nprint(\"对链表进行遍历\")\nsingle_link.traversal()\nprint(f\"size：{single_link.size()}\")\nprint(\"对链表进行逆向操作之后\")\nsingle_link.reverse()\nsingle_link.traversal()\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "链表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-013",
+    "module": "Python算法",
+    "difficulty": 3,
+    "question": "交叉链表求交点",
+    "answer": "```python\n# Definition for singly-linked list.\nclass ListNode：\n    def __init__(self, x)：\n        self.val = x\n        self.next = None\n\nclass Solution：\ndef getIntersectionNode(self, headA, headB)：\n\"\"\"\n：tye head1, head1： ListNode\n：rtye： ListNode\n\"\"\"\nif headA is not None and headB is not None：\ncur1, cur2 = headA, headB\n\n            while cur1 != cur2：\n                cur1 = cur1.next if cur1 is not None else headA\n                cur2 = cur2.next if cur2 is not None else headB\n\n            return cur1\n\n```\n\ncur1、cur2，2 个指针的初始位置是链表 headA、headB 头结点，cur1、cur2 两个指针一直往后遍历。\n直到 cur1 指针走到链表的末尾，然后 cur1 指向 headB；\n直到 cur2 指针走到链表的末尾，然后 cur2 指向 headA；\n然后再继续遍历；\n每次 cur1、cur2 指向 None，则将 cur1、cur2 分别指向 headB、headA。\n循环的次数越多，cur1、cur2 的距离越接近，直到 cur1 等于 cur2。则是两个链表的相交点。",
+    "tags": ["Python", "算法", "算法和数据结构", "链表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-014",
+    "module": "Python算法",
+    "difficulty": 2,
+    "question": "用队列实现栈",
+    "answer": "下面代码分别使用 1 个队列和 2 个队列实现了栈。\n\n```python\nfrom queue import Queue\n\n#使用 2 个队列实现\nclass MyStack：\n\n    def __init__(self)：\n        \"\"\"\n        Initialize your data structure here.\n        \"\"\"\n        # q1 作为进栈出栈，q2 作为中转站\n        self.q1 = Queue()\n        self.q2 = Queue()\n\n    def push(self, x)：\n        \"\"\"\n        Push element x onto stack.\n        ：type x： int\n        ：rtype： void\n        \"\"\"\n        self.q1.put(x)\n\n    def pop(self)：\n        \"\"\"\n        Removes the element on top of the stack and returns that element.\n        ：rtype： int\n        \"\"\"\n\n        while self.q1.qsize() > 1：\n            self.q2.put(self.q1.get())  # 将 q1 中除尾元素外的所有元素转到 q2 中\n        if self.q1.qsize() == 1：\n            res = self.q1.get()  # 弹出 q1 的最后一个元素\n            self.q1, self.q2 = self.q2, self.q1  # 交换 q1,q2\n            return res\n\n    def top(self)：\n        \"\"\"\n        Get the top element.\n        ：rtype： int\n        \"\"\"\n        while self.q1.qsize() > 1：\n            self.q2.put(self.q1.get())  # 将 q1 中除尾元素外的所有元素转到 q2 中\n        if self.q1.qsize() == 1：\n            res = self.q1.get()  # 弹出 q1 的最后一个元素\n            self.q2.put(res)  # 与 pop 唯一不同的是需要将 q1 最后一个元素保存到 q2 中\n            self.q1, self.q2 = self.q2, self.q1  # 交换 q1,q2\n            return res\n\n    def empty(self)：\n        \"\"\"\n        Returns whether the stack is empty.\n        ：rtype： bool\n        \"\"\"\n        return not bool(self.q1.qsize() + self.q2.qsize())  # 为空返回 True，不为空返回 False\n\n#使用 1 个队列实现\nclass MyStack2(object)：\n\n    def __init__(self)：\n        \"\"\"\n        Initialize your data structure here.\n        \"\"\"\n        self.sq1 = Queue()\n\n    def push(self, x)：\n        \"\"\"\n        Push element x onto stack.\n        ：type x： int\n        ：rtype： void\n        \"\"\"\n        self.sq1.put(x)\n\n    def pop(self)：\n        \"\"\"\n        Removes the element on top of the stack and returns that element.\n        ：rtype： int\n        \"\"\"\n        count = self.sq1.qsize()\n        if count == 0：\n            return False\n        while count > 1：\n            x = self.sq1.get()\n            self.sq1.put(x)\n            count -= 1\n        return self.sq1.get()\n\n    def top(self)：\n        \"\"\"\n        Get the top element.\n        ：rtype： int\n        \"\"\"\n        count = self.sq1.qsize()\n        if count == 0：\n            return False\n        while count：\n            x = self.sq1.get()\n            self.sq1.put(x)\n            count -= 1\n        return x\n\n    def empty(self)：\n        \"\"\"\n        Returns whether the stack is empty.\n        ：rtype： bool\n        \"\"\"\n        return self.sq1.empty()\n\nif __name__ == '__main__'：\nobj = MyStack2()\nobj.push(1)\nobj.push(3)\nobj.push(4)\nprint(obj.pop())\nprint(obj.pop())\nprint(obj.pop())\nprint(obj.empty())\n```",
+    "tags": ["Python", "算法", "算法和数据结构", "队列", "栈"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-015",
+    "module": "Python算法",
+    "difficulty": 3,
+    "question": "找出数据流的中位数",
+    "answer": "对于一个升序排序的数组，中位数为左半部分的最大值，右半部分的最小值，而左右两部分可以是无需的，只要保证左半部分的数均小于右半部分即可。因此，左右两半部分分别可用最大堆、最小堆实现。\n\n如果有奇数个数，则中位数放在左半部分；如果有偶数个数，则取左半部分的最大值、右边部分的最小值之平均值。\n\n分两种情况讨论：\n当目前有偶数个数字时，数字先插入最小堆，然后选择最小堆的最小值插入最大堆（第一个数字插入左半部分的最小堆）。\n\n当目前有奇数个数字时，数字先插入最大堆，然后选择最大堆的最大值插入最小堆。\n最大堆：根结点的键值是所有堆结点键值中最大者，且每个结点的值都比其孩子的值大。\n最小堆：根结点的键值是所有堆结点键值中最小者，且每个结点的值都比其孩子的值小。\n\n```python\n# -*- coding：utf-8 -*-\nfrom heapq import *\n\nclass Solution：\ndef __init__(self)：\nself.maxheap = []\nself.minheap = []\n\n    def Insert(self, num)：\n        if (len(self.maxheap) + len(self.minheap)) & 0x1：  # 总数为奇数插入最大堆\n            if len(self.minheap) > 0：\n                if num > self.minheap[0]：  # 大于最小堆里的元素\n                    heappush(self.minheap, num)  # 新数据插入最小堆\n                    heappush(self.maxheap, -self.minheap[0])  # 最小堆中的最小插入最大堆\n                    heappop(self.minheap)\n                else：\n                    heappush(self.maxheap, -num)\n            else：\n                heappush(self.maxheap, -num)\n        else：  # 总数为偶数 插入最小堆\n            if len(self.maxheap) > 0：  # 小于最大堆里的元素\n                if num < -self.maxheap[0]：\n                    heappush(self.maxheap, -num)  # 新数据插入最大堆\n                    heappush(self.minheap, -self.maxheap[0])  # 最大堆中的最大元素插入最小堆\n                    heappop(self.maxheap)\n                else：\n                    heappush(self.minheap, num)\n            else：\n                heappush(self.minheap, num)\n\n    def GetMedian(self, n=None)：\n        if (len(self.maxheap) + len(self.minheap)) & 0x1：\n            mid = self.minheap[0]\n        else：\n            mid = (self.minheap[0] - self.maxheap[0]) / 2.0\n        return mid\n\nif __name__ == '__main__'：\ns = Solution()\ns.Insert(1)\ns.Insert(2)\ns.Insert(3)\ns.Insert(4)\nprint(s.GetMedian())\n```",
+    "tags": ["Python", "算法", "算法和数据结构"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-algorithms-016",
+    "module": "Python算法",
+    "difficulty": 3,
+    "question": "二叉搜索树中第 K 小的元素",
+    "answer": "二叉搜索树(Binary Search Tree)，又名二叉排序树(Binary Sort Tree)。\n\n二叉搜索树是具有有以下性质的二叉树：\n\n1.  若左子树不为空，则左子树上所有节点的值均小于或等于它的根节点的值。\n2.  若右子树不为空，则右子树上所有节点的值均大于或等于它的根节点的值。\n3.  左、右子树也分别为二叉搜索树。\n\n二叉搜索树按照中序遍历的顺序打印出来正好就是排序好的顺序。所以对其遍历一个节点就进行计数，计数达到 k 的时候就结束。\n\n```python\nclass TreeNode：\n    def __init__(self, x)：\n        self.val = x\n        self.left = None\n        self.right = None\n\nclass Solution：\ncount = 0\nnodeVal = 0\n\n    def kthSmallest(self, root, k)：\n        \"\"\"\n        ：type root： TreeNode\n        ：type k： int\n        ：rtype： int\n        \"\"\"\n        self.dfs(root, k)\n        return self.nodeVal\n\n    def dfs(self, node, k)：\n        if node != None：\n            self.dfs(node.left, k)\n            self.count = self.count + 1\n            if self.count == k：\n                self.nodeVal = node.val\n                # 将该节点的左右子树置为 None,来结束递归，减少时间复杂度\n                node.left = None\n                node.right = None\n            self.dfs(node.right, k)\n\n```",
+    "tags": ["Python", "算法", "算法和数据结构"],
+    "source": "derekramm/python-interview-questions"
+  }
+]

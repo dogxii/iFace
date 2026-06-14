@@ -39,6 +39,10 @@ function normalizeQuestion(value: string): string {
   return value.trim().replace(/\s+/g, ' ')
 }
 
+function toQuestionFilePath(file: string): string {
+  return relative(questionRoot, file).replace(/\\/g, '/')
+}
+
 function groupBy<T>(items: T[], keyFor: (item: T) => string): Map<string, T[]> {
   const grouped = new Map<string, T[]>()
   for (const item of items) {
@@ -51,7 +55,7 @@ function groupBy<T>(items: T[], keyFor: (item: T) => string): Map<string, T[]> {
 const failures: Failure[] = []
 const questions: QuestionWithFile[] = []
 const files = findJsonFiles(questionRoot).sort()
-const actualQuestionFiles = files.map((file) => relative(questionRoot, file)).sort()
+const actualQuestionFiles = files.map(toQuestionFilePath).sort()
 const registryQuestionFiles = [...BUILTIN_MODULE_FILES].sort()
 
 function reportSetDiff(
@@ -221,7 +225,7 @@ for (const question of questions) {
 const moduleCounts = groupBy(questions, (question) => question.module)
 const difficultyCounts = groupBy(questions, (question) => String(question.difficulty as Difficulty))
 const questionsByFile = groupBy(questions, (question) =>
-  relative(questionRoot, join(repoRoot, question.file)),
+  toQuestionFilePath(join(repoRoot, question.file)),
 )
 
 for (const category of BUILTIN_CATEGORIES) {

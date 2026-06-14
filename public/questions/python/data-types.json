@@ -1,0 +1,272 @@
+[
+  {
+    "id": "python-data-types-001",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "列举 Python 中的基本数据类型？",
+    "answer": "Python3 中有六个标准的数据类型：字符串（String）、数字（Digit）、列表（List）、元组（Tuple）、集合（Sets）、字典（Dictionary）。\n\n### 面试补充\n围绕“列举 Python 中的基本数据类型？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-002",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何区别可变数据类型和不可变数据类型",
+    "answer": "从对象内存地址方向来说\n\n1.  可变数据类型：在内存地址不变的情况下，值可改变（列表和字典是可变类型，但是字典中的 key 值必须是不可变类型）\n2.  不可变数据类型：内存改变，值也跟着改变。（数字，字符串，布尔类型，都是不可变类型）可以通过 id() 方法进行内存地址的检测。\n\n### 面试补充\n围绕“如何区别可变数据类型和不可变数据类型”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-003",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "将\"hello world\"转换为首字母大写\"Hello World\"",
+    "answer": "这个得看清题目是要求两个单词首字母都要大写，如果只是第一个单词首字母大小的话，只使用 capitalize 即可，但是这里是两个单词，所以用下面的方法。\n\n```python\narr = \"hello world\".split(\" \")\nnew_str = f\"{arr[0].capitalize()} {arr[1].capitalize()}\"\nprint(new_str)\n```\n\n后来评论中有朋友提到了下面的方法，这里感谢这位朋友提醒。方案如下\n\n```python\n\"hello world\".title()\n```\n\n非常简单一句话搞定。",
+    "tags": ["Python", "数据类型", "数据类型-字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-004",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何检测字符串中只含有数字?",
+    "answer": "可以通过 isdigit 方法，例子如下\n\n```python\ns1 = \"12223\".isdigit()\nprint(s1)\n\ns2 = \"12223a\".isdigit()\nprint(s2)\n\n#结果如下：\n#True\n#False\n```\n\n### 面试补充\n围绕“如何检测字符串中只含有数字?”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-005",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "将字符串\"ilovechina\"进行反转",
+    "answer": "```python\ns1 = \"ilovechina\"[::-1]\nprint(s1)\n```\n\n### 面试补充\n围绕“将字符串\"ilovechina\"进行反转”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-006",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "Python 中的字符串格式化方式你知道哪些？",
+    "answer": "%s，format，fstring(Python3.6 开始才支持，现在推荐的写法)\n\n### 面试补充\n围绕“Python 中的字符串格式化方式你知道哪些？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-007",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "有一个字符串开头和末尾都有空格，比如“ adabdw ”，要求写一个函数把这个字符串的前后空格都去掉",
+    "answer": "因为题目要是写一个函数所以我们不能直接使用 strip，不过我们可以把它封装到函数啊\n\n```python\ndef strip_function(s1)：\n    return s1.strip()\n\ns1 = \" adabdw \"\nprint(strip_function(s1))\n```\n\n### 面试补充\n围绕“有一个字符串开头和末尾都有空格，比如“ adabdw ”，要求写一个函数把这个字符串的前后空格都去掉”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-008",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "获取字符串”123456“最后的两个字符",
+    "answer": "切片使用的考察，最后两个即开始索引是 -2，代码如下\n\n```python\na = \"123456\"\nprint(a[-2::])\n```\n\n### 面试补充\n围绕“获取字符串”123456“最后的两个字符”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-009",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "一个编码为 GBK 的字符串 S，要将其转成 UTF-8 编码的字符串，应如何操作？",
+    "answer": "```python\na= \"S\".encode(\"gbk\").decode(\"utf-8\",'ignore')\nprint(a)\n```\n\n### 面试补充\n围绕“一个编码为 GBK 的字符串 S，要将其转成 UTF-8 编码的字符串，应如何操作？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-010",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "（1）s=\"info：xiaoZhang 33 shandong\"，用正则切分字符串输出['info', 'xiaoZhang', '33', 'shandong']。（2）a = \"你好 中国 \"，去除多余空格只留一个空格",
+    "answer": "（1）我们需要根据冒号或者空格切分\n\n```python\nimport re\n\ns = \"info：xiaoZhang 33 shandong\"\nres = re.split(r\"：| \", s)\nprint(res)\n```\n\n（2）\n\n```python\ns = \"你好     中国  \"\nprint(\" \".join(s.split()))\n```\n\n### 面试补充\n围绕“（1）s=\"info：xiaoZhang 33 shandong\"，用正则切分字符串输出['info', 'xiaoZhang', '33', 'shandong']。（2）a = \"你好 中国 \"，去除多余空格只留一个空格”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串", "正则"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-011",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "(1) 怎样将字符串转换为小写。 (2) 单引号、双引号、三引号的区别？",
+    "answer": "(1) 使用字符串的 lower() 方法。\n\n(2)单独使用单引号和双引号没什么区别，但是如果引号里面还需要使用引号的时候，就需要这两个配合使用了，然后说三引号，同样的三引号也分为三单引号和三双引号，两个都可以声名长的字符串时候使用，如果使用 docstring 就需要使用三双引号。\n\n### 面试补充\n围绕“(1) 怎样将字符串转换为小写。 (2) 单引号、双引号、三引号的区别？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型-字符串", "字符串"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-012",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "已知 AList = [1,2,3,1,2]，对 AList 列表元素去重，写出具体过程",
+    "answer": "```python\nlist(set(AList))\n```\n\n### 面试补充\n围绕“已知 AList = [1,2,3,1,2]，对 AList 列表元素去重，写出具体过程”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "数据类型", "数据类型 - 列表", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-013",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何实现 \"1,2,3\" 变成 [\"1\",\"2\",\"3\"]",
+    "answer": "```python\ns = \"1,2,3\"\nprint(s.split(\",\"))\n```\n\n### 面试补充\n围绕“如何实现 \"1,2,3\" 变成 [\"1\",\"2\",\"3\"]”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "数据类型", "数据类型 - 列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-014",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "给定两个 list，A 和 B，找出相同元素和不同元素",
+    "answer": "```python\nA、B 中相同元素：print(set(A)&set(B))\nA、B 中不同元素：print(set(A)^set(B))\n```\n\n### 面试补充\n围绕“给定两个 list，A 和 B，找出相同元素和不同元素”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-015",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "[[1,2],[3,4],[5,6]] 一行代码展开该列表，得出 [1,2,3,4,5,6]",
+    "answer": "```python\nl = [[1,2],[3,4],[5,6]]\nx=[j for i in l for j in i]\nprint(x)\n```\n\n### 面试补充\n围绕“[[1,2],[3,4],[5,6]] 一行代码展开该列表，得出 [1,2,3,4,5,6]”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 列表", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-016",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "合并列表 [1,5,7,9] 和 [2,2,6,8]",
+    "answer": "使用 extend 和 + 都可以。\n\n```python\na = [1,5,7,9]\nb = [2,2,6,8]\na.extend(b)\nprint(a)\n```\n\n### 面试补充\n围绕“合并列表 [1,5,7,9] 和 [2,2,6,8]”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 列表", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-017",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何打乱一个列表的元素？",
+    "answer": "```python\nimport random\n\na = [1, 2, 3, 4, 5]\nrandom.shuffle(a)\nprint(a)\n```\n\n### 面试补充\n围绕“如何打乱一个列表的元素？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 列表", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-018",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "字典操作中 del 和 pop 有什么区别",
+    "answer": "del 可以根据索引（元素所在位置）来删除的，没有返回值。\npop 可以根据索引弹出一个值，然后可以接收它的返回值。\n\n### 面试补充\n围绕“字典操作中 del 和 pop 有什么区别”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 字典", "字典"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-019",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "按照字典的内的年龄排序",
+    "answer": "```python\nd1 = [\n    {'name'：'alice', 'age'：38},\n    {'name'：'bob', 'age'：18},\n    {'name'：'Carl', 'age'：28},\n]\n```\n\n```python\nd1 = [\n    {'name'： 'alice', 'age'： 38},\n    {'name'： 'bob', 'age'： 18},\n    {'name'： 'Carl', 'age'： 28},\n]\n\nprint(sorted(d1, key=lambda x：x[\"age\"]))\n```",
+    "tags": ["Python", "数据类型", "数据类型 - 字典", "字典", "排序"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-020",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "请合并下面两个字典 a = {\"A\"：1,\"B\"：2},b = {\"C\"：3,\"D\"：4}",
+    "answer": "合并字典方法很多，可以使用 a.update(b) 或者下面字典解包的方式\n\n```python\na = {\"A\"：1,\"B\"：2}\nb = {\"C\"：3,\"D\"：4}\nprint({**a,**b})\n```\n\n### 面试补充\n围绕“请合并下面两个字典 a = {\"A\"：1,\"B\"：2},b = {\"C\"：3,\"D\"：4}”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 字典", "字典"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-021",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何使用生成式的方式生成一个字典，写一段功能代码",
+    "answer": "```python\n# 需求 3： 把字典的 key 和 value 值调换；\nd = {'a'：'1', 'b'：'2'}\n\nprint({v：k for k,v in d.items()})\n```\n\n### 面试补充\n围绕“如何使用生成式的方式生成一个字典，写一段功能代码”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 字典", "字典"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-022",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何把元组 (\"a\",\"b\") 和元组 (1,2)，变为字典 {\"a\"：1,\"b\"：2}",
+    "answer": "**答**\nzip 的使用，但是最后记得把 zip 对象再转换为字典。\n\n```python\na = (\"a\", \"b\")\nb = (1, 2)\nprint(dict(zip(a, b)))\n```\n\n### 面试补充\n围绕“如何把元组 (\"a\",\"b\") 和元组 (1,2)，变为字典 {\"a\"：1,\"b\"：2}”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 字典", "字典", "元组"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-023",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "下列字典对象键类型不正确的是？",
+    "answer": "```python\nA：{1：0,2：0,3：0}\nB：{\"a\"：0, \"b\"：0, \"c\"：0}\nC： {(1,2)：0, (2,3)：0}\nD： {[1,2]：0, [2,3]：0}\n```\n\nD\n因为只有可 hash 的对象才能做字典的键，列表是可变类型不是可 hash 对象，所以不能用列表做为字典的键。\n\n### 面试补充\n围绕“下列字典对象键类型不正确的是？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 综合", "字典"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-024",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "如何交换字典 {\"A\"：1,\"B\"：2}的键和值",
+    "answer": "```python\ns =  {\"A\"：1,\"B\"：2}\n\n#方法一：\ndict_new = {value:key for key，value in s.items()}\n\n# 方法二：\n\nnew_s= dict(zip(s.values()，s.keys()))\n```\n\n### 面试补充\n围绕“如何交换字典 {\"A\"：1,\"B\"：2}的键和值”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 综合", "字典"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-025",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "Python 里面如何实现 tuple 和 list 的转换？",
+    "answer": "Python 中的类型转换，一般通过类型强转即可完成\ntuple 转 list 是 list() 方法\nlist 转 tuple 使用 tuple() 方法\n\n### 面试补充\n围绕“Python 里面如何实现 tuple 和 list 的转换？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 综合"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-026",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "我们知道对于列表可以使用切片操作进行部分元素的选择，那么如何对生成器类型的对象实现相同的功能呢？",
+    "answer": "这个题目考察了 Python 标准库的 itertools 模快的掌握情况，该模块提供了操作生成器的一些方法。 对于生成器类型我们使用 islice 方法来实现切片的功能。例子如下\n\n```python\nfrom itertools import islice\ngen = iter(range(10)) #iter()函数用来生成迭代器\n#第一个参数是迭代器，第二个参数起始索引，第三个参数结束索引，不支持负数索引\nfor i in islice(gen,0,4)：\n    print(i)\n```",
+    "tags": ["Python", "数据类型", "数据类型 - 综合", "列表", "生成器"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-027",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "请将 [i for i in range(3)] 改成生成器",
+    "answer": "通过把列表生产式的中括号，改为小括号我们就实现了生产器的功能即，\n\n```python\n(i for i in range(3))\n```\n\n### 面试补充\n围绕“请将 [i for i in range(3)] 改成生成器”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 综合", "生成器"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-028",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "a=\"hello\" 和 b=\"你好\" 编码成 bytes 类型",
+    "answer": "这个题目一共三种方式，第一种是在字符串的前面加一个 b，第二种可以使用 bytes 方法，第三种使用字符串 encode 方法。具体代码如下，abc 代表三种情况\n\n```python\na = b\"hello\"\nb = bytes(\"你好\", \"utf-8\")\nc = \"你好\".encode(\"utf-8\")\nprint(a, b, c)\n```\n\n### 面试补充\n围绕“a=\"hello\" 和 b=\"你好\" 编码成 bytes 类型”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 综合"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-029",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "下面的代码输出结果是什么？",
+    "answer": "```python\na = (1,2,3,[4,5,6,7],8)\na[2] = 2\n```\n\n我们知道元组里的元素是不能改变的所以这个题目的答案是出现异常。\n\n### 面试补充\n围绕“下面的代码输出结果是什么？”回答时，回答数据类型题时，重点补充可变性、哈希性、切片或迭代行为，以及它们对性能和副作用的影响。很多坑都来自共享引用、原地修改和浅拷贝，所以最好能顺手说出一个真实使用场景。",
+    "tags": ["Python", "数据类型", "数据类型 - 综合"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-data-types-030",
+    "module": "Python数据类型",
+    "difficulty": 2,
+    "question": "下面的代码输出的结果是什么?",
+    "answer": "```python\na = (1,2,3,[4,5,6,7],8)\na[3][0] = 2\n```\n\n前面我说了元组的里元素是不能改变的，这句话严格来说是不准确的，如果元组里面元素本身就是可变类型，比如列表，那么在操作这个元素里的对象时，其内存地址也是不变的。a[3] 对应的元素是列表，然后对列表第一个元素赋值，所以最后的结果是：\n(1,2,3,[2,5,6,7],8)",
+    "tags": ["Python", "数据类型", "数据类型 - 综合"],
+    "source": "derekramm/python-interview-questions"
+  }
+]

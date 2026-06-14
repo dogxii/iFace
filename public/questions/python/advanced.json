@@ -1,0 +1,191 @@
+[
+  {
+    "id": "python-advanced-001",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "函数装饰器有什么作用？请列举说明？",
+    "answer": "装饰器就是一个函数，它可以在不需要做任何代码变动的前提下给一个函数增加额外功能，启动装饰的效果。\n它经常用于有切面需求的场景，比如：插入日志、性能测试、事务处理、缓存、权限校验等场景。\n下面是一个日志功能的装饰器\n\n```python\nfrom functools import wraps\ndef log(label)：\n    def decorate(func)：\n       @wraps(func)\n       def _wrap(*args,**kwargs)：\n        try：\n          func(*args,**kwargs)\n          print(\"name\",func.__name__)\n        except Exception as e：\n           print(e.args)\n       return _wrap\n    return decorate\n\n@log(\"info\")\ndef foo(a,b,c)：\nprint(a+b+c)\nprint(\"in foo\")\n\n#decorate=decorate(foo)\n\nif __name__ == '__main__'：\nfoo(1,2,3)\n#decorate()\n```",
+    "tags": ["Python", "高级特性", "装饰器"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-002",
+    "module": "Python高级特性",
+    "difficulty": 3,
+    "question": "Python 垃圾回收机制？",
+    "answer": "Python 不像 C++，Java 等语言一样，他们可以不用事先声明变量类型而直接对变量进行赋值。对 Python 语言来讲，对象的类型和内存都是在运行时确定的。这也是为什么我们称 Python 语言为动态类型的原因。\n\n主要体现在下面三个方法：\n\n1.引用计数机制\n2.标记-清除\n3.分代回收\n\n### 面试补充\n围绕“Python 垃圾回收机制？”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性", "垃圾回收"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-003",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "魔法函数 ___call___怎么使用?",
+    "answer": "___call___ 可以把类实例当做函数调用。\n使用示例如下\n\n```python\nclass Bar：\n    def ___call___(self, *args, **kwargs)：\n        print('in call')\n\nif __name__ == '__main__'：\nb = Bar()\nb()\n```\n\n### 面试补充\n围绕“魔法函数 ___call___怎么使用?”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-004",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "如何判断一个对象是函数还是方法？",
+    "answer": "看代码已经结果就懂了\n\n```python\nfrom types import MethodType, FunctionType\n\nclass Bar：\ndef foo(self)：\npass\n\ndef foo2()：\npass\n\ndef run()：\nprint(\"foo 是函数\", isinstance(Bar().foo, FunctionType))\nprint(\"foo 是方法\", isinstance(Bar().foo, MethodType))\nprint(\"foo2 是函数\", isinstance(foo2, FunctionType))\nprint(\"foo2 是方法\", isinstance(foo2, MethodType))\n\nif __name__ == '__main__'：\nrun()\n```\n\n输出\n\n```python\nfoo 是函数 False\nfoo 是方法 True\nfoo2 是函数 True\nfoo2 是方法 False\n```",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-005",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "@classmethod 和 @staticmethod 用法和区别",
+    "answer": "相同之处：@staticmethod 和@classmethod 都可以直接类名.方法名()来调用，不用在示例化一个类。\n@classmethod\n我们要写一个只在类中运行而不在实例中运行的方法。如果我们想让方法不在实例中运行，可以这么做：\n\n```python\ndef iget_no_of_instance(ins_obj)：\n    return ins_obj.__class__.no_inst\n\nclass Kls(object)：\nno_inst = 0\n\n    def __init__(self)：\n        Kls.no_inst = Kls.no_inst + 1\n\nik1 = Kls()\nik2 = Kls()\nprint(iget_no_of_instance(ik1))\n```\n\n@staticmethod\n经常有一些跟类有关系的功能但在运行时又不需要实例和类参与的情况下需要用到静态方法\n\n```python\nIND = 'ON'\n\nclass Kls(object)：\ndef __init__(self, data)：\nself.data = data\n\n    @staticmethod\n    def check_ind()：\n        return (IND == 'ON')\n\n    def do_reset(self)：\n        if self.check_ind()：\n            print('Reset done for：', self.data)\n\n    def set_db(self)：\n        if self.check_ind()：\n            self.db = 'New db connection'\n        print('DB connection made for： ', self.data)\n\nik1 = Kls(12)\nik1.do_reset()\nik1.set_db()\n```",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-006",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "Python 中的接口如何实现？",
+    "answer": "接口提取了一群类共同的函数，可以把接口当做一个函数的集合，然后让子类去实现接口中的函数。但是在 Python 中根本就没有一个叫做 interface 的关键字，如果非要去模仿接口的概念，可以使用抽象类来实现。抽象类是一个特殊的类，它的特殊之处在于只能被继承，不能被实例化。使用 abc 模块来实现抽象类。\n\n### 面试补充\n围绕“Python 中的接口如何实现？”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-007",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "Python 中的反射了解么?",
+    "answer": "Python 的反射机制设定较为简单，一共有四个关键函数分别是 getattr、hasattr、setattr、delattr。\n\n### 面试补充\n围绕“Python 中的反射了解么?”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-008",
+    "module": "Python高级特性",
+    "difficulty": 3,
+    "question": "metaclass 作用？以及应用场景？",
+    "answer": "metaclass 即元类，metaclass 是类似创建类的模板，所有的类都是通过他来 create 的(调用__new__)，这使得你可以自由的控制创建类的那个过程，实现你所需要的功能。\n我们可以使用元类创建单例模式和实现 ORM 模式。\n\n### 面试补充\n围绕“metaclass 作用？以及应用场景？”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-009",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "hasattr()、getattr()、setattr() 的用法",
+    "answer": "这三个方法属于 Python 的反射机制里面的，hasattr 可以判断一个对象是否含有某个属性，getattr 可以充当 get 获取对象属性的作用。而 setattr 可以充当 person.name = \"liming\"的赋值操作。代码示例如下：\n\n```python\nclass Person()：\n    def __init__(self)：\n        self.name = \"liming\"\n        self.age = 12\n\n    def show(self)：\n        print(self.name)\n        print(self.age)\n\n    def set_name(self)：\n        setattr(Person, \"sex\", \"男\")\n\n    def get_name(self)：\n        print(getattr(self, \"name\"))\n        print(getattr(self, \"age\"))\n        print(getattr(self, \"sex\"))\n\ndef run()：\nif hasattr(Person, \"show\")：\nprint(\"判断 Person 类是否含有 show 方法\")\n\n    Person().set_name()\n    Person().get_name()\n\nif __name__ == '__main__'：\nrun()\n```",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-010",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "请列举你知道的 Python 的魔法方法及用途",
+    "answer": "```python\n1 __init__：\n类的初始化方法。它获取任何传给构造器的参数（比如我们调用 x = SomeClass(10, ‘foo’) ， __init__就会接到参数 10 和 ‘foo’ 。 __init__在 Python 的类定义中用的最多。\n\n2 __new__：\n__new__是对象实例化时第一个调用的方法，它只取下 cls 参数，并把其他参数传给 __init__ 。 __new__很少使用，但是也有它适合的场景，尤其是当类继承自一个像元组或者字符串这样不经常改变的类型的时候.\n\n3 __del__：\n__new__和 __init__是对象的构造器， __del__是对象的销毁器。它并非实现了语句 del x (因此该语句不等同于 x.__del__())。而是定义了当对象被垃圾回收时的行为。 当对象需要在销毁时做一些处理的时候这个方法很有用，比如 socket 对象、文件对象。但是需要注意的是，当 Python 解释器退出但对象仍然存活的时候，__del__并不会 执行。 所以养成一个手工清理的好习惯是很重要的，比如及时关闭连接。\n```",
+    "tags": ["Python", "高级特性", "魔法方法"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-011",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "如何知道一个 Python 对象的类型？",
+    "answer": "可以通过 type 方法\n\n### 面试补充\n围绕“如何知道一个 Python 对象的类型？”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-012",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "Python 的传参是传值还是传址？",
+    "answer": "Python 中的传参即不是传值也不是传地址，传的是对象的引用。\n\n### 面试补充\n围绕“Python 的传参是传值还是传址？”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-013",
+    "module": "Python高级特性",
+    "difficulty": 3,
+    "question": "Python 中的元类 (metaclass) 使用举例",
+    "answer": "可以使用元类实现一个单例模式，代码如下\n\n```python\nclass Singleton(type)：\n    def __init__(self, *args, **kwargs)：\n        print(\"in __init__\")\n        self.__instance = None\n        super(Singleton, self).__init__(*args, **kwargs)\n\n    def ___call___(self, *args, **kwargs)：\n        print(\"in ___call___\")\n        if self.__instance is None：\n            self.__instance = super(Singleton, self).___call___(*args, **kwargs)\n        return self.__instance\n\nclass Foo(metaclass=Singleton)：\npass # 在代码执行到这里的时候，元类中的__new__方法和__init__方法其实已经被执行了，而不是在 Foo 实例化的时候执行。且仅会执行一次。\n\nfoo1 = Foo()\nfoo2 = Foo()\nprint(foo1 is foo2)\n```",
+    "tags": ["Python", "高级特性", "元类"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-014",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "简述 any() 和 all() 方法",
+    "answer": "any(x)：判断 x 对象是否为空对象，如果都为空、0、false，则返回 false，如果不都为空、0、false，则返回 true。\nall(x)：如果 all(x) 参数 x 对象的所有元素不为 0、''、False 或者 x 为空对象，则返回 True，否则返回 False。\n\n### 面试补充\n围绕“简述 any() 和 all() 方法”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-015",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "filter 方法求出列表所有奇数并构造新列表，a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]",
+    "answer": "答\n\n```python\na = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]\nprint(list(filter(lambda x： x % 2 == 1, a)))\n```\n\n其实现在不推荐使用 filter,map 等方法了，一般列表生成式就可以搞定了。\n\n### 面试补充\n围绕“filter 方法求出列表所有奇数并构造新列表，a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性", "列表"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-016",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "什么是猴子补丁？",
+    "answer": "猴子补丁（monkey patching)：在运行时动态修改模块、类或函数，通常是添加功能或修正缺陷。猴子补丁在代码运行时内存中）发挥作用，不会修改源码，因此只对当前运行的程序实例有效。因为猴子补丁破坏了封装，而且容易导致程序与补丁代码的实现细节紧密耦合，所以被视为临时的变通方案，不是集成代码的推荐方式。大概是下面这样的一个效果\n\n```python\ndef post()：\n    print(\"this is post\")\n    print(\"想不到吧\")\n\nclass Http()：\n@classmethod\ndef get(self)：\nprint(\"this is get\")\n\ndef main()：\nHttp.get=post #动态的修改了 get 原因的功能，\n\nif __name__ == '__main__'：\nmain()\n Http.get()\n```",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-017",
+    "module": "Python高级特性",
+    "difficulty": 3,
+    "question": "在 Python 中是如何管理内存的？",
+    "answer": "垃圾回收：Python 不像 C++，Java 等语言一样，他们可以不用事先声明变量类型而直接对变量进行赋值。对 Python 语言来讲，对象的类型和内存都是在运行时确定的。这也是为什么我们称 Python 语言为动态类型的原因（这里我们把动态类型可以简单的归结为对变量内存地址的分配是在运行时自动判断变量类型并对变量进行赋值）。\n\n引用计数：Python 采用了类似 Windows 内核对象一样的方式来对内存进行管理。每一个对象，都维护这一个对指向该对对象的引用的计数。当变量被绑定在一个对象上的时候，该变量的引用计数就是 1，(还有另外一些情况也会导致变量引用计数的增加)，系统会自动维护这些标签，并定时扫描，当某标签的引用计数变为 0 的时候，该对就会被回收。\n\n*   内存池机制 Python 的内存机制以金字塔行，1、2 层主要有操作系统进行操作\n*   第 0 层是 C 中的 malloc，free 等内存分配和释放函数进行操作\n*   第 1 层和第 2 层是内存池，有 Python 的接口函数 PyMem_Malloc 函数实现，当对象小于 256K 时有该层直接分配内存\n*   第 3 层是最上层，也就是我们对 Python 对象的直接操作\n*   在 C 中如果频繁的调用 malloc 与 free 时,是会产生性能问题的.再加上频繁的分配与释放小块的内存会产生内存碎片。Python 在这里主要干的工作有：\n\n    *   如果请求分配的内存在 1~256 字节之间就使用自己的内存管理系统,否则直接使用 malloc。\n*   这里还是会调用 malloc 分配内存，但每次会分配一块大小为 256k 的大块内存。\n*   经由内存池登记的内存到最后还是会回收到内存池，并不会调用 C 的 free 释放掉以便下次使用。对于简单的 Python 对象，例如数值、字符串，元组（tuple 不允许被更改)采用的是复制的方式(深拷贝?)，也就是说当将另一个变量 B 赋值给变量 A 时，虽然 A 和 B 的内存空间仍然相同，但当 A 的值发生变化时，会重新给 A 分配空间，A 和 B 的地址变得不再相同。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-018",
+    "module": "Python高级特性",
+    "difficulty": 3,
+    "question": "当退出 Python 时是否释放所有内存分配？",
+    "answer": "不是的，循环引用其他对象或引用自全局命名空间的对象的模块，在 Python 退出时并非完全释放。\n\n另外，也不会释放 c 库保留的内存部分\n\n### 面试补充\n围绕“当退出 Python 时是否释放所有内存分配？”回答时，高级特性题不要只列 API，要说明机制、使用场景和副作用。装饰器、元类、反射、内存管理、正则等内容都适合用“什么时候用、什么时候不用、如何排查问题”来展开。",
+    "tags": ["Python", "高级特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-019",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "（1）使用正则表达式匹配出`<html><h1\\>www.baidu.com</h1></html>`中的地址（2）a=\"张明 98 分\"，用 re.sub，将 98 替换为 100",
+    "answer": "第一问答案\n\n```python\nimport re\n\nsource = \"<html><h1>www.baidu.com</h1></html>\"\npat = re.compile(\"<html><h1>(.\\*?)</h1></html>\")\nprint(pat.findall(source)[0])\n```\n\n第二问答案\n\n```python\nimport re\ns = \"张明 98 分\"\nprint(re.sub(r\"\\d+\",\"100\",s))\n```",
+    "tags": ["Python", "高级特性", "正则表达式", "正则"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-020",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "正则表达式匹配中(.*)和(.*?)匹配区别？",
+    "answer": "(.*) 为贪婪模式极可能多的匹配内容 ,(.*?) 为非贪婪模式又叫懒惰模式，一般匹配到结果就好，匹配字符的少为主，示例代码如下\n\n```python\nimport re\n\ns = \"<html><div>文本 1</div><div>文本 2</div></html>\"\n\npat1 = re.compile(r\"\\<div>(.\\*?)\\</div>\")\nprint(pat1.findall(s))\n\npat2 = re.compile(r\"\\<div>(.\\*)\\</div>\")\nprint(pat2.findall(s))\n```\n\n输出\n\n```python\n['文本 1', '文本 2']\n['文本 1</div><div>文本 2']\n```",
+    "tags": ["Python", "高级特性", "正则表达式", "正则"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-advanced-021",
+    "module": "Python高级特性",
+    "difficulty": 2,
+    "question": "写一段匹配邮箱的正则表达式",
+    "answer": "关于邮箱的匹配这个还真的是一个永恒的话题。\n\n电子邮件地址有统一的标准格式：用户名@服务器域名。用户名表示邮件信箱、注册名或信件接收者的用户标识，@符号后是你使用的邮件服务器的域名。@可以读成“at”，也就是“在”的意思。整个电子邮件地址可理解为网络中某台服务器上的某个用户的地址。\n\n1.  用户名，可以自己选择。由字母 a～z(不区分大小写)、数字 0～9、点、减号或下划线组成；只能以数字或字母开头和结尾。\n2.  与你使用的网站有关，代表邮箱服务商。例如网易的有@163.com 新浪有@vip.sina.com 等。\n\n网上看到了各种各样的版本，都不确定用哪个，于是自己简单的总结了一个。大家有更好的欢迎留言。\n\n```python\nr\"^[a-zA-Z0-9]+[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\"\n```\n\n下面解释上面的表达式\n\n1.  首先强调一点关于\\w 的含义，\\w 匹配英文字母和俄语字母或数字或下划线或汉字。\n2.  注意^[]和[^]的区别，[]表示字符集合，^[]表示已[]内的任意字符集开始，[^]表示。\n3.  ^[a-zA-Z0-9]+：这里注意^[]和[^]的,第一个^表示已什么开头，第二个[]的^表示不等于[]内。所以这段表示以英文字母和数字开头，后面紧跟的+，限定其个数>=1 个。\n4.  [a-zA-Z0-9_.+-]+：表示匹配英文字母和数字开头以及_.+-, 的任意一个字符，并限定其个数>=1 个。为了考虑@前面可能出现.+-（但是不在开头出现）。\n5.  @就是邮箱必备符号了\n6.  @[a-zA-Z0-9-]+.：前面的不用说了，后面的.表示.转义了,也是必备符号。\n7.  [ a-zA-Z0-9-.]+：$符表示以什么结束,这里表示以英文字和数字或 -. 1 个或多个结尾。\n\n来个例子验证一波：\n\n```python\nimport re\nplt=re.compile(r\"^[a-zA-Z0-9]+[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+$\")\nb=plt.findall('adas+fefe.we@qq.com.cn')\nprint(b)\n```\n\n网上找了个验证邮件地址的通用正则表达式（符合 RFC 5322 标准）\n\n```python\n(?：[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?：\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|\"(?：[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?：(?：[a-z0-9](?：[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?：[a-z0-9-]*[a-z0-9])?|\\[(?：(?：25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?：25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]：(?：[\\x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\\\[\\x01-\\x09\\x0b\\x0c\\x0e-\\x7f])+)\\])\n```",
+    "tags": ["Python", "高级特性", "正则表达式", "正则"],
+    "source": "derekramm/python-interview-questions"
+  }
+]

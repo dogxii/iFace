@@ -1,0 +1,443 @@
+[
+  {
+    "id": "python-basics-001",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "谈谈对 Python 和其他语言的区别",
+    "answer": "Python 是一门语法简洁优美,功能强大无比,应用领域非常广泛,具有强大完备的第三方库，他是一门强类型的可移植、可扩展，可嵌入的解释型编程语言，属于动态语言。\n\n拿 C 语言和 Python 比：\nPython 的第三方类库比较齐全并且使用简洁,很少代码就能实现一些功能，如果用 C 去实现相同的功能可能就比较复杂。但是对于速度来说 Python 的运行速度相较于 C 就比较慢了。所以有利的同时也有弊端，毕竟我们的学习成本降低了。",
+    "tags": ["Python", "基础语法", "语言特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-002",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "简述解释型和编译型编程语言",
+    "answer": "解释型语言是在运行程序的时候才翻译，每执行一次，要翻译一次，效率较低。\n编译型就是直接编译成机型可以执行的，只翻译一次，所以效率相对来说较高。\n\n### 面试补充\n围绕“简述解释型和编译型编程语言”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "语言特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-003",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "Python 的解释器种类以及相关特点？",
+    "answer": "*   CPython\nc 语言开发的，使用最广的解释器\n*   IPython\n基于 cPython 之上的一个交互式计时器，交互方式增强功能和 cPython 一样\n*   PyPy\n目标是执行效率，采用 JIT 技术。对 Python 代码进行动态编译，提高执行效率\n*   JPython\n运行在 Java 上的解释器，直接把 Python 代码编译成 Java 字节码执行\n*   IronPython\n运行在微软 .NET 平台上的解释器，把 Python 编译成 . NET 的字节码。",
+    "tags": ["Python", "基础语法", "语言特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-004",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "Python3 和 Python2 的区别？",
+    "answer": "这里例举 5 条\n\n1.  print 在 Python3 中是函数必须加括号，Python2 中 print 为 class。\n2.  Python2 中使用 xrange，Python3 使用 range。\n3.  Python2 中默认的字符串类型默认是 ASCII，Python3 中默认的字符串类型是 Unicode。\n4.  Python2 中/的结果是整型，Python3 中是浮点类型。\n5.  Python2 中声明元类：__metaclass__ = MetaClass,Python3 中声明元类：class newclass(metaclass=MetaClass)：pass。",
+    "tags": ["Python", "基础语法", "语言特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-005",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "Python3 和 Python2 中 int 和 long 区别？",
+    "answer": "Python2 有 int 和 long 类型。int 类型最大值不能超过 sys.maxint，而且这个最大值是平台相关的。可以通过在数字的末尾附上一个Ｌ来定义长整型，显然，它比 int 类型表示的数字范围更大。在 Python3 里，只有一种整数类型 int，大多数情况下，和 Python２中的长整型类似。\n\n### 面试补充\n围绕“Python3 和 Python2 中 int 和 long 区别？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "语言特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-006",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "xrange 和 range 的区别？",
+    "answer": "xrange 是在 Python2 中的用法，Python3 中只有 range\nxrange 用法与 range 完全相同，所不同的是生成的不是一个 list 对象，而是一个生成器。\n\n### 面试补充\n围绕“xrange 和 range 的区别？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "语言特性"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-007",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "什么是 PEP8?",
+    "answer": "PEP8 通常会听别人提到，但是具体的指什么内容呢，简单介绍下。\n《Python Enhancement Proposal #8》（8 号 Python 增强提案）又叫 PEP8，他针对的 Python 代码格式而编订的风格指南。\n\n### 面试补充\n围绕“什么是 PEP8?”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范", "PEP8"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-008",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "了解 Python 之禅么？",
+    "answer": "通过 import this 语句可以获取其具体的内容。它告诉大家如何写出高效整洁的代码。\n\n### 面试补充\n围绕“了解 Python 之禅么？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-009",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "了解 DocStrings 么？",
+    "answer": "DocStrings 文档字符串是一个重要工具，用于解释文档程序，帮助你的程序文档更加简单易懂。主要是解释代码作用的。\n\n### 面试补充\n围绕“了解 DocStrings 么？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范", "DocStrings"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-010",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "了解类型注解么？",
+    "answer": "PEP 484 引入了类型提示，这使得可以对 Python 代码进行静态类型检查。\n在使用 Ide 的时候可以获取到参数的类型，更方便传入参数。使用格式如下\n\ndef foo(num： int) -> None：\n    print(f\"接收到的数字是：{num}\")\n\n介绍下这个简单例子，我们可以在函数的参数部分使用参数名+：+类型，来指定参数可以接受的类型，这里的话就是 num 参数为 int 类型，然后后面->接的是返回值的类型。这里返回值为 None，然后通过 fstring 格式化字符串输出传入的数字。",
+    "tags": ["Python", "基础语法", "编码规范", "类型注解"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-011",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "例举你知道 Python 对象的命名规范，例如方法或者类等",
+    "answer": "类：总是使用首字母大写单词串，如 MyClass。内部类可以使用额外的前导下划线。\n变量：小写，由下划线连接各个单词。方法名类似\n常量：常量名所有字母大写\n等\n\n### 面试补充\n围绕“例举你知道 Python 对象的命名规范，例如方法或者类等”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-012",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "Python 中的注释有几种？",
+    "answer": "总体来说分为两种，单行注释和多行注释。\n\n1.  单行注释在行首是 `#`。\n2.  多行注释可以使用三个单引号或三个双引号，包括要注释的内容。\n\n### 面试补充\n围绕“Python 中的注释有几种？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-013",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "如何优雅的给一个函数加注释？",
+    "answer": "可以使用 docstring 配合类型注解\n\n### 面试补充\n围绕“如何优雅的给一个函数加注释？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-014",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "如何给变量加注释？",
+    "answer": "可以通过变量名：类型的方式如下\n\n```python\na： str = \"this is string type\"\n```\n\n### 面试补充\n围绕“如何给变量加注释？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-015",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "Python 代码缩进中是否支持 Tab 键和空格混用",
+    "answer": "不允许 tab 键和空格键混用，这种现象在使用 sublime 的时候尤为明显。\n\n一般推荐使用 4 个空格替代 tab 键。\n\n### 面试补充\n围绕“Python 代码缩进中是否支持 Tab 键和空格混用”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-016",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "是否可以在一句 import 中导入多个库?",
+    "answer": "可以是可以，但是不推荐。因为一次导入多个模块可读性不是很好，所以一行导入一个模块会比较好。同样的尽量少用 from modulename import *，因为判断某个函数或者属性的来源有些困难，不方便调试，可读性也降低了。\n\n### 面试补充\n围绕“是否可以在一句 import 中导入多个库?”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-017",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "在给 Py 文件命名的时候需要注意什么?",
+    "answer": "给文件命名的时候不要和标准库库的一些模块重复，比如 abc。\n另外要名字要有意义，不建议数字开头或者中文命名。\n\n### 面试补充\n围绕“在给 Py 文件命名的时候需要注意什么?”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-018",
+    "module": "Python基础",
+    "difficulty": 1,
+    "question": "例举几个规范 Python 代码风格的工具",
+    "answer": "pylint 和 flake8\n\n### 面试补充\n围绕“例举几个规范 Python 代码风格的工具”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "基础语法", "编码规范"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-019",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "解释一下 Python 中 pass 语句的作用？",
+    "answer": "pass 实际上就是一个占位符，在写一个函数但是不确定里面写啥的时候，这个时候可以使用 pass。示例如下\n\n```python\ndef foo()：\n pass\n```\n\n### 面试补充\n围绕“解释一下 Python 中 pass 语句的作用？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-020",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "简述你对 input()函数的理解",
+    "answer": "在 Python3 中 input 函数可以接收用户输入的字符串。\n\n然后根据程序的需要转换成所需格式即可。\n\n### 面试补充\n围绕“简述你对 input()函数的理解”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-021",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "Python 中的 is 和==",
+    "answer": "先说==它的作用是判断两个对象的值是否相同，然后说 is。is 表示的谁是谁，这也就意味着对象完全相等。我们知道一个对象有各自的内存地址和对应的值，当内存地址和值都相同的时候使用 is 可以得到结果 True。另外需要注意的下面两点特殊的情况。\n\n这些变量很可能在许多程序中使用。 通过池化这些对象，Python 可以防止对一致使用的对象进行内存分配调用。\n\n```python\n1.介于数字-5 和 256 之间的整数\n2.字符串仅包含字母、数字或下划线\n```",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-022",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "Python 中的作用域",
+    "answer": "```python\nPython 中，一个变量的作用域总是由在代码中被赋值的地方所决定\n\n当 Python 遇到一个变量的话它会按照这的顺序进行搜索\n\n本地作用域(Local)--->当前作用域被嵌入的本地作用域(Enclosing locals)--->全局/模块作用域(Global)--->内置作用域(Built-in)\n```\n\n### 面试补充\n围绕“Python 中的作用域”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容", "作用域"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-023",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "三元运算写法和应用场景？",
+    "answer": "Python 中的三元运算又称三目运算，是对简单的条件语句的简写。\n是一种比较 Pythonic 的学法，形式为：val = 1 if 条件成立 else 2\n代码示例如下：\n\n```python\na = 2\nb = 5\n\n# 普通写法\n\nif a > b：\nval = True\nelse：\nval = False\n\n# 改为三元运算符后\n\nval = a if a > b else b\nprint(val) # 5\n```",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-024",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "了解 enumerate 么？",
+    "answer": "enumerate 可以在迭代一个对象的时候，同时获取当前对象的索引和值。\n代码示例如下\n\n```python\nfrom string import ascii_lowercase\n\ns = ascii_lowercase\n\nfor index, value in enumerate(s)：\nprint(index, value)\n```\n\n### 面试补充\n围绕“了解 enumerate 么？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-025",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "列举 5 个 Python 中的标准模块",
+    "answer": "pathlib：路径操作模块，比 os 模块拼接方便。\nurllib：网络请求模块，包括对 url 的结构解析。\nasyncio： Python 的异步库，基于事件循环的协程模块。\nre：正则表达式模块。\nitertools：提供了操作生成器的一些模块。\n\n### 面试补充\n围绕“列举 5 个 Python 中的标准模块”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-026",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "如何在函数中设置一个全局变量",
+    "answer": "```python\n# 通过使用 global 对全局变量进行修改。\nn = 0\ndef foo()：\n    global n\n    n = 100\nfoo()\nprint(n)\nx = 0\n```\n\n之前我在视频教程中对这块做了个讲解，具体点击下方链接\nhttps：//www.bilibili.com/video/av50865713\n\n### 面试补充\n围绕“如何在函数中设置一个全局变量”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-027",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "pathlib 的用法举例",
+    "answer": "pathlib 可以对文件以及文件的其他属性进行操作。比较喜欢的一点是路径拼接符\"/\"的使用，之前在公众号中写过 pathlib 一些其他的用法这里就不一一例举了。\n\n### 面试补充\n围绕“pathlib 的用法举例”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-028",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "Python 中的异常处理，写一个简单的应用场景",
+    "answer": "比如在计算除法中出现为 0 的情况出现异常\n\n```python\ntry：\n    1 / 0\nexcept ZeroDivisionError as e：\n    print(e.args)\n```\n\n### 面试补充\n围绕“Python 中的异常处理，写一个简单的应用场景”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容", "异常"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-029",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "Python 中递归的最大次数，那如何突破呢？",
+    "answer": "Python 有递归次数限制，默认最大次数为 1000。通过下面的代码可以突破这个限制\n\n```python\nimport sys\nsys.setrecursionlimit(1500) # set the maximum depth as 1500\n```\n\n另外需要注意的是 sys.setrecursionlimit() 只是修改解释器在解释时允许的最大递归次数，此外，限制最大递归次数的还和操作系统有关。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-030",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "什么是面向对象的 mro",
+    "answer": "Python 是支持面向对象编程的，同时也是支持多重继承的。一般我们通过调用类对象的 mro()方法获取其继承关系。\n\n### 面试补充\n围绕“什么是面向对象的 mro”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容", "MRO"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-031",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "isinstance 作用以及应用场景？",
+    "answer": "isinstance 是判断一个对象是否为另一个对象的子类的，例如我们知道在 Python3 中 bool 类型其实是 int 的子类，所以我们可以对其检测。\n\n```python\nprint(isinstance(True,int))\n```\n\n### 面试补充\n围绕“isinstance 作用以及应用场景？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-032",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "什么是断言？应用场景？",
+    "answer": "在 Python 中是断言语句 assert 实现此功能，一般在表达式为 True 的情况下，程序才能通过。\n\n```python\n#author：陈祥安\n#公众号：Python 学习开发\n\n#assert（）方法，断言成功，则程序继续执行，断言失败，则程序报错\n\n# 断言能够帮助别人或未来的你理解代码，\n\n# 找出程序中逻辑不对的地方。一方面，\n\n# 断言会提醒你某个对象应该处于何种状态，\n\n# 另一方面，如果某个时候断言为假，\n\n# 会抛出 AssertionError 异常，很有可能终止程序。\n\ndef foo(a)：\nassert a==2,Exception(\"不等于 2\")\nprint(\"ok\",a)\n\nif __name__ == '__main__'：\nfoo(1)\n```",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-033",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "lambda 表达式格式以及应用场景？",
+    "answer": "lambda 表达式其实就是一个匿名函数,在函数编程中经常作为参数使用。\n例子如下\n\n```python\na = [('a',1),('b',2),('c',3),('d',4)]\na_1 = list(map(lambda x：x[0],a))\n```\n\n### 面试补充\n围绕“lambda 表达式格式以及应用场景？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-034",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "新式类和旧式类的区别",
+    "answer": "Python 2.x 中默认都是经典类，只有显式继承了 object 才是新式类，Python 3.x 中默认都是新式类，经典类被移除，不必显式的继承 object。\n新式类都从 object 继承，经典类不需要。\n新式类的 MRO(method resolution order 基类搜索顺序)算法采用 C3 算法广度优先搜索，而旧式类的 MRO 算法是采用深度优先搜索。\n新式类相同父类只执行一次构造函数，经典类重复执行多次。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-035",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "dir()是干什么用的？",
+    "answer": "当在使用某一个对象不知道有哪些属性或者方法可以使用时，此时可以通过 dir() 方法进行查看。\n\n### 面试补充\n围绕“dir()是干什么用的？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-036",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "一个包里有三个模块，demo1.py、demo2.py、demo3.py，但使用 from tools import *导入模块时，如何保证只有 demo1、demo3 被导入了",
+    "answer": "增加__init__.py 文件，并在文件中增加：\n\n```python\n__all__ = ['demo1','demo3']\n```\n\n### 面试补充\n围绕“一个包里有三个模块，demo1.py、demo2.py、demo3.py，但使用 from tools import *导入模块时，如何保证只有 demo1、demo3 被导入了”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-037",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "列举 5 个 Python 中的异常类型以及其含义",
+    "answer": "```python\nAttributeError 对象没有这个属性\n\nNotImplementedError 尚未实现的方法\n\nStopIteration 迭代器没有更多的值\n\nTypeError 对类型无效的操作\n\nIndentationError 缩进错误\n```\n\n### 面试补充\n围绕“列举 5 个 Python 中的异常类型以及其含义”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容", "异常"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-038",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "copy 和 deepcopy 的区别是什么？",
+    "answer": "copy.copy()浅拷贝，只拷贝父对象，不会拷贝对象的内部的子对象。\ncopy.deepcopy()深拷贝，拷贝对象及其子对象。\n\n### 面试补充\n围绕“copy 和 deepcopy 的区别是什么？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-039",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "代码中经常遇到的*args, **kwargs 含义及用法",
+    "answer": "在函数定义中使用 *args 和**kwargs 传递可变长参数。\n*args 用来将参数打包成 tuple 给函数体调用。\n**kwargs 打包关键字参数成 dict 给函数体调用。\n\n### 面试补充\n围绕“代码中经常遇到的*args, **kwargs 含义及用法”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-040",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "Python 中会有函数或成员变量包含单下划线前缀和结尾，和双下划线前缀结尾，区别是什么?",
+    "answer": "\"单下划线\" 开始的成员变量叫做保护变量，意思是只有类对象和子类对象自己能访问到这些变量；\n \"双下划线\" 开始的是私有成员，意思是只有类对象自己能访问，连子类对象也不能访问到这个数据。\n\n以单下划线开头（_foo）的代表不能直接访问的类属性，需通过类提供的接口进行访问，不能用“from xxx import *”而导入；以双下划线开头的（__foo）代表类的私有成员；\n\n以双下划线开头和结尾的（__foo**）代表 Python 里特殊方法专用的标识，如 __init**（）代表类的构造函数。\n\n代码示例\n\n```python\nclass Person：\n    \"\"\"docstring for ClassName\"\"\"\n    def __init__(self)：\n       self.__age = 12\n       self._sex = 12\n    def _sex(self)：\n        return \"男\"\n    def set_age(self,age)：\n        self.__age = age\n\n    def get_age(self)：\n        return self.__age\n\nif __name__ == '__main__'：\np=Person()\nprint(p.\\_sex)\n#print(p.**age)\n#Python 自动将**age 解释成 \\_Person**age,于是我们用 \\_Person**age 访问，这次成功。\nprint(p.\\_Person\\_\\_age)\n```",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-041",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "w、a+、wb 文件写入模式的区别",
+    "answer": "w 表示写模式支持写入字符串，如果文件存在则覆盖。\na+ 和 w 的功能类型不过如果文件存在的话内容不会覆盖而是追加。\nwb 是写入二进制字节类型的数据。\n\n### 面试补充\n围绕“w、a+、wb 文件写入模式的区别”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-042",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "举例 sort 和 sorted 的区别",
+    "answer": "相同之处 sort 和 sorted 都可以对列表元素排序，sort() 与 sorted() 的不同在于，sort 是在原位重新排列列表，而 sorted() 是产生一个新的列表。\nsort 是应用在 list 上的方法，sorted 可以对所有可迭代的对象进行排序操作。\n\nlist 的 sort 方法返回的是对已经存在的列表进行操作，而内建函数 sorted 方法返回的是一个新的 list，而不是在原来的基础上进行的操作。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-043",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "什么是负索引？",
+    "answer": "负索引一般表示的是从后面取元素。\n\n### 面试补充\n围绕“什么是负索引？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。\n\n还可以主动补一句适用边界：哪些版本或场景下这个结论成立，以及如果放到实际项目中会怎样验证。这样短题也能回答得更完整，避免只给一个 API 名称或一句口号。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-044",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "pprint 模块是干什么的？",
+    "answer": "pprint 是 print 函数的美化版，可以通过 import pprint 导入。示例如下\n\n```python\nimport pprint\npprint.pprint(\"this is pprint\")\n```\n\n### 面试补充\n围绕“pprint 模块是干什么的？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-045",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "解释一下 Python 中的赋值运算符",
+    "answer": "通过下面的代码列举出所有的赋值运算符\n\n```python\na=7\na+=1\nprint(a)\na-=1\nprint(a)\na*=2\nprint(a)\na/=2\nprint(a)\na**=2\nprint(a)\na//=3\nprint(a)\na%=4\nprint(a)\n```\n\n### 面试补充\n围绕“解释一下 Python 中的赋值运算符”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-046",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "解释一下 Python 中的逻辑运算符",
+    "answer": "Python 中有三个逻辑运算符：and、or、not\n\n```python\nprint(False and True) #False\nprint(7<7 or True) #True\nprint(not 2==2) #False\n```\n\n### 面试补充\n围绕“解释一下 Python 中的逻辑运算符”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-047",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "讲讲 Python 中的位运算符",
+    "answer": "按位运算符是把数字看作二进制来进行计算的。Python 中的按位运算法则如下：\n\n下表中变量 a 为 60，b 为 13，二进制格式如下：\n\n```python\na = 0011 1100\nb = 0000 1101\n-----------------\na&b = 0000 1100\na|b = 0011 1101\na^b = 0011 0001\n~a  = 1100 0011\n```\n\n![enter image description here](https://images.gitbook.cn/c2660350-8bf3-11e9-86b6-1bdaa75635da)",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-048",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "在 Python 中如何使用多进制数字？",
+    "answer": "我们在 Python 中，除十进制外还可以使用二进制、八进制和十六进制\n\n*   二进制数字由 0 和 1 组成，我们使用 0b 或 0B 前缀表示二进制数\n```python\nprint(int(0b1010))#10\n```\n\n*   使用 bin()函数将一个数字转换为它的二进制形式\n```python\nprint(bin(0xf))#0b1111\n```\n\n*   八进制数由数字 0-7 组成，用前缀 0o 或 0O 表示 8 进制数\n```python\nprint(oct(8))#0o10\n```\n\n*   十六进数由数字 0-15 组成，用前缀 0x 或者 0X 表示 16 进制数\n```python\nprint(hex(16))#0x10\nprint(hex(15))#0xf\n```",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-basics-049",
+    "module": "Python基础",
+    "difficulty": 2,
+    "question": "怎样声明多个变量并赋值？",
+    "answer": "Python 是支持多个变量赋值的，代码示例如下\n\n```python\n#对变量 a,b,c 声明并赋值\na,b,c = 1,2,3\n```\n\n### 面试补充\n围绕“怎样声明多个变量并赋值？”回答时，这类基础题建议按“概念是什么、Python 3 中如何表现、常见误区是什么”的顺序回答。面试中不要只背结论，最好结合一个小例子说明边界，比如对象身份、作用域、导入规则或语法细节，这样能体现你真正写过 Python。",
+    "tags": ["Python", "基础语法", "其他内容"],
+    "source": "derekramm/python-interview-questions"
+  }
+]

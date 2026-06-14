@@ -1,0 +1,209 @@
+[
+  {
+    "id": "python-engineering-001",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "Python 交换两个变量的值",
+    "answer": "在 Python 中交换两个对象的值通过下面的方式即可\n\n```python\na , b = b ,a\n```\n\n但是需要强调的是这并不是元组解包，通过 dis 模块可以发现，这是交换操作的字节码是 ROT_TWO，意思是在栈的顶端做两个值的互换操作。\n\n### 面试补充\n围绕“Python 交换两个变量的值”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-002",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "在读文件操作的时候会使用 read、readline 或者 readlines，简述它们各自的作用",
+    "answer": ".read() 每次读取整个文件，它通常用于将文件内容放到一个字符串变量中。如果希望一行一行的输出那么就可以使用 readline()，该方法会把文件的内容加载到内存，所以对于对于大文件的读取操作来说非常的消耗内存资源，此时就可以通过 readlines 方法，将文件的句柄生成一个生产器，然后去读就可以了。\n\n### 面试补充\n围绕“在读文件操作的时候会使用 read、readline 或者 readlines，简述它们各自的作用”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-003",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "json 序列化时，可以处理的数据类型有哪些？如何定制支持 datetime 类型？",
+    "answer": "可以处理的数据类型是 str、int、list、tuple、dict、bool、None,\n因为 datetime 类不支持 json 序列化，所以我们对它进行拓展。\n\n```python\n# 自定义时间序列化\nimport json\nfrom datetime import datetime, date\n\n# JSONEncoder 不知道怎么去把这个数据转换成 json 字符串的时候\n\n# ，它就会去调 default()函数,所以都是重写这个函数来处理它本身不支持的数据类型，\n\n# default()函数默#认是直接抛异常的。\n\nclass DateToJson(json.JSONEncoder)：\ndef default(self, obj)：\nif isinstance(obj, datetime)：\nreturn obj.strftime('%Y-%m-%d %H：%M：%S')\nelif isinstance(obj, date)：\nreturn obj.strftime('%Y-%m-%d')\nelse：\nreturn json.JSONEncoder.default(self, obj)\n\nd = {'name'： 'cxa', 'data'： datetime.now()}\nprint(json.dumps(d, cls=DateToJson))\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "json"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-004",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "json 序列化时，默认遇到中文会转换成 unicode，如果想要保留中文怎么办？",
+    "answer": "可以通过 json.dumps 的 ensure_ascii 参数解决，代码示例如下：\n\n```python\nimport json\na=json.dumps({\"name\"：\"张三\"},ensure_ascii=False)\nprint(a)\n```\n\n### 面试补充\n围绕“json 序列化时，默认遇到中文会转换成 unicode，如果想要保留中文怎么办？”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目", "json"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-005",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "有两个磁盘文件 A 和 B，各存放一行字母，要求把这两个文件中的信息合并(按字母顺序排列)，输出到一个新文件 C 中",
+    "answer": "```python\n#文件 A.txt 内容为 ASDCF\n#文件 B.txt 内容为 EFGGTG\nwith open(\"A.txt\") as f1：\n    f1_txt = f1.readline()\nwith open(\"B.txt\") as f2：\n    f2_txt = f2.readline()\nf3_txt = f1_txt + f2_txt\n\nf3_list = sorted(f3_txt)\n\nwith open(\"C.txt\", \"a+\") as f：\nf.write(\"\".join(f3_list))\n```\n\n输出的文件 C 的内容为 ACDEFFGGGST",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-006",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "如果当前的日期为 20190530，要求写一个函数输出 N 天后的日期，(比如 N 为 2，则输出 20190601)",
+    "answer": "这个题目考察的是 datetime 里的 timedelta 方法的使用，参数可选、默认值都为 0：datetime.timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0) 通过这个参数可以指定不同的日期类型进行加减操作，这里我们需要改的是 days，代码如下\n\n```python\nimport datetime\n\ndef datetime_operate(n： int)：\nnow = datetime.datetime.now() # 获取当前时间\n\\_new_date = now + datetime.timedelta(days=n) # 获取指定天数后的新日期\nnew_date = \\_new_date.strftime(\"%Y%m%d\") # 转换为指定的输出格式\nreturn new_date\n\nif __name__ == '__main__'：\nprint(datetime_operate(4))\n```",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-007",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "写一个函数，接收整数参数 n，返回一个函数，函数的功能是把函数的参数和 n 相乘并把结果返回",
+    "answer": "这个题目考查了闭包的使用代码示例如下，返回函数之类型是函数对象。\n\n```python\ndef mul_operate(num):\n    def g(val):\n        return num * val\n\n    return g\n\nm = mul_operate(8)\nprint(m(5))\n```\n\n### 面试补充\n围绕“写一个函数，接收整数参数 n，返回一个函数，函数的功能是把函数的参数和 n 相乘并把结果返回”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-008",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "下面代码会存在什么问题，如何改进？",
+    "answer": "```python\ndef strappend(num)：\n    str='first'\n    for i in range(num)：\n        str+=str(i)\n    return str\n```\n\n首先不应该使用 Python 的内置类似 str 作为变量名这里我把它改为了 s,另外在Python,str 是个不可变对象，每次迭代都会生成新的存储空间，num 越大，创建的 str 对象就会越多，内存消耗越大。使用 yield 改成生成器即可,\n还有一点就是命名规范的位置，函数名改为_分割比较好，完整的代码如下:\n\n```python\ndef str_append(num):\n    s = 'first'\n    for i in range(num):\n        s += str(i)\n        yield s\n\nif __name__ == '__main__':\nfor i in str_append(3):\nprint(i)\n```",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-009",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "一行代码输出 1-100 之间的所有偶数",
+    "answer": "可以通过列表生成式，然后使用与操作如果如 1 与之后结果为 0 则表明为偶数，等于 1 则为奇数。\n\n```python\n# 方法1\nprint([i for i in range(1, 101) if i & 0x1 == 0])\n# 方法2：测试发现方法二效率更高\nprint(list(range(2, 101, 2)))\n```\n\n### 面试补充\n围绕“一行代码输出 1-100 之间的所有偶数”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-010",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "with 语句的作用，写一段代码？",
+    "answer": "with 语句适用于对资源进行访问的场合，确保不管使用过程中是否发生异常都会执行必要的“清理”操作，释放资源，比如文件使用后自动关闭、线程中锁的自动获取和释放等。\n\n其他的内容看下面我之前写的代码。\n\n```python\n#一般访问文件资源时我们会这样处理：\n\nf = open(\n'c：\\test.txt', 'r')\ndata = f.read()\nf.close()\n\n# 这样写没有错，但是容易犯两个毛病：\n\n# 1. 如果在读写时出现异常而忘了异常处理。\n\n# 2. 忘了关闭文件句柄\n\n#以下的加强版本的写法：\n\nf = open('c：\\test.txt', 'r')\ntry：\ndata = f.read()\nfinally：\nf.close()\n\n#以上的写法就可以避免因读取文件时异常的发生而没有关闭问题的处理了。代码长了一些。 #但使用 with 有更优雅的写法：\n\nwith open(r'c：\\test.txt', 'r') as f：\ndata = f.read()\n#with 的实现\n\nclass Test：\ndef **enter**(self)：\nprint('**enter**() is call!')\nreturn self\n\n    def dosomething(self)：\n        print('dosomethong!')\n\n    def __exit__(self, exc_type, exc_value, traceback)：\n        print('__exit__() is call!')\n        print(f'type：{exc_type}')\n        print(f'value：{exc_value}')\n        print(f'trace：{traceback}')\n        print('__exit()__ is call!')\n\nwith Test() as sample：\npass\n\n#当对象被实例化时，就会主动调用**enter**()方法，任务执行完成后就会调用**exit**()方法， #另外，注意到，**exit**()方法是带有三个参数的(exc_type, exc_value, traceback), #依据上面的官方说明：如果上下文运行时没有异常发生，那么三个参数都将置为 None, #这里三个参数由于没有发生异常，的确是置为了 None, 与预期一致.\n\n# 修改后不出异常了\n\nclass Test：\ndef **enter**(self)：\nprint('**enter**() is call!')\nreturn self\n\n    def dosomething(self)：\n        x = 1/0\n        print('dosomethong!')\n\n    def __exit__(self, exc_type, exc_value, traceback)：\n        print('__exit__() is call!')\n        print(f'type：{exc_type}')\n        print(f'value：{exc_value}')\n        print(f'trace：{traceback}')\n        print('__exit()__ is call!')\n        return True\n\nwith Test() as sample：\n```",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-011",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "Python 字典和 json 字符串相互转化方法",
+    "answer": "在 Python 中使用 dumps 方法 将 dict 对象转为 Json 对象，使用 loads 方法可以将 Json 对象转为 dict 对象。\n\n```python\ndic = {'a': 123, 'b': \"456\", 'c': \"liming\"}\njson_str = json.dumps(dic)\ndic2 = json.loads(json_str)\nprint(dic2)\n打印：\n'{\"a\": 123, \"b\": \"456\", \"c\": \"liming\"}'\n{'a': 123, 'b': '456', 'c': 'liming'}\n```\n\n我们再来看一个特殊的例子\n\n```python\nimport json\ndic = {'a'： 123, 'b'： \"456\", 'c'： \"liming\"}\ndic_str = json.loads(str(dic).replace(\"'\", \"\\\"\"))\nprint(dic_str)\n```\n\n下面我解释下上面代码是测试什么:\n\n```python\n首先 json.loads(jsonstr) 这里面的参数只能是 jsonstr 格式的字符串.\n当我们使用 str 将字典 dic 转化为字符串以后，得到的结果为:\"{'a': 123, 'b': '456', 'c': 'liming'}\"。\n如果直接使用 json.loads(str(dic)) 你会发现出现错误，原因就是，单引号的字符串不符合Json的标准格式所以再次使用了 replace(\"'\", \"\\\"\")。得到字典\n其实这个例子主要目的是告诉大家 Json 的标准格式是不支持单引号型字符串的，否则会出现以下错误。\njson.decoder.JSONDecodeError: Expecting property name enclosed in double quotes: line 1 column 2 (char 1)\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "字符串", "字典"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-012",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "请写一个 Python 逻辑，计算一个文件中的大写字母数量",
+    "answer": "```python\nwith open('A.txt') as fs：\n    count = 0\n    for i in fs.read()：\n        if i.isupper()：\n            count += 1\nprint(count)\n```\n\n### 面试补充\n围绕“请写一个 Python 逻辑，计算一个文件中的大写字母数量”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-013",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "请写一段 Python连接Mongo数据库，然后的查询代码",
+    "answer": "```python\n# -*- coding: utf-8 -*-\n# @Author : 陈祥安\nimport pymongo\ndb_configs = {\n    'type': 'mongo',\n    'host': '地址',\n    'port': '端口',\n    'user': 'spider_data',\n    'passwd': '密码',\n    'db_name': 'spider_data'\n}\n\nclass Mongo():\ndef __init__(self, db=db_configs[\"db_name\"], username=db_configs[\"user\"],\npassword=db_configs[\"passwd\"]):\nself.client = pymongo.MongoClient(f'mongodb://{db_configs[\"host\"]}:db_configs[\"port\"]')\nself.username = username\nself.password = password\nif self.username and self.password:\nself.db1 = self.client[db].authenticate(self.username, self.password)\nself.db1 = self.client[db]\n\n    def find_data(self):\n        # 获取状态为0的数据\n        data = self.db1.test.find({\"status\": 0})\n        gen = (item for item in data)\n        return gen\n\nif __name__ == '__main__':\nm = Mongo()\nprint(m.find_data())\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "Mongo"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-014",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "说一说Redis的基本类型",
+    "answer": "Redis 支持五种数据类型： string（字符串） 、 hash（哈希）、list（列表） 、 set（集合） 及 zset(sorted set： 有序集合)。\n\n### 面试补充\n围绕“说一说Redis的基本类型”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "操作类题目", "Redis"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-015",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "请写一段 Python连接Redis数据库的代码",
+    "answer": "```python\nfrom redis import StrictRedis, ConnectionPool\nredis_url=\"redis://:xxxx@112.27.10.168:6379/15\"\npool = ConnectionPool.from_url(redis_url, decode_responses=True)\nr= StrictRedis(connection_pool=pool)\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "Redis"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-016",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "请写一段 Python连接Mysql数据库的代码",
+    "answer": "```python\nconn = pymysql.connect(host='localhost',\nport=3306, user='root',\npasswd='1234', db='user', charset='utf8mb4')#声明mysql连接对象\ncursor=conn.cursor(cursor=pymysql.cursors.DictCursor)#查询结果以字典的形式\ncursor.execute(sql语句字符串)#执行sql语句\nconn.close()#关闭链接\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "MySQL"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-017",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "了解Redis的事务么",
+    "answer": "简单理解，可以认为 redis 事务是一些列 redis 命令的集合，并且有如下两个特点：\n1.事务是一个单独的隔离操作：事务中的所有命令都会序列化、按顺序地执行。事务在执行的过程中，不会被其他客户端发送来的命令请求所打断。\n2.事务是一个原子操作：事务中的命令要么全部被执行，要么全部都不执行。\n一般来说，事务有四个性质称为ACID，分别是原子性，一致性，隔离性和持久性。\n一个事务从开始到执行会经历以下三个阶段：\n\n*   开始事务\n*   命令入队\n*   执行事务\n代码示例:\n```python\nimport redis\nimport sys\ndef run():\n    try:\n        conn=redis.StrictRedis('192.168.80.41')\n       # Python中redis事务是通过pipeline的封装实现的\n        pipe=conn.pipeline()\n        pipe.sadd('s001','a')\n        sys.exit()\n        #在事务还没有提交前退出，所以事务不会被执行。\n        pipe.sadd('s001','b')\n        pipe.execute()\n        pass\n    except Exception as err:\n        print(err)\n        pass\nif __name__==\"__main__\":\n      run()\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "Redis"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-018",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "了解数据库的三范式么？",
+    "answer": "经过研究和对使用中问题的总结，对于设计数据库提出了一些规范，这些规范被称为范式\n一般需要遵守下面3范式即可:\n第一范式（1NF）：强调的是列的原子性，即列不能够再分成其他几列。\n第二范式（2NF）：首先是 1NF，另外包含两部分内容，一是表必须有一个主键；二是没有包含在主键中的列必须完全依赖于主键，而不能只依赖于主键的一部分。\n第三范式（3NF）：首先是 2NF，另外非主键列必须直接依赖于主键，不能存在传递依赖。即不能存在：非主键列 A 依赖于非主键列 B，非主键列 B 依赖于主键的情况。",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-019",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "了解分布式锁么",
+    "answer": "分布式锁是控制分布式系统之间的同步访问共享资源的一种方式。\n对于分布式锁的目标，我们必须首先明确三点：\n\n*   任何一个时间点必须只能够有一个客户端拥有锁。\n*   不能够有死锁，也就是最终客户端都能够获得锁，尽管可能会经历失败。\n*   错误容忍性要好，只要有大部分的Redis实例存活，客户端就应该能够获得锁。\n分布式锁的条件\n互斥性：分布式锁需要保证在不同节点的不同线程的互斥\n可重入性：同一个节点上的同一个线程如果获取了锁之后，能够再次获取这个锁。\n锁超时：支持超时释放锁，防止死锁\n高效，高可用：加锁和解锁需要高效，同时也需要保证高可用防止分布式锁失效，可以增加降级。\n支持阻塞和非阻塞：可以实现超时获取失败，tryLock(long timeOut)\n支持公平锁和非公平锁\n\n分布式锁的实现方案\n1、数据库实现（乐观锁）\n2、基于zookeeper的实现\n3、基于Redis的实现（推荐）",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-020",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "用 Python 实现一个 Reids 的分布式锁的功能",
+    "answer": "REDIS分布式锁实现的方式：SETNX + GETSET,NX是Not eXists的缩写，如SETNX命令就应该理解为：SET if Not eXists。\n多个进程执行以下Redis命令：\n\n```python\nSETNX lock.foo <current Unix time + lock timeout + 1>\n```\n\n如果 SETNX 返回1，说明该进程获得锁，SETNX将键 lock.foo 的值设置为锁的超时时间（当前时间 + 锁的有效时间）。\n如果 SETNX 返回0，说明其他进程已经获得了锁，进程不能进入临界区。进程可以在一个循环中不断地尝试 SETNX 操作，以获得锁。\n\n```python\nimport time\nimport redis\nfrom conf.config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD\n\nclass RedisLock:\ndef __init__(self):\nself.conn = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, password=REDIS_PASSWORD, db=1)\nself.\\_lock = 0\nself.lock_key = \"\"\n@staticmethod\ndef my_float(timestamp):\n\"\"\"\nArgs:\ntimestamp:\nReturns:\nfloat 或者 0\n如果取出的是 None，说明原本锁并没人用，getset 已经写入，返回 0，可以继续操作。\n\"\"\"\nif timestamp:\nreturn float(timestamp)\nelse: #防止取出的值为 None，转换 float 报错\nreturn 0\n\n    @staticmethod\n    def get_lock(cls, key, timeout=10):\n        cls.lock_key = f\"{key}_dynamic_lock\"\n        while cls._lock != 1:\n            timestamp = time.time() + timeout + 1\n            cls._lock = cls.conn.setnx(cls.lock_key, timestamp)\n            # if 条件中，可能在运行到or之后被释放，也可能在and之后被释放\n            # 将导致 get到一个None，float失败。\n            if cls._lock == 1 or (\n                            time.time() > cls.my_float(cls.conn.get(cls.lock_key)) and\n                            time.time() > cls.my_float(cls.conn.getset(cls.lock_key, timestamp))):\n                break\n            else:\n                time.sleep(0.3)\n\n    @staticmethod\n    def release(cls):\n        if cls.conn.get(cls.lock_key) and time.time() < cls.conn.get(cls.lock_key):\n            cls.conn.delete(cls.lock_key)\n\ndef redis_lock_deco(cls):\ndef \\_deco(func):\ndef **deco(*args, \\*\\*kwargs):\ncls.get_lock(cls, args[1])\ntry:\nreturn func(*args, \\*\\*kwargs)\nfinally:\ncls.release(cls)\nreturn **deco\nreturn \\_deco\n\n@redis_lock_deco(RedisLock())\ndef my_func():\nprint(\"myfunc() called.\")\ntime.sleep(20)\n\nif __name__ == \"__main__\":\nmy_func()\n```",
+    "tags": ["Python", "工程实践", "操作类题目"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-021",
+    "module": "Python工程实践",
+    "difficulty": 3,
+    "question": "写一段 Python 使用 mongo 数据库创建索引的代码:",
+    "answer": "```python\n# -*- coding: utf-8 -*-\n# @Time : 2018/12/28 10:01 AM\n# @Author : cxa\nimport pymongo\ndb_configs = {\n    'type': 'mongo',\n    'host': '地址',\n    'port': '端口',\n    'user': 'spider_data',\n    'passwd': '密码',\n    'db_name': 'spider_data'\n}\n\nclass Mongo():\ndef __init__(self, db=db_configs[\"db_name\"], username=db_configs[\"user\"],\npassword=db_configs[\"passwd\"]):\nself.client = pymongo.MongoClient(f'mongodb://{db_configs[\"host\"]}:{db_configs[\"port\"]}')\nself.username = username\nself.password = password\nif self.username and self.password:\nself.db1 = self.client[db].authenticate(self.username, self.password)\nself.db1 = self.client[db]\n\n    def add_index(self):\n        \"\"\"\n          通过create_index添加索引\n        \"\"\"\n        self.db1.test.create_index([('name', pymongo.ASCENDING)], unique=True)\n\n    def get_index(self,):\n        \"\"\"\n          查看索引列表\n        \"\"\"\n        indexlist=self.db1.test.list_indexes()\n        for index in indexlist:\n            print(index)\n\nif __name__ == '__main__':\nm = Mongo()\nm.add_index()\nprint(m.get_index())\n```",
+    "tags": ["Python", "工程实践", "操作类题目", "Mongo"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-022",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "说说你知道的 git 命令",
+    "answer": "git init：该命令将创建一个名为 .git 的子目录,这个子目录含有你初始化的 Git 仓库中所有的必须文件,这些文件是 Git 仓库的骨干\ngit clone url：将服务器代码下载到本地\ngit pull：将服务器的代码拉到本地进行同步，如果本地有修改会产生冲突。\ngit push：提交本地修改的代码到服务器\ngit checkout -b branch：创建并切换分支\ngit status：查看修改状态\ngit add 文件名：提交到暂存区\ngit commit -m \"提交内容\"：输入提交的注释内容\ngit log：查看提交的日志情况",
+    "tags": ["Python", "工程实践", "Git 面试题", "Git"],
+    "source": "derekramm/python-interview-questions"
+  },
+  {
+    "id": "python-engineering-023",
+    "module": "Python工程实践",
+    "difficulty": 2,
+    "question": "git 如何查看某次提交修改的内容",
+    "answer": "我们首先可以 git log 显示历史的提交列表\n之后我们用 git show <commit-hashId> 便可以显示某次提交的修改内容\n同样 git show <commit-hashId> filename 可以显示某次提交的某个内容的修改信息。\n\n* * *\n\n### 面试补充\n围绕“git 如何查看某次提交修改的内容”回答时，工程类题目更看重能否把 API 用在真实项目里。可以补充异常处理、资源释放、连接生命周期、序列化边界和可维护性取舍，说明你不仅知道代码怎么写，也知道上线后哪里容易出问题。",
+    "tags": ["Python", "工程实践", "Git 面试题", "Git"],
+    "source": "derekramm/python-interview-questions"
+  }
+]
