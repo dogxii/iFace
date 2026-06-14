@@ -97,6 +97,10 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
     ],
   },
   {
+    category: 'Agent 面试核心',
+    files: ['agent-interview-core/core.json'],
+  },
+  {
     category: 'Java',
     files: [
       'java/basics.json',
@@ -112,7 +116,7 @@ export const BUILTIN_CATEGORIES: readonly BuiltinCategory[] = [
 
 /** Flat list of every built-in file path across all categories (for legacy compat). */
 export const BUILTIN_MODULE_FILES: readonly string[] = BUILTIN_CATEGORIES.flatMap((c) => c.files)
-export const BUILTIN_QUESTIONS_VERSION = '0.19.0'
+export const BUILTIN_QUESTIONS_VERSION = '0.20.0'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

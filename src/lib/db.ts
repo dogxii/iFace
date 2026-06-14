@@ -668,11 +668,17 @@ export const DEFAULT_CATEGORY_MAP: CategoryMap = {
     builtin: true,
     order: 3,
   },
+  'Agent 面试核心': {
+    name: 'Agent 面试核心',
+    modules: ['Agent面试核心'],
+    builtin: true,
+    order: 4,
+  },
   Java: {
     name: 'Java',
     modules: ['Java基础', 'Java并发', 'JVM', 'Spring框架', '计算机网络', 'MySQL', 'Redis'],
     builtin: true,
-    order: 4,
+    order: 5,
   },
 }
 

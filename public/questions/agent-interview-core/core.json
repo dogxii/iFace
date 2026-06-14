@@ -1,0 +1,218 @@
+[
+  {
+    "id": "agent-interview-core-001",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "为什么要做 Agent？",
+    "answer": "因为单纯的大模型更多是回答问题，RAG 主要是补充知识，但真实业务里很多任务不只是问答，还需要理解目标、拆解任务、调用工具，并根据结果继续决策。Agent 的价值就是把大模型从“回答问题”升级成“完成任务”。面试里可以强调：Agent 不是为了炫技，而是当任务路径不固定、需要外部系统操作、需要多步反馈闭环时才有价值。能用普通问答或确定性 workflow 解决的问题，不一定要强行上 Agent。",
+    "tags": ["Agent", "业务价值", "任务执行"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-002",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "了解过市面上有哪些智能体 Agent 吗？",
+    "answer": "了解过。开发类有 Cursor、Copilot、Claude Code、Codex；平台类有 Dify、Coze、通义智能体；框架类有 LangChain、LangGraph、CrewAI、AutoGen、Semantic Kernel。它们主要差异在工具调用、任务编排、状态管理和企业集成能力。面试时不要只报名字，可以顺带说分类：开发类偏代码协作，平台类偏低代码搭建和业务集成，框架类偏工程开发和可控编排。",
+    "tags": ["Agent", "产品生态", "框架"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-003",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "Agent 开发常用框架有哪些？",
+    "answer": "常见有 LangChain、LangGraph、LlamaIndex、CrewAI、AutoGen、Semantic Kernel、Dify。我们主要使用的是 LangChain，它提供了 LLM 调用、Prompt 模板、Memory、Retriever、Tool Calling 和 Agent Executor，适合搭建 RAG、工具调用和多轮对话能力。可以补一句：如果任务流程复杂、状态分支多，LangGraph 会更适合显式建图；如果偏知识库问答，LlamaIndex 也常用于数据接入和索引。",
+    "tags": ["LangChain", "Agent框架", "工程选型"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-004",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "介绍一些 AI 大模型",
+    "answer": "常见模型包括 GPT、Claude、Gemini、Qwen、DeepSeek、Llama、GLM 等。可以按能力分为通用对话模型、推理模型、代码模型、多模态模型和 Embedding 模型。选型时主要看推理能力、上下文长度、工具调用能力、成本、稳定性和是否支持私有化。面试里可以进一步说明：RAG 场景还要关注 embedding 和 rerank，Agent 场景还要关注函数调用稳定性、结构化输出能力和长上下文表现。",
+    "tags": ["LLM", "模型选型", "Embedding"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-005",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "RAG 系统流程",
+    "answer": "RAG 一般包括文档采集、清洗切分、向量化入库、用户问题改写、检索召回、重排序、上下文拼接、模型生成和引用溯源。核心目标是让模型基于外部知识回答，减少幻觉。面试表达可以按链路讲：离线阶段负责把知识变成可检索索引，在线阶段负责理解问题、召回证据、组织上下文并生成答案。RAG 的难点不只是向量库，而是数据质量、切分策略、召回准确率和答案忠实度，还要能解释答案依据。",
+    "tags": ["RAG", "检索生成", "知识库"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-006",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "RAG 检索优化策略",
+    "answer": "RAG 检索优化不是只调向量库参数。一般会先对用户问题做改写，补充关键词或同义词；然后用关键词检索加向量检索做混合召回；再根据权限、业务模块、时间等 metadata 过滤；之后用 rerank 模型重排序；最后做去重、合并相邻片段和上下文压缩。落地时还要根据失败样本反推优化方向，比如召回不到、召回太多噪声、排序不准、上下文拼接过长，分别对应不同的改法，持续调优。",
+    "tags": ["RAG", "检索优化", "混合召回"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-007",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "多阶段召回策略优化",
+    "answer": "多阶段召回的核心是先尽量找全，再逐步筛准。第一步用关键词检索和向量检索做粗召回；第二步根据权限、业务模块、文档类型等 metadata 过滤；第三步用 rerank 模型重新排序；第四步做去重、合并相邻片段和上下文压缩，最后把最相关的内容给大模型。这样设计的好处是兼顾召回率和精确率，也方便在每一层埋点评估问题到底出在粗召回、过滤、排序还是上下文组织，便于定向优化。",
+    "tags": ["RAG", "多阶段召回", "Rerank"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-008",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "RAG 评估方案",
+    "answer": "RAG 评估可以分三层。检索层看 recall@k、precision@k、MRR；生成层看答案正确性、忠实度、引用命中率和幻觉率；业务层看用户满意度、人工验收通过率、响应时间和成本。面试里可以强调：不能只看最终回答好不好，要把检索和生成拆开评估。否则答案错了时，不知道是没有召回正确文档、召回了但排序靠后，还是模型没有忠实使用上下文，也难以定位问题，再做针对性迭代。",
+    "tags": ["RAG", "评估", "指标"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-009",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "RAG 动态知识更新怎么做？",
+    "answer": "动态更新主要靠增量同步。监听文档、数据库或代码仓库变化后，触发重新切分、embedding 和索引更新。同时保留版本号、更新时间、删除标记和回滚能力，避免旧知识或脏数据影响回答。实践中还要处理重复文档、权限变化、失败重试和索引一致性。比如文档删除后不能只不再展示，还要在索引中标记失效或删除，否则模型可能继续基于旧内容回答，同时要避免线上查询新旧版本混用和权限错乱。",
+    "tags": ["RAG", "知识更新", "索引同步"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-010",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "LLM 为什么会产生幻觉？怎么解决？",
+    "answer": "原因包括训练知识过时、上下文不足、问题歧义和模型按概率生成。解决方式包括 RAG 补充事实、工具查询真实数据、要求引用来源、结构化输出校验、降低 temperature，以及高风险场景加人工审核。面试中可以补充：幻觉不能完全消除，只能通过系统设计降低概率和影响范围。对业务系统来说，更重要的是让答案可追溯、可校验、可降级，而不是只靠 Prompt 要求模型不要编造。",
+    "tags": ["LLM", "幻觉", "可靠性"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-011",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "MCP 和 Function Calling 的区别",
+    "answer": "Function Calling 是模型调用函数的一种方式，负责让模型选择函数并生成参数。MCP 是工具接入协议，负责把外部工具、数据源和资源统一暴露给 Agent。简单说，MCP 管“工具怎么接进来”，Function Calling 管“模型怎么调用工具”。面试里可以用工程视角展开：Function Calling 更像模型 API 能力，MCP 更像工具生态和连接标准，能统一本地工具、远程服务、资源和 prompt 的暴露方式。",
+    "tags": ["MCP", "Function Calling", "工具调用"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-012",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "MCP 协议核心内容是什么？",
+    "answer": "MCP 可以理解成 Agent 连接外部工具的统一协议。它有 Host、Client、Server 三层：Host 是 AI 应用，Client 是连接器，Server 是具体工具服务。Server 可以暴露 tools、resources、prompts，通信通常基于 JSON-RPC，传输可以是 stdio 或 HTTP。面试里可以强调 MCP 的价值是标准化工具接入，不同工具不需要每个应用都单独适配一套私有协议。",
+    "tags": ["MCP", "JSON-RPC", "工具协议"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-013",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "MCP 的通信方式有哪些？",
+    "answer": "MCP 消息格式基于 JSON-RPC。传输方式主要有本地 stdio 和远程 HTTP。stdio 适合本地工具，比如文件系统或 Git；HTTP 更适合远程服务，方便鉴权、审计和企业部署。回答时可以补充选择依据：本地开发工具追求低成本和易启动，可以用 stdio；企业级共享工具要考虑权限、日志、网络隔离和多用户访问，更适合 HTTP 或远程服务形态，也更利于统一运维。",
+    "tags": ["MCP", "通信方式", "stdio"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-014",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "MCP 和 skill 的区别",
+    "answer": "MCP 是外部工具和数据源的接入协议，解决“Agent 怎么调用外部能力”。Skill 是 Agent 内部的能力说明和流程包，解决“Agent 怎么完成某类任务”。两者可以配合使用。比如一个部署类 skill 可以描述发布流程、注意事项和验收标准，而真正执行 GitHub、Cloudflare、VPS 操作时，可以通过 MCP 或其他工具接口完成。面试里要突出：MCP 偏工具协议，skill 偏工作流知识和操作规范。",
+    "tags": ["MCP", "Skill", "Agent能力"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-015",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "如何写好的 Prompt？",
+    "answer": "好的 Prompt 要明确角色、任务目标、上下文、约束条件、输出格式和异常处理。比如 RAG 场景下，要说明只能基于上下文回答，信息不足就说不知道，不能编造，并按固定结构输出。这样可以降低幻觉，也方便后端解析和评估。面试中还可以强调：Prompt 不是一次性文案，而是工程配置，需要模板化、版本化、结合评测集迭代，并和检索、工具、结构化校验配合，减少线上不确定性。",
+    "tags": ["Prompt", "提示词", "结构化输出"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-016",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "Prompt 工程有哪些实践经验？",
+    "answer": "Prompt 最好模板化、版本化，并区分系统指令、任务指令、上下文和输出格式。实践里比较有效的是明确边界、规定输出格式、加少量示例、说明失败时怎么回答，并结合评测集持续优化。面试里可以补充：不要把所有规则堆进一个超长 prompt，要区分稳定规则和任务变量；输出需要给后端解析时，最好配合 JSON schema、重试和校验，而不是只相信模型会按格式输出，这也是工程落地关键。",
+    "tags": ["Prompt工程", "版本化", "评测"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-017",
+    "module": "Agent面试核心",
+    "difficulty": 1,
+    "question": "Prompt 设计示例",
+    "answer": "比如 RAG 场景下可以这样设计：你是企业知识库助手，只能基于给定上下文回答；如果上下文不足，要说明没有找到依据；不要编造；输出包含结论、依据、引用来源和建议。这样能降低幻觉，也方便展示和校验。面试时可以继续解释为什么这样写：角色限定减少跑题，依据和引用方便追溯，不足就说明不知道可以减少编造，固定结构便于前端展示和后端评估，最终目标是可控、可追溯、可评估，并方便复盘。",
+    "tags": ["Prompt", "RAG", "示例"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-018",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "多轮对话怎么实现？",
+    "answer": "基础做法是按 session 保存历史消息。长对话不能无限拼接历史，所以会做摘要记忆、关键信息抽取、槽位状态保存和上下文裁剪。生产里一般会区分短期对话上下文、长期用户偏好和当前任务状态。面试中可以强调：多轮对话不是简单把历史全塞给模型，而是要管理上下文窗口、隐私权限、过期策略和任务状态，否则对话越长越容易噪声变多、成本变高、答案跑偏，必要时还要做会话隔离和权限控制。",
+    "tags": ["多轮对话", "Memory", "上下文管理"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-019",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "推理模式的差异化设计是什么？",
+    "answer": "不同任务适合不同推理方式。简单问题可以直接回答，知识类问题走 RAG，需要实时数据就调用工具，复杂任务先规划再执行，高风险任务加人工确认。这样可以平衡准确率、成本和响应速度。面试里可以把它理解成路由策略：不是所有请求都走最复杂的 Agent，系统要根据任务类型、风险、实时性和成本选择不同链路，避免为了智能而牺牲稳定性，本质是在质量、成本和时延之间做平衡，保证可控。",
+    "tags": ["推理模式", "任务路由", "成本控制"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-020",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "Agent 常见推理模式有哪些？",
+    "answer": "常见有 ReAct、Plan-and-Execute、Reflection、Supervisor-Worker 和工作流式 Agent。ReAct 是边思考边调用工具；Plan-and-Execute 是先拆解再执行；Reflection 是生成后自检；Supervisor-Worker 是主管分配任务；工作流式 Agent 稳定性更好，更适合生产。面试时可以补充取舍：ReAct 灵活但容易发散，工作流稳定但灵活性弱，多 Agent 分工清晰但通信和排障成本更高。",
+    "tags": ["Agent", "推理模式", "ReAct"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-021",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "推理模式怎么选择？",
+    "answer": "可以根据任务类型、是否需要外部知识、是否需要工具、风险等级、上下文长度和延迟要求来选择。简单问题直接回答，知识问题走 RAG，操作任务走工具调用，复杂任务走规划执行。面试里要体现工程取舍：高风险任务要加确认和审计，低价值简单任务不要使用昂贵链路，长任务要考虑状态保存和失败恢复，实时任务要控制模型调用次数和工具延迟，最终目标是让系统稳定可控，而不是追求复杂架构。",
+    "tags": ["推理模式", "选型", "工程取舍"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-022",
+    "module": "Agent面试核心",
+    "difficulty": 3,
+    "question": "多 Agent 执行策略怎么设计？",
+    "answer": "可以先用 Router 判断任务类型、复杂度、风险和所需能力，再决定使用单 Agent、多 Agent 并行，还是主管 Agent 分发。执行过程中如果置信度低、失败次数多或超时，可以触发重新规划或切换策略。面试里可以强调：多 Agent 不只是多开几个模型，而是要设计角色边界、输入输出协议、状态共享、冲突解决、失败重试和最终汇总。否则会出现互相甩锅、重复执行和成本失控。",
+    "tags": ["多Agent", "Router", "执行策略"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-023",
+    "module": "Agent面试核心",
+    "difficulty": 2,
+    "question": "复杂任务下 Agent 的执行流程是什么？",
+    "answer": "一般是先理解用户目标，再拆解任务，然后根据需要检索知识、调用工具、观察结果、修正计划，最后生成答案。如果任务失败，还需要重试、降级或请求人工确认。面试里可以按闭环表达：目标理解、任务规划、动作执行、结果观察、状态更新、完成校验。复杂任务的关键不是一次规划完美，而是每一步都有可观察结果，能根据结果调整，而不是模型自说自话，这样才适合线上生产环境和问题追踪，也便于排障。",
+    "tags": ["Agent流程", "复杂任务", "反馈闭环"],
+    "source": "Agent面试核心"
+  },
+  {
+    "id": "agent-interview-core-024",
+    "module": "Agent面试核心",
+    "difficulty": 3,
+    "question": "复杂任务准确率怎么评估和提升？",
+    "answer": "可以把复杂任务拆成计划是否合理、工具是否选对、中间结果是否正确、最终答案是否准确几个维度。通过任务集回放、trace 分析、失败归因和人工标注，持续优化 Prompt、工具选择和执行策略。面试里可以强调：复杂任务不能只评最终答案，因为最终错可能来自计划错、工具参数错、检索错、观察结果误读或汇总错。把链路拆开评估，才能知道该优化模型、Prompt、工具 schema 还是工作流。",
+    "tags": ["Agent评估", "Trace", "准确率"],
+    "source": "Agent面试核心"
+  }
+]

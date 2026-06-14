@@ -33,6 +33,8 @@ export const BUILTIN_MODULES = [
   '评测与线上优化',
   'AI工程化',
   'AI应用实践',
+  // Agent 面试核心
+  'Agent面试核心',
   // Java
   'Java基础',
   'Java并发',
@@ -80,6 +82,8 @@ export const BUILTIN_MODULE_CATEGORY: Record<string, string> = {
   评测与线上优化: 'AI Agent',
   AI工程化: 'AI Agent',
   AI应用实践: 'AI Agent',
+  // Agent 面试核心
+  Agent面试核心: 'Agent 面试核心',
   // Java
   Java基础: 'Java',
   Java并发: 'Java',
@@ -350,6 +354,7 @@ export const MODULE_ICONS: Record<string, string> = {
   RAG与知识库: '📚',
   工具调用与工作流: '🛠️',
   评测与线上优化: '📈',
+  Agent面试核心: '🎯',
   // Common custom modules
   Golang: '🐹',
   Java: '☕',
@@ -392,6 +397,7 @@ export const MODULE_COLORS: Record<string, string> = {
   RAG与知识库: 'from-emerald-400 to-teal-500',
   工具调用与工作流: 'from-amber-400 to-orange-500',
   评测与线上优化: 'from-rose-400 to-red-500',
+  Agent面试核心: 'from-cyan-400 to-emerald-500',
   Golang: 'from-sky-400 to-cyan-500',
   Java: 'from-orange-400 to-red-500',
   Python: 'from-blue-400 to-yellow-500',
