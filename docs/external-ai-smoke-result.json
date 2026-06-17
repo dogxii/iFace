@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-05-13T04:47:29.259Z",
-  "packageVersion": "1.3.0",
+  "generatedAt": "2026-06-17T06:32:12.183Z",
+  "packageVersion": "1.4.2",
   "targets": {
     "ai": true,
     "gist": false
@@ -10,7 +10,7 @@
     {
       "check": "ai.chat",
       "details": {
-        "model": "deepseek-v4-flash",
+        "model": "deepseek-chat",
         "baseUrlHost": "api.deepseek.com",
         "responseChars": 5,
         "streamedChars": 5
@@ -19,11 +19,11 @@
     {
       "check": "ai.feedback",
       "details": {
-        "model": "deepseek-v4-flash",
+        "model": "deepseek-chat",
         "baseUrlHost": "api.deepseek.com",
-        "feedbackChars": 279,
-        "streamedChars": 279,
-        "noteChars": 404
+        "feedbackChars": 600,
+        "streamedChars": 600,
+        "noteChars": 725
       }
     }
   ],
