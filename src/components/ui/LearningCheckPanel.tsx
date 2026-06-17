@@ -320,6 +320,11 @@ export function LearningCheckPanel({ checks }: LearningCheckPanelProps) {
 
           .learning-check-markdown pre {
             margin: 8px 0 0 !important;
+            font-weight: 400 !important;
+          }
+
+          .learning-check-markdown code {
+            font-weight: 400 !important;
           }
         `}
       </style>
@@ -398,7 +403,6 @@ export function LearningCheckPanel({ checks }: LearningCheckPanelProps) {
         <div
           style={{
             fontSize: 15,
-            fontWeight: 650,
             color: 'var(--text)',
             lineHeight: 1.6,
           }}

@@ -109,6 +109,7 @@ const components: Components = {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '0.8125rem',
+            fontWeight: 400,
             background: 'var(--surface-2)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 10,
@@ -134,6 +135,7 @@ const components: Components = {
           style={{
             fontFamily: 'var(--font-mono)',
             fontSize: '0.82em',
+            fontWeight: 400,
             background: 'var(--surface-3)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 4,
@@ -148,7 +150,11 @@ const components: Components = {
       )
     }
     return (
-      <code className={className ?? ''} style={{ color: 'var(--text)' }} {...props}>
+      <code
+        className={className ?? ''}
+        style={{ color: 'var(--text)', fontWeight: 400 }}
+        {...props}
+      >
         {children}
       </code>
     )
