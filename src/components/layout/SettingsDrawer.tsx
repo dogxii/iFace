@@ -51,6 +51,7 @@ import {
 } from '@/store/useAIStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
+  type AnswerNavigationMode,
   DAILY_GOAL_DEFAULT,
   DAILY_GOAL_MAX,
   DAILY_GOAL_MIN,
@@ -591,6 +592,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     resetAll,
     studyMode,
     setStudyMode,
+    answerNavigationMode,
+    setAnswerNavigationMode,
     streak,
     resetStreak,
     dailyGoal,
@@ -1461,6 +1464,115 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                       onClick={() => {
                         setStudyMode(opt.value)
                         showToast(`已切换至「${opt.label}」模式`)
+                      }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                        padding: '12px 14px',
+                        borderRadius: 10,
+                        border: `1px solid ${active ? 'rgba(var(--primary-rgb),0.4)' : 'var(--border-subtle)'}`,
+                        background: active ? 'var(--primary-light)' : 'var(--surface-2)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        transition: 'all 0.15s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          ;(e.currentTarget as HTMLElement).style.borderColor =
+                            'rgba(var(--primary-rgb),0.3)'
+                          ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          ;(e.currentTarget as HTMLElement).style.borderColor =
+                            'var(--border-subtle)'
+                          ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
+                        }
+                      }}
+                    >
+                      <span style={{ fontSize: 22, lineHeight: 1.2, flexShrink: 0 }}>
+                        {opt.emoji}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}
+                        >
+                          <span
+                            style={{
+                              fontSize: 13,
+                              fontWeight: 600,
+                              color: active ? 'var(--primary)' : 'var(--text)',
+                            }}
+                          >
+                            {opt.label}
+                          </span>
+                          {active && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 600,
+                                padding: '1px 6px',
+                                borderRadius: 99,
+                                background: 'var(--primary)',
+                                color: 'white',
+                              }}
+                            >
+                              当前
+                            </span>
+                          )}
+                        </div>
+                        <p
+                          style={{
+                            fontSize: 12,
+                            color: 'var(--text-3)',
+                            lineHeight: 1.5,
+                            margin: 0,
+                          }}
+                        >
+                          {opt.description}
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Answer navigation preference */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>
+                  切题后默认进入
+                </div>
+                {(
+                  [
+                    {
+                      value: 'answer' as AnswerNavigationMode,
+                      label: '参考答案',
+                      emoji: '📄',
+                      description: '切换到下一题时默认回到参考答案页，适合常规刷题。',
+                    },
+                    {
+                      value: 'check' as AnswerNavigationMode,
+                      label: '测试一下（纯刷题）',
+                      emoji: '📝',
+                      description: '切到下一题时继续停留在测试页，适合连续自测。',
+                    },
+                  ] as {
+                    value: AnswerNavigationMode
+                    label: string
+                    emoji: string
+                    description: string
+                  }[]
+                ).map((opt) => {
+                  const active = answerNavigationMode === opt.value
+                  return (
+                    <button
+                      type="button"
+                      key={opt.value}
+                      onClick={() => {
+                        setAnswerNavigationMode(opt.value)
+                        showToast(`已切换至「${opt.label}」`)
                       }}
                       style={{
                         display: 'flex',

@@ -1,9 +1,9 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { isLearningCheckAnswerCorrect, type LearningCheckQuestion } from '@/lib/learningCheck'
 
 interface LearningCheckPanelProps {
   checks: LearningCheckQuestion[]
-  onBackToAnswer: () => void
 }
 
 type LearningCheckResponses = Record<string, string[]>
@@ -55,16 +55,18 @@ function getOptionStyle(params: {
   }
 }
 
+function LearningCheckMarkdown({ content }: { content: string }) {
+  return <MarkdownRenderer className="learning-check-markdown" content={content} />
+}
+
 function LearningCheckSummary({
   checks,
   responses,
   onRestart,
-  onBackToAnswer,
 }: {
   checks: LearningCheckQuestion[]
   responses: LearningCheckResponses
   onRestart: () => void
-  onBackToAnswer: () => void
 }) {
   const correctCount = checks.filter((check) =>
     isLearningCheckAnswerCorrect(check, responses[check.id] ?? []),
@@ -174,9 +176,9 @@ function LearningCheckSummary({
                   正确答案：{getAnswerText(check)}
                 </p>
               )}
-              <p style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.65 }}>
-                {check.explanation}
-              </p>
+              <div style={{ fontSize: 12, color: 'var(--text-3)', lineHeight: 1.65 }}>
+                <LearningCheckMarkdown content={check.explanation} />
+              </div>
             </div>
           )
         })}
@@ -203,32 +205,12 @@ function LearningCheckSummary({
         >
           再测一次
         </button>
-        <button
-          type="button"
-          onClick={onBackToAnswer}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: 34,
-            padding: '0 13px',
-            borderRadius: 9,
-            border: '1px solid rgba(var(--primary-rgb),0.24)',
-            background: 'var(--primary-light)',
-            color: 'var(--primary)',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          回到参考答案
-        </button>
       </div>
     </div>
   )
 }
 
-export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPanelProps) {
+export function LearningCheckPanel({ checks }: LearningCheckPanelProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [draftSelection, setDraftSelection] = useState<string[]>([])
   const [responses, setResponses] = useState<LearningCheckResponses>({})
@@ -305,20 +287,42 @@ export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPane
   }
 
   if (summaryVisible) {
-    return (
-      <LearningCheckSummary
-        checks={checks}
-        responses={responses}
-        onRestart={handleRestart}
-        onBackToAnswer={onBackToAnswer}
-      />
-    )
+    return <LearningCheckSummary checks={checks} responses={responses} onRestart={handleRestart} />
   }
 
   if (!currentCheck) return null
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <style>
+        {`
+          .learning-check-markdown p {
+            margin-bottom: 0 !important;
+            font-size: inherit !important;
+            line-height: inherit !important;
+            color: inherit !important;
+          }
+
+          .learning-check-markdown ul,
+          .learning-check-markdown ol {
+            margin: 6px 0 0 !important;
+          }
+
+          .learning-check-markdown li {
+            font-size: inherit !important;
+            line-height: inherit !important;
+            color: inherit !important;
+          }
+
+          .learning-check-markdown .code-block-wrap {
+            margin-top: 10px;
+          }
+
+          .learning-check-markdown pre {
+            margin: 8px 0 0 !important;
+          }
+        `}
+      </style>
       <div
         style={{
           display: 'flex',
@@ -329,9 +333,6 @@ export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPane
         }}
       >
         <div style={{ minWidth: 0 }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 5 }}>
-            测试一下
-          </p>
           <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', lineHeight: 1.45 }}>
             第 {currentIndex + 1} 题 / 共 {checks.length} 题
           </h3>
@@ -371,10 +372,7 @@ export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPane
 
       <div
         style={{
-          padding: 16,
-          borderRadius: 12,
-          border: '1px solid var(--border-subtle)',
-          background: 'var(--surface-2)',
+          paddingBottom: 2,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -397,17 +395,16 @@ export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPane
           </span>
           <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{currentCheck.focus}</span>
         </div>
-        <p
+        <div
           style={{
             fontSize: 15,
             fontWeight: 650,
             color: 'var(--text)',
             lineHeight: 1.6,
-            whiteSpace: 'pre-wrap',
           }}
         >
-          {currentCheck.prompt}
-        </p>
+          <LearningCheckMarkdown content={currentCheck.prompt} />
+        </div>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -461,11 +458,9 @@ export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPane
               >
                 {option.id.toUpperCase()}
               </span>
-              <span
-                style={{ fontSize: 13, lineHeight: 1.6, color: 'inherit', whiteSpace: 'pre-wrap' }}
-              >
-                {option.text}
-              </span>
+              <div style={{ minWidth: 0, fontSize: 13, lineHeight: 1.6, color: 'inherit' }}>
+                <LearningCheckMarkdown content={option.text} />
+              </div>
               {submitted && (correctOption || selected) && (
                 <span
                   style={{
@@ -529,40 +524,20 @@ export function LearningCheckPanel({ checks, onBackToAnswer }: LearningCheckPane
               marginBottom: 6,
             }}
           >
-            {currentCorrect ? '答对了' : '这题还需要回看'}
+            {currentCorrect ? '答对了' : '答案解析'}
           </p>
           {!currentCorrect && (
             <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.6, marginBottom: 6 }}>
               正确答案：{getAnswerText(currentCheck)}
             </p>
           )}
-          <p style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.65 }}>
-            {currentCheck.explanation}
-          </p>
+          <div style={{ fontSize: 12, color: 'var(--text-2)', lineHeight: 1.65 }}>
+            <LearningCheckMarkdown content={currentCheck.explanation} />
+          </div>
         </div>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <button
-          type="button"
-          onClick={onBackToAnswer}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: 34,
-            padding: '0 13px',
-            borderRadius: 9,
-            border: '1px solid var(--border)',
-            background: 'var(--surface)',
-            color: 'var(--text-2)',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          回到参考答案
-        </button>
         {submitted && (
           <button
             type="button"

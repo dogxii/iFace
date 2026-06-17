@@ -84,6 +84,26 @@ function saveStudyMode(mode: StudyMode): void {
   } catch {}
 }
 
+// ─── Answer Navigation Preference ────────────────────────────────────────────
+
+export type AnswerNavigationMode = 'answer' | 'check'
+
+const ANSWER_NAVIGATION_MODE_KEY = 'iface_answer_navigation_mode'
+
+function loadAnswerNavigationMode(): AnswerNavigationMode {
+  try {
+    const v = localStorage.getItem(ANSWER_NAVIGATION_MODE_KEY)
+    if (v === 'answer' || v === 'check') return v
+  } catch {}
+  return 'answer'
+}
+
+function saveAnswerNavigationMode(mode: AnswerNavigationMode): void {
+  try {
+    localStorage.setItem(ANSWER_NAVIGATION_MODE_KEY, mode)
+  } catch {}
+}
+
 // ─── Hidden Categories ────────────────────────────────────────────────────────
 
 const HIDDEN_CATEGORIES_KEY = 'iface_hidden_categories'
@@ -148,6 +168,7 @@ interface StoreState {
   records: StudyRecordMap
   theme: 'light' | 'dark'
   studyMode: StudyMode
+  answerNavigationMode: AnswerNavigationMode
   streak: StreakData
   dailyGoal: number
   hiddenCategories: Set<string>
@@ -160,6 +181,7 @@ type Action =
       records: StudyRecordMap
       theme: 'light' | 'dark'
       studyMode: StudyMode
+      answerNavigationMode: AnswerNavigationMode
       streak: StreakData
       dailyGoal: number
     }
@@ -168,6 +190,7 @@ type Action =
   | { type: 'RESET_RECORDS' }
   | { type: 'SET_THEME'; theme: 'light' | 'dark' }
   | { type: 'SET_STUDY_MODE'; studyMode: StudyMode }
+  | { type: 'SET_ANSWER_NAVIGATION_MODE'; answerNavigationMode: AnswerNavigationMode }
   | { type: 'SET_DAILY_GOAL'; dailyGoal: number }
   | { type: 'INCREMENT_STREAK' }
   | { type: 'RESET_STREAK' }
@@ -181,6 +204,7 @@ function reducer(state: StoreState, action: Action): StoreState {
         records: action.records,
         theme: action.theme,
         studyMode: action.studyMode,
+        answerNavigationMode: action.answerNavigationMode,
         streak: action.streak,
         dailyGoal: action.dailyGoal,
         initialized: true,
@@ -206,6 +230,8 @@ function reducer(state: StoreState, action: Action): StoreState {
       return { ...state, theme: action.theme }
     case 'SET_STUDY_MODE':
       return { ...state, studyMode: action.studyMode }
+    case 'SET_ANSWER_NAVIGATION_MODE':
+      return { ...state, answerNavigationMode: action.answerNavigationMode }
     case 'INCREMENT_STREAK': {
       const today = todayStr()
       const prev = state.streak
@@ -277,6 +303,7 @@ export function useStudyStore() {
     records: {},
     theme: loadTheme(),
     studyMode: loadStudyMode(),
+    answerNavigationMode: loadAnswerNavigationMode(),
     streak: loadStreak(),
     dailyGoal: loadDailyGoal(),
     hiddenCategories: loadHiddenCategories(),
@@ -293,12 +320,21 @@ export function useStudyStore() {
     applyThemeToDom(theme)
 
     const studyMode = loadStudyMode()
+    const answerNavigationMode = loadAnswerNavigationMode()
     const streak = loadStreak()
     const dailyGoal = loadDailyGoal()
     getAllStudyRecords().then((records) => {
       const map: StudyRecordMap = {}
       for (const r of records) map[r.questionId] = r
-      dispatch({ type: 'INIT', records: map, theme, studyMode, streak, dailyGoal })
+      dispatch({
+        type: 'INIT',
+        records: map,
+        theme,
+        studyMode,
+        answerNavigationMode,
+        streak,
+        dailyGoal,
+      })
     })
   }, [])
 
@@ -377,6 +413,12 @@ export function useStudyStore() {
   const setStudyMode = useCallback((mode: StudyMode) => {
     saveStudyMode(mode)
     const action: Action = { type: 'SET_STUDY_MODE', studyMode: mode }
+    broadcast(action)
+  }, [])
+
+  const setAnswerNavigationMode = useCallback((mode: AnswerNavigationMode) => {
+    saveAnswerNavigationMode(mode)
+    const action: Action = { type: 'SET_ANSWER_NAVIGATION_MODE', answerNavigationMode: mode }
     broadcast(action)
   }, [])
 
@@ -501,6 +543,7 @@ export function useStudyStore() {
     records: state.records,
     theme: state.theme,
     studyMode: state.studyMode,
+    answerNavigationMode: state.answerNavigationMode,
     streak: state.streak,
     dailyGoal: state.dailyGoal,
     hiddenCategories: state.hiddenCategories,
@@ -516,6 +559,7 @@ export function useStudyStore() {
     setTheme,
     toggleTheme,
     setStudyMode,
+    setAnswerNavigationMode,
     setDailyGoal,
     setHiddenCategories,
     setCategoryVisibility,

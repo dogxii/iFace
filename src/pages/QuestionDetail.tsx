@@ -236,7 +236,15 @@ function SessionProgress({ current, total, onExit }: SessionProgressProps) {
 
 // ─── Shortcut Hints ───────────────────────────────────────────────────────────
 
-function ShortcutHints({ answerVisible }: { answerVisible: boolean }) {
+function ShortcutHints({
+  answerVisible,
+  answerPanelView,
+}: {
+  answerVisible: boolean
+  answerPanelView: AnswerPanelView
+}) {
+  const showStatusShortcuts = answerVisible && answerPanelView === 'answer'
+
   return (
     <div
       style={{
@@ -254,7 +262,7 @@ function ShortcutHints({ answerVisible }: { answerVisible: boolean }) {
           <span>查看答案</span>
         </span>
       )}
-      {answerVisible && (
+      {showStatusShortcuts && (
         <>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Kbd>1</Kbd>
@@ -720,6 +728,23 @@ function isEditableTarget(target: EventTarget | null): boolean {
   )
 }
 
+function blurActiveControl() {
+  const activeElement = document.activeElement
+  if (
+    activeElement instanceof HTMLElement &&
+    activeElement.matches('button, a, [role="button"], [role="tab"]')
+  ) {
+    activeElement.blur()
+  }
+}
+
+function withLearningCheckSearch(search: string): string {
+  const params = new URLSearchParams(search)
+  params.set('check', '1')
+  const serialized = params.toString()
+  return serialized ? `?${serialized}` : ''
+}
+
 function appendSpeechTranscript(current: string, transcript: string): string {
   const next = transcript.trim()
   if (!next) return current
@@ -874,6 +899,7 @@ interface MyAnswerInputProps {
   onNoteSaved?: () => void
   /** When true the component is in "compact / inside answer card" mode */
   compact?: boolean
+  autoFocus?: boolean
 }
 
 function MyAnswerInput({
@@ -885,6 +911,7 @@ function MyAnswerInput({
   isAiEnabled,
   onNoteSaved,
   compact = false,
+  autoFocus = true,
 }: MyAnswerInputProps) {
   const { sendMessage, streaming, streamingQuestionId } = useAIStore()
 
@@ -931,10 +958,10 @@ function MyAnswerInput({
   // Auto-focus only in answer-first mode. In answer-alongside mode the input
   // mounts after pressing Space, so focusing it would unexpectedly scroll down.
   useEffect(() => {
-    if (!compact && !collapsed && !feedback) {
+    if (autoFocus && !compact && !collapsed && !feedback) {
       setTimeout(() => textareaRef.current?.focus(), 80)
     }
-  }, [collapsed, compact, feedback])
+  }, [autoFocus, collapsed, compact, feedback])
 
   const handleSubmit = useCallback(async () => {
     if (!text.trim() || isStreaming) return
@@ -2772,13 +2799,10 @@ function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPanelTabsP
       role="tablist"
       aria-label="答案学习视图"
       style={{
-        display: 'inline-flex',
+        display: 'flex',
         alignItems: 'center',
-        gap: 3,
-        padding: 3,
-        borderRadius: 10,
-        border: '1px solid var(--border-subtle)',
-        background: 'var(--surface-2)',
+        gap: 2,
+        minWidth: 0,
       }}
     >
       {items.map((item) => {
@@ -2794,20 +2818,27 @@ function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPanelTabsP
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 6,
-              minHeight: 28,
-              padding: '0 10px',
+              minHeight: 30,
+              padding: '0 11px',
               borderRadius: 8,
-              border: '1px solid',
-              borderColor: active ? 'rgba(var(--primary-rgb),0.22)' : 'transparent',
-              background: active ? 'var(--surface)' : 'transparent',
-              color: active ? 'var(--text)' : 'var(--text-3)',
+              border: 'none',
+              background: active ? 'var(--primary-light)' : 'transparent',
+              color: active ? 'var(--primary)' : 'var(--text-2)',
               fontSize: 12,
-              fontWeight: active ? 700 : 600,
+              fontWeight: active ? 600 : 500,
               cursor: 'pointer',
-              boxShadow: active ? 'var(--shadow-sm)' : 'none',
-              transition: 'all 0.15s',
+              transition: 'background 0.15s, color 0.15s',
               whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(event) => {
+              if (active) return
+              event.currentTarget.style.background = 'var(--surface-2)'
+              event.currentTarget.style.color = 'var(--text)'
+            }}
+            onMouseLeave={(event) => {
+              if (active) return
+              event.currentTarget.style.background = 'transparent'
+              event.currentTarget.style.color = 'var(--text-2)'
             }}
           >
             <span>{item.label}</span>
@@ -4044,13 +4075,22 @@ function AIDrawer({
 
 export default function QuestionDetail() {
   const { id } = useParams<{ id: string }>()
+  const questionId = id ?? ''
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
   const { question, loading } = useQuestion(id)
   const { allQuestions } = useQuestions()
-  const { records, getStatus, setStatus, getRecord, studyMode, streak, incrementStreak } =
-    useStudyStore()
+  const {
+    records,
+    getStatus,
+    setStatus,
+    getRecord,
+    studyMode,
+    answerNavigationMode,
+    streak,
+    incrementStreak,
+  } = useStudyStore()
   const { config: aiConfig } = useAIStore()
 
   const [answerVisible, setAnswerVisible] = useState(false)
@@ -4100,6 +4140,7 @@ export default function QuestionDetail() {
   const [storedSessionIds, setStoredSessionIds] = useState<string[]>(() =>
     readPracticeSession(sessionKey),
   )
+  const checkSearchParam = searchParams.get('check')
 
   const openAIWithPreset = useCallback(
     (preset: 'question' | 'concept') => {
@@ -4136,12 +4177,13 @@ export default function QuestionDetail() {
     : sessionIds.length > 0
       ? `?ids=${sessionIds.join(',')}`
       : ''
+  const questionNavigationSearch =
+    answerNavigationMode === 'check' ? withLearningCheckSearch(sessionSearch) : sessionSearch
   const sessionIdentity = sessionKey
     ? `session:${sessionKey}`
     : inlineSessionIds.length > 0
       ? `ids:${inlineSessionIds.join(',')}`
       : 'browse'
-
   const hasLearningCheck = learningChecks.length > 0
 
   // Adjacent IDs from the full question list (for non-session browsing)
@@ -4249,7 +4291,7 @@ export default function QuestionDetail() {
     [answerAnnotationsForDisplayedAnswer],
   )
 
-  const shouldAutoRevealAnswer = studyMode === 'memory-only'
+  const shouldAutoRevealAnswer = studyMode === 'memory-only' || answerNavigationMode === 'check'
 
   // Reset when the question or practice session changes. A retry session can
   // legitimately restart from the same question id with a new session key.
@@ -4257,7 +4299,7 @@ export default function QuestionDetail() {
   useEffect(() => {
     markingRef.current = false
     setMarking(false)
-    setAnswerVisible(shouldAutoRevealAnswer)
+    setAnswerVisible(shouldAutoRevealAnswer || checkSearchParam === '1')
     setJustMarked(null)
     setLastPressedKey(null)
     setAiInitialPrompt(null)
@@ -4269,7 +4311,7 @@ export default function QuestionDetail() {
     return () => {
       if (id) clearSessionReview(id)
     }
-  }, [id, sessionIdentity, shouldAutoRevealAnswer])
+  }, [checkSearchParam, id, sessionIdentity, shouldAutoRevealAnswer])
 
   useEffect(() => {
     let cancelled = false
@@ -4289,6 +4331,14 @@ export default function QuestionDetail() {
       cancelled = true
     }
   }, [question])
+
+  useEffect(() => {
+    if (!questionId) return
+
+    const forcedCheckView =
+      hasLearningCheck && (answerNavigationMode === 'check' || checkSearchParam === '1')
+    setAnswerPanelView(forcedCheckView ? 'check' : 'answer')
+  }, [answerNavigationMode, checkSearchParam, hasLearningCheck, questionId])
 
   useEffect(() => {
     if (!hasLearningCheck && answerPanelView === 'check') {
@@ -4507,7 +4557,7 @@ export default function QuestionDetail() {
 
         if (isInSession && nextId) {
           setTimeout(() => {
-            navigate(`/questions/${nextId}${sessionSearch}`)
+            navigate(`/questions/${nextId}${questionNavigationSearch}`)
           }, 600)
         } else if (isInSession) {
           setSessionFinished(true)
@@ -4523,7 +4573,7 @@ export default function QuestionDetail() {
       isInSession,
       nextId,
       navigate,
-      sessionSearch,
+      questionNavigationSearch,
       incrementStreak,
       streak.currentStreak,
     ],
@@ -4533,14 +4583,17 @@ export default function QuestionDetail() {
     setAnswerVisible(true)
     setJustMarked(null)
     setLastPressedKey(null)
-  }, [])
+    if (hasLearningCheck && answerNavigationMode === 'check') {
+      setAnswerPanelView('check')
+    }
+  }, [answerNavigationMode, hasLearningCheck])
 
   const navigateTo = useCallback(
     (targetId: string | null | undefined) => {
       if (!targetId) return
-      navigate(`/questions/${targetId}${sessionSearch}`)
+      navigate(`/questions/${targetId}${questionNavigationSearch}`)
     },
-    [navigate, sessionSearch],
+    [navigate, questionNavigationSearch],
   )
 
   const handleRetrySession = useCallback(() => {
@@ -4882,8 +4935,20 @@ export default function QuestionDetail() {
         return
       }
       if (noteDrawerOpen) return
-      if (answerPanelView === 'check') return
       if (markingRef.current) return
+
+      if (answerPanelView === 'check') {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          blurActiveControl()
+          navigateTo(nextId)
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          blurActiveControl()
+          navigateTo(prevId)
+        }
+        return
+      }
 
       switch (e.key) {
         case ' ':
@@ -4901,10 +4966,12 @@ export default function QuestionDetail() {
           break
         case 'ArrowRight':
           e.preventDefault()
+          blurActiveControl()
           navigateTo(nextId)
           break
         case 'ArrowLeft':
           e.preventDefault()
+          blurActiveControl()
           navigateTo(prevId)
           break
         default:
@@ -5463,6 +5530,7 @@ export default function QuestionDetail() {
               onOpenNote={() => setNoteDrawerOpen(true)}
               isAiEnabled={isAiEnabled}
               onNoteSaved={handleNoteSaved}
+              autoFocus={answerNavigationMode !== 'check'}
             />
           </div>
         )}
@@ -5617,11 +5685,7 @@ export default function QuestionDetail() {
 
             {/* Answer body */}
             {answerPanelView === 'check' ? (
-              <LearningCheckPanel
-                key={`learning-check-${question.id}`}
-                checks={learningChecks}
-                onBackToAnswer={() => setAnswerPanelView('answer')}
-              />
+              <LearningCheckPanel key={`learning-check-${question.id}`} checks={learningChecks} />
             ) : answerEditMode ? (
               <AnswerOverrideEditor
                 draft={answerDraft}
@@ -5808,7 +5872,7 @@ export default function QuestionDetail() {
 
         {/* Keyboard shortcuts */}
         <div className="animate-fade-in stagger-3">
-          <ShortcutHints answerVisible={answerVisible} />
+          <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
         </div>
 
         {/* Navigation */}
@@ -5823,7 +5887,10 @@ export default function QuestionDetail() {
         >
           <button
             type="button"
-            onClick={() => navigateTo(prevId)}
+            onClick={() => {
+              blurActiveControl()
+              navigateTo(prevId)
+            }}
             disabled={!prevId}
             style={{
               display: 'flex',
@@ -5885,7 +5952,10 @@ export default function QuestionDetail() {
 
           <button
             type="button"
-            onClick={() => navigateTo(nextId)}
+            onClick={() => {
+              blurActiveControl()
+              navigateTo(nextId)
+            }}
             disabled={!nextId}
             style={{
               display: 'flex',
