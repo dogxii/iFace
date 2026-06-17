@@ -104,6 +104,43 @@ function saveAnswerNavigationMode(mode: AnswerNavigationMode): void {
   } catch {}
 }
 
+// ─── Mobile Question Navigation Preference ───────────────────────────────────
+
+const MOBILE_QUESTION_NAV_KEY = 'iface_mobile_question_nav_enabled'
+
+function loadMobileQuestionNavEnabled(): boolean {
+  try {
+    return localStorage.getItem(MOBILE_QUESTION_NAV_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+function saveMobileQuestionNavEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(MOBILE_QUESTION_NAV_KEY, enabled ? '1' : '0')
+  } catch {}
+}
+
+// ─── AI FAB Preference ───────────────────────────────────────────────────────
+
+const AI_FAB_VISIBLE_KEY = 'iface_ai_fab_visible'
+
+function loadAiFabVisible(): boolean {
+  try {
+    const stored = localStorage.getItem(AI_FAB_VISIBLE_KEY)
+    if (stored === '1') return true
+    if (stored === '0') return false
+  } catch {}
+  return true
+}
+
+function saveAiFabVisible(visible: boolean): void {
+  try {
+    localStorage.setItem(AI_FAB_VISIBLE_KEY, visible ? '1' : '0')
+  } catch {}
+}
+
 // ─── Hidden Categories ────────────────────────────────────────────────────────
 
 const HIDDEN_CATEGORIES_KEY = 'iface_hidden_categories'
@@ -169,6 +206,8 @@ interface StoreState {
   theme: 'light' | 'dark'
   studyMode: StudyMode
   answerNavigationMode: AnswerNavigationMode
+  mobileQuestionNavEnabled: boolean
+  aiFabVisible: boolean
   streak: StreakData
   dailyGoal: number
   hiddenCategories: Set<string>
@@ -182,6 +221,8 @@ type Action =
       theme: 'light' | 'dark'
       studyMode: StudyMode
       answerNavigationMode: AnswerNavigationMode
+      mobileQuestionNavEnabled: boolean
+      aiFabVisible: boolean
       streak: StreakData
       dailyGoal: number
     }
@@ -191,6 +232,8 @@ type Action =
   | { type: 'SET_THEME'; theme: 'light' | 'dark' }
   | { type: 'SET_STUDY_MODE'; studyMode: StudyMode }
   | { type: 'SET_ANSWER_NAVIGATION_MODE'; answerNavigationMode: AnswerNavigationMode }
+  | { type: 'SET_MOBILE_QUESTION_NAV_ENABLED'; mobileQuestionNavEnabled: boolean }
+  | { type: 'SET_AI_FAB_VISIBLE'; aiFabVisible: boolean }
   | { type: 'SET_DAILY_GOAL'; dailyGoal: number }
   | { type: 'INCREMENT_STREAK' }
   | { type: 'RESET_STREAK' }
@@ -205,6 +248,8 @@ function reducer(state: StoreState, action: Action): StoreState {
         theme: action.theme,
         studyMode: action.studyMode,
         answerNavigationMode: action.answerNavigationMode,
+        mobileQuestionNavEnabled: action.mobileQuestionNavEnabled,
+        aiFabVisible: action.aiFabVisible,
         streak: action.streak,
         dailyGoal: action.dailyGoal,
         initialized: true,
@@ -232,6 +277,10 @@ function reducer(state: StoreState, action: Action): StoreState {
       return { ...state, studyMode: action.studyMode }
     case 'SET_ANSWER_NAVIGATION_MODE':
       return { ...state, answerNavigationMode: action.answerNavigationMode }
+    case 'SET_MOBILE_QUESTION_NAV_ENABLED':
+      return { ...state, mobileQuestionNavEnabled: action.mobileQuestionNavEnabled }
+    case 'SET_AI_FAB_VISIBLE':
+      return { ...state, aiFabVisible: action.aiFabVisible }
     case 'INCREMENT_STREAK': {
       const today = todayStr()
       const prev = state.streak
@@ -304,6 +353,8 @@ export function useStudyStore() {
     theme: loadTheme(),
     studyMode: loadStudyMode(),
     answerNavigationMode: loadAnswerNavigationMode(),
+    mobileQuestionNavEnabled: loadMobileQuestionNavEnabled(),
+    aiFabVisible: loadAiFabVisible(),
     streak: loadStreak(),
     dailyGoal: loadDailyGoal(),
     hiddenCategories: loadHiddenCategories(),
@@ -321,6 +372,8 @@ export function useStudyStore() {
 
     const studyMode = loadStudyMode()
     const answerNavigationMode = loadAnswerNavigationMode()
+    const mobileQuestionNavEnabled = loadMobileQuestionNavEnabled()
+    const aiFabVisible = loadAiFabVisible()
     const streak = loadStreak()
     const dailyGoal = loadDailyGoal()
     getAllStudyRecords().then((records) => {
@@ -332,6 +385,8 @@ export function useStudyStore() {
         theme,
         studyMode,
         answerNavigationMode,
+        mobileQuestionNavEnabled,
+        aiFabVisible,
         streak,
         dailyGoal,
       })
@@ -419,6 +474,21 @@ export function useStudyStore() {
   const setAnswerNavigationMode = useCallback((mode: AnswerNavigationMode) => {
     saveAnswerNavigationMode(mode)
     const action: Action = { type: 'SET_ANSWER_NAVIGATION_MODE', answerNavigationMode: mode }
+    broadcast(action)
+  }, [])
+
+  const setMobileQuestionNavEnabled = useCallback((enabled: boolean) => {
+    saveMobileQuestionNavEnabled(enabled)
+    const action: Action = {
+      type: 'SET_MOBILE_QUESTION_NAV_ENABLED',
+      mobileQuestionNavEnabled: enabled,
+    }
+    broadcast(action)
+  }, [])
+
+  const setAiFabVisible = useCallback((visible: boolean) => {
+    saveAiFabVisible(visible)
+    const action: Action = { type: 'SET_AI_FAB_VISIBLE', aiFabVisible: visible }
     broadcast(action)
   }, [])
 
@@ -544,6 +614,8 @@ export function useStudyStore() {
     theme: state.theme,
     studyMode: state.studyMode,
     answerNavigationMode: state.answerNavigationMode,
+    mobileQuestionNavEnabled: state.mobileQuestionNavEnabled,
+    aiFabVisible: state.aiFabVisible,
     streak: state.streak,
     dailyGoal: state.dailyGoal,
     hiddenCategories: state.hiddenCategories,
@@ -560,6 +632,8 @@ export function useStudyStore() {
     toggleTheme,
     setStudyMode,
     setAnswerNavigationMode,
+    setMobileQuestionNavEnabled,
+    setAiFabVisible,
     setDailyGoal,
     setHiddenCategories,
     setCategoryVisibility,

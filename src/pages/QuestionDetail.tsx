@@ -4165,6 +4165,8 @@ export default function QuestionDetail() {
     getRecord,
     studyMode,
     answerNavigationMode,
+    mobileQuestionNavEnabled,
+    aiFabVisible,
     streak,
     incrementStreak,
   } = useStudyStore()
@@ -4994,6 +4996,8 @@ export default function QuestionDetail() {
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
   const showRelatedPractice =
     answerVisible && relatedPracticeItems.length > 0 && (!isInSession || showSessionSummary)
+  const showMobileQuestionNav = mobileQuestionNavEnabled
+  const showMobileAiFab = aiFabVisible && !aiDrawerOpen
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -5203,7 +5207,7 @@ export default function QuestionDetail() {
     <>
       {/* ── Main content — always max-width 760, never changes ── */}
       <div
-        className="page-container"
+        className={`page-container question-detail-page${showMobileQuestionNav ? ' has-mobile-question-nav' : ''}`}
         style={{ maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 16 }}
       >
         {/* Breadcrumb / Session progress */}
@@ -5748,13 +5752,19 @@ export default function QuestionDetail() {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.1"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z" />
-                    <path d="M8 7h6" />
-                    <path d="M8 11h8" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 4v2" />
+                    <path d="M12 18v2" />
+                    <path d="M4 12h2" />
+                    <path d="M18 12h2" />
+                    <path d="m6.3 6.3 1.4 1.4" />
+                    <path d="m16.3 16.3 1.4 1.4" />
+                    <path d="m17.7 6.3-1.4 1.4" />
+                    <path d="m7.7 16.3-1.4 1.4" />
                   </svg>
                 </AnswerAIButton>
               </div>
@@ -6106,18 +6116,20 @@ export default function QuestionDetail() {
         <StreakCelebration streak={celebrationStreak} onDone={() => setCelebrationStreak(0)} />
       )}
 
-      <MobileQuestionNav
-        prevDisabled={!prevId}
-        nextDisabled={!nextId}
-        onPrev={() => {
-          blurActiveControl()
-          navigateTo(prevId)
-        }}
-        onNext={() => {
-          blurActiveControl()
-          navigateTo(nextId)
-        }}
-      />
+      {showMobileQuestionNav && (
+        <MobileQuestionNav
+          prevDisabled={!prevId}
+          nextDisabled={!nextId}
+          onPrev={() => {
+            blurActiveControl()
+            navigateTo(prevId)
+          }}
+          onNext={() => {
+            blurActiveControl()
+            navigateTo(nextId)
+          }}
+        />
+      )}
 
       <style>{`
 				@keyframes ai-dot-bounce {
@@ -6183,7 +6195,7 @@ export default function QuestionDetail() {
 					}
 				}
 				@media (max-width: 640px) {
-					.page-container {
+					.question-detail-page.has-mobile-question-nav {
 						padding-bottom: calc(66px + env(safe-area-inset-bottom)) !important;
 					}
 					.mobile-question-nav {
@@ -6202,8 +6214,14 @@ export default function QuestionDetail() {
 						box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.07);
 						backdrop-filter: blur(16px);
 					}
-					.ai-fab {
+					.ai-fab.ai-fab-with-mobile-nav {
 						bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+						right: 16px !important;
+						width: 48px !important;
+						height: 48px !important;
+					}
+					.ai-fab:not(.ai-fab-with-mobile-nav) {
+						bottom: 16px !important;
 						right: 16px !important;
 						width: 48px !important;
 						height: 48px !important;
@@ -6211,11 +6229,11 @@ export default function QuestionDetail() {
 				}
 			`}</style>
       {/* ── Mobile FAB: AI Assistant ── */}
-      {!aiDrawerOpen && (
+      {showMobileAiFab && (
         <button
           type="button"
           onClick={() => setAiDrawerOpen(true)}
-          className="ai-fab"
+          className={`ai-fab${showMobileQuestionNav ? ' ai-fab-with-mobile-nav' : ''}`}
           style={{
             position: 'fixed',
             bottom: 24,

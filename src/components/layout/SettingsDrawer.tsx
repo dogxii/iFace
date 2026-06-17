@@ -594,6 +594,10 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     setStudyMode,
     answerNavigationMode,
     setAnswerNavigationMode,
+    mobileQuestionNavEnabled,
+    setMobileQuestionNavEnabled,
+    aiFabVisible,
+    setAiFabVisible,
     streak,
     resetStreak,
     dailyGoal,
@@ -1540,112 +1544,54 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
               </div>
 
               {/* Answer navigation preference */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '8px 0',
+                }}
+              >
                 <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>
                   切题后默认进入
                 </div>
-                {(
-                  [
-                    {
-                      value: 'answer' as AnswerNavigationMode,
-                      label: '参考答案',
-                      emoji: '📄',
-                      description: '切换到下一题时默认回到参考答案页，适合常规刷题。',
-                    },
-                    {
-                      value: 'check' as AnswerNavigationMode,
-                      label: '测试一下（纯刷题）',
-                      emoji: '📝',
-                      description: '切到下一题时继续停留在测试页，适合连续自测。',
-                    },
-                  ] as {
-                    value: AnswerNavigationMode
-                    label: string
-                    emoji: string
-                    description: string
-                  }[]
-                ).map((opt) => {
-                  const active = answerNavigationMode === opt.value
-                  return (
-                    <button
-                      type="button"
-                      key={opt.value}
-                      onClick={() => {
-                        setAnswerNavigationMode(opt.value)
-                        showToast(`已切换至「${opt.label}」`)
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: 12,
-                        padding: '12px 14px',
-                        borderRadius: 10,
-                        border: `1px solid ${active ? 'rgba(var(--primary-rgb),0.4)' : 'var(--border-subtle)'}`,
-                        background: active ? 'var(--primary-light)' : 'var(--surface-2)',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          ;(e.currentTarget as HTMLElement).style.borderColor =
-                            'rgba(var(--primary-rgb),0.3)'
-                          ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) {
-                          ;(e.currentTarget as HTMLElement).style.borderColor =
-                            'var(--border-subtle)'
-                          ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-                        }
-                      }}
-                    >
-                      <span style={{ fontSize: 22, lineHeight: 1.2, flexShrink: 0 }}>
-                        {opt.emoji}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
-                          style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 13,
-                              fontWeight: 600,
-                              color: active ? 'var(--primary)' : 'var(--text)',
-                            }}
-                          >
-                            {opt.label}
-                          </span>
-                          {active && (
-                            <span
-                              style={{
-                                fontSize: 10,
-                                fontWeight: 600,
-                                padding: '1px 6px',
-                                borderRadius: 99,
-                                background: 'var(--primary)',
-                                color: 'white',
-                              }}
-                            >
-                              当前
-                            </span>
-                          )}
-                        </div>
-                        <p
-                          style={{
-                            fontSize: 12,
-                            color: 'var(--text-3)',
-                            lineHeight: 1.5,
-                            margin: 0,
-                          }}
-                        >
-                          {opt.description}
-                        </p>
-                      </div>
-                    </button>
-                  )
-                })}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {(
+                    [
+                      { value: 'answer' as AnswerNavigationMode, label: '参考答案' },
+                      { value: 'check' as AnswerNavigationMode, label: '测试一下' },
+                    ] as const
+                  ).map((opt) => {
+                    const active = answerNavigationMode === opt.value
+                    return (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => {
+                          setAnswerNavigationMode(opt.value)
+                          showToast(`切题后默认进入「${opt.label}」`)
+                        }}
+                        style={{
+                          height: 28,
+                          padding: '0 10px',
+                          borderRadius: 7,
+                          border: `1px solid ${
+                            active ? 'rgba(var(--primary-rgb),0.28)' : 'transparent'
+                          }`,
+                          background: active ? 'var(--primary-light)' : 'transparent',
+                          color: active ? 'var(--primary)' : 'var(--text-2)',
+                          fontSize: 13,
+                          fontWeight: active ? 600 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
 
               {/* Streak Stats */}
@@ -1942,6 +1888,52 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                       )
                     })
                   })()}
+                </div>
+              </div>
+
+              {/* Question page display */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: 'var(--text-3)', flexShrink: 0 }}
+                  >
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M8 20v-3" />
+                    <path d="M16 20v-3" />
+                    <path d="M8 8h8" />
+                    <path d="M8 12h5" />
+                  </svg>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>
+                    题目页显示
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Toggle
+                    checked={mobileQuestionNavEnabled}
+                    onChange={(enabled) => {
+                      setMobileQuestionNavEnabled(enabled)
+                      showToast(enabled ? '已显示移动端底部切题按钮' : '已隐藏移动端底部切题按钮')
+                    }}
+                    label="移动端底部切题"
+                    description="在题目详情页底部显示上一题、下一题按钮"
+                  />
+                  <Toggle
+                    checked={aiFabVisible}
+                    onChange={(visible) => {
+                      setAiFabVisible(visible)
+                      showToast(visible ? '已显示移动端 AI 助手按钮' : '已隐藏移动端 AI 助手按钮')
+                    }}
+                    label="移动端 AI 助手按钮"
+                    description="在题目详情页右下角显示 AI 助手入口"
+                  />
                 </div>
               </div>
             </>
