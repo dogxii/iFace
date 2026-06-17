@@ -5,6 +5,7 @@ import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Kbd, Skeleton, Spinner } from '@/components/ui'
 import { AIPanelWithStyles } from '@/components/ui/AIPanel'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
+import { LearningCheckPanel } from '@/components/ui/LearningCheckPanel'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
@@ -25,6 +26,7 @@ import {
   setQuestionStarred,
 } from '@/lib/db'
 import { buildReviewNoteMarkdown, formatReviewNoteTime } from '@/lib/feedbackNote'
+import { type LearningCheckQuestion, loadLearningChecksForQuestion } from '@/lib/learningCheck'
 import { createPracticeSessionPath, readPracticeSession } from '@/lib/practiceSession'
 import {
   buildAnswerFeedbackContext,
@@ -234,7 +236,15 @@ function SessionProgress({ current, total, onExit }: SessionProgressProps) {
 
 // ─── Shortcut Hints ───────────────────────────────────────────────────────────
 
-function ShortcutHints({ answerVisible }: { answerVisible: boolean }) {
+function ShortcutHints({
+  answerVisible,
+  answerPanelView,
+}: {
+  answerVisible: boolean
+  answerPanelView: AnswerPanelView
+}) {
+  const showStatusShortcuts = answerVisible && answerPanelView === 'answer'
+
   return (
     <div
       style={{
@@ -252,7 +262,7 @@ function ShortcutHints({ answerVisible }: { answerVisible: boolean }) {
           <span>查看答案</span>
         </span>
       )}
-      {answerVisible && (
+      {showStatusShortcuts && (
         <>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
             <Kbd>1</Kbd>
@@ -718,6 +728,23 @@ function isEditableTarget(target: EventTarget | null): boolean {
   )
 }
 
+function blurActiveControl() {
+  const activeElement = document.activeElement
+  if (
+    activeElement instanceof HTMLElement &&
+    activeElement.matches('button, a, [role="button"], [role="tab"]')
+  ) {
+    activeElement.blur()
+  }
+}
+
+function withLearningCheckSearch(search: string): string {
+  const params = new URLSearchParams(search)
+  params.set('check', '1')
+  const serialized = params.toString()
+  return serialized ? `?${serialized}` : ''
+}
+
 function appendSpeechTranscript(current: string, transcript: string): string {
   const next = transcript.trim()
   if (!next) return current
@@ -872,6 +899,7 @@ interface MyAnswerInputProps {
   onNoteSaved?: () => void
   /** When true the component is in "compact / inside answer card" mode */
   compact?: boolean
+  autoFocus?: boolean
 }
 
 function MyAnswerInput({
@@ -883,6 +911,7 @@ function MyAnswerInput({
   isAiEnabled,
   onNoteSaved,
   compact = false,
+  autoFocus = true,
 }: MyAnswerInputProps) {
   const { sendMessage, streaming, streamingQuestionId } = useAIStore()
 
@@ -929,10 +958,10 @@ function MyAnswerInput({
   // Auto-focus only in answer-first mode. In answer-alongside mode the input
   // mounts after pressing Space, so focusing it would unexpectedly scroll down.
   useEffect(() => {
-    if (!compact && !collapsed && !feedback) {
+    if (autoFocus && !compact && !collapsed && !feedback) {
       setTimeout(() => textareaRef.current?.focus(), 80)
     }
-  }, [collapsed, compact, feedback])
+  }, [autoFocus, collapsed, compact, feedback])
 
   const handleSubmit = useCallback(async () => {
     if (!text.trim() || isStreaming) return
@@ -2751,6 +2780,152 @@ function AnswerOverrideHeaderMeta({
   )
 }
 
+type AnswerPanelView = 'answer' | 'check'
+
+interface AnswerPanelTabsProps {
+  activeView: AnswerPanelView
+  answerLabel: string
+  onChange: (view: AnswerPanelView) => void
+}
+
+function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPanelTabsProps) {
+  const items: Array<{ view: AnswerPanelView; label: string }> = [
+    { view: 'answer', label: answerLabel },
+    { view: 'check', label: '测试一下' },
+  ]
+
+  return (
+    <div
+      role="tablist"
+      aria-label="答案学习视图"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        minWidth: 0,
+      }}
+    >
+      {items.map((item) => {
+        const active = activeView === item.view
+        return (
+          <button
+            key={item.view}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(item.view)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 30,
+              padding: '0 11px',
+              borderRadius: 8,
+              border: 'none',
+              background: active ? 'var(--primary-light)' : 'transparent',
+              color: active ? 'var(--primary)' : 'var(--text-2)',
+              fontSize: 12,
+              fontWeight: active ? 600 : 500,
+              cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(event) => {
+              if (active) return
+              event.currentTarget.style.background = 'var(--surface-2)'
+              event.currentTarget.style.color = 'var(--text)'
+            }}
+            onMouseLeave={(event) => {
+              if (active) return
+              event.currentTarget.style.background = 'transparent'
+              event.currentTarget.style.color = 'var(--text-2)'
+            }}
+          >
+            <span>{item.label}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+interface MobileQuestionNavProps {
+  prevDisabled: boolean
+  nextDisabled: boolean
+  onPrev: () => void
+  onNext: () => void
+}
+
+function MobileQuestionNav({ prevDisabled, nextDisabled, onPrev, onNext }: MobileQuestionNavProps) {
+  const navButtonStyle = (disabled: boolean): React.CSSProperties => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minWidth: 0,
+    height: 38,
+    padding: '0 10px',
+    borderRadius: 10,
+    border: '1px solid var(--border-subtle)',
+    background: 'var(--surface)',
+    color: disabled ? 'var(--text-3)' : 'var(--text-2)',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.48 : 1,
+    whiteSpace: 'nowrap',
+  })
+
+  return (
+    <div className="mobile-question-nav">
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={prevDisabled}
+        style={navButtonStyle(prevDisabled)}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        上一题
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={nextDisabled}
+        style={navButtonStyle(nextDisabled)}
+      >
+        下一题
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
 function AnswerAIButton({
   title,
   active = false,
@@ -3977,13 +4152,24 @@ function AIDrawer({
 
 export default function QuestionDetail() {
   const { id } = useParams<{ id: string }>()
+  const questionId = id ?? ''
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
   const { question, loading } = useQuestion(id)
   const { allQuestions } = useQuestions()
-  const { records, getStatus, setStatus, getRecord, studyMode, streak, incrementStreak } =
-    useStudyStore()
+  const {
+    records,
+    getStatus,
+    setStatus,
+    getRecord,
+    studyMode,
+    answerNavigationMode,
+    mobileQuestionNavEnabled,
+    aiFabVisible,
+    streak,
+    incrementStreak,
+  } = useStudyStore()
   const { config: aiConfig } = useAIStore()
 
   const [answerVisible, setAnswerVisible] = useState(false)
@@ -3996,6 +4182,7 @@ export default function QuestionDetail() {
     questionId: string
     text: string
   } | null>(null)
+  const [answerPanelView, setAnswerPanelView] = useState<AnswerPanelView>('answer')
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
   const [answerOverride, setAnswerOverride] = useState<QuestionAnswerOverride | null>(null)
@@ -4015,6 +4202,7 @@ export default function QuestionDetail() {
   const [celebrationStreak, setCelebrationStreak] = useState(0)
   const [sessionFinished, setSessionFinished] = useState(false)
   const [noteRefreshKey, setNoteRefreshKey] = useState(0)
+  const [learningChecks, setLearningChecks] = useState<LearningCheckQuestion[]>([])
   const answerRef = useRef<HTMLDivElement>(null)
   const answerContentRef = useRef<HTMLDivElement>(null)
   const answerAnnotationToolbarRef = useRef<HTMLDivElement>(null)
@@ -4031,6 +4219,7 @@ export default function QuestionDetail() {
   const [storedSessionIds, setStoredSessionIds] = useState<string[]>(() =>
     readPracticeSession(sessionKey),
   )
+  const checkSearchParam = searchParams.get('check')
 
   const openAIWithPreset = useCallback(
     (preset: 'question' | 'concept') => {
@@ -4067,11 +4256,14 @@ export default function QuestionDetail() {
     : sessionIds.length > 0
       ? `?ids=${sessionIds.join(',')}`
       : ''
+  const questionNavigationSearch =
+    answerNavigationMode === 'check' ? withLearningCheckSearch(sessionSearch) : sessionSearch
   const sessionIdentity = sessionKey
     ? `session:${sessionKey}`
     : inlineSessionIds.length > 0
       ? `ids:${inlineSessionIds.join(',')}`
       : 'browse'
+  const hasLearningCheck = learningChecks.length > 0
 
   // Adjacent IDs from the full question list (for non-session browsing)
   // Sorted same as default list order (insertion order = file order by id)
@@ -4178,7 +4370,7 @@ export default function QuestionDetail() {
     [answerAnnotationsForDisplayedAnswer],
   )
 
-  const shouldAutoRevealAnswer = studyMode === 'memory-only'
+  const shouldAutoRevealAnswer = studyMode === 'memory-only' || answerNavigationMode === 'check'
 
   // Reset when the question or practice session changes. A retry session can
   // legitimately restart from the same question id with a new session key.
@@ -4186,10 +4378,11 @@ export default function QuestionDetail() {
   useEffect(() => {
     markingRef.current = false
     setMarking(false)
-    setAnswerVisible(shouldAutoRevealAnswer)
+    setAnswerVisible(shouldAutoRevealAnswer || checkSearchParam === '1')
     setJustMarked(null)
     setLastPressedKey(null)
     setAiInitialPrompt(null)
+    setAnswerPanelView('answer')
     setSessionFinished(false)
     setNoteDrawerOpen(false)
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -4197,7 +4390,40 @@ export default function QuestionDetail() {
     return () => {
       if (id) clearSessionReview(id)
     }
-  }, [id, sessionIdentity, shouldAutoRevealAnswer])
+  }, [checkSearchParam, id, sessionIdentity, shouldAutoRevealAnswer])
+
+  useEffect(() => {
+    let cancelled = false
+    setLearningChecks([])
+
+    if (!question) return
+
+    loadLearningChecksForQuestion(question)
+      .then((checks) => {
+        if (!cancelled) setLearningChecks(checks)
+      })
+      .catch(() => {
+        if (!cancelled) setLearningChecks([])
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [question])
+
+  useEffect(() => {
+    if (!questionId) return
+
+    const forcedCheckView =
+      hasLearningCheck && (answerNavigationMode === 'check' || checkSearchParam === '1')
+    setAnswerPanelView(forcedCheckView ? 'check' : 'answer')
+  }, [answerNavigationMode, checkSearchParam, hasLearningCheck, questionId])
+
+  useEffect(() => {
+    if (!hasLearningCheck && answerPanelView === 'check') {
+      setAnswerPanelView('answer')
+    }
+  }, [answerPanelView, hasLearningCheck])
 
   useEffect(() => {
     if (searchParams.get('note') !== '1') return
@@ -4291,7 +4517,7 @@ export default function QuestionDetail() {
     setAnswerCommentOpen(false)
     setAnswerCommentDraft('')
     setActiveAnswerCommentId(null)
-  }, [answerEditMode, answerVisible, displayedAnswerHash])
+  }, [answerEditMode, answerPanelView, answerVisible, displayedAnswerHash])
 
   useEffect(() => {
     if (!activeAnswerCommentId) return
@@ -4303,7 +4529,9 @@ export default function QuestionDetail() {
   }, [activeAnswerCommentId, visibleAnswerAnnotations])
 
   useEffect(() => {
-    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (!answerVisible || answerPanelView !== 'answer' || answerEditMode || answerOverrideLoading) {
+      return
+    }
     const root = answerContentRef.current
     if (!root) return
 
@@ -4338,7 +4566,13 @@ export default function QuestionDetail() {
       observer?.disconnect()
       cleanupHighlights?.()
     }
-  }, [answerEditMode, answerOverrideLoading, answerVisible, visibleAnswerAnnotations])
+  }, [
+    answerEditMode,
+    answerOverrideLoading,
+    answerPanelView,
+    answerVisible,
+    visibleAnswerAnnotations,
+  ])
 
   useEffect(() => {
     if (!answerSelection) return
@@ -4402,7 +4636,7 @@ export default function QuestionDetail() {
 
         if (isInSession && nextId) {
           setTimeout(() => {
-            navigate(`/questions/${nextId}${sessionSearch}`)
+            navigate(`/questions/${nextId}${questionNavigationSearch}`)
           }, 600)
         } else if (isInSession) {
           setSessionFinished(true)
@@ -4418,7 +4652,7 @@ export default function QuestionDetail() {
       isInSession,
       nextId,
       navigate,
-      sessionSearch,
+      questionNavigationSearch,
       incrementStreak,
       streak.currentStreak,
     ],
@@ -4428,14 +4662,17 @@ export default function QuestionDetail() {
     setAnswerVisible(true)
     setJustMarked(null)
     setLastPressedKey(null)
-  }, [])
+    if (hasLearningCheck && answerNavigationMode === 'check') {
+      setAnswerPanelView('check')
+    }
+  }, [answerNavigationMode, hasLearningCheck])
 
   const navigateTo = useCallback(
     (targetId: string | null | undefined) => {
       if (!targetId) return
-      navigate(`/questions/${targetId}${sessionSearch}`)
+      navigate(`/questions/${targetId}${questionNavigationSearch}`)
     },
-    [navigate, sessionSearch],
+    [navigate, questionNavigationSearch],
   )
 
   const handleRetrySession = useCallback(() => {
@@ -4477,7 +4714,9 @@ export default function QuestionDetail() {
   }, [id, starred])
 
   const refreshAnswerSelection = useCallback(() => {
-    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (!answerVisible || answerPanelView !== 'answer' || answerEditMode || answerOverrideLoading) {
+      return
+    }
     if (answerCommentOpen || answerAnnotationSaving) return
     const root = answerContentRef.current
     if (!root) return
@@ -4499,6 +4738,7 @@ export default function QuestionDetail() {
     answerCommentOpen,
     answerEditMode,
     answerOverrideLoading,
+    answerPanelView,
     answerVisible,
   ])
 
@@ -4702,7 +4942,9 @@ export default function QuestionDetail() {
   )
 
   useEffect(() => {
-    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (!answerVisible || answerPanelView !== 'answer' || answerEditMode || answerOverrideLoading) {
+      return
+    }
 
     const clearScheduledRefresh = () => {
       if (answerSelectionTimerRef.current === null) return
@@ -4742,12 +4984,20 @@ export default function QuestionDetail() {
       document.removeEventListener('touchend', handleSelectEnd)
       document.removeEventListener('keyup', handleSelectEnd)
     }
-  }, [answerEditMode, answerOverrideLoading, answerVisible, scheduleAnswerSelectionRefresh])
+  }, [
+    answerEditMode,
+    answerOverrideLoading,
+    answerPanelView,
+    answerVisible,
+    scheduleAnswerSelectionRefresh,
+  ])
 
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
   const showRelatedPractice =
     answerVisible && relatedPracticeItems.length > 0 && (!isInSession || showSessionSummary)
+  const showMobileQuestionNav = mobileQuestionNavEnabled
+  const showMobileAiFab = aiFabVisible && !aiDrawerOpen
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -4768,6 +5018,19 @@ export default function QuestionDetail() {
       if (noteDrawerOpen) return
       if (markingRef.current) return
 
+      if (answerPanelView === 'check') {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault()
+          blurActiveControl()
+          navigateTo(nextId)
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault()
+          blurActiveControl()
+          navigateTo(prevId)
+        }
+        return
+      }
+
       switch (e.key) {
         case ' ':
           e.preventDefault()
@@ -4784,10 +5047,12 @@ export default function QuestionDetail() {
           break
         case 'ArrowRight':
           e.preventDefault()
+          blurActiveControl()
           navigateTo(nextId)
           break
         case 'ArrowLeft':
           e.preventDefault()
+          blurActiveControl()
           navigateTo(prevId)
           break
         default:
@@ -4804,12 +5069,14 @@ export default function QuestionDetail() {
     nextId,
     prevId,
     aiDrawerOpen,
+    answerPanelView,
     noteDrawerOpen,
     settingsOpen,
   ])
 
   const handleStartAnswerEdit = useCallback(() => {
     if (!question) return
+    setAnswerPanelView('answer')
     setAnswerDraft(answerOverride?.content ?? question.answer)
     setAnswerEditMode(true)
     setAnswerSaveStatus('idle')
@@ -4922,6 +5189,7 @@ export default function QuestionDetail() {
       ? '参考答案'
       : '自定义答案'
     : '参考答案'
+  const showAnswerContent = answerPanelView === 'answer'
   const answerContextQuestion = {
     ...question,
     answer: displayedAnswerText,
@@ -4939,7 +5207,7 @@ export default function QuestionDetail() {
     <>
       {/* ── Main content — always max-width 760, never changes ── */}
       <div
-        className="page-container"
+        className={`page-container question-detail-page${showMobileQuestionNav ? ' has-mobile-question-nav' : ''}`}
         style={{ maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 16 }}
       >
         {/* Breadcrumb / Session progress */}
@@ -5343,6 +5611,7 @@ export default function QuestionDetail() {
               onOpenNote={() => setNoteDrawerOpen(true)}
               isAiEnabled={isAiEnabled}
               onNoteSaved={handleNoteSaved}
+              autoFocus={answerNavigationMode !== 'check'}
             />
           </div>
         )}
@@ -5385,14 +5654,31 @@ export default function QuestionDetail() {
                     flexShrink: 0,
                   }}
                 />
-                <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                  {answerHeading}
-                </h2>
+                {hasLearningCheck ? (
+                  <AnswerPanelTabs
+                    activeView={answerPanelView}
+                    answerLabel={answerHeading}
+                    onChange={(view) => {
+                      if (view === 'check') {
+                        setAnswerEditMode(false)
+                        setAnswerSelection(null)
+                      }
+                      setAnswerPanelView(view)
+                    }}
+                  />
+                ) : (
+                  <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                    {answerHeading}
+                  </h2>
+                )}
                 {hasCustomAnswer && !answerEditMode && (
                   <AnswerOverrideHeaderMeta
                     updatedAt={answerOverride?.updatedAt ?? null}
                     showingOriginal={showOriginalAnswer}
-                    onToggleOriginal={() => setShowOriginalAnswer((value) => !value)}
+                    onToggleOriginal={() => {
+                      setAnswerPanelView('answer')
+                      setShowOriginalAnswer((value) => !value)
+                    }}
                   />
                 )}
               </div>
@@ -5466,20 +5752,28 @@ export default function QuestionDetail() {
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="2.1"
+                    strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z" />
-                    <path d="M8 7h6" />
-                    <path d="M8 11h8" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 4v2" />
+                    <path d="M12 18v2" />
+                    <path d="M4 12h2" />
+                    <path d="M18 12h2" />
+                    <path d="m6.3 6.3 1.4 1.4" />
+                    <path d="m16.3 16.3 1.4 1.4" />
+                    <path d="m17.7 6.3-1.4 1.4" />
+                    <path d="m7.7 16.3-1.4 1.4" />
                   </svg>
                 </AnswerAIButton>
               </div>
             </div>
 
-            {/* Markdown answer */}
-            {answerEditMode ? (
+            {/* Answer body */}
+            {answerPanelView === 'check' ? (
+              <LearningCheckPanel key={`learning-check-${question.id}`} checks={learningChecks} />
+            ) : answerEditMode ? (
               <AnswerOverrideEditor
                 draft={answerDraft}
                 saveStatus={answerSaveStatus}
@@ -5502,7 +5796,7 @@ export default function QuestionDetail() {
               </section>
             )}
 
-            {answerSelection && !answerEditMode && !answerOverrideLoading && (
+            {showAnswerContent && answerSelection && !answerEditMode && !answerOverrideLoading && (
               <AnswerAnnotationToolbar
                 toolbarRef={answerAnnotationToolbarRef}
                 selection={answerSelection}
@@ -5518,7 +5812,7 @@ export default function QuestionDetail() {
               />
             )}
 
-            {!answerEditMode && !answerOverrideLoading && (
+            {showAnswerContent && !answerEditMode && !answerOverrideLoading && (
               <AnswerCommentMarkers
                 rootRef={answerContentRef}
                 annotations={visibleAnswerAnnotations}
@@ -5592,7 +5886,7 @@ export default function QuestionDetail() {
             </div>
 
             {/* ── My Answer Input — "answer-alongside" mode: compact inside answer card ── */}
-            {showAnswerInputInside && !hideAnswerInput && (
+            {showAnswerContent && showAnswerInputInside && !hideAnswerInput && (
               <MyAnswerInput
                 key={`answer-inside-${id ?? ''}`}
                 questionId={id ?? ''}
@@ -5665,7 +5959,7 @@ export default function QuestionDetail() {
 
         {/* Keyboard shortcuts */}
         <div className="animate-fade-in stagger-3">
-          <ShortcutHints answerVisible={answerVisible} />
+          <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
         </div>
 
         {/* Navigation */}
@@ -5680,7 +5974,10 @@ export default function QuestionDetail() {
         >
           <button
             type="button"
-            onClick={() => navigateTo(prevId)}
+            onClick={() => {
+              blurActiveControl()
+              navigateTo(prevId)
+            }}
             disabled={!prevId}
             style={{
               display: 'flex',
@@ -5742,7 +6039,10 @@ export default function QuestionDetail() {
 
           <button
             type="button"
-            onClick={() => navigateTo(nextId)}
+            onClick={() => {
+              blurActiveControl()
+              navigateTo(nextId)
+            }}
             disabled={!nextId}
             style={{
               display: 'flex',
@@ -5816,6 +6116,21 @@ export default function QuestionDetail() {
         <StreakCelebration streak={celebrationStreak} onDone={() => setCelebrationStreak(0)} />
       )}
 
+      {showMobileQuestionNav && (
+        <MobileQuestionNav
+          prevDisabled={!prevId}
+          nextDisabled={!nextId}
+          onPrev={() => {
+            blurActiveControl()
+            navigateTo(prevId)
+          }}
+          onNext={() => {
+            blurActiveControl()
+            navigateTo(nextId)
+          }}
+        />
+      )}
+
       <style>{`
 				@keyframes ai-dot-bounce {
 					0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
@@ -5832,6 +6147,9 @@ export default function QuestionDetail() {
 				}
 				@media (max-width: 1023px) {
 					.ai-fab { display: flex !important; }
+				}
+				.mobile-question-nav {
+					display: none;
 				}
 				@media (min-width: 1024px) {
 					.ai-drawer-backdrop { display: none !important; }
@@ -5876,13 +6194,46 @@ export default function QuestionDetail() {
 						grid-template-columns: 1fr !important;
 					}
 				}
+				@media (max-width: 640px) {
+					.question-detail-page.has-mobile-question-nav {
+						padding-bottom: calc(66px + env(safe-area-inset-bottom)) !important;
+					}
+					.mobile-question-nav {
+						position: fixed;
+						left: 0;
+						right: 0;
+						bottom: 0;
+						z-index: 135;
+						display: grid;
+						grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+						gap: 10px;
+						align-items: center;
+						padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
+						background: color-mix(in srgb, var(--surface) 94%, transparent);
+						border-top: 1px solid var(--border-subtle);
+						box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.07);
+						backdrop-filter: blur(16px);
+					}
+					.ai-fab.ai-fab-with-mobile-nav {
+						bottom: calc(60px + env(safe-area-inset-bottom)) !important;
+						right: 16px !important;
+						width: 48px !important;
+						height: 48px !important;
+					}
+					.ai-fab:not(.ai-fab-with-mobile-nav) {
+						bottom: 16px !important;
+						right: 16px !important;
+						width: 48px !important;
+						height: 48px !important;
+					}
+				}
 			`}</style>
       {/* ── Mobile FAB: AI Assistant ── */}
-      {!aiDrawerOpen && (
+      {showMobileAiFab && (
         <button
           type="button"
           onClick={() => setAiDrawerOpen(true)}
-          className="ai-fab"
+          className={`ai-fab${showMobileQuestionNav ? ' ai-fab-with-mobile-nav' : ''}`}
           style={{
             position: 'fixed',
             bottom: 24,

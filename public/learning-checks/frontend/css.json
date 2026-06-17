@@ -1,0 +1,5007 @@
+[
+  {
+    "questionId": "css-001",
+    "checks": [
+      {
+        "id": "css-001-check-01",
+        "kind": "single",
+        "prompt": "一个元素设置 `box-sizing: content-box; width: 200px; padding: 20px; border: 5px solid`，不考虑 margin，它的渲染宽度是多少？",
+        "options": [
+          {
+            "id": "a",
+            "text": "200px"
+          },
+          {
+            "id": "b",
+            "text": "220px"
+          },
+          {
+            "id": "c",
+            "text": "250px"
+          },
+          {
+            "id": "d",
+            "text": "150px"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "标准盒模型中 `width` 只包含 content。实际宽度是 `200 + 20*2 + 5*2 = 250px`。",
+        "focus": "盒模型计算"
+      },
+      {
+        "id": "css-001-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `box-sizing: border-box`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`width` / `height` 包含 content、padding 和 border。"
+          },
+          {
+            "id": "b",
+            "text": "设置 padding 和 border 后，content 区会被压缩。"
+          },
+          {
+            "id": "c",
+            "text": "全局设置 `*, *::before, *::after { box-sizing: border-box; }` 是常见实践。"
+          },
+          {
+            "id": "d",
+            "text": "margin 也会被包含进 `width`。"
+          },
+          {
+            "id": "e",
+            "text": "`border-box` 会让元素不再参与正常布局。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`border-box` 管的是内容、内边距和边框，不包含 margin，也不会改变元素参与布局的方式。",
+        "focus": "border-box 语义"
+      },
+      {
+        "id": "css-001-check-03",
+        "kind": "multiple",
+        "prompt": "哪些尺寸 API 的理解正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`offsetWidth` 包含 content、padding 和 border。"
+          },
+          {
+            "id": "b",
+            "text": "`clientWidth` 包含 content 和 padding，通常不包含 border。"
+          },
+          {
+            "id": "c",
+            "text": "`getBoundingClientRect().width` 返回实际渲染宽度，可包含小数。"
+          },
+          {
+            "id": "d",
+            "text": "`clientWidth` 一定包含 margin。"
+          },
+          {
+            "id": "e",
+            "text": "`offsetWidth` 会返回字符串，例如 `\"200px\"`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "DOM 尺寸 API 的包含范围不同。margin 不属于 `offsetWidth` 或 `clientWidth`，返回值是数字。",
+        "focus": "JS 尺寸 API"
+      }
+    ]
+  },
+  {
+    "questionId": "css-002",
+    "checks": [
+      {
+        "id": "css-002-check-01",
+        "kind": "single",
+        "prompt": "BFC 最准确的理解是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "一种让元素固定在视口上的定位方式。"
+          },
+          {
+            "id": "b",
+            "text": "一个独立的块级布局区域，内部浮动、margin 折叠等规则和外部隔离。"
+          },
+          {
+            "id": "c",
+            "text": "一个只存在于 Flexbox 中的对齐算法。"
+          },
+          {
+            "id": "d",
+            "text": "一个 JavaScript 布局 API。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "BFC 是块级格式化上下文，它会包含内部浮动、阻止 BFC 内外 margin 折叠，并避免与外部浮动重叠。",
+        "focus": "BFC 定位"
+      },
+      {
+        "id": "css-002-check-02",
+        "kind": "multiple",
+        "prompt": "哪些写法可以常见地创建 BFC 或类似布局隔离区域？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`display: flow-root`"
+          },
+          {
+            "id": "b",
+            "text": "`overflow: hidden`"
+          },
+          {
+            "id": "c",
+            "text": "`position: absolute`"
+          },
+          {
+            "id": "d",
+            "text": "`display: inline-block`"
+          },
+          {
+            "id": "e",
+            "text": "`color: red`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "现代清浮动优先 `display: flow-root`。`overflow`、浮动、绝对定位、inline-block 等也可创建 BFC，但可能有副作用。",
+        "focus": "创建 BFC"
+      },
+      {
+        "id": "css-002-check-03",
+        "kind": "multiple",
+        "prompt": "关于 BFC 的用途，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以包含内部浮动，避免父元素高度塌陷。"
+          },
+          {
+            "id": "b",
+            "text": "可以阻止父子 margin 折叠。"
+          },
+          {
+            "id": "c",
+            "text": "BFC 区域不会与外部 float 重叠。"
+          },
+          {
+            "id": "d",
+            "text": "`overflow: hidden` 创建 BFC 永远没有副作用。"
+          },
+          {
+            "id": "e",
+            "text": "BFC 会自动让所有子元素水平居中。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`overflow: hidden` 可能裁剪阴影、弹层或溢出内容。BFC 是布局隔离，不是居中工具。",
+        "focus": "BFC 用途与副作用"
+      }
+    ]
+  },
+  {
+    "questionId": "css-003",
+    "checks": [
+      {
+        "id": "css-003-check-01",
+        "kind": "single",
+        "prompt": "在 `display: flex; flex-direction: row` 的容器中，`justify-content` 控制哪个方向的对齐？",
+        "options": [
+          {
+            "id": "a",
+            "text": "主轴，也就是默认水平方向。"
+          },
+          {
+            "id": "b",
+            "text": "交叉轴，也就是默认垂直方向。"
+          },
+          {
+            "id": "c",
+            "text": "z 轴层叠方向。"
+          },
+          {
+            "id": "d",
+            "text": "只控制文本基线。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Flexbox 是一维布局。`flex-direction` 决定主轴，`justify-content` 控制主轴，`align-items` 控制交叉轴。",
+        "focus": "主轴对齐"
+      },
+      {
+        "id": "css-003-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是 Flex 子项属性或相关写法？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`flex-grow`"
+          },
+          {
+            "id": "b",
+            "text": "`flex-shrink`"
+          },
+          {
+            "id": "c",
+            "text": "`flex-basis`"
+          },
+          {
+            "id": "d",
+            "text": "`align-self`"
+          },
+          {
+            "id": "e",
+            "text": "`grid-template-columns`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`grid-template-columns` 是 Grid 容器属性。Flex 子项通过 grow、shrink、basis、align-self、order 等参与分配和对齐。",
+        "focus": "Flex 子项属性"
+      },
+      {
+        "id": "css-003-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 Flexbox 常见坑判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`align-content` 只在多行 flex 容器中有意义。"
+          },
+          {
+            "id": "b",
+            "text": "长文本撑破 flex 子项时，常给子项加 `min-width: 0`。"
+          },
+          {
+            "id": "c",
+            "text": "`order` 只改变视觉顺序，不应替代 DOM 语义顺序。"
+          },
+          {
+            "id": "d",
+            "text": "Flexbox 最适合复杂二维页面骨架，Grid 完全没必要。"
+          },
+          {
+            "id": "e",
+            "text": "`flex: 1` 一定等价于 `flex: none`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Flex 适合一维分配，Grid 更适合二维布局。`flex: 1` 通常表示可增长和可收缩，而 `flex: none` 不伸缩。",
+        "focus": "Flex 常见坑"
+      }
+    ]
+  },
+  {
+    "questionId": "css-004",
+    "checks": [
+      {
+        "id": "css-004-check-01",
+        "kind": "single",
+        "prompt": "CSS Grid 相比 Flexbox 的核心优势是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只能做水平居中。"
+          },
+          {
+            "id": "b",
+            "text": "能同时控制行和列，适合二维布局。"
+          },
+          {
+            "id": "c",
+            "text": "只能用于表格元素。"
+          },
+          {
+            "id": "d",
+            "text": "不支持响应式。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Grid 是二维布局系统，适合页面骨架、卡片矩阵、仪表盘和跨行跨列布局。",
+        "focus": "Grid 定位"
+      },
+      {
+        "id": "css-004-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于 Grid 容器常用属性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`grid-template-columns`"
+          },
+          {
+            "id": "b",
+            "text": "`grid-template-rows`"
+          },
+          {
+            "id": "c",
+            "text": "`grid-template-areas`"
+          },
+          {
+            "id": "d",
+            "text": "`gap`"
+          },
+          {
+            "id": "e",
+            "text": "`flex-basis`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`flex-basis` 是 Flex 子项属性。Grid 容器通过模板列/行、区域、gap 和对齐属性定义网格。",
+        "focus": "Grid 容器属性"
+      },
+      {
+        "id": "css-004-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 Grid 细节理解正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`fr` 表示按比例分配剩余空间。"
+          },
+          {
+            "id": "b",
+            "text": "`minmax(0, 1fr)` 常用于避免内容把轨道撑破。"
+          },
+          {
+            "id": "c",
+            "text": "`auto-fit` 会折叠空列，项目少时更容易拉伸填满。"
+          },
+          {
+            "id": "d",
+            "text": "`justify-items` / `align-items` 控制单元格内 item 对齐。"
+          },
+          {
+            "id": "e",
+            "text": "`justify-content` 只控制单个 grid item 的水平对齐。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`justify-content` / `align-content` 控制整个网格在容器中的对齐；单个格子里的 item 对齐看 items/self。",
+        "focus": "Grid 实战细节"
+      }
+    ]
+  },
+  {
+    "questionId": "css-005",
+    "checks": [
+      {
+        "id": "css-005-check-01",
+        "kind": "single",
+        "prompt": "选择器 `#nav .item:hover` 的优先级四元组更接近哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`(0,0,1,0)`"
+          },
+          {
+            "id": "b",
+            "text": "`(0,1,2,0)`"
+          },
+          {
+            "id": "c",
+            "text": "`(0,0,2,1)`"
+          },
+          {
+            "id": "d",
+            "text": "`(1,0,0,0)`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`#nav` 是 1 个 ID，`.item` 和 `:hover` 是 2 个 class/伪类级别，没有元素选择器，也不是内联样式。",
+        "focus": "specificity 计算"
+      },
+      {
+        "id": "css-005-check-02",
+        "kind": "multiple",
+        "prompt": "关于现代选择器优先级，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`:where()` 永远贡献 0 优先级。"
+          },
+          {
+            "id": "b",
+            "text": "`:is()` 取参数中最高优先级。"
+          },
+          {
+            "id": "c",
+            "text": "`:not()` 取参数优先级。"
+          },
+          {
+            "id": "d",
+            "text": "`:has()` 取参数优先级。"
+          },
+          {
+            "id": "e",
+            "text": "通配符 `*` 的优先级比 ID 更高。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`:where()` 常用于写低优先级基础样式；`:is/:not/:has` 的优先级来自参数。通配符不贡献优先级。",
+        "focus": "现代选择器优先级"
+      },
+      {
+        "id": "css-005-check-03",
+        "kind": "multiple",
+        "prompt": "最终样式生效不只看选择器优先级，还要考虑哪些因素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "样式来源和 `!important` 重要性。"
+          },
+          {
+            "id": "b",
+            "text": "cascade layer 层顺序。"
+          },
+          {
+            "id": "c",
+            "text": "同优先级下的书写顺序。"
+          },
+          {
+            "id": "d",
+            "text": "继承值和直接声明的关系。"
+          },
+          {
+            "id": "e",
+            "text": "CSS 文件名长度。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "层叠顺序综合来源、重要性、layer、specificity 和源码顺序。继承值优先级低于直接匹配元素的声明。",
+        "focus": "层叠顺序"
+      }
+    ]
+  },
+  {
+    "questionId": "css-006",
+    "checks": [
+      {
+        "id": "css-006-check-01",
+        "kind": "single",
+        "prompt": "现代项目里让一个未知宽高子元素水平垂直居中，最直接的容器写法是哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`display: flex; justify-content: center; align-items: center;`"
+          },
+          {
+            "id": "b",
+            "text": "`line-height: 50px`，适用于所有多行内容。"
+          },
+          {
+            "id": "c",
+            "text": "`float: left`"
+          },
+          {
+            "id": "d",
+            "text": "`position: static; top: 50%`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Flex 和 Grid 是现代居中的首选。`line-height` 只适合单行文本，static 元素 top/left 无效。",
+        "focus": "现代居中"
+      },
+      {
+        "id": "css-006-check-02",
+        "kind": "multiple",
+        "prompt": "哪些居中方案条件判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Grid 可用 `display: grid; place-items: center;`。"
+          },
+          {
+            "id": "b",
+            "text": "绝对定位 + `transform: translate(-50%, -50%)` 不需要知道元素尺寸。"
+          },
+          {
+            "id": "c",
+            "text": "绝对定位 + `inset: 0; margin: auto` 通常需要固定宽高。"
+          },
+          {
+            "id": "d",
+            "text": "单行文本可用 `height` 等于 `line-height` 做垂直居中。"
+          },
+          {
+            "id": "e",
+            "text": "`text-align: center` 可以让任意块级子元素垂直居中。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`text-align` 控制行内内容的水平对齐，不负责垂直居中，也不直接居中任意块级盒。",
+        "focus": "居中方案条件"
+      },
+      {
+        "id": "css-006-check-03",
+        "kind": "multiple",
+        "prompt": "哪些居中方案选择更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "普通组件内容居中优先 Flex/Grid。"
+          },
+          {
+            "id": "b",
+            "text": "弹层或徽标定位可用 absolute + transform。"
+          },
+          {
+            "id": "c",
+            "text": "单行按钮文字可用 line-height 或 Flex 居中。"
+          },
+          {
+            "id": "d",
+            "text": "所有居中问题都应用 `margin-left: -50%`。"
+          },
+          {
+            "id": "e",
+            "text": "为了居中必须修改 DOM 顺序。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同方案服务不同布局上下文。现代 CSS 已能在不改 DOM 语义的情况下完成大多数居中。",
+        "focus": "方案选择"
+      }
+    ]
+  },
+  {
+    "questionId": "css-007",
+    "checks": [
+      {
+        "id": "css-007-check-01",
+        "kind": "single",
+        "prompt": "`:hover` 和 `::before` 的本质区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "二者都是创建真实 DOM 节点。"
+          },
+          {
+            "id": "b",
+            "text": "`:hover` 选择已有元素状态，`::before` 创建或选择元素的虚拟部分。"
+          },
+          {
+            "id": "c",
+            "text": "`::before` 只能用于链接。"
+          },
+          {
+            "id": "d",
+            "text": "`:hover` 必须写双冒号。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "伪类表示状态、位置或条件；伪元素表示元素的一部分或虚拟结构。现代伪元素用双冒号。",
+        "focus": "伪类 vs 伪元素"
+      },
+      {
+        "id": "css-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于伪类？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`:focus`"
+          },
+          {
+            "id": "b",
+            "text": "`:checked`"
+          },
+          {
+            "id": "c",
+            "text": "`:nth-child(odd)`"
+          },
+          {
+            "id": "d",
+            "text": "`:not(.disabled)`"
+          },
+          {
+            "id": "e",
+            "text": "`::placeholder`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`::placeholder` 是伪元素。伪类一般以单冒号表示已有元素的状态、关系或条件。",
+        "focus": "伪类识别"
+      },
+      {
+        "id": "css-007-check-03",
+        "kind": "multiple",
+        "prompt": "关于伪元素，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`::before` 和 `::after` 通常需要设置 `content` 才会生成盒子。"
+          },
+          {
+            "id": "b",
+            "text": "`::selection` 可定制文本选中样式。"
+          },
+          {
+            "id": "c",
+            "text": "`::marker` 可定制列表标记。"
+          },
+          {
+            "id": "d",
+            "text": "伪元素一定可以用 JS `querySelector` 直接获取。"
+          },
+          {
+            "id": "e",
+            "text": "伪元素一定会出现在 DOM 树中。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "伪元素不是真实 DOM 节点，不能直接通过 DOM API 获取；它们由 CSS 渲染生成。",
+        "focus": "伪元素实践"
+      }
+    ]
+  },
+  {
+    "questionId": "css-008",
+    "checks": [
+      {
+        "id": "css-008-check-01",
+        "kind": "single",
+        "prompt": "CSS Custom Properties 和 SCSS 变量最大的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CSS 变量只能写数字，SCSS 变量只能写颜色。"
+          },
+          {
+            "id": "b",
+            "text": "CSS 变量是运行时能力，参与层叠和继承；SCSS 变量是编译期替换。"
+          },
+          {
+            "id": "c",
+            "text": "CSS 变量必须通过 JavaScript 创建。"
+          },
+          {
+            "id": "d",
+            "text": "SCSS 变量会被浏览器动态继承。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "CSS 变量最终保留在 CSS 中，可被媒体查询、状态和 JS 改变；SCSS 变量编译后不存在。",
+        "focus": "CSS 变量本质"
+      },
+      {
+        "id": "css-008-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 CSS 变量用法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`--primary-color: #007bff;`"
+          },
+          {
+            "id": "b",
+            "text": "`color: var(--text-color, #111);`"
+          },
+          {
+            "id": "c",
+            "text": "通过 `[data-theme=\"dark\"]` 覆盖变量实现主题。"
+          },
+          {
+            "id": "d",
+            "text": "JS 可用 `style.setProperty('--primary-color', '#f00')` 修改变量。"
+          },
+          {
+            "id": "e",
+            "text": "CSS 变量不参与继承和层叠。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CSS 变量就是依赖继承和层叠来实现局部覆盖和主题系统的。",
+        "focus": "CSS 变量用法"
+      },
+      {
+        "id": "css-008-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `@property` 和 CSS 变量，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`@property` 可声明自定义属性语法、初始值和是否继承。"
+          },
+          {
+            "id": "b",
+            "text": "类型化自定义属性更利于动画和浏览器解析。"
+          },
+          {
+            "id": "c",
+            "text": "大量修改根节点变量会触发样式重新计算。"
+          },
+          {
+            "id": "d",
+            "text": "`var()` fallback 会在变量有任意值时都生效。"
+          },
+          {
+            "id": "e",
+            "text": "CSS 变量值在声明处就一定被验证为当前属性合法值。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "CSS 变量值是 token 序列，最终是否合法取决于使用它的属性。fallback 主要在变量未定义或无效时使用。",
+        "focus": "@property 与性能"
+      }
+    ]
+  },
+  {
+    "questionId": "css-009",
+    "checks": [
+      {
+        "id": "css-009-check-01",
+        "kind": "single",
+        "prompt": "“移动优先”的媒体查询写法通常意味着什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "默认写小屏样式，再用 `@media (min-width: ...)` 增强大屏。"
+          },
+          {
+            "id": "b",
+            "text": "默认写桌面样式，再用 `max-width` 删除所有样式。"
+          },
+          {
+            "id": "c",
+            "text": "只支持手机，不支持桌面。"
+          },
+          {
+            "id": "d",
+            "text": "所有尺寸都必须用 px。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "移动优先让基础样式更轻，再随可用空间增加增强布局。断点应按内容需要重排来定。",
+        "focus": "移动优先"
+      },
+      {
+        "id": "css-009-check-02",
+        "kind": "multiple",
+        "prompt": "响应式设计通常要考虑哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "视口宽度和容器尺寸。"
+          },
+          {
+            "id": "b",
+            "text": "暗色模式、减少动画等用户偏好。"
+          },
+          {
+            "id": "c",
+            "text": "触摸/鼠标输入差异。"
+          },
+          {
+            "id": "d",
+            "text": "响应式图片和高清资源。"
+          },
+          {
+            "id": "e",
+            "text": "只考虑某几个手机型号名称。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "响应式不是设备表，而是布局、媒体、输入方式和可访问性偏好的自适应。",
+        "focus": "响应式能力"
+      },
+      {
+        "id": "css-009-check-03",
+        "kind": "multiple",
+        "prompt": "哪些响应式写法理解正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`clamp(16px, 4vw, 32px)` 可做有上下限的流式尺寸。"
+          },
+          {
+            "id": "b",
+            "text": "`100dvh` 比传统 `100vh` 更适合移动端动态地址栏场景。"
+          },
+          {
+            "id": "c",
+            "text": "容器查询按组件容器尺寸响应，不只看视口。"
+          },
+          {
+            "id": "d",
+            "text": "`srcset` / `sizes` 可让浏览器选择合适图片资源。"
+          },
+          {
+            "id": "e",
+            "text": "容器查询会自动替代所有媒体查询。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "媒体查询负责页面级断点，容器查询负责组件内部响应，两者可以共存。",
+        "focus": "容器查询与单位"
+      }
+    ]
+  },
+  {
+    "questionId": "css-010",
+    "checks": [
+      {
+        "id": "css-010-check-01",
+        "kind": "single",
+        "prompt": "`position: absolute` 的元素通常相对于谁定位？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远相对于视口。"
+          },
+          {
+            "id": "b",
+            "text": "最近的非 `static` 定位祖先；某些 transform/filter/contain 祖先也可能创建 containing block。"
+          },
+          {
+            "id": "c",
+            "text": "永远相对于 body。"
+          },
+          {
+            "id": "d",
+            "text": "相对于自己的原位置，且不脱离文档流。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "absolute 脱离文档流，不占原空间。常见做法是在父元素上设置 `position: relative` 建立定位上下文。",
+        "focus": "absolute 参照"
+      },
+      {
+        "id": "css-010-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 position 特性判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`static` 是默认值，top/right/bottom/left 无效。"
+          },
+          {
+            "id": "b",
+            "text": "`relative` 相对自身原位置偏移，原占位仍保留。"
+          },
+          {
+            "id": "c",
+            "text": "`fixed` 通常相对视口，但 transform 祖先可能改变其 containing block。"
+          },
+          {
+            "id": "d",
+            "text": "`sticky` 参与文档流，滚动到阈值后表现类似 fixed。"
+          },
+          {
+            "id": "e",
+            "text": "`absolute` 不会脱离文档流。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "absolute/fixed 会脱离文档流。sticky 需要至少一个 inset，并受滚动容器和父元素边界限制。",
+        "focus": "position 值"
+      },
+      {
+        "id": "css-010-check-03",
+        "kind": "multiple",
+        "prompt": "哪些定位相关坑判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "sticky 不生效可能是没设置 `top` 等 inset。"
+          },
+          {
+            "id": "b",
+            "text": "sticky 会受最近滚动容器和父元素边界限制。"
+          },
+          {
+            "id": "c",
+            "text": "`z-index` 只在当前层叠上下文内比较。"
+          },
+          {
+            "id": "d",
+            "text": "子元素 `z-index: 999999` 一定能盖过页面所有元素。"
+          },
+          {
+            "id": "e",
+            "text": "`position: relative` 偏移会改变原本占位位置。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "relative 的视觉偏移不改变原占位；z-index 受层叠上下文限制，不是全局数值竞赛。",
+        "focus": "z-index 与 sticky"
+      }
+    ]
+  },
+  {
+    "questionId": "css-011",
+    "checks": [
+      {
+        "id": "css-011-check-01",
+        "kind": "single",
+        "prompt": "为什么子元素 `z-index: 9999` 仍可能盖不过父元素外面的兄弟元素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`z-index` 只对文字颜色有效。"
+          },
+          {
+            "id": "b",
+            "text": "子元素被限制在父元素创建的层叠上下文里，不能越过父上下文和外部元素比较。"
+          },
+          {
+            "id": "c",
+            "text": "`z-index` 最大只能写 10。"
+          },
+          {
+            "id": "d",
+            "text": "只要使用 absolute 就一定在最上层。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "不同层叠上下文之间先比较上下文本身。子元素的 z-index 再大，也无法突破父上下文。",
+        "focus": "层叠上下文"
+      },
+      {
+        "id": "css-011-check-02",
+        "kind": "multiple",
+        "prompt": "哪些情况可能创建新的 stacking context？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`position: relative` 且 `z-index` 非 auto。"
+          },
+          {
+            "id": "b",
+            "text": "`opacity: 0.99`。"
+          },
+          {
+            "id": "c",
+            "text": "`transform: translateZ(0)`。"
+          },
+          {
+            "id": "d",
+            "text": "`isolation: isolate`。"
+          },
+          {
+            "id": "e",
+            "text": "`font-weight: bold`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "定位 + z-index、透明、transform、filter、contain、container-type、will-change 等都可能创建层叠上下文。",
+        "focus": "创建层叠上下文"
+      },
+      {
+        "id": "css-011-check-03",
+        "kind": "multiple",
+        "prompt": "调试弹层遮挡问题时，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "找最近创建 stacking context 的祖先。"
+          },
+          {
+            "id": "b",
+            "text": "检查父级 `opacity`、`transform`、`z-index`、`contain` 等属性。"
+          },
+          {
+            "id": "c",
+            "text": "必要时把弹层挂到更高层 portal 容器。"
+          },
+          {
+            "id": "d",
+            "text": "设计统一 z-index token。"
+          },
+          {
+            "id": "e",
+            "text": "只要无限增大子元素 z-index，就一定解决。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "遮挡问题常在父级上下文。统一层级系统和 portal 比盲目加大数字更可靠。",
+        "focus": "调试遮挡"
+      }
+    ]
+  },
+  {
+    "questionId": "css-012",
+    "checks": [
+      {
+        "id": "css-012-check-01",
+        "kind": "single",
+        "prompt": "`transition` 和 `animation` 的核心区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "transition 依赖状态变化触发，animation 由 keyframes 驱动，可自动播放和循环。"
+          },
+          {
+            "id": "b",
+            "text": "transition 必须写 `@keyframes`，animation 不需要。"
+          },
+          {
+            "id": "c",
+            "text": "animation 只能用于 hover。"
+          },
+          {
+            "id": "d",
+            "text": "transition 只能改变 display。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "transition 适合 hover、展开收起、主题切换等两态变化；animation 适合 loading、入场、多阶段动画。",
+        "focus": "transition vs animation"
+      },
+      {
+        "id": "css-012-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 animation 属性用途匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`animation-iteration-count` 控制播放次数或 infinite。"
+          },
+          {
+            "id": "b",
+            "text": "`animation-fill-mode: forwards` 可保留结束状态。"
+          },
+          {
+            "id": "c",
+            "text": "`animation-play-state` 可暂停或恢复动画。"
+          },
+          {
+            "id": "d",
+            "text": "`animation-direction` 可控制 reverse/alternate。"
+          },
+          {
+            "id": "e",
+            "text": "`transition-delay` 控制 keyframes 中每一帧的位置。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`transition-delay` 是 transition 延迟；keyframes 阶段由百分比或 from/to 控制。",
+        "focus": "动画属性"
+      },
+      {
+        "id": "css-012-check-03",
+        "kind": "multiple",
+        "prompt": "关于 CSS 动画，哪些实践正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "优先动画 `transform` 和 `opacity`。"
+          },
+          {
+            "id": "b",
+            "text": "避免频繁动画 `width`、`height`、`top`、`left`。"
+          },
+          {
+            "id": "c",
+            "text": "尊重 `prefers-reduced-motion`。"
+          },
+          {
+            "id": "d",
+            "text": "`will-change` 只在动画前短时间使用。"
+          },
+          {
+            "id": "e",
+            "text": "所有动画都应无限循环，才能让页面更有反馈。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "无限动画容易消耗资源并影响可访问性。高成本布局属性动画更容易卡顿。",
+        "focus": "性能与无障碍"
+      }
+    ]
+  },
+  {
+    "questionId": "css-013",
+    "checks": [
+      {
+        "id": "css-013-check-01",
+        "kind": "single",
+        "prompt": "CSS Modules 主要解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让 CSS 只能在运行时通过 JS 生成。"
+          },
+          {
+            "id": "b",
+            "text": "通过构建时局部作用域和哈希类名，避免全局类名污染。"
+          },
+          {
+            "id": "c",
+            "text": "自动把所有 CSS 改成 inline style。"
+          },
+          {
+            "id": "d",
+            "text": "完全替代 CSS 语法。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "CSS Modules 仍写 CSS，但 class 默认局部化，构建后生成唯一类名并通过 `styles.xxx` 引用。",
+        "focus": "CSS Modules 本质"
+      },
+      {
+        "id": "css-013-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 CSS Modules 用法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`import styles from './Button.module.css'`。"
+          },
+          {
+            "id": "b",
+            "text": "`className={styles.button}` 引用局部类名。"
+          },
+          {
+            "id": "c",
+            "text": "`:global(.global-class)` 可声明全局样式。"
+          },
+          {
+            "id": "d",
+            "text": "`composes` 可组合本模块或其他模块的类。"
+          },
+          {
+            "id": "e",
+            "text": "CSS Modules 中所有类名都会自动变成全局类名。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CSS Modules 默认局部。需要全局样式时才显式使用 `:global()`。",
+        "focus": "CSS Modules 用法"
+      },
+      {
+        "id": "css-013-check-03",
+        "kind": "multiple",
+        "prompt": "关于 CSS Modules 与其他方案，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "普通 CSS 是全局作用域，大项目容易冲突。"
+          },
+          {
+            "id": "b",
+            "text": "CSS Modules 可放心使用简单类名，因为构建会局部化。"
+          },
+          {
+            "id": "c",
+            "text": "CSS-in-JS 常支持运行时动态样式，但可能有运行时成本。"
+          },
+          {
+            "id": "d",
+            "text": "CSS Modules 不需要构建工具支持。"
+          },
+          {
+            "id": "e",
+            "text": "CSS Modules 会自动根据 props 计算样式分支。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "CSS Modules 是构建期方案，动态分支仍由组件代码决定组合哪些 class。",
+        "focus": "方案对比"
+      }
+    ]
+  },
+  {
+    "questionId": "css-014",
+    "checks": [
+      {
+        "id": "css-014-check-01",
+        "kind": "single",
+        "prompt": "SCSS/Sass 的本质是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "浏览器原生运行时变量系统。"
+          },
+          {
+            "id": "b",
+            "text": "CSS 预处理器，在构建阶段编译成普通 CSS。"
+          },
+          {
+            "id": "c",
+            "text": "JavaScript 动画库。"
+          },
+          {
+            "id": "d",
+            "text": "只能用于 HTML 表格布局。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Sass 提供变量、嵌套、mixin、函数、循环和模块化，但最终产物仍是普通 CSS。",
+        "focus": "Sass 定位"
+      },
+      {
+        "id": "css-014-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 Sass 特性或风险判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`$primary` 这类变量是编译期变量。"
+          },
+          {
+            "id": "b",
+            "text": "`@mixin` / `@include` 适合复用样式逻辑。"
+          },
+          {
+            "id": "c",
+            "text": "嵌套太深会生成复杂选择器，提高维护成本。"
+          },
+          {
+            "id": "d",
+            "text": "`@extend` 会合并选择器，复杂项目里可能难预测。"
+          },
+          {
+            "id": "e",
+            "text": "Sass 变量可以被浏览器根据暗色模式运行时自动改写。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Sass 变量编译后不存在。需要运行时主题切换时应使用 CSS 变量。",
+        "focus": "Sass 特性与风险"
+      },
+      {
+        "id": "css-014-check-03",
+        "kind": "multiple",
+        "prompt": "关于 Sass 模块化和函数，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "现代 Sass 推荐 `@use` / `@forward`。"
+          },
+          {
+            "id": "b",
+            "text": "旧 `@import` 容易造成全局污染和重复加载。"
+          },
+          {
+            "id": "c",
+            "text": "可用 `@function` 封装 `rem()` 等计算。"
+          },
+          {
+            "id": "d",
+            "text": "`@for` 可批量生成工具类。"
+          },
+          {
+            "id": "e",
+            "text": "Sass 函数会在浏览器运行时每帧重新计算。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Sass 的函数和循环都在构建阶段执行。浏览器看到的是生成后的 CSS。",
+        "focus": "Sass 模块化"
+      }
+    ]
+  },
+  {
+    "questionId": "css-015",
+    "checks": [
+      {
+        "id": "css-015-check-01",
+        "kind": "single",
+        "prompt": "CSS border 三角形技巧的核心是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给元素设置很大的 border-radius。"
+          },
+          {
+            "id": "b",
+            "text": "元素宽高为 0，只显示某一侧 border，其他边透明。"
+          },
+          {
+            "id": "c",
+            "text": "必须使用 SVG path。"
+          },
+          {
+            "id": "d",
+            "text": "必须依赖 JavaScript 计算角度。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "宽高为 0 时，四条 border 形成四个三角区域。让三边透明、保留一边颜色即可得到三角形。",
+        "focus": "border 三角形"
+      },
+      {
+        "id": "css-015-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 CSS 图形实现方式匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "圆形可用 `aspect-ratio: 1` + `border-radius: 50%`。"
+          },
+          {
+            "id": "b",
+            "text": "多边形可用 `clip-path: polygon(...)`。"
+          },
+          {
+            "id": "c",
+            "text": "圆环进度可用 `conic-gradient` + mask。"
+          },
+          {
+            "id": "d",
+            "text": "装饰性图形可用伪元素避免污染 DOM 语义。"
+          },
+          {
+            "id": "e",
+            "text": "所有复杂交互图形都应该强行用 border 实现。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "border 适合简单三角和气泡箭头。复杂图形和可交互图形更适合 SVG、Canvas 或专门图形方案。",
+        "focus": "常见图形方案"
+      },
+      {
+        "id": "css-015-check-03",
+        "kind": "multiple",
+        "prompt": "关于 CSS 图形和加载动画，哪些实践正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "spinner 可用圆形 border 和 `transform: rotate()`。"
+          },
+          {
+            "id": "b",
+            "text": "动画图形要考虑 `prefers-reduced-motion`。"
+          },
+          {
+            "id": "c",
+            "text": "加载状态应提供可读语义，例如 `role=\"status\"` 或文字。"
+          },
+          {
+            "id": "d",
+            "text": "装饰性伪元素一定会被读屏作为重要内容朗读。"
+          },
+          {
+            "id": "e",
+            "text": "为了视觉效果可以忽略动画敏感用户。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "纯装饰通常不应进入语义内容；动画和 loading 需要兼顾性能和可访问性。",
+        "focus": "图形动画与可访问性"
+      }
+    ]
+  },
+  {
+    "questionId": "css-016",
+    "checks": [
+      {
+        "id": "css-016-check-01",
+        "kind": "single",
+        "prompt": "`contain` 属性主要告诉浏览器什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "该元素要固定在视口内。"
+          },
+          {
+            "id": "b",
+            "text": "该元素及其子树与页面其他部分相对独立，可限制样式、布局、绘制影响范围。"
+          },
+          {
+            "id": "c",
+            "text": "该元素必须继承所有父级样式。"
+          },
+          {
+            "id": "d",
+            "text": "该元素不能有子元素。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "contain 是性能和隔离提示，能帮助浏览器减少不必要的样式、布局和绘制工作。",
+        "focus": "contain 作用"
+      },
+      {
+        "id": "css-016-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `contain`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`contain: layout` 表示内部布局不影响外部。"
+          },
+          {
+            "id": "b",
+            "text": "`contain: paint` 会限制绘制范围，阴影或弹层可能被裁剪。"
+          },
+          {
+            "id": "c",
+            "text": "`contain: size` 表示元素尺寸不依赖子元素，没明确尺寸时可能不符合预期。"
+          },
+          {
+            "id": "d",
+            "text": "`contain: content` 约等于 layout、paint、style。"
+          },
+          {
+            "id": "e",
+            "text": "`contain: strict` 可以放心全局加到所有元素上。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "contain 要用于边界清晰、尺寸可控的组件。`strict` 包含 size，滥用容易造成布局异常。",
+        "focus": "contain 值和副作用"
+      },
+      {
+        "id": "css-016-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `content-visibility: auto`，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可让浏览器跳过视口外内容的布局和绘制。"
+          },
+          {
+            "id": "b",
+            "text": "适合长列表、长文档、首屏以下大块内容。"
+          },
+          {
+            "id": "c",
+            "text": "配合 `contain-intrinsic-size` 可减少滚动跳动。"
+          },
+          {
+            "id": "d",
+            "text": "它会自动删除视口外 DOM 节点。"
+          },
+          {
+            "id": "e",
+            "text": "它适合替代所有虚拟列表方案。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "content-visibility 是渲染跳过，不是 DOM 虚拟化。超大列表仍可能需要虚拟滚动。",
+        "focus": "content-visibility"
+      }
+    ]
+  },
+  {
+    "questionId": "css-017",
+    "checks": [
+      {
+        "id": "css-017-check-01",
+        "kind": "single",
+        "prompt": "下面哪类修改最容易触发 Layout/Reflow？",
+        "options": [
+          {
+            "id": "a",
+            "text": "修改 `width`、`margin`、`display`、`font-size`。"
+          },
+          {
+            "id": "b",
+            "text": "只修改合成层上的 `opacity`。"
+          },
+          {
+            "id": "c",
+            "text": "只修改合成层上的 `transform`。"
+          },
+          {
+            "id": "d",
+            "text": "修改 CSS 变量名但不被任何属性使用。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "几何信息变化会影响盒子尺寸或位置，通常需要布局计算。transform/opacity 在合成层上常可跳过 layout/paint。",
+        "focus": "Layout 触发"
+      },
+      {
+        "id": "css-017-check-02",
+        "kind": "multiple",
+        "prompt": "哪些读取可能触发 forced synchronous layout？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`el.offsetWidth`"
+          },
+          {
+            "id": "b",
+            "text": "`el.getBoundingClientRect()`"
+          },
+          {
+            "id": "c",
+            "text": "`getComputedStyle(el).width`"
+          },
+          {
+            "id": "d",
+            "text": "`el.dataset.id`"
+          },
+          {
+            "id": "e",
+            "text": "`console.log('hello')`"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "读取布局信息时，浏览器可能必须先把之前的样式写入计算完，造成同步布局。",
+        "focus": "forced layout"
+      },
+      {
+        "id": "css-017-check-03",
+        "kind": "multiple",
+        "prompt": "减少重排重绘时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "批量 DOM 写入，避免读写交替。"
+          },
+          {
+            "id": "b",
+            "text": "动画优先使用 `transform` 和 `opacity`。"
+          },
+          {
+            "id": "c",
+            "text": "谨慎使用 `will-change`，用前验证，用后移除。"
+          },
+          {
+            "id": "d",
+            "text": "用 `contain` 限制独立组件的影响范围。"
+          },
+          {
+            "id": "e",
+            "text": "动画 `left/top` 永远比 `transform` 更稳。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`left/top` 改变布局位置，更容易触发布局和重绘。优化要用 DevTools 验证实际阶段。",
+        "focus": "性能优化"
+      }
+    ]
+  },
+  {
+    "questionId": "css-018",
+    "checks": [
+      {
+        "id": "css-018-check-01",
+        "kind": "single",
+        "prompt": "单行文字省略号通常至少需要哪组属性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`white-space: nowrap; overflow: hidden; text-overflow: ellipsis;`"
+          },
+          {
+            "id": "b",
+            "text": "`display: flex; color: red;`"
+          },
+          {
+            "id": "c",
+            "text": "`line-height: 0; visibility: hidden;`"
+          },
+          {
+            "id": "d",
+            "text": "`word-break: break-all; height: auto;`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "单行省略依赖不换行、裁剪溢出和省略号绘制。Flex/Grid 子项还常需要 `min-width: 0`。",
+        "focus": "单行省略"
+      },
+      {
+        "id": "css-018-check-02",
+        "kind": "multiple",
+        "prompt": "关于多行省略，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "常用 `display: -webkit-box`。"
+          },
+          {
+            "id": "b",
+            "text": "常用 `-webkit-line-clamp: 3`。"
+          },
+          {
+            "id": "c",
+            "text": "需要 `-webkit-box-orient: vertical` 和 `overflow: hidden`。"
+          },
+          {
+            "id": "d",
+            "text": "`text-overflow: ellipsis` 单独就能稳定实现多行省略。"
+          },
+          {
+            "id": "e",
+            "text": "多行省略会自动提供完整内容给触摸和读屏用户。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多行省略常用 WebKit line clamp 组合。重要内容还需要可访问的展开、tooltip 或详情方案。",
+        "focus": "多行省略"
+      },
+      {
+        "id": "css-018-check-03",
+        "kind": "multiple",
+        "prompt": "哪些可能导致省略号不生效或体验不完整？",
+        "options": [
+          {
+            "id": "a",
+            "text": "flex 子项默认 `min-width: auto` 把容器撑开。"
+          },
+          {
+            "id": "b",
+            "text": "没有设置 `overflow: hidden`。"
+          },
+          {
+            "id": "c",
+            "text": "多行纯 CSS 兜底只是视觉模拟，可能遮挡内容。"
+          },
+          {
+            "id": "d",
+            "text": "只用 `title` 对键盘、触摸屏和辅助技术不总友好。"
+          },
+          {
+            "id": "e",
+            "text": "设置 `white-space: nowrap` 会自动处理所有可访问性问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "省略号是视觉处理，不等于完整信息可达。布局和无障碍都要额外考虑。",
+        "focus": "省略号失败排查"
+      }
+    ]
+  },
+  {
+    "questionId": "css-019",
+    "checks": [
+      {
+        "id": "css-019-check-01",
+        "kind": "single",
+        "prompt": "移动端“1px 问题”的根源是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CSS 不能画边框。"
+          },
+          {
+            "id": "b",
+            "text": "高 DPR 屏幕上 1 个 CSS 像素对应多个物理像素，视觉上比设计稿物理 1px 更粗。"
+          },
+          {
+            "id": "c",
+            "text": "浏览器禁止使用小数像素。"
+          },
+          {
+            "id": "d",
+            "text": "只有 Android 存在 CSS 像素。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "设计稿里的细线常指物理像素。高 DPR 下 `1px` CSS 像素会映射到多个物理像素。",
+        "focus": "hairline 问题"
+      },
+      {
+        "id": "css-019-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是常见 hairline 实现方式？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接使用 `border: 0.5px` 并验证目标浏览器效果。"
+          },
+          {
+            "id": "b",
+            "text": "伪元素画 1px，再用 `transform: scaleY(0.5)`。"
+          },
+          {
+            "id": "c",
+            "text": "使用 `min-resolution: 2dppx` 等 DPR 媒体查询调整缩放比例。"
+          },
+          {
+            "id": "d",
+            "text": "用 `box-shadow` 或背景渐变模拟。"
+          },
+          {
+            "id": "e",
+            "text": "修改 viewport scale 是现代默认首选方案。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "viewport 缩放会影响整页尺寸、rem、手势和第三方组件，现在通常不作为首选。",
+        "focus": "细线实现"
+      },
+      {
+        "id": "css-019-check-03",
+        "kind": "multiple",
+        "prompt": "四边 hairline 方案中，哪些细节正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "伪元素通常设为 `width: 200%; height: 200%`。"
+          },
+          {
+            "id": "b",
+            "text": "再用 `transform: scale(0.5)` 缩回。"
+          },
+          {
+            "id": "c",
+            "text": "`transform-origin: 0 0` 可保证缩放对齐左上角。"
+          },
+          {
+            "id": "d",
+            "text": "`pointer-events: none` 避免伪元素拦截交互。"
+          },
+          {
+            "id": "e",
+            "text": "伪元素缩放后会自动改变父元素布局尺寸。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "伪元素通常绝对定位，不参与父元素布局。缩放只影响视觉绘制。",
+        "focus": "四边框缩放"
+      }
+    ]
+  },
+  {
+    "questionId": "css-020",
+    "checks": [
+      {
+        "id": "css-020-check-01",
+        "kind": "single",
+        "prompt": "`em` 在非 `font-size` 属性上通常相对于什么计算？",
+        "options": [
+          {
+            "id": "a",
+            "text": "浏览器视口宽度。"
+          },
+          {
+            "id": "b",
+            "text": "当前元素计算后的字体大小。"
+          },
+          {
+            "id": "c",
+            "text": "根元素宽度。"
+          },
+          {
+            "id": "d",
+            "text": "父元素的 margin。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`font-size` 上的 em 相对父元素字体大小；其他属性上的 em 通常相对当前元素计算后的 font-size。",
+        "focus": "em 参照"
+      },
+      {
+        "id": "css-020-check-02",
+        "kind": "multiple",
+        "prompt": "哪些单位选择更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "边框、阴影、精细线条常用 px。"
+          },
+          {
+            "id": "b",
+            "text": "全局字号和间距 token 常用 rem。"
+          },
+          {
+            "id": "c",
+            "text": "页面视口相关布局可用 vw/vh/dvh。"
+          },
+          {
+            "id": "d",
+            "text": "容器响应可用 cqw/cqi 等容器查询单位。"
+          },
+          {
+            "id": "e",
+            "text": "所有场景都应该统一用 px，响应式更简单。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同单位表达不同参照系。响应式布局应结合 rem、vw/dvh、百分比、fr、容器单位和 clamp。",
+        "focus": "单位选择"
+      },
+      {
+        "id": "css-020-check-03",
+        "kind": "multiple",
+        "prompt": "关于现代 CSS 单位，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`dvh` 是动态视口高度，更适合移动端地址栏变化场景。"
+          },
+          {
+            "id": "b",
+            "text": "`ch` 约等于字符 `0` 的宽度，可用于控制文章行长。"
+          },
+          {
+            "id": "c",
+            "text": "`lh` 等于当前元素行高。"
+          },
+          {
+            "id": "d",
+            "text": "`clamp()` 可限制流式字体的最小和最大值。"
+          },
+          {
+            "id": "e",
+            "text": "`100vh` 在所有移动端场景都能完美避开动态工具栏问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "移动端传统 `vh` 可能受地址栏影响。`svh/lvh/dvh` 能更精细表达视口高度。",
+        "focus": "现代视口与排版单位"
+      }
+    ]
+  },
+  {
+    "questionId": "css-021",
+    "checks": [
+      {
+        "id": "css-021-check-01",
+        "kind": "single",
+        "prompt": "要实现“左侧 200px 固定，右侧自适应且不会被长内容撑破”，最稳妥的 Grid 写法是哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`grid-template-columns: 200px 1fr`，右侧不需要额外处理。"
+          },
+          {
+            "id": "b",
+            "text": "`grid-template-columns: 200px minmax(0, 1fr)`。"
+          },
+          {
+            "id": "c",
+            "text": "`grid-template-columns: auto auto`，再给右侧 `width: 100%`。"
+          },
+          {
+            "id": "d",
+            "text": "`grid-template-columns: 200px fit-content(100%)`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`minmax(0, 1fr)` 允许自适应列收缩到 0，能避免长文本、表格或图片把主内容列撑破。",
+        "focus": "左固定右自适应"
+      },
+      {
+        "id": "css-021-check-02",
+        "kind": "multiple",
+        "prompt": "关于三栏布局和圣杯布局，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "现代页面骨架优先用 Grid 或 Flex。"
+          },
+          {
+            "id": "b",
+            "text": "圣杯布局常见目标是 DOM 中主内容优先，视觉上左右固定、中间自适应。"
+          },
+          {
+            "id": "c",
+            "text": "Flex 三栏中，中间栏通常也需要 `min-width: 0` 处理内容溢出。"
+          },
+          {
+            "id": "d",
+            "text": "圣杯布局比 Grid 更适合现代响应式页面。"
+          },
+          {
+            "id": "e",
+            "text": "三栏布局必须使用 `position: absolute` 才能稳定。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "圣杯布局是 float 时代的兼容方案。新项目通常用 Grid/Flex，历史方案理解原理即可。",
+        "focus": "三栏布局选择"
+      },
+      {
+        "id": "css-021-check-03",
+        "kind": "multiple",
+        "prompt": "设计两栏或三栏自适应布局时，哪些细节容易影响最终效果？",
+        "options": [
+          {
+            "id": "a",
+            "text": "主内容区里的长单词、代码块、表格可能导致列被撑开。"
+          },
+          {
+            "id": "b",
+            "text": "移动端通常需要把多栏降级为单栏或上下排列。"
+          },
+          {
+            "id": "c",
+            "text": "页面级二维布局更适合 Grid，组件内部一维分配更适合 Flex。"
+          },
+          {
+            "id": "d",
+            "text": "给中间栏写 `width: 100%` 就一定能避免溢出。"
+          },
+          {
+            "id": "e",
+            "text": "固定栏宽度越大，响应式表现一定越好。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "布局题的关键不只是写出两栏，还要处理内容溢出、断点和布局模型选择。",
+        "focus": "布局细节"
+      }
+    ]
+  },
+  {
+    "questionId": "css-022",
+    "checks": [
+      {
+        "id": "css-022-check-01",
+        "kind": "single",
+        "prompt": "现代 CSS 中，`display` 更准确的理解是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只决定元素是否独占一行。"
+          },
+          {
+            "id": "b",
+            "text": "同时决定元素外部如何参与布局，以及内部子元素使用什么布局模型。"
+          },
+          {
+            "id": "c",
+            "text": "只决定子元素是 Flex 还是 Grid。"
+          },
+          {
+            "id": "d",
+            "text": "只影响元素是否可见，不影响布局。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`display` 可以拆成 outer display 和 inner display，例如 `inline flex` 与传统 `inline-flex` 类似。",
+        "focus": "display 的双重含义"
+      },
+      {
+        "id": "css-022-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`display: none` 会让元素不参与布局，通常也不进入无障碍树。"
+          },
+          {
+            "id": "b",
+            "text": "`display: inline-block` 外部按行内排列，内部可设置宽高。"
+          },
+          {
+            "id": "c",
+            "text": "`display: flow-root` 会创建 BFC，常用于清浮动和阻止 margin 折叠。"
+          },
+          {
+            "id": "d",
+            "text": "`display: contents` 会让元素自身不生成盒子，但 DOM 节点仍存在。"
+          },
+          {
+            "id": "e",
+            "text": "`display: inline` 的 `width` 和 `height` 会像 block 一样生效。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "这些值的差异来自“外部布局参与方式”和“内部格式化上下文”两条线索。",
+        "focus": "display 值辨析"
+      },
+      {
+        "id": "css-022-check-03",
+        "kind": "multiple",
+        "prompt": "使用 `display: contents` 时，哪些判断更稳妥？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它可用于不破坏 Grid/Flex 布局的语义包装。"
+          },
+          {
+            "id": "b",
+            "text": "它只移除盒子，不等于移除 DOM 节点。"
+          },
+          {
+            "id": "c",
+            "text": "交互元素和依赖可访问语义的结构要谨慎使用。"
+          },
+          {
+            "id": "d",
+            "text": "它等价于 `display: none`，只是名字不同。"
+          },
+          {
+            "id": "e",
+            "text": "它一定能保留所有浏览器和辅助技术中的语义表现。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`display: contents` 很有用，但历史上可访问性支持有差异，不适合无脑套在交互结构上。",
+        "focus": "display: contents 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "css-023",
+    "checks": [
+      {
+        "id": "css-023-check-01",
+        "kind": "single",
+        "prompt": "如果一个布局需要同时控制行和列，并且有跨行跨列的区域，优先选择什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Flex，因为 Flex 天然是二维布局。"
+          },
+          {
+            "id": "b",
+            "text": "Grid，因为 Grid 适合二维布局和显式轨道控制。"
+          },
+          {
+            "id": "c",
+            "text": "Float，因为 float 能自动处理所有跨列。"
+          },
+          {
+            "id": "d",
+            "text": "Inline-block，因为它最适合复杂页面骨架。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Flex 是一维布局，Grid 是二维布局。页面骨架、卡片网格和仪表盘通常更适合 Grid。",
+        "focus": "Grid 和 Flex 的核心差别"
+      },
+      {
+        "id": "css-023-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景和布局模型匹配合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "导航栏按钮一行排列，用 Flex。"
+          },
+          {
+            "id": "b",
+            "text": "页面 header/main/footer 三段骨架，用 Grid。"
+          },
+          {
+            "id": "c",
+            "text": "卡片内部标题、正文、按钮纵向分布，用 Flex。"
+          },
+          {
+            "id": "d",
+            "text": "图片画廊按列自适应，用 Grid。"
+          },
+          {
+            "id": "e",
+            "text": "所有布局都应该统一用 Flex，避免团队学习 Grid。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Flex 和 Grid 可以混用。外层二维骨架用 Grid，内层一维对齐用 Flex 是常见组合。",
+        "focus": "适用场景"
+      },
+      {
+        "id": "css-023-check-03",
+        "kind": "multiple",
+        "prompt": "关于 Grid 和 Flex 混用，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Grid 容器里的单个 grid item 内部仍然可以使用 Flex。"
+          },
+          {
+            "id": "b",
+            "text": "Flex 卡片列表也可以在每张卡片内部使用 Grid 对齐局部区域。"
+          },
+          {
+            "id": "c",
+            "text": "选择模型时应先看主问题是一维分配还是二维轨道。"
+          },
+          {
+            "id": "d",
+            "text": "一个页面里混用 Grid 和 Flex 会导致浏览器无法布局。"
+          },
+          {
+            "id": "e",
+            "text": "Grid 只能用于整页，不能用于组件内部。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "现代 CSS 布局不是二选一。关键是让每层布局模型解决它擅长的问题。",
+        "focus": "混用策略"
+      }
+    ]
+  },
+  {
+    "questionId": "css-024",
+    "checks": [
+      {
+        "id": "css-024-check-01",
+        "kind": "single",
+        "prompt": "CSS Houdini 的核心目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用 JS 替代所有 CSS。"
+          },
+          {
+            "id": "b",
+            "text": "把部分 CSS 解析、属性类型、绘制、布局和动画能力开放给开发者。"
+          },
+          {
+            "id": "c",
+            "text": "让浏览器自动把所有动画变成 GPU 动画。"
+          },
+          {
+            "id": "d",
+            "text": "只用于给 Sass 增加变量功能。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Houdini 是一组底层 CSS API，不是一个单独框架。它让 JS 能更结构化地参与 CSS 渲染管线。",
+        "focus": "Houdini 的定位"
+      },
+      {
+        "id": "css-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些能力属于 Houdini 相关方向？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`CSS.registerProperty` 给自定义属性注册类型和初始值。"
+          },
+          {
+            "id": "b",
+            "text": "Paint Worklet 用 `paint(name)` 生成自定义背景或纹理。"
+          },
+          {
+            "id": "c",
+            "text": "Typed OM 用结构化对象读写 CSS 值，减少字符串拼接。"
+          },
+          {
+            "id": "d",
+            "text": "`localStorage` 自动把 CSS 变量同步到服务端。"
+          },
+          {
+            "id": "e",
+            "text": "`z-index` 自动计算最优层级。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Houdini 关注 CSS 引擎接口。注册属性、绘制 worklet、Typed OM 都是典型能力。",
+        "focus": "Houdini API 能力"
+      },
+      {
+        "id": "css-024-check-03",
+        "kind": "multiple",
+        "prompt": "生产环境使用 Houdini 时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先做 feature detection，再提供降级方案。"
+          },
+          {
+            "id": "b",
+            "text": "认识到 Worklet 环境受限，不能直接访问 DOM。"
+          },
+          {
+            "id": "c",
+            "text": "简单图形优先考虑 CSS 或 SVG，不为炫技强上 Houdini。"
+          },
+          {
+            "id": "d",
+            "text": "针对目标浏览器验证兼容性。"
+          },
+          {
+            "id": "e",
+            "text": "只要用了 Paint API，就不需要考虑性能。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Houdini 能力强但支持度和成本差异大，实际项目应以兼容性、维护性和性能验证为准。",
+        "focus": "生产使用注意"
+      }
+    ]
+  },
+  {
+    "questionId": "css-025",
+    "checks": [
+      {
+        "id": "css-025-check-01",
+        "kind": "single",
+        "prompt": "为页面启用平滑滚动时，哪项处理最必要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给所有元素都加 `scroll-behavior: smooth`。"
+          },
+          {
+            "id": "b",
+            "text": "在 `prefers-reduced-motion: reduce` 下关闭或弱化平滑滚动。"
+          },
+          {
+            "id": "c",
+            "text": "禁止键盘滚动，避免和动画冲突。"
+          },
+          {
+            "id": "d",
+            "text": "用 `setInterval` 每 16ms 手动滚动。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "平滑滚动和滚动动画可能影响眩晕敏感用户，应尊重系统的减少动态效果偏好。",
+        "focus": "平滑滚动可访问性"
+      },
+      {
+        "id": "css-025-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 CSS 能改善滚动容器体验或稳定性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`overscroll-behavior: contain` 防止内部滚到底后带动外层。"
+          },
+          {
+            "id": "b",
+            "text": "`scroll-snap-type` 配合 `scroll-snap-align` 实现吸附。"
+          },
+          {
+            "id": "c",
+            "text": "`scroll-padding-top` 处理固定头部遮挡锚点。"
+          },
+          {
+            "id": "d",
+            "text": "`scrollbar-gutter: stable` 减少滚动条出现导致的布局抖动。"
+          },
+          {
+            "id": "e",
+            "text": "隐藏滚动条就等于禁用了滚动。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "滚动体验包括边界、吸附、锚点偏移、滚动条占位和可访问性，不只是滚得顺不顺。",
+        "focus": "滚动体验控制"
+      },
+      {
+        "id": "css-025-check-03",
+        "kind": "multiple",
+        "prompt": "关于滚动监听和长内容优化，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "JS 滚动监听使用 passive listener，避免阻塞滚动。"
+          },
+          {
+            "id": "b",
+            "text": "高频滚动更新放到 `requestAnimationFrame` 或节流逻辑里。"
+          },
+          {
+            "id": "c",
+            "text": "长页面可用 `content-visibility: auto` 跳过视口外渲染。"
+          },
+          {
+            "id": "d",
+            "text": "每次 scroll 事件都同步读取布局再写样式是最佳实践。"
+          },
+          {
+            "id": "e",
+            "text": "滚动容器越多，性能一定越好。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "滚动性能的重点是减少主线程阻塞、避免布局抖动，并控制视口外内容渲染成本。",
+        "focus": "滚动性能"
+      }
+    ]
+  },
+  {
+    "questionId": "css-026",
+    "checks": [
+      {
+        "id": "css-026-check-01",
+        "kind": "single",
+        "prompt": "`will-change` 最准确的定位是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "强制某个属性一定只走 GPU。"
+          },
+          {
+            "id": "b",
+            "text": "提前告诉浏览器某些属性即将变化，让浏览器有机会做优化。"
+          },
+          {
+            "id": "c",
+            "text": "自动修复所有动画卡顿。"
+          },
+          {
+            "id": "d",
+            "text": "替代 `transition` 和 `animation`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`will-change` 是优化提示，不是性能保证。它可能触发合成层准备，也可能带来额外成本。",
+        "focus": "will-change 的本质"
+      },
+      {
+        "id": "css-026-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "在动画开始前短时间添加。"
+          },
+          {
+            "id": "b",
+            "text": "动画结束后移除或恢复为 `auto`。"
+          },
+          {
+            "id": "c",
+            "text": "主要用于 `transform`、`opacity` 等确实即将变化的属性。"
+          },
+          {
+            "id": "d",
+            "text": "全站所有卡片永久写 `will-change: transform`。"
+          },
+          {
+            "id": "e",
+            "text": "写 `will-change: all` 让浏览器自己猜。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "长期、大量、宽泛地使用 `will-change` 会增加内存和合成成本，可能适得其反。",
+        "focus": "正确使用 will-change"
+      },
+      {
+        "id": "css-026-check-03",
+        "kind": "multiple",
+        "prompt": "滥用 `will-change` 可能造成哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "产生过多合成层。"
+          },
+          {
+            "id": "b",
+            "text": "增加内存占用和 GPU 纹理成本。"
+          },
+          {
+            "id": "c",
+            "text": "纹理上传、合成和功耗开销变高。"
+          },
+          {
+            "id": "d",
+            "text": "DevTools 中看到 Layers 变复杂。"
+          },
+          {
+            "id": "e",
+            "text": "CSS 选择器会全部失效。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`will-change` 要用工具验证收益。优化提示用错了，可能把问题从卡顿变成内存和合成压力。",
+        "focus": "滥用风险"
+      }
+    ]
+  },
+  {
+    "questionId": "css-027",
+    "checks": [
+      {
+        "id": "css-027-check-01",
+        "kind": "single",
+        "prompt": "暗色模式同时支持系统偏好和用户手动选择时，哪个优先级更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远使用系统偏好，不允许用户覆盖。"
+          },
+          {
+            "id": "b",
+            "text": "用户手动选择优先；没有选择时才跟随系统偏好。"
+          },
+          {
+            "id": "c",
+            "text": "每次刷新随机选择亮色或暗色。"
+          },
+          {
+            "id": "d",
+            "text": "只用 CSS，不需要考虑持久化。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "主题是用户偏好。手动选择应持久化并优先于系统偏好，系统变化只影响未手动设置的用户。",
+        "focus": "手动主题优先级"
+      },
+      {
+        "id": "css-027-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用语义 CSS 变量管理颜色 token。"
+          },
+          {
+            "id": "b",
+            "text": "设置 `color-scheme` 让原生控件和滚动条跟随主题。"
+          },
+          {
+            "id": "c",
+            "text": "初始化主题脚本尽量早执行，减少明暗闪烁。"
+          },
+          {
+            "id": "d",
+            "text": "重新检查暗色下的对比度、阴影、边框和状态色。"
+          },
+          {
+            "id": "e",
+            "text": "对整页统一 `filter: invert(1)` 就是完整暗色模式。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "暗色模式不是简单反色。变量、原生 UI、首屏防闪和视觉校验都要一起处理。",
+        "focus": "暗色模式实现要点"
+      },
+      {
+        "id": "css-027-check-03",
+        "kind": "multiple",
+        "prompt": "关于暗色模式中的图片和资源，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "照片、图表和品牌图不应默认全局反色。"
+          },
+          {
+            "id": "b",
+            "text": "Logo、图标、插图可提供亮暗两套资源。"
+          },
+          {
+            "id": "c",
+            "text": "单色图标可用变量或受控 filter 做主题适配。"
+          },
+          {
+            "id": "d",
+            "text": "暗色模式下所有图片都必须变成黑白。"
+          },
+          {
+            "id": "e",
+            "text": "`color-scheme` 会自动重绘业务图片。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "图片资源需要按类型处理。照片、图表、品牌资产和 UI 图标的适配策略不同。",
+        "focus": "资源适配"
+      }
+    ]
+  },
+  {
+    "questionId": "css-028",
+    "checks": [
+      {
+        "id": "css-028-check-01",
+        "kind": "single",
+        "prompt": "`overflow: clip` 和 `overflow: hidden` 的关键区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`clip` 会自动创建滚动条。"
+          },
+          {
+            "id": "b",
+            "text": "`clip` 裁剪溢出但不创建滚动容器；`hidden/auto/scroll` 通常会创建滚动容器。"
+          },
+          {
+            "id": "c",
+            "text": "`hidden` 不会裁剪内容。"
+          },
+          {
+            "id": "d",
+            "text": "两者完全等价。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`overflow: clip` 更像纯裁剪。如果既要裁剪又要 BFC，可配合 `display: flow-root`。",
+        "focus": "overflow: clip 与 hidden"
+      },
+      {
+        "id": "css-028-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`overflow: hidden` 会裁剪内容，也可能让用户无法滚到被裁剪内容。"
+          },
+          {
+            "id": "b",
+            "text": "`overflow: auto` 比 `scroll` 更适合“溢出时才出现滚动条”的区域。"
+          },
+          {
+            "id": "c",
+            "text": "为清浮动使用 `overflow: hidden` 可能误裁阴影、下拉层或焦点环。"
+          },
+          {
+            "id": "d",
+            "text": "`overflow` 会影响 sticky、滚动容器和裁剪边界。"
+          },
+          {
+            "id": "e",
+            "text": "`overflow` 只影响视觉，不影响布局和滚动行为。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`overflow` 常被当作小属性，但它会牵动 BFC、滚动容器、裁剪和定位行为。",
+        "focus": "overflow 的副作用"
+      },
+      {
+        "id": "css-028-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合用 overflow 相关能力处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "固定高度侧栏内部滚动。"
+          },
+          {
+            "id": "b",
+            "text": "卡片图片按圆角裁剪。"
+          },
+          {
+            "id": "c",
+            "text": "单行文本省略配合 `white-space: nowrap`。"
+          },
+          {
+            "id": "d",
+            "text": "横向代码块使用 `overflow-x: auto`。"
+          },
+          {
+            "id": "e",
+            "text": "用 `overflow: hidden` 作为所有弹窗定位问题的通用解。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "overflow 很适合滚动、裁剪和省略，但不能滥用来掩盖层级、定位或布局问题。",
+        "focus": "常见使用场景"
+      }
+    ]
+  },
+  {
+    "questionId": "css-029",
+    "checks": [
+      {
+        "id": "css-029-check-01",
+        "kind": "single",
+        "prompt": "CSS 逻辑属性主要解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让 CSS 文件自动压缩。"
+          },
+          {
+            "id": "b",
+            "text": "用 block/inline 方向表达布局，更好适配 RTL 和不同 writing-mode。"
+          },
+          {
+            "id": "c",
+            "text": "让所有长度单位自动换成 rem。"
+          },
+          {
+            "id": "d",
+            "text": "替代 Flex 和 Grid。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "逻辑属性不绑定物理左上右下，而是跟随文字方向和书写模式。",
+        "focus": "逻辑属性的价值"
+      },
+      {
+        "id": "css-029-check-02",
+        "kind": "multiple",
+        "prompt": "哪些对应关系正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`margin-left` 在 LTR 中常对应 `margin-inline-start`。"
+          },
+          {
+            "id": "b",
+            "text": "`width` 常可对应逻辑尺寸 `inline-size`。"
+          },
+          {
+            "id": "c",
+            "text": "`height` 常可对应逻辑尺寸 `block-size`。"
+          },
+          {
+            "id": "d",
+            "text": "`left` 可对应 `inset-inline-start`。"
+          },
+          {
+            "id": "e",
+            "text": "`padding-top` 对应 `padding-inline-end`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "block 是块流方向，inline 是行内文字方向。LTR/RTL 下 inline-start 的物理方向会变化。",
+        "focus": "属性对应关系"
+      },
+      {
+        "id": "css-029-check-03",
+        "kind": "multiple",
+        "prompt": "使用逻辑属性做国际化布局时，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`text-align: start` 能随方向切换文本起始对齐。"
+          },
+          {
+            "id": "b",
+            "text": "图标间距可用 `margin-inline-end` 代替固定 `margin-right`。"
+          },
+          {
+            "id": "c",
+            "text": "背景图位置、transform 和图标方向不一定自动逻辑化。"
+          },
+          {
+            "id": "d",
+            "text": "使用逻辑属性后就永远不需要处理 RTL 特例。"
+          },
+          {
+            "id": "e",
+            "text": "`inset: 0` 是按逻辑方向设置四边。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "逻辑属性能减少方向相关覆盖，但复杂视觉资源和变换仍可能需要单独适配。",
+        "focus": "国际化细节"
+      }
+    ]
+  },
+  {
+    "questionId": "css-030",
+    "checks": [
+      {
+        "id": "css-030-check-01",
+        "kind": "single",
+        "prompt": "`repeat(auto-fit, minmax(200px, 1fr))` 在项目数量少于可容纳列数时通常会怎样？",
+        "options": [
+          {
+            "id": "a",
+            "text": "保留空列，让已有项目保持 200px。"
+          },
+          {
+            "id": "b",
+            "text": "折叠空列，让已有项目拉伸填满容器。"
+          },
+          {
+            "id": "c",
+            "text": "自动变成一列。"
+          },
+          {
+            "id": "d",
+            "text": "禁止项目换行。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`auto-fit` 会折叠空轨道，已有项目获得更多空间；`auto-fill` 会保留空轨道位置。",
+        "focus": "auto-fit 视觉效果"
+      },
+      {
+        "id": "css-030-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "两者都常和 `repeat()`、`minmax()` 搭配做自适应列。"
+          },
+          {
+            "id": "b",
+            "text": "`auto-fill` 会尽可能填充轨道，即使部分轨道没有内容也保留空间。"
+          },
+          {
+            "id": "c",
+            "text": "`auto-fit` 更常用于卡片网格，让少量卡片填满容器。"
+          },
+          {
+            "id": "d",
+            "text": "需要保留网格占位或拖拽对齐时，`auto-fill` 可能更合适。"
+          },
+          {
+            "id": "e",
+            "text": "`auto-fill` 和 `auto-fit` 在任何情况下视觉都完全相同。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "区别通常在“空轨道是否保留”。项目刚好填满时可能看不出差别，项目少时差异明显。",
+        "focus": "auto-fill 与 auto-fit"
+      },
+      {
+        "id": "css-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些写法或判断更稳妥？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`minmax(280px, 1fr)` 能设定卡片最小宽度和剩余空间分配。"
+          },
+          {
+            "id": "b",
+            "text": "`gap` 应参与响应式设计，不能只盯列宽。"
+          },
+          {
+            "id": "c",
+            "text": "小屏下如果最小宽度过大，可能产生横向溢出。"
+          },
+          {
+            "id": "d",
+            "text": "`1fr` 总是可以忽略内容最小宽度，不会被撑开。"
+          },
+          {
+            "id": "e",
+            "text": "自适应网格不需要考虑图片比例和卡片高度。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "自适应列数只是第一步，内容最小尺寸、间距、图片比例和溢出都决定最终体验。",
+        "focus": "Grid 自适应细节"
+      }
+    ]
+  },
+  {
+    "questionId": "css-031",
+    "checks": [
+      {
+        "id": "css-031-check-01",
+        "kind": "single",
+        "prompt": "加载动画中，哪类属性通常更适合高频动画？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`width` 和 `height`。"
+          },
+          {
+            "id": "b",
+            "text": "`transform` 和 `opacity`。"
+          },
+          {
+            "id": "c",
+            "text": "`top` 和 `left`。"
+          },
+          {
+            "id": "d",
+            "text": "`border-width` 和 `font-size`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`transform` 和 `opacity` 更容易走合成阶段，通常比频繁改几何属性更稳定。",
+        "focus": "spinner 动画属性"
+      },
+      {
+        "id": "css-031-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法更适合真实产品里的 loading？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给加载指示器提供 `role=\"status\"` 或可读文案。"
+          },
+          {
+            "id": "b",
+            "text": "长时间 loading 提供具体状态、重试或取消入口。"
+          },
+          {
+            "id": "c",
+            "text": "在 `prefers-reduced-motion: reduce` 下关闭或弱化循环动画。"
+          },
+          {
+            "id": "d",
+            "text": "只要动画足够明显，就不需要文本或语义提示。"
+          },
+          {
+            "id": "e",
+            "text": "所有 loading 都应该无限旋转，不需要超时策略。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "加载动画不是纯视觉装饰。用户要知道发生了什么，以及卡住时能做什么。",
+        "focus": "加载状态可访问性"
+      },
+      {
+        "id": "css-031-check-03",
+        "kind": "multiple",
+        "prompt": "关于 skeleton shimmer，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "常用线性渐变和 `background-position` 制造扫光效果。"
+          },
+          {
+            "id": "b",
+            "text": "要避免在大量列表项上同时创建过重动画。"
+          },
+          {
+            "id": "c",
+            "text": "内容结构应尽量接近最终布局，减少加载完成后的跳动。"
+          },
+          {
+            "id": "d",
+            "text": "骨架屏越花哨，感知性能一定越好。"
+          },
+          {
+            "id": "e",
+            "text": "骨架屏可以替代实际错误处理。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "骨架屏的价值是稳定预期和减少等待焦虑，不是用动画掩盖慢请求或错误状态。",
+        "focus": "骨架屏和闪光效果"
+      }
+    ]
+  },
+  {
+    "questionId": "css-032",
+    "checks": [
+      {
+        "id": "css-032-check-01",
+        "kind": "single",
+        "prompt": "相邻两个普通块元素，一个 `margin-bottom: 20px`，另一个 `margin-top: 30px`，两者间距通常是多少？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`50px`。"
+          },
+          {
+            "id": "b",
+            "text": "`30px`。"
+          },
+          {
+            "id": "c",
+            "text": "`20px`。"
+          },
+          {
+            "id": "d",
+            "text": "`10px`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "相邻垂直 margin 折叠时，两个正值通常取较大值，不是相加。",
+        "focus": "margin 折叠结果"
+      },
+      {
+        "id": "css-032-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景可能发生垂直 margin 折叠？",
+        "options": [
+          {
+            "id": "a",
+            "text": "相邻普通块级兄弟元素。"
+          },
+          {
+            "id": "b",
+            "text": "父元素和第一个子元素之间，且父元素没有 border、padding、BFC 等隔离。"
+          },
+          {
+            "id": "c",
+            "text": "空块元素自身的上下 margin。"
+          },
+          {
+            "id": "d",
+            "text": "Flex 容器中的 flex item 之间。"
+          },
+          {
+            "id": "e",
+            "text": "水平方向的 `margin-left` 和 `margin-right`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "margin 折叠主要存在于普通块格式化上下文的垂直方向。Flex/Grid 子项不会折叠。",
+        "focus": "折叠发生条件"
+      },
+      {
+        "id": "css-032-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方式可以阻止或规避父子 margin 折叠？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给父元素 `display: flow-root` 创建 BFC。"
+          },
+          {
+            "id": "b",
+            "text": "给父元素加 `padding-top` 或 `border-top`。"
+          },
+          {
+            "id": "c",
+            "text": "使用 Flex/Grid 布局并用 `gap` 管理间距。"
+          },
+          {
+            "id": "d",
+            "text": "给子元素设置更大的 `margin-top`。"
+          },
+          {
+            "id": "e",
+            "text": "给父元素设置 `color`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "要阻止折叠，需要改变格式化上下文或用边框、内边距隔开，而不是继续调 margin 大小。",
+        "focus": "阻止折叠"
+      }
+    ]
+  },
+  {
+    "questionId": "css-033",
+    "checks": [
+      {
+        "id": "css-033-check-01",
+        "kind": "single",
+        "prompt": "为什么正文常推荐使用无单位 `line-height`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为无单位行高会被浏览器当作 `0`。"
+          },
+          {
+            "id": "b",
+            "text": "因为它继承的是比例，子元素会按自己的 `font-size` 计算行高。"
+          },
+          {
+            "id": "c",
+            "text": "因为它可以自动让所有文本严格垂直居中。"
+          },
+          {
+            "id": "d",
+            "text": "因为只有无单位行高能设置动画。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`line-height: 1.6` 继承比例，比继承固定像素或百分比结果更符合嵌套排版预期。",
+        "focus": "无单位 line-height"
+      },
+      {
+        "id": "css-033-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`vertical-align` 作用于 inline、inline-block、inline-table 或 table-cell。"
+          },
+          {
+            "id": "b",
+            "text": "它对普通 block 元素的整体垂直居中无效。"
+          },
+          {
+            "id": "c",
+            "text": "`middle` 不是严格几何居中，而是和基线及 x-height 有关。"
+          },
+          {
+            "id": "d",
+            "text": "Flex 容器里的垂直居中应该优先用 `vertical-align`。"
+          },
+          {
+            "id": "e",
+            "text": "`vertical-align` 可以替代所有 `align-items`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`vertical-align` 是行内排版和表格单元格里的对齐属性，不是通用布局居中方案。",
+        "focus": "vertical-align 辨析"
+      },
+      {
+        "id": "css-033-check-03",
+        "kind": "multiple",
+        "prompt": "`img` 下方出现空隙时，哪些解释和处理正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "默认 `img` 是 inline-level replaced element，会按 baseline 对齐。"
+          },
+          {
+            "id": "b",
+            "text": "基线下方会预留给文字下伸部的空间。"
+          },
+          {
+            "id": "c",
+            "text": "可以把图片设为 `display: block`。"
+          },
+          {
+            "id": "d",
+            "text": "也可以用 `vertical-align: bottom` 处理。"
+          },
+          {
+            "id": "e",
+            "text": "空隙一定是图片文件自带透明边。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "这类空隙来自 IFC 的基线对齐规则，不一定是图片素材问题。",
+        "focus": "图片底部空隙"
+      }
+    ]
+  },
+  {
+    "questionId": "css-034",
+    "checks": [
+      {
+        "id": "css-034-check-01",
+        "kind": "single",
+        "prompt": "使用 CSS Columns 做瀑布流时，最重要的限制是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不能自适应列宽。"
+          },
+          {
+            "id": "b",
+            "text": "视觉顺序通常按列从上到下，可能和 DOM/阅读顺序不一致。"
+          },
+          {
+            "id": "c",
+            "text": "必须用 JavaScript 计算每个元素高度。"
+          },
+          {
+            "id": "d",
+            "text": "不能设置列间距。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Columns 方案简单，但视觉顺序和键盘、读屏顺序可能不一致，内容排序要求高时要谨慎。",
+        "focus": "CSS Columns 瀑布流限制"
+      },
+      {
+        "id": "css-034-check-02",
+        "kind": "multiple",
+        "prompt": "哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "内容展示、顺序要求不高时，CSS Columns 可以是低成本方案。"
+          },
+          {
+            "id": "b",
+            "text": "需要按最短列放置、图片加载后重排、无限滚动时，JS 方案更灵活。"
+          },
+          {
+            "id": "c",
+            "text": "Grid masonry 可作为渐进增强，但要验证目标浏览器支持。"
+          },
+          {
+            "id": "d",
+            "text": "瀑布流只能用 float 实现。"
+          },
+          {
+            "id": "e",
+            "text": "CSS Columns 的视觉顺序一定等于按行从左到右。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "瀑布流没有单一最佳方案，要按顺序要求、兼容性和重排能力选择。",
+        "focus": "瀑布流方案选择"
+      },
+      {
+        "id": "css-034-check-03",
+        "kind": "multiple",
+        "prompt": "做图片瀑布流时，哪些措施能减少布局跳动？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提前知道图片宽高或设置 `aspect-ratio`。"
+          },
+          {
+            "id": "b",
+            "text": "使用占位图或占位尺寸。"
+          },
+          {
+            "id": "c",
+            "text": "图片加载完成后再计算或修正布局。"
+          },
+          {
+            "id": "d",
+            "text": "使用 ResizeObserver 监听尺寸变化。"
+          },
+          {
+            "id": "e",
+            "text": "等图片自然把页面撑开，不需要任何占位。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "瀑布流最怕图片尺寸未知导致重排。稳定尺寸信息是体验和性能的基础。",
+        "focus": "图片瀑布流稳定性"
+      }
+    ]
+  },
+  {
+    "questionId": "css-035",
+    "checks": [
+      {
+        "id": "css-035-check-01",
+        "kind": "single",
+        "prompt": "浏览器从页面结构到屏幕输出的常见顺序更接近哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Paint -> Layout -> DOM -> CSSOM -> Composite。"
+          },
+          {
+            "id": "b",
+            "text": "DOM/CSSOM -> Render/Layout Tree -> Layout -> Paint -> Composite。"
+          },
+          {
+            "id": "c",
+            "text": "Composite -> Paint -> Layout -> CSSOM。"
+          },
+          {
+            "id": "d",
+            "text": "CSSOM -> Composite -> DOM -> Layout。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "先解析结构和样式，再计算布局、绘制指令，最后合成输出。",
+        "focus": "渲染流水线顺序"
+      },
+      {
+        "id": "css-035-check-02",
+        "kind": "multiple",
+        "prompt": "哪些判断通常成立？",
+        "options": [
+          {
+            "id": "a",
+            "text": "改 `width`、`margin`、`font-size` 通常会触发布局。"
+          },
+          {
+            "id": "b",
+            "text": "改 `color`、`background` 通常至少涉及绘制。"
+          },
+          {
+            "id": "c",
+            "text": "合成层上的 `transform`、`opacity` 动画通常可以只做合成。"
+          },
+          {
+            "id": "d",
+            "text": "`display: none` 只影响合成，不影响布局树。"
+          },
+          {
+            "id": "e",
+            "text": "所有 `transform` 在任何场景都绝对不会触发 Paint。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "属性成本是经验规则，不是绝对保证。元素是否在合成层、效果组合和内容变化都会影响实际阶段。",
+        "focus": "属性变化成本"
+      },
+      {
+        "id": "css-035-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法能降低运行时渲染成本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "批量读写 DOM，避免写样式后马上读布局再写样式。"
+          },
+          {
+            "id": "b",
+            "text": "动画优先使用 `transform` 和 `opacity`。"
+          },
+          {
+            "id": "c",
+            "text": "大列表使用分页或虚拟滚动减少 DOM 数量。"
+          },
+          {
+            "id": "d",
+            "text": "用 DevTools Performance/Layers 验证实际瓶颈。"
+          },
+          {
+            "id": "e",
+            "text": "给所有元素都加 `will-change`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能优化要减少 Layout/Paint 和无效 DOM 工作，并通过工具确认瓶颈。",
+        "focus": "避免布局抖动"
+      }
+    ]
+  },
+  {
+    "questionId": "css-036",
+    "checks": [
+      {
+        "id": "css-036-check-01",
+        "kind": "single",
+        "prompt": "移动端菜单关闭时，除了移出视口，还应处理什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让链接仍然可以被点击，方便快速打开。"
+          },
+          {
+            "id": "b",
+            "text": "设置 `visibility`、`pointer-events` 或焦点管理，避免隐藏链接仍可交互。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有 ARIA 属性。"
+          },
+          {
+            "id": "d",
+            "text": "把菜单固定为 `display: block` 即可。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "视觉隐藏不等于交互隐藏。关闭状态要避免鼠标、触摸、键盘和读屏状态不一致。",
+        "focus": "移动导航关闭状态"
+      },
+      {
+        "id": "css-036-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "汉堡按钮使用 `aria-controls` 关联菜单。"
+          },
+          {
+            "id": "b",
+            "text": "`aria-expanded` 要和菜单打开状态同步。"
+          },
+          {
+            "id": "c",
+            "text": "按钮文案或 `aria-label` 应区分打开和关闭菜单。"
+          },
+          {
+            "id": "d",
+            "text": "覆盖层菜单应考虑 Escape 关闭和焦点管理。"
+          },
+          {
+            "id": "e",
+            "text": "只用三个横线图标即可，不需要按钮语义。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "导航菜单是交互控件，不是纯视觉动画。状态、焦点和键盘行为都属于完整实现。",
+        "focus": "响应式导航可访问性"
+      },
+      {
+        "id": "css-036-check-03",
+        "kind": "multiple",
+        "prompt": "关于响应式导航实现，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CSS 负责断点、布局和过渡。"
+          },
+          {
+            "id": "b",
+            "text": "少量 JS 负责打开状态和 ARIA 同步。"
+          },
+          {
+            "id": "c",
+            "text": "`prefers-reduced-motion` 下应关闭或弱化菜单过渡。"
+          },
+          {
+            "id": "d",
+            "text": "checkbox hack 永远比 JS 更适合生产项目。"
+          },
+          {
+            "id": "e",
+            "text": "移动端菜单不需要处理点击外部关闭。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "真实产品中，样式和状态需要配合。只靠视觉切换容易漏掉可访问和交互细节。",
+        "focus": "CSS/JS 分工"
+      }
+    ]
+  },
+  {
+    "questionId": "css-037",
+    "checks": [
+      {
+        "id": "css-037-check-01",
+        "kind": "single",
+        "prompt": "正文 Web Font 通常更适合选择哪类 `font-display` 策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`block`，让正文一直隐藏直到字体加载完成。"
+          },
+          {
+            "id": "b",
+            "text": "`swap` 或 `optional`，优先保证正文尽快可见。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有 fallback 字体。"
+          },
+          {
+            "id": "d",
+            "text": "把字体文件内联到每个组件里。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "正文可读性优先。`swap` 或 `optional` 能减少 FOIT，具体取舍看品牌一致性和性能要求。",
+        "focus": "font-display 取舍"
+      },
+      {
+        "id": "css-037-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "优先使用 WOFF2。"
+          },
+          {
+            "id": "b",
+            "text": "对大字体做子集化和 `unicode-range` 拆分。"
+          },
+          {
+            "id": "c",
+            "text": "只 preload 首屏真正关键的字体。"
+          },
+          {
+            "id": "d",
+            "text": "使用合理缓存策略。"
+          },
+          {
+            "id": "e",
+            "text": "把所有字重、所有语言字体都 preload。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "字体优化的关键是少、准、可缓存。过度 preload 会抢占其他关键资源。",
+        "focus": "字体性能优化"
+      },
+      {
+        "id": "css-037-check-03",
+        "kind": "multiple",
+        "prompt": "关于字体切换导致的布局偏移，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "自定义字体和 fallback 字体度量不同，会导致加载后重排。"
+          },
+          {
+            "id": "b",
+            "text": "可以选择更接近的 fallback 字体降低差异。"
+          },
+          {
+            "id": "c",
+            "text": "可用 `size-adjust`、`ascent-override` 等 metric override 精调。"
+          },
+          {
+            "id": "d",
+            "text": "`font-display: swap` 一定不会产生任何布局变化。"
+          },
+          {
+            "id": "e",
+            "text": "CLS 只和图片尺寸有关，和字体无关。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "字体加载会改变文字宽高和换行，进而影响布局。度量匹配是减少 CLS 的重要手段。",
+        "focus": "字体导致 CLS"
+      }
+    ]
+  },
+  {
+    "questionId": "css-038",
+    "checks": [
+      {
+        "id": "css-038-check-01",
+        "kind": "single",
+        "prompt": "动画中使用 `transform: translateY(...)` 通常比改 `top` 更稳，是因为？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`transform` 会改变文档流里的布局位置。"
+          },
+          {
+            "id": "b",
+            "text": "`transform` 改变的是绘制结果的变换矩阵，合适情况下可跳过 Layout/Paint。"
+          },
+          {
+            "id": "c",
+            "text": "`top` 在浏览器中完全不可用。"
+          },
+          {
+            "id": "d",
+            "text": "`transform` 会自动压缩图片。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`top/left` 影响布局几何；`transform` 不改变布局盒位置，合成层上通常只需更新合成。",
+        "focus": "transform 为什么常更快"
+      },
+      {
+        "id": "css-038-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "非 `none` 的 transform 会创建新的 stacking context。"
+          },
+          {
+            "id": "b",
+            "text": "transform 可能成为绝对定位或固定定位后代的 containing block。"
+          },
+          {
+            "id": "c",
+            "text": "transform 后的视觉位置不会改变 `offsetTop` 等布局指标。"
+          },
+          {
+            "id": "d",
+            "text": "`transform-origin` 会影响旋转和缩放结果。"
+          },
+          {
+            "id": "e",
+            "text": "transform 顺序不影响最终视觉。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "transform 是矩阵变换，顺序、原点、层叠上下文和定位包含块都会影响实际行为。",
+        "focus": "transform 的副作用"
+      },
+      {
+        "id": "css-038-check-03",
+        "kind": "multiple",
+        "prompt": "哪些优化策略更健康？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动画前短时间添加 `will-change: transform, opacity`。"
+          },
+          {
+            "id": "b",
+            "text": "动画结束后移除合成提示。"
+          },
+          {
+            "id": "c",
+            "text": "用 DevTools 验证是否真的减少 Layout/Paint。"
+          },
+          {
+            "id": "d",
+            "text": "给所有元素加 `translateZ(0)`。"
+          },
+          {
+            "id": "e",
+            "text": "默认认为 `filter` 和 `backdrop-filter` 都一定只走合成。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "合成层是资源，不是免费午餐。只提升真正需要动画的元素，并用工具验证。",
+        "focus": "合成层策略"
+      }
+    ]
+  },
+  {
+    "questionId": "css-039",
+    "checks": [
+      {
+        "id": "css-039-check-01",
+        "kind": "single",
+        "prompt": "Inline Formatting Context 主要负责什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "页面整体二维网格布局。"
+          },
+          {
+            "id": "b",
+            "text": "行内级内容排成一行行 line box，并按基线、行高和对齐规则布局。"
+          },
+          {
+            "id": "c",
+            "text": "把所有元素变成绝对定位。"
+          },
+          {
+            "id": "d",
+            "text": "管理 JavaScript 事件冒泡。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "IFC 是文字、span、img、inline-block 图文混排背后的行内排版规则。",
+        "focus": "IFC 的职责"
+      },
+      {
+        "id": "css-039-check-02",
+        "kind": "multiple",
+        "prompt": "哪些问题可以用 IFC 规则解释？",
+        "options": [
+          {
+            "id": "a",
+            "text": "图片底部出现基线空隙。"
+          },
+          {
+            "id": "b",
+            "text": "相邻 `inline-block` 因 HTML 空白出现间隙。"
+          },
+          {
+            "id": "c",
+            "text": "单行省略依赖不换行、溢出裁剪和文本溢出。"
+          },
+          {
+            "id": "d",
+            "text": "float 会缩短附近 line box 的可用宽度。"
+          },
+          {
+            "id": "e",
+            "text": "Grid 子项跨列是 IFC 造成的。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "IFC 处理行内内容排列、换行、基线、空白和图文环绕，不负责 Grid 轨道。",
+        "focus": "IFC 现象"
+      },
+      {
+        "id": "css-039-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "一行中最高或最低的 inline box 会影响 line box 高度。"
+          },
+          {
+            "id": "b",
+            "text": "`line-height`、字体度量和 replaced element 都可能参与行盒高度计算。"
+          },
+          {
+            "id": "c",
+            "text": "`vertical-align` 控制行内级盒子相对基线或行盒的垂直对齐。"
+          },
+          {
+            "id": "d",
+            "text": "line box 高度永远等于父元素的 `font-size`。"
+          },
+          {
+            "id": "e",
+            "text": "baseline 只存在于英文文本，中文排版不会受影响。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "行盒是多个行内级盒子共同决定的结果，不能简单等同于字体大小。",
+        "focus": "line box 与 baseline"
+      }
+    ]
+  },
+  {
+    "questionId": "css-040",
+    "checks": [
+      {
+        "id": "css-040-check-01",
+        "kind": "single",
+        "prompt": "视差滚动中，滚动过程中优先动画哪个属性更稳？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`top`。"
+          },
+          {
+            "id": "b",
+            "text": "`height`。"
+          },
+          {
+            "id": "c",
+            "text": "`transform`。"
+          },
+          {
+            "id": "d",
+            "text": "`background-size`。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "视差层通常用 `transform` 移动，能减少布局和绘制压力。滚动中频繁改几何属性风险更高。",
+        "focus": "视差滚动性能"
+      },
+      {
+        "id": "css-040-check-02",
+        "kind": "multiple",
+        "prompt": "哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`background-attachment: fixed` 简单，但移动端和性能表现要验证。"
+          },
+          {
+            "id": "b",
+            "text": "CSS 3D perspective 方案对结构、层叠上下文和滚动容器要求较高。"
+          },
+          {
+            "id": "c",
+            "text": "Scroll-driven Animations 可作为声明式渐进增强。"
+          },
+          {
+            "id": "d",
+            "text": "JS 方案应在 scroll 里记录状态，把 DOM 写入放进 `requestAnimationFrame`。"
+          },
+          {
+            "id": "e",
+            "text": "视差滚动越强，用户体验一定越好。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "视差是增强效果，不是核心信息。实现方案要看兼容性、结构复杂度和性能预算。",
+        "focus": "视差方案取舍"
+      },
+      {
+        "id": "css-040-check-03",
+        "kind": "multiple",
+        "prompt": "上线视差效果前，哪些检查必要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "压缩图片并控制视差层尺寸，避免超大纹理。"
+          },
+          {
+            "id": "b",
+            "text": "用 passive scroll listener，避免阻塞滚动。"
+          },
+          {
+            "id": "c",
+            "text": "在 `prefers-reduced-motion: reduce` 下关闭或弱化效果。"
+          },
+          {
+            "id": "d",
+            "text": "用 Performance 面板检查 Paint、Layout 和掉帧。"
+          },
+          {
+            "id": "e",
+            "text": "给所有视差层永久设置 `will-change`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "视差效果很容易变成滚动性能问题。性能验证和减少动态效果支持都不能省。",
+        "focus": "视差工程注意"
+      }
+    ]
+  },
+  {
+    "questionId": "css-041",
+    "checks": [
+      {
+        "id": "css-041-check-01",
+        "kind": "single",
+        "prompt": "在普通 author 样式中，未分层样式和已分层样式谁的优先级更高？",
+        "options": [
+          {
+            "id": "a",
+            "text": "未分层普通样式会高于所有已分层普通样式。"
+          },
+          {
+            "id": "b",
+            "text": "已分层样式一定高于未分层样式。"
+          },
+          {
+            "id": "c",
+            "text": "两者只比较选择器长度，层没有影响。"
+          },
+          {
+            "id": "d",
+            "text": "只有 `!important` 才能让 @layer 生效。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "普通声明中，未分层样式是最高优先级逃逸口。因此大型项目最好约定全局 CSS 都进入明确 layer。",
+        "focus": "@layer 优先级"
+      },
+      {
+        "id": "css-041-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法符合 `@layer` 的最佳实践？",
+        "options": [
+          {
+            "id": "a",
+            "text": "集中声明层顺序，例如 `reset, base, components, utilities`。"
+          },
+          {
+            "id": "b",
+            "text": "把 reset 和第三方库放在较低层。"
+          },
+          {
+            "id": "c",
+            "text": "把业务覆盖或工具类放在较高层。"
+          },
+          {
+            "id": "d",
+            "text": "用 `@import url(...) layer(name)` 导入第三方样式到指定层。"
+          },
+          {
+            "id": "e",
+            "text": "在项目中随意写未分层样式，让它自然覆盖一切。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`@layer` 的价值是把覆盖关系显式化，减少靠选择器加长和 `!important` 抢优先级。",
+        "focus": "@layer 工程治理"
+      },
+      {
+        "id": "css-041-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `@layer` 和 `!important`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`!important` 会反转 layer 顺序，较早声明的层优先级更高。"
+          },
+          {
+            "id": "b",
+            "text": "分层 important 声明会高于未分层 important 声明。"
+          },
+          {
+            "id": "c",
+            "text": "工程上不应依赖大量 important 作为主要覆盖机制。"
+          },
+          {
+            "id": "d",
+            "text": "`!important` 在 `@layer` 中完全失效。"
+          },
+          {
+            "id": "e",
+            "text": "`@layer` 可以替代 CSS Modules 的局部作用域能力。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`@layer` 管的是层叠顺序，不是作用域隔离。important 规则需要理解，但不应成为常规写法。",
+        "focus": "important 特殊规则"
+      }
+    ]
+  },
+  {
+    "questionId": "css-042",
+    "checks": [
+      {
+        "id": "css-042-check-01",
+        "kind": "single",
+        "prompt": "在大型主题系统中，业务组件最应该直接消费哪一层 token？",
+        "options": [
+          {
+            "id": "a",
+            "text": "原始色板 token，例如 `--palette-blue-500`。"
+          },
+          {
+            "id": "b",
+            "text": "语义 token 或组件 token，例如 `--color-danger-text`、`--button-bg`。"
+          },
+          {
+            "id": "c",
+            "text": "任意硬编码颜色值。"
+          },
+          {
+            "id": "d",
+            "text": "图片文件名。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "业务代码依赖语义用途更稳定。原始色板变化时，语义 token 可以保持组件 API 不变。",
+        "focus": "Token 分层"
+      },
+      {
+        "id": "css-042-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法适合大型项目？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用 JSON/YAML/Figma Tokens 等作为单一来源。"
+          },
+          {
+            "id": "b",
+            "text": "通过构建脚本生成 CSS variables、TypeScript 类型和多端资源。"
+          },
+          {
+            "id": "c",
+            "text": "对颜色 token 做对比度校验。"
+          },
+          {
+            "id": "d",
+            "text": "对废弃 token 做迁移说明和 changelog。"
+          },
+          {
+            "id": "e",
+            "text": "允许业务组件随意写裸色值，后期再统一替换。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "主题系统难点不在变量语法，而在单一来源、生成链路、校验和迁移治理。",
+        "focus": "Design Tokens 治理"
+      },
+      {
+        "id": "css-042-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CSS 变量天然支持级联，适合运行时主题切换。"
+          },
+          {
+            "id": "b",
+            "text": "`data-theme` 可作为亮暗主题或品牌主题的覆盖入口。"
+          },
+          {
+            "id": "c",
+            "text": "SSR 或静态首屏应尽早设置主题标记，避免闪烁。"
+          },
+          {
+            "id": "d",
+            "text": "`color-scheme` 应和当前主题同步。"
+          },
+          {
+            "id": "e",
+            "text": "只要用了 CSS 变量，就不需要设计 token 命名规范。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CSS 变量提供机制，Design Tokens 提供语义和治理。两者配合才适合大型项目。",
+        "focus": "CSS 变量主题切换"
+      }
+    ]
+  },
+  {
+    "questionId": "css-043",
+    "checks": [
+      {
+        "id": "css-043-check-01",
+        "kind": "single",
+        "prompt": "Scroll-driven Animations 和普通 CSS 动画的关键区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它只能用 JavaScript 编写。"
+          },
+          {
+            "id": "b",
+            "text": "它把动画时间轴从真实时间改为滚动进度或元素可见性进度。"
+          },
+          {
+            "id": "c",
+            "text": "它会自动让所有属性只走合成。"
+          },
+          {
+            "id": "d",
+            "text": "它只能用于加载动画。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "滚动驱动动画让“滚到哪里，动画播到哪里”，适合进度条、入场、视差等场景。",
+        "focus": "Scroll-driven Animations 概念"
+      },
+      {
+        "id": "css-043-check-02",
+        "kind": "multiple",
+        "prompt": "哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`animation-timeline: scroll(root block)` 可绑定根滚动容器的 block 方向滚动进度。"
+          },
+          {
+            "id": "b",
+            "text": "命名 scroll timeline 适合组件内部滚动容器。"
+          },
+          {
+            "id": "c",
+            "text": "`animation-timeline: view(block)` 使用元素进入和离开视口的过程作为时间轴。"
+          },
+          {
+            "id": "d",
+            "text": "`animation-range` 可限制动画在 entry、exit、cover 等区间播放。"
+          },
+          {
+            "id": "e",
+            "text": "`view()` 等价于 IntersectionObserver 的 JavaScript API 调用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`scroll()` 关注滚动容器进度，`view()` 关注元素可见性过程。它们是 CSS 声明式能力。",
+        "focus": "scroll() 与 view()"
+      },
+      {
+        "id": "css-043-check-03",
+        "kind": "multiple",
+        "prompt": "使用 Scroll-driven Animations 时，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用 `@supports (animation-timeline: scroll())` 或 `view()` 包裹增强效果。"
+          },
+          {
+            "id": "b",
+            "text": "不支持时提供静态样式、IntersectionObserver 或 rAF 降级。"
+          },
+          {
+            "id": "c",
+            "text": "仍然优先动画 `transform` 和 `opacity`。"
+          },
+          {
+            "id": "d",
+            "text": "配合 `prefers-reduced-motion` 降低动态效果。"
+          },
+          {
+            "id": "e",
+            "text": "有了滚动时间轴就可以安全动画 `height`、`top` 和复杂滤镜。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "滚动驱动只改变时间轴，不自动解决属性性能、兼容性和可访问性问题。",
+        "focus": "渐进增强"
+      }
+    ]
+  },
+  {
+    "questionId": "css-044",
+    "checks": [
+      {
+        "id": "css-044-check-01",
+        "kind": "single",
+        "prompt": "容器查询最适合解决哪类问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "根据当前时间切换主题。"
+          },
+          {
+            "id": "b",
+            "text": "组件根据所在容器尺寸调整内部布局，而不是只看视口尺寸。"
+          },
+          {
+            "id": "c",
+            "text": "替代所有 JavaScript 状态管理。"
+          },
+          {
+            "id": "d",
+            "text": "自动压缩图片资源。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "媒体查询看视口，容器查询看祖先容器。它让组件在侧栏、弹窗、主内容区中更可复用。",
+        "focus": "容器查询解决的问题"
+      },
+      {
+        "id": "css-044-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`container-type: inline-size` 是常见选择，通常查询容器宽度方向。"
+          },
+          {
+            "id": "b",
+            "text": "`container: card / inline-size` 同时声明名称和类型。"
+          },
+          {
+            "id": "c",
+            "text": "`container-type: size` 会引入更强尺寸包含，使用要谨慎。"
+          },
+          {
+            "id": "d",
+            "text": "`container-type: normal` 可以进行尺寸查询。"
+          },
+          {
+            "id": "e",
+            "text": "容器查询总是查询元素自身尺寸，不需要祖先容器。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "容器查询依赖合适的查询容器。通常给外层壳声明容器，再改内部元素样式。",
+        "focus": "container-type"
+      },
+      {
+        "id": "css-044-check-03",
+        "kind": "multiple",
+        "prompt": "哪些实践更稳妥？",
+        "options": [
+          {
+            "id": "a",
+            "text": "默认样式先可用，再用 `@supports` 增强容器查询。"
+          },
+          {
+            "id": "b",
+            "text": "媒体查询负责页面级断点，容器查询负责组件内部响应。"
+          },
+          {
+            "id": "c",
+            "text": "使用 `cqi`、`cqw` 等容器单位时要理解查询容器来源。"
+          },
+          {
+            "id": "d",
+            "text": "避免让元素直接根据自己的尺寸改自己，造成循环依赖风险。"
+          },
+          {
+            "id": "e",
+            "text": "有了容器查询后就不需要任何媒体查询。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "容器查询和媒体查询是互补关系。组件级响应增强了复用，但页面级结构仍需要媒体查询。",
+        "focus": "容器查询实践"
+      }
+    ]
+  },
+  {
+    "questionId": "css-045",
+    "checks": [
+      {
+        "id": "css-045-check-01",
+        "kind": "single",
+        "prompt": "现代 CSS 中，`float` 最适合保留在哪类场景？",
+        "options": [
+          {
+            "id": "a",
+            "text": "图文环绕。"
+          },
+          {
+            "id": "b",
+            "text": "页面主布局。"
+          },
+          {
+            "id": "c",
+            "text": "复杂仪表盘二维布局。"
+          },
+          {
+            "id": "d",
+            "text": "响应式导航栏对齐。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "现代页面布局优先 Flex/Grid。`float` 的原始强项是让文字围绕浮动元素排版。",
+        "focus": "float 的现代定位"
+      },
+      {
+        "id": "css-045-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方式可以处理父元素包含内部浮动的问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`.clearfix::after { content: ''; display: block; clear: both; }`"
+          },
+          {
+            "id": "b",
+            "text": "给父元素 `display: flow-root`。"
+          },
+          {
+            "id": "c",
+            "text": "给父元素创建 BFC，例如 `overflow: hidden`，但要注意裁剪副作用。"
+          },
+          {
+            "id": "d",
+            "text": "给父元素设置 `color: transparent`。"
+          },
+          {
+            "id": "e",
+            "text": "给浮动子元素设置更大的 `z-index`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "浮动子元素脱离普通流，父元素高度可能塌陷。清浮动本质是让父元素重新包住浮动或让后续元素避开浮动。",
+        "focus": "清除浮动"
+      },
+      {
+        "id": "css-045-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `clear`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`clear` 作用在当前元素自己身上。"
+          },
+          {
+            "id": "b",
+            "text": "`clear: both` 表示当前元素两侧都不允许有浮动元素。"
+          },
+          {
+            "id": "c",
+            "text": "它会让当前元素移动到相关浮动元素下方。"
+          },
+          {
+            "id": "d",
+            "text": "`clear` 会直接删除前一个浮动元素的 `float`。"
+          },
+          {
+            "id": "e",
+            "text": "`clear` 只能写在伪元素上，普通元素不能用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`clear` 不是修改浮动元素，而是改变当前元素对浮动的避让行为。",
+        "focus": "clear 的含义"
+      }
+    ]
+  },
+  {
+    "questionId": "css-046",
+    "checks": [
+      {
+        "id": "css-046-check-01",
+        "kind": "single",
+        "prompt": "哪个隐藏方式会保留布局，并且元素仍可能响应点击和聚焦？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`display: none`。"
+          },
+          {
+            "id": "b",
+            "text": "`visibility: hidden`。"
+          },
+          {
+            "id": "c",
+            "text": "`opacity: 0`。"
+          },
+          {
+            "id": "d",
+            "text": "`hidden` 属性一定等同于 `opacity: 0`。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "`opacity: 0` 只是视觉透明，元素仍在页面中，通常还会参与命中测试和辅助技术访问。",
+        "focus": "透明但仍可交互"
+      },
+      {
+        "id": "css-046-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`display: none` 不占位，后代也不能单独显示出来。"
+          },
+          {
+            "id": "b",
+            "text": "`visibility: hidden` 占位，后代可以设置 `visibility: visible` 重新显示。"
+          },
+          {
+            "id": "c",
+            "text": "`opacity: 0` 占位且透明，淡入淡出常用它。"
+          },
+          {
+            "id": "d",
+            "text": "`display` 切换通常会影响布局。"
+          },
+          {
+            "id": "e",
+            "text": "三者对事件命中、布局和可访问性的影响完全相同。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "隐藏方式选择取决于是否占位、是否需要动画、是否可交互以及是否应暴露给辅助技术。",
+        "focus": "三种隐藏方式"
+      },
+      {
+        "id": "css-046-check-03",
+        "kind": "multiple",
+        "prompt": "做弹窗淡入淡出时，哪些处理更完整？",
+        "options": [
+          {
+            "id": "a",
+            "text": "透明关闭状态配合 `pointer-events: none`。"
+          },
+          {
+            "id": "b",
+            "text": "根据状态处理 `aria-hidden` 或语义可见性。"
+          },
+          {
+            "id": "c",
+            "text": "管理焦点，避免键盘进入不可见内容。"
+          },
+          {
+            "id": "d",
+            "text": "动画结束后可切换到彻底隐藏，减少不可见内容干扰。"
+          },
+          {
+            "id": "e",
+            "text": "只设置 `opacity: 0` 就能完成所有隐藏语义。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "动画隐藏和语义隐藏是两件事。真实交互需要同时处理视觉、事件、焦点和辅助技术。",
+        "focus": "弹窗淡出实践"
+      }
+    ]
+  },
+  {
+    "questionId": "css-047",
+    "checks": [
+      {
+        "id": "css-047-check-01",
+        "kind": "single",
+        "prompt": "组件按钮的 padding 希望跟随按钮字号一起缩放，最适合使用什么单位？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只用固定 `px`。"
+          },
+          {
+            "id": "b",
+            "text": "`em`。"
+          },
+          {
+            "id": "c",
+            "text": "`vh`。"
+          },
+          {
+            "id": "d",
+            "text": "`deg`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`em` 在非 `font-size` 属性上通常相对当前元素计算后的字体大小，很适合组件内部随字号缩放的间距。",
+        "focus": "em 的适用场景"
+      },
+      {
+        "id": "css-047-check-02",
+        "kind": "multiple",
+        "prompt": "哪些选择合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "边框、阴影、少量固定图标尺寸常用 `px`。"
+          },
+          {
+            "id": "b",
+            "text": "全局字号、页面间距和排版节奏常用 `rem`。"
+          },
+          {
+            "id": "c",
+            "text": "组件内部想随字号缩放的 padding、gap、圆角可用 `em`。"
+          },
+          {
+            "id": "d",
+            "text": "响应式字号可用 `clamp()` 结合 `rem + vw` 并设置上下限。"
+          },
+          {
+            "id": "e",
+            "text": "所有尺寸都统一改成 `px` 才是响应式最佳实践。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "单位表达参照系。好用的 CSS 尺寸系统通常混合 px、em、rem、百分比、fr 和 clamp。",
+        "focus": "px/em/rem 选择"
+      },
+      {
+        "id": "css-047-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `rem` 和根字号，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`rem` 相对根元素字体大小。"
+          },
+          {
+            "id": "b",
+            "text": "`html { font-size: 100%; }` 通常更尊重用户默认字号。"
+          },
+          {
+            "id": "c",
+            "text": "把根字号固定成特殊比例可能影响用户偏好和第三方组件预期。"
+          },
+          {
+            "id": "d",
+            "text": "`rem` 会随着每层父元素字体大小逐级变化。"
+          },
+          {
+            "id": "e",
+            "text": "用户缩放页面时 CSS px 完全不会被放大。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`rem` 比 `em` 更不受组件嵌套影响，但根字号策略仍要尊重可访问性和生态预期。",
+        "focus": "根字号与用户偏好"
+      }
+    ]
+  },
+  {
+    "questionId": "css-048",
+    "checks": [
+      {
+        "id": "css-048-check-01",
+        "kind": "single",
+        "prompt": "Tailwind 的核心抽象更接近哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每个组件都必须写一个语义 CSS class。"
+          },
+          {
+            "id": "b",
+            "text": "用受设计 token 约束的原子工具类组合样式。"
+          },
+          {
+            "id": "c",
+            "text": "运行时根据用户点击生成 CSS。"
+          },
+          {
+            "id": "d",
+            "text": "只提供 CSS reset。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Tailwind 的重点不是“不写 CSS”，而是把样式表达放到可组合的工具类和设计 token 体系里。",
+        "focus": "Tailwind 核心"
+      },
+      {
+        "id": "css-048-check-02",
+        "kind": "multiple",
+        "prompt": "哪些写法或判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`bg-${color}-600` 这类拼接可能无法被扫描器识别完整 class。"
+          },
+          {
+            "id": "b",
+            "text": "把完整 class 写进映射表更可靠。"
+          },
+          {
+            "id": "c",
+            "text": "外部组件库或非默认路径需要用 `@source` 或配置纳入扫描。"
+          },
+          {
+            "id": "d",
+            "text": "任意值 class 也需要在源码中以完整 token 出现。"
+          },
+          {
+            "id": "e",
+            "text": "Tailwind 会在浏览器运行时自动猜出所有动态 class。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Tailwind 产物来自源码扫描。扫描不到完整 class，就不会生成对应 CSS。",
+        "focus": "动态 class 陷阱"
+      },
+      {
+        "id": "css-048-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法更客观？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Tailwind 适合组件化、设计系统明确、快速迭代的项目。"
+          },
+          {
+            "id": "b",
+            "text": "复杂组件 class 很长时，需要抽组件或用 class 合并工具治理。"
+          },
+          {
+            "id": "c",
+            "text": "团队应统一格式化、排序、冲突合并和 token 规范。"
+          },
+          {
+            "id": "d",
+            "text": "高度定制项目也能用 Tailwind，但更依赖工程约束。"
+          },
+          {
+            "id": "e",
+            "text": "使用 Tailwind 后就不需要理解 CSS 层叠和布局。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Tailwind 降低了命名和样式分散成本，但没有消除 CSS 基础、组件抽象和团队规范问题。",
+        "focus": "Tailwind 适配场景"
+      }
+    ]
+  },
+  {
+    "questionId": "css-049",
+    "checks": [
+      {
+        "id": "css-049-check-01",
+        "kind": "single",
+        "prompt": "Sticky Footer 和 `position: fixed` footer 的关键区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Sticky Footer 永远悬浮在视口底部。"
+          },
+          {
+            "id": "b",
+            "text": "内容不足一屏时 footer 贴底，内容超过一屏时跟随文档自然出现在内容后。"
+          },
+          {
+            "id": "c",
+            "text": "Sticky Footer 必须遮挡页面底部内容。"
+          },
+          {
+            "id": "d",
+            "text": "Sticky Footer 只能用 JavaScript 实现。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Sticky Footer 不是固定悬浮页脚，而是文档布局里的自然贴底效果。",
+        "focus": "Sticky Footer 定义"
+      },
+      {
+        "id": "css-049-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方案适合现代 Sticky Footer？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`body` 使用列向 Flex，`main { flex: 1 0 auto; }`。"
+          },
+          {
+            "id": "b",
+            "text": "`body` 使用 Grid，`grid-template-rows: auto 1fr auto`。"
+          },
+          {
+            "id": "c",
+            "text": "移动端可考虑 `100dvh` 处理动态地址栏。"
+          },
+          {
+            "id": "d",
+            "text": "永远用 `position: fixed`，不需要给内容留空间。"
+          },
+          {
+            "id": "e",
+            "text": "用固定 footer 高度的 `calc()` 是现代首选。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Flex 和 Grid 都能让主内容吃掉剩余空间。fixed 是悬浮页脚，语义和体验不同。",
+        "focus": "实现方案"
+      },
+      {
+        "id": "css-049-check-03",
+        "kind": "multiple",
+        "prompt": "关于页脚布局，哪些细节值得注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "fixed footer 可能遮挡内容，需要额外 padding。"
+          },
+          {
+            "id": "b",
+            "text": "移动端键盘、动态地址栏和安全区域会影响 fixed/footer 体验。"
+          },
+          {
+            "id": "c",
+            "text": "`min-height: 100vh; min-height: 100dvh;` 可以作为渐进写法。"
+          },
+          {
+            "id": "d",
+            "text": "footer 高度在所有设备上都应该写死。"
+          },
+          {
+            "id": "e",
+            "text": "Sticky Footer 不需要考虑内容超过一屏的情况。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "页脚题容易混淆 sticky footer 和 fixed footer。真实页面要同时处理短内容和长内容。",
+        "focus": "移动端与安全区域"
+      }
+    ]
+  },
+  {
+    "questionId": "css-050",
+    "checks": [
+      {
+        "id": "css-050-check-01",
+        "kind": "single",
+        "prompt": "三列卡片在同一行内需要等高，现代 CSS 最常用的基础方案是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "padding-bottom: 9999px 加负 margin。"
+          },
+          {
+            "id": "b",
+            "text": "Flex 或 Grid 的 stretch 对齐。"
+          },
+          {
+            "id": "c",
+            "text": "每张卡片用 JS 固定高度。"
+          },
+          {
+            "id": "d",
+            "text": "全部使用 float。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Flex/Grid 默认就能处理同一行或同一轨道的拉伸，老式视觉等高方案维护成本高。",
+        "focus": "等高列首选"
+      },
+      {
+        "id": "css-050-check-02",
+        "kind": "multiple",
+        "prompt": "哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Flex 的等高发生在同一 flex line 内。"
+          },
+          {
+            "id": "b",
+            "text": "Flex 换行后，每一行只和本行最高项等高。"
+          },
+          {
+            "id": "c",
+            "text": "Grid 同一行轨道会按最高内容撑开。"
+          },
+          {
+            "id": "d",
+            "text": "多行卡片如果目标是瀑布流，Grid 等高行可能不是想要的效果。"
+          },
+          {
+            "id": "e",
+            "text": "Flex 可以天然让所有换行后的卡片跨行等高。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "等高范围取决于布局模型。跨行等高、瀑布流和卡片内部对齐是不同问题。",
+        "focus": "Flex 与 Grid 等高"
+      },
+      {
+        "id": "css-050-check-03",
+        "kind": "multiple",
+        "prompt": "商品卡片等高后，还希望按钮贴底，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "外层列表负责卡片等高。"
+          },
+          {
+            "id": "b",
+            "text": "卡片内部使用 `display: flex; flex-direction: column`。"
+          },
+          {
+            "id": "c",
+            "text": "正文区域 `flex: 1` 或按钮区 `margin-top: auto`。"
+          },
+          {
+            "id": "d",
+            "text": "给所有标题写固定高度并截断就是唯一方案。"
+          },
+          {
+            "id": "e",
+            "text": "用 `position: absolute` 把按钮压到底，不需要考虑内容流。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "外层解决等高，内层解决底部对齐，是卡片布局里很常见的组合。",
+        "focus": "卡片底部按钮对齐"
+      }
+    ]
+  },
+  {
+    "questionId": "css-051",
+    "checks": [
+      {
+        "id": "css-051-check-01",
+        "kind": "single",
+        "prompt": "`filter` 和 `backdrop-filter` 的核心区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "二者完全相同。"
+          },
+          {
+            "id": "b",
+            "text": "`filter` 作用于元素自身及内容，`backdrop-filter` 作用于元素背后的已绘制内容。"
+          },
+          {
+            "id": "c",
+            "text": "`filter` 只能用于文字，不能用于图片。"
+          },
+          {
+            "id": "d",
+            "text": "`backdrop-filter` 不需要透明背景也能看到毛玻璃效果。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "毛玻璃效果依赖处理背后的内容，并且前景元素通常需要半透明背景才能看见效果。",
+        "focus": "filter 与 backdrop-filter"
+      },
+      {
+        "id": "css-051-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`drop-shadow()` 根据渲染后的 alpha 轮廓投影。"
+          },
+          {
+            "id": "b",
+            "text": "`box-shadow` 基于元素边框盒投影。"
+          },
+          {
+            "id": "c",
+            "text": "透明 PNG 或 SVG 图标的不规则阴影常适合 `drop-shadow()`。"
+          },
+          {
+            "id": "d",
+            "text": "`box-shadow` 支持 spread、inset 等能力。"
+          },
+          {
+            "id": "e",
+            "text": "`drop-shadow()` 完全替代了 `box-shadow`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "两者服务的形状模型不同。规则盒子阴影和不规则透明轮廓阴影不能简单互换。",
+        "focus": "drop-shadow 与 box-shadow"
+      },
+      {
+        "id": "css-051-check-03",
+        "kind": "multiple",
+        "prompt": "使用滤镜时，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "非 `none` 的 `filter` 通常会创建新的 stacking context。"
+          },
+          {
+            "id": "b",
+            "text": "大面积 `blur()` 和 `backdrop-filter` 成本较高。"
+          },
+          {
+            "id": "c",
+            "text": "动画滤镜前应通过 DevTools 检查 Paint 和 Composite。"
+          },
+          {
+            "id": "d",
+            "text": "暗色模式不应简单全站 `invert()`。"
+          },
+          {
+            "id": "e",
+            "text": "所有滤镜动画都保证只走 GPU 合成且零成本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "滤镜很容易影响绘制和合成成本，尤其是模糊、毛玻璃和大面积滚动场景。",
+        "focus": "filter 性能和层叠"
+      }
+    ]
+  },
+  {
+    "questionId": "css-052",
+    "checks": [
+      {
+        "id": "css-052-check-01",
+        "kind": "single",
+        "prompt": "为了减少页面先亮后暗或先暗后亮，主题初始化脚本应放在哪里更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "尽量放在首屏 CSS 生效前或非常靠前的位置。"
+          },
+          {
+            "id": "b",
+            "text": "放到所有图片加载完成后。"
+          },
+          {
+            "id": "c",
+            "text": "放到用户第一次点击页面后。"
+          },
+          {
+            "id": "d",
+            "text": "不需要初始化，CSS 会自动读取 localStorage。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "浏览器不会在 CSS 中直接读取 localStorage。主题标记越早设置，首屏闪烁越少。",
+        "focus": "主题首屏防闪"
+      },
+      {
+        "id": "css-052-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法更稳妥？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只对颜色、背景、边框、阴影等颜色相关属性做受控过渡。"
+          },
+          {
+            "id": "b",
+            "text": "切换时临时添加动画类，结束后移除。"
+          },
+          {
+            "id": "c",
+            "text": "尊重 `prefers-reduced-motion`。"
+          },
+          {
+            "id": "d",
+            "text": "给 `*` 设置全局 transition，所有属性都动画。"
+          },
+          {
+            "id": "e",
+            "text": "主题切换时动画布局尺寸，制造更强视觉变化。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "全局通配 transition 会影响弹窗、布局和第三方组件。主题过渡应小范围、可控、可关闭。",
+        "focus": "主题切换过渡"
+      },
+      {
+        "id": "css-052-check-03",
+        "kind": "multiple",
+        "prompt": "如果主题支持 `light`、`dark`、`system`，哪些处理正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "存储用户选择的模式，而不是只存当前实际亮暗结果。"
+          },
+          {
+            "id": "b",
+            "text": "`system` 模式下监听 `(prefers-color-scheme: dark)` 变化。"
+          },
+          {
+            "id": "c",
+            "text": "实际应用主题时根据模式计算当前亮暗。"
+          },
+          {
+            "id": "d",
+            "text": "`color-scheme` 和 token 覆盖要同步。"
+          },
+          {
+            "id": "e",
+            "text": "用户选择 `system` 后就不需要再响应系统变化。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`system` 是一种模式，不是一次性结果。系统偏好变化后，实际主题应随之更新。",
+        "focus": "system 模式"
+      }
+    ]
+  },
+  {
+    "questionId": "css-053",
+    "checks": [
+      {
+        "id": "css-053-check-01",
+        "kind": "single",
+        "prompt": "动态列表做交错入场时，哪种方式比写大量 `nth-child` 更灵活？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给所有元素写同一个固定 `animation-delay`。"
+          },
+          {
+            "id": "b",
+            "text": "用自定义属性传入索引，再用 `calc(var(--i) * step)` 计算延迟。"
+          },
+          {
+            "id": "c",
+            "text": "给每个元素随机设置 `position: absolute`。"
+          },
+          {
+            "id": "d",
+            "text": "动画 `height: auto`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "自定义属性能把动态索引从 JS 或模板传给 CSS，避免为未知数量写大量选择器。",
+        "focus": "交错动画延迟来源"
+      },
+      {
+        "id": "css-053-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "优先动画 `transform` 和 `opacity`。"
+          },
+          {
+            "id": "b",
+            "text": "列表很长时只给进入视口的元素触发动画。"
+          },
+          {
+            "id": "c",
+            "text": "交错延迟不要过长，避免界面显得迟钝。"
+          },
+          {
+            "id": "d",
+            "text": "在 `prefers-reduced-motion` 下关闭或弱化动画。"
+          },
+          {
+            "id": "e",
+            "text": "首屏同时给几百个项目创建复杂动画一定没问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "交错动画的目标是增强层次，不应拖慢首屏或让用户等待控件出现。",
+        "focus": "交错动画性能"
+      },
+      {
+        "id": "css-053-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "固定数量入口可用 `nth-child`。"
+          },
+          {
+            "id": "b",
+            "text": "动态网格可由 JS 或模板写入 `--i`。"
+          },
+          {
+            "id": "c",
+            "text": "滚动入场可用 IntersectionObserver。"
+          },
+          {
+            "id": "d",
+            "text": "Scroll-driven Animations 可作为支持浏览器中的渐进增强。"
+          },
+          {
+            "id": "e",
+            "text": "所有滚动入场都必须用 scroll 事件手写计算。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "触发方式要看数量、动态性、兼容性和滚动场景。不要把所有动画都压到 scroll 事件里。",
+        "focus": "触发方式选择"
+      }
+    ]
+  },
+  {
+    "questionId": "css-054",
+    "checks": [
+      {
+        "id": "css-054-check-01",
+        "kind": "single",
+        "prompt": "CSS 性能主要可以分成哪两类问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "变量命名和注释格式。"
+          },
+          {
+            "id": "b",
+            "text": "加载阶段是否阻塞首屏，运行阶段是否造成 Layout/Paint/Composite 开销。"
+          },
+          {
+            "id": "c",
+            "text": "只看选择器长度。"
+          },
+          {
+            "id": "d",
+            "text": "只看颜色数量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "CSS 既会影响资源加载和首屏，也会影响交互时的样式计算、布局、绘制和合成。",
+        "focus": "CSS 性能两大阶段"
+      },
+      {
+        "id": "css-054-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于加载阶段 CSS 性能？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提取首屏 critical CSS。"
+          },
+          {
+            "id": "b",
+            "text": "按路由或组件拆分非首屏样式。"
+          },
+          {
+            "id": "c",
+            "text": "删除未使用 CSS，压缩并开启 Brotli/Gzip。"
+          },
+          {
+            "id": "d",
+            "text": "第三方组件库按需引入样式。"
+          },
+          {
+            "id": "e",
+            "text": "把所有页面样式打进一个巨大 CSS 文件最利于首屏。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "首屏需要的 CSS 越少越准越快，浏览器越早能完成渲染阻塞资源处理。",
+        "focus": "加载阶段优化"
+      },
+      {
+        "id": "css-054-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法更符合运行时 CSS 性能优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动画优先使用 `transform`、`opacity`。"
+          },
+          {
+            "id": "b",
+            "text": "`will-change` 只给即将动画的元素短时间使用。"
+          },
+          {
+            "id": "c",
+            "text": "用 `contain` 限制独立组件的影响范围。"
+          },
+          {
+            "id": "d",
+            "text": "长内容可用 `content-visibility: auto` 并提供合理 intrinsic size。"
+          },
+          {
+            "id": "e",
+            "text": "为了选择器最快，牺牲所有可维护性去写最短 class。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "选择器匹配通常不是最大瓶颈。更重要的是减少布局、绘制、合成和不必要的渲染范围。",
+        "focus": "运行阶段优化"
+      }
+    ]
+  },
+  {
+    "questionId": "css-055",
+    "checks": [
+      {
+        "id": "css-055-check-01",
+        "kind": "single",
+        "prompt": "CSS Subgrid 主要解决什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让 CSS Grid 自动变成瀑布流。"
+          },
+          {
+            "id": "b",
+            "text": "让嵌套网格在某个方向复用父网格轨道，实现跨层级对齐。"
+          },
+          {
+            "id": "c",
+            "text": "让 Flex 子项自动换行。"
+          },
+          {
+            "id": "d",
+            "text": "让所有元素自动等高。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Subgrid 的核心是复用父网格轨道，解决嵌套内容和外层网格精确对齐的问题。",
+        "focus": "Subgrid 解决的问题"
+      },
+      {
+        "id": "css-055-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "元素必须先是父 grid 的 item，再把自己设为 grid container。"
+          },
+          {
+            "id": "b",
+            "text": "子网格复用的是它跨越范围内的父网格轨道。"
+          },
+          {
+            "id": "c",
+            "text": "可以只在列方向或行方向使用 `subgrid`。"
+          },
+          {
+            "id": "d",
+            "text": "gap 会继承父网格，也可以在子网格上覆盖。"
+          },
+          {
+            "id": "e",
+            "text": "任意普通 block 元素都能直接使用 `grid-template-columns: subgrid` 继承祖先网格。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Subgrid 不是“全局继承任意祖先网格”，它依赖元素在父网格中的跨轨道范围。",
+        "focus": "Subgrid 使用条件"
+      },
+      {
+        "id": "css-055-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "卡片内部标题、正文、按钮跨卡片对齐是 subgrid 的典型场景。"
+          },
+          {
+            "id": "b",
+            "text": "页面内容区和 full-bleed 区域跨嵌套层级对齐也适合 subgrid。"
+          },
+          {
+            "id": "c",
+            "text": "上线前可用 `@supports (grid-template-columns: subgrid)` 做增强和降级。"
+          },
+          {
+            "id": "d",
+            "text": "Subgrid 等同于 Masonry 瀑布流。"
+          },
+          {
+            "id": "e",
+            "text": "使用 Subgrid 后不需要考虑浏览器兼容性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Subgrid 解决的是轨道对齐，不是瀑布流。作为较新的能力，应按目标浏览器做渐进增强。",
+        "focus": "Subgrid 降级和场景"
+      }
+    ]
+  }
+]

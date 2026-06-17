@@ -51,6 +51,7 @@ import {
 } from '@/store/useAIStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import {
+  type AnswerNavigationMode,
   DAILY_GOAL_DEFAULT,
   DAILY_GOAL_MAX,
   DAILY_GOAL_MIN,
@@ -591,6 +592,12 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
     resetAll,
     studyMode,
     setStudyMode,
+    answerNavigationMode,
+    setAnswerNavigationMode,
+    mobileQuestionNavEnabled,
+    setMobileQuestionNavEnabled,
+    aiFabVisible,
+    setAiFabVisible,
     streak,
     resetStreak,
     dailyGoal,
@@ -1536,6 +1543,57 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                 })}
               </div>
 
+              {/* Answer navigation preference */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  padding: '8px 0',
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>
+                  切题后默认进入
+                </div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                  {(
+                    [
+                      { value: 'answer' as AnswerNavigationMode, label: '参考答案' },
+                      { value: 'check' as AnswerNavigationMode, label: '测试一下' },
+                    ] as const
+                  ).map((opt) => {
+                    const active = answerNavigationMode === opt.value
+                    return (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => {
+                          setAnswerNavigationMode(opt.value)
+                          showToast(`切题后默认进入「${opt.label}」`)
+                        }}
+                        style={{
+                          height: 28,
+                          padding: '0 10px',
+                          borderRadius: 7,
+                          border: `1px solid ${
+                            active ? 'rgba(var(--primary-rgb),0.28)' : 'transparent'
+                          }`,
+                          background: active ? 'var(--primary-light)' : 'transparent',
+                          color: active ? 'var(--primary)' : 'var(--text-2)',
+                          fontSize: 13,
+                          fontWeight: active ? 600 : 500,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Streak Stats */}
               <div
                 style={{
@@ -1830,6 +1888,52 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                       )
                     })
                   })()}
+                </div>
+              </div>
+
+              {/* Question page display */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ color: 'var(--text-3)', flexShrink: 0 }}
+                  >
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M8 20v-3" />
+                    <path d="M16 20v-3" />
+                    <path d="M8 8h8" />
+                    <path d="M8 12h5" />
+                  </svg>
+                  <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>
+                    题目页显示
+                  </span>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <Toggle
+                    checked={mobileQuestionNavEnabled}
+                    onChange={(enabled) => {
+                      setMobileQuestionNavEnabled(enabled)
+                      showToast(enabled ? '已显示移动端底部切题按钮' : '已隐藏移动端底部切题按钮')
+                    }}
+                    label="移动端底部切题"
+                    description="在题目详情页底部显示上一题、下一题按钮"
+                  />
+                  <Toggle
+                    checked={aiFabVisible}
+                    onChange={(visible) => {
+                      setAiFabVisible(visible)
+                      showToast(visible ? '已显示移动端 AI 助手按钮' : '已隐藏移动端 AI 助手按钮')
+                    }}
+                    label="移动端 AI 助手按钮"
+                    description="在题目详情页右下角显示 AI 助手入口"
+                  />
                 </div>
               </div>
             </>
