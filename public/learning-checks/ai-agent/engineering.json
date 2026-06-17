@@ -1,0 +1,1822 @@
+[
+  {
+    "questionId": "ai-eng-001",
+    "checks": [
+      {
+        "id": "ai-eng-001-check-01",
+        "kind": "single",
+        "prompt": "LLM 应用的模型选择应如何权衡？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看价格最低。"
+          },
+          {
+            "id": "b",
+            "text": "在质量、延迟、上下文窗口、成本和稳定性之间综合权衡。"
+          },
+          {
+            "id": "c",
+            "text": "只看模型名字是否流行。"
+          },
+          {
+            "id": "d",
+            "text": "永远只用最强模型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型选择是系统权衡，不是单看单项指标。",
+        "focus": "模型选择"
+      },
+      {
+        "id": "ai-eng-001-check-02",
+        "kind": "multiple",
+        "prompt": "模型选型通常应关注哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务质量"
+          },
+          {
+            "id": "b",
+            "text": "延迟"
+          },
+          {
+            "id": "c",
+            "text": "上下文窗口"
+          },
+          {
+            "id": "d",
+            "text": "成本"
+          },
+          {
+            "id": "e",
+            "text": "UI 主题色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同业务场景会把这些维度推到不同的优先级。",
+        "focus": "选择维度"
+      },
+      {
+        "id": "ai-eng-001-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景可能需要不同模型分层使用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "简单分类"
+          },
+          {
+            "id": "b",
+            "text": "复杂推理"
+          },
+          {
+            "id": "c",
+            "text": "高风险决策"
+          },
+          {
+            "id": "d",
+            "text": "大上下文任务"
+          },
+          {
+            "id": "e",
+            "text": "纯静态文案显示"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工程上常按任务难度和风险分层用模。",
+        "focus": "实际决策"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-002",
+    "checks": [
+      {
+        "id": "ai-eng-002-check-01",
+        "kind": "single",
+        "prompt": "推理服务中的流式输出、超时、中断和重试为什么要一起设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为它们完全独立。"
+          },
+          {
+            "id": "b",
+            "text": "因为它们共同影响体验、成本和恢复行为。"
+          },
+          {
+            "id": "c",
+            "text": "因为只要流式就不用超时。"
+          },
+          {
+            "id": "d",
+            "text": "因为重试一定更安全。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "流式、超时和重试是联动的运行时策略。",
+        "focus": "流式输出"
+      },
+      {
+        "id": "ai-eng-002-check-02",
+        "kind": "multiple",
+        "prompt": "流式输出通常能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更快的感知反馈"
+          },
+          {
+            "id": "b",
+            "text": "更好的用户等待体验"
+          },
+          {
+            "id": "c",
+            "text": "更容易中断长输出"
+          },
+          {
+            "id": "d",
+            "text": "自动降低所有成本"
+          },
+          {
+            "id": "e",
+            "text": "替代评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "流式改善体验，但不改变实际模型耗时。",
+        "focus": "流式收益"
+      },
+      {
+        "id": "ai-eng-002-check-03",
+        "kind": "multiple",
+        "prompt": "为什么超时和中断要与重试联动？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为失败可能只是临时抖动"
+          },
+          {
+            "id": "b",
+            "text": "因为重试可能造成重复副作用"
+          },
+          {
+            "id": "c",
+            "text": "因为需要明确恢复路径"
+          },
+          {
+            "id": "d",
+            "text": "因为任何失败都应无限重试"
+          },
+          {
+            "id": "e",
+            "text": "因为超时不影响状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "运行时策略必须考虑状态和副作用。",
+        "focus": "超时中断"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-003",
+    "checks": [
+      {
+        "id": "ai-eng-003-check-01",
+        "kind": "single",
+        "prompt": "模型路由、降级和 fallback 的核心目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远只调用最贵模型。"
+          },
+          {
+            "id": "b",
+            "text": "在质量、成本和稳定性之间保持平衡。"
+          },
+          {
+            "id": "c",
+            "text": "取消所有监控。"
+          },
+          {
+            "id": "d",
+            "text": "让所有请求都走同一路径。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "路由和降级是生产稳定性的关键手段。",
+        "focus": "模型路由"
+      },
+      {
+        "id": "ai-eng-003-check-02",
+        "kind": "multiple",
+        "prompt": "模型路由通常可以依据哪些信号？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务复杂度"
+          },
+          {
+            "id": "b",
+            "text": "风险等级"
+          },
+          {
+            "id": "c",
+            "text": "成本预算"
+          },
+          {
+            "id": "d",
+            "text": "上下文长度"
+          },
+          {
+            "id": "e",
+            "text": "用户头像颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "路由应由任务和风险驱动，而不是随机选择。",
+        "focus": "路由依据"
+      },
+      {
+        "id": "ai-eng-003-check-03",
+        "kind": "multiple",
+        "prompt": "哪些属于合理降级？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更小模型"
+          },
+          {
+            "id": "b",
+            "text": "更短输出"
+          },
+          {
+            "id": "c",
+            "text": "只读模式"
+          },
+          {
+            "id": "d",
+            "text": "人工接管"
+          },
+          {
+            "id": "e",
+            "text": "伪造完整答案"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "降级要保持真实状态和用户信任。",
+        "focus": "降级策略"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-004",
+    "checks": [
+      {
+        "id": "ai-eng-004-check-01",
+        "kind": "single",
+        "prompt": "Token 计数、上下文预算和输出预留为什么要工程化管理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型会自动控制所有预算。"
+          },
+          {
+            "id": "b",
+            "text": "因为预算失控会导致截断、成本上升和性能问题。"
+          },
+          {
+            "id": "c",
+            "text": "因为 token 数只影响训练。"
+          },
+          {
+            "id": "d",
+            "text": "因为预留越多越好。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "上下文预算是生产系统的硬约束。",
+        "focus": "Token 预算"
+      },
+      {
+        "id": "ai-eng-004-check-02",
+        "kind": "multiple",
+        "prompt": "上下文预算通常应考虑哪些部分？",
+        "options": [
+          {
+            "id": "a",
+            "text": "系统提示"
+          },
+          {
+            "id": "b",
+            "text": "历史消息"
+          },
+          {
+            "id": "c",
+            "text": "RAG 片段"
+          },
+          {
+            "id": "d",
+            "text": "输出预留"
+          },
+          {
+            "id": "e",
+            "text": "UI 标题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "预算是整条输入输出链路的综合约束。",
+        "focus": "预算内容"
+      },
+      {
+        "id": "ai-eng-004-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于管理 token 预算？",
+        "options": [
+          {
+            "id": "a",
+            "text": "限制历史长度"
+          },
+          {
+            "id": "b",
+            "text": "压缩上下文"
+          },
+          {
+            "id": "c",
+            "text": "控制输出长度"
+          },
+          {
+            "id": "d",
+            "text": "记录 token 消耗"
+          },
+          {
+            "id": "e",
+            "text": "让所有消息原样保留"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "预算管理是成本和稳定性的基础。",
+        "focus": "管理方式"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-005",
+    "checks": [
+      {
+        "id": "ai-eng-005-check-01",
+        "kind": "single",
+        "prompt": "KV Cache、批处理、并发队列和限流如何影响推理吞吐？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它们只影响 UI。"
+          },
+          {
+            "id": "b",
+            "text": "它们共同决定 GPU 利用率、排队和整体吞吐。"
+          },
+          {
+            "id": "c",
+            "text": "只要限流就一定高吞吐。"
+          },
+          {
+            "id": "d",
+            "text": "它们与吞吐无关。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "吞吐是系统编排、缓存和调度共同作用的结果。",
+        "focus": "吞吐"
+      },
+      {
+        "id": "ai-eng-005-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是常见吞吐优化手段？",
+        "options": [
+          {
+            "id": "a",
+            "text": "KV Cache"
+          },
+          {
+            "id": "b",
+            "text": "批处理"
+          },
+          {
+            "id": "c",
+            "text": "并发队列"
+          },
+          {
+            "id": "d",
+            "text": "限流与排队管理"
+          },
+          {
+            "id": "e",
+            "text": "随机打散请求"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "吞吐优化通常发生在推理服务层。",
+        "focus": "性能手段"
+      },
+      {
+        "id": "ai-eng-005-check-03",
+        "kind": "multiple",
+        "prompt": "吞吐优化不当可能带来什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "延迟波动"
+          },
+          {
+            "id": "b",
+            "text": "队头阻塞"
+          },
+          {
+            "id": "c",
+            "text": "尾延迟变差"
+          },
+          {
+            "id": "d",
+            "text": "自动消除成本压力"
+          },
+          {
+            "id": "e",
+            "text": "不需要监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "吞吐优化不能只看平均值，还要看尾部体验。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-006",
+    "checks": [
+      {
+        "id": "ai-eng-006-check-01",
+        "kind": "single",
+        "prompt": "语义缓存和结果缓存如何设计命中条件与失效策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永久缓存所有结果。"
+          },
+          {
+            "id": "b",
+            "text": "根据相似度、时间、版本和权限设计命中与失效。"
+          },
+          {
+            "id": "c",
+            "text": "只看字符串是否完全一样。"
+          },
+          {
+            "id": "d",
+            "text": "不需要失效策略。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "缓存命中和失效需要考虑业务语义，不只是文本相等。",
+        "focus": "语义缓存"
+      },
+      {
+        "id": "ai-eng-006-check-02",
+        "kind": "multiple",
+        "prompt": "LLM/Agent 系统里常见可缓存对象有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "稳定回答"
+          },
+          {
+            "id": "b",
+            "text": "embedding"
+          },
+          {
+            "id": "c",
+            "text": "检索结果"
+          },
+          {
+            "id": "d",
+            "text": "工具只读查询结果"
+          },
+          {
+            "id": "e",
+            "text": "用户所有敏感写操作"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存适合稳定、可复用、权限可控的结果。",
+        "focus": "缓存对象"
+      },
+      {
+        "id": "ai-eng-006-check-03",
+        "kind": "multiple",
+        "prompt": "缓存失效时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型版本变化"
+          },
+          {
+            "id": "b",
+            "text": "数据更新"
+          },
+          {
+            "id": "c",
+            "text": "权限变化"
+          },
+          {
+            "id": "d",
+            "text": "过期时间"
+          },
+          {
+            "id": "e",
+            "text": "永远不失效"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "失效策略决定缓存是否安全和新鲜。",
+        "focus": "失效策略"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-007",
+    "checks": [
+      {
+        "id": "ai-eng-007-check-01",
+        "kind": "single",
+        "prompt": "模型版本灰度、A/B 测试和回滚机制为什么重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型永远不会变差。"
+          },
+          {
+            "id": "b",
+            "text": "因为模型和 Prompt 改动可能带来回归，需要可控验证和快速撤回。"
+          },
+          {
+            "id": "c",
+            "text": "因为这些机制只影响开发效率。"
+          },
+          {
+            "id": "d",
+            "text": "因为灰度可以替代评测。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "上线治理是生产 AI 的必要部分。",
+        "focus": "灰度和回滚"
+      },
+      {
+        "id": "ai-eng-007-check-02",
+        "kind": "multiple",
+        "prompt": "灰度和 A/B 测试能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "观察真实流量"
+          },
+          {
+            "id": "b",
+            "text": "限制影响范围"
+          },
+          {
+            "id": "c",
+            "text": "比较新旧方案"
+          },
+          {
+            "id": "d",
+            "text": "支持回滚决策"
+          },
+          {
+            "id": "e",
+            "text": "自动保证没有问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上线机制本质上是风险控制。",
+        "focus": "灰度作用"
+      },
+      {
+        "id": "ai-eng-007-check-03",
+        "kind": "multiple",
+        "prompt": "回滚机制需要哪些前提？",
+        "options": [
+          {
+            "id": "a",
+            "text": "版本可追踪"
+          },
+          {
+            "id": "b",
+            "text": "配置可切换"
+          },
+          {
+            "id": "c",
+            "text": "指标和告警"
+          },
+          {
+            "id": "d",
+            "text": "回滚策略预先定义"
+          },
+          {
+            "id": "e",
+            "text": "永久删除旧版本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有版本治理，很难快速止损。",
+        "focus": "回滚前提"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-008",
+    "checks": [
+      {
+        "id": "ai-eng-008-check-01",
+        "kind": "single",
+        "prompt": "AI 应用的 LLM API 网关为什么重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为它只负责转发请求。"
+          },
+          {
+            "id": "b",
+            "text": "因为它能统一鉴权、审计、限流和计费。"
+          },
+          {
+            "id": "c",
+            "text": "因为它可以替代模型。"
+          },
+          {
+            "id": "d",
+            "text": "因为它与安全无关。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "网关是 AI 生产化的控制层。",
+        "focus": "API 网关"
+      },
+      {
+        "id": "ai-eng-008-check-02",
+        "kind": "multiple",
+        "prompt": "LLM API 网关通常应做哪些事？",
+        "options": [
+          {
+            "id": "a",
+            "text": "鉴权"
+          },
+          {
+            "id": "b",
+            "text": "限流"
+          },
+          {
+            "id": "c",
+            "text": "审计"
+          },
+          {
+            "id": "d",
+            "text": "计费"
+          },
+          {
+            "id": "e",
+            "text": "直接改模型参数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "网关负责统一入口治理。",
+        "focus": "网关能力"
+      },
+      {
+        "id": "ai-eng-008-check-03",
+        "kind": "multiple",
+        "prompt": "统一网关能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "统一安全边界"
+          },
+          {
+            "id": "b",
+            "text": "统一成本统计"
+          },
+          {
+            "id": "c",
+            "text": "统一观测和审计"
+          },
+          {
+            "id": "d",
+            "text": "自动提升模型质量"
+          },
+          {
+            "id": "e",
+            "text": "删除所有后端规则"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "网关让 AI 接入可治理、可追踪、可计费。",
+        "focus": "网关价值"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-009",
+    "checks": [
+      {
+        "id": "ai-eng-009-check-01",
+        "kind": "single",
+        "prompt": "推理服务中的 GPU/CPU 资源隔离、队列调度和容量规划为什么重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为资源不会争抢。"
+          },
+          {
+            "id": "b",
+            "text": "因为它们决定并发稳定性、成本控制和尾延迟。"
+          },
+          {
+            "id": "c",
+            "text": "因为容量规划只和 UI 有关。"
+          },
+          {
+            "id": "d",
+            "text": "因为队列可以替代模型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "资源治理直接影响生产可用性。",
+        "focus": "资源隔离"
+      },
+      {
+        "id": "ai-eng-009-check-02",
+        "kind": "multiple",
+        "prompt": "容量规划和调度通常要考虑哪些目标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "并发稳定"
+          },
+          {
+            "id": "b",
+            "text": "尾延迟"
+          },
+          {
+            "id": "c",
+            "text": "GPU 利用率"
+          },
+          {
+            "id": "d",
+            "text": "预算控制"
+          },
+          {
+            "id": "e",
+            "text": "页面配色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "资源分配要兼顾吞吐和用户体验。",
+        "focus": "调度目标"
+      },
+      {
+        "id": "ai-eng-009-check-03",
+        "kind": "multiple",
+        "prompt": "资源隔离能减少什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "抢占"
+          },
+          {
+            "id": "b",
+            "text": "雪崩"
+          },
+          {
+            "id": "c",
+            "text": "队列阻塞"
+          },
+          {
+            "id": "d",
+            "text": "自动降低模型错误率"
+          },
+          {
+            "id": "e",
+            "text": "替代监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "资源隔离是稳定性的底层保障。",
+        "focus": "隔离价值"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-010",
+    "checks": [
+      {
+        "id": "ai-eng-010-check-01",
+        "kind": "single",
+        "prompt": "vLLM、TGI 等推理框架主要解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "业务评测问题。"
+          },
+          {
+            "id": "b",
+            "text": "推理吞吐、显存利用和服务化部署效率。"
+          },
+          {
+            "id": "c",
+            "text": "用户权限问题。"
+          },
+          {
+            "id": "d",
+            "text": "Prompt 写作问题。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "推理框架优化的是服务性能和部署能力。",
+        "focus": "推理框架"
+      },
+      {
+        "id": "ai-eng-010-check-02",
+        "kind": "multiple",
+        "prompt": "这些框架通常能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更高吞吐"
+          },
+          {
+            "id": "b",
+            "text": "更好的批处理"
+          },
+          {
+            "id": "c",
+            "text": "更高显存利用率"
+          },
+          {
+            "id": "d",
+            "text": "更容易做服务化部署"
+          },
+          {
+            "id": "e",
+            "text": "自动修复知识错误"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "它们主要解决推理服务层瓶颈。",
+        "focus": "常见收益"
+      },
+      {
+        "id": "ai-eng-010-check-03",
+        "kind": "multiple",
+        "prompt": "选推理框架时通常关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "性能"
+          },
+          {
+            "id": "b",
+            "text": "部署复杂度"
+          },
+          {
+            "id": "c",
+            "text": "硬件兼容性"
+          },
+          {
+            "id": "d",
+            "text": "可观测性支持"
+          },
+          {
+            "id": "e",
+            "text": "模型回答风格"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "框架选型要看服务能力，而不是模型回答内容。",
+        "focus": "选型关注"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-011",
+    "checks": [
+      {
+        "id": "ai-eng-011-check-01",
+        "kind": "single",
+        "prompt": "LLM 服务应记录哪些观测数据？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只记录最终文本。"
+          },
+          {
+            "id": "b",
+            "text": "请求、响应、耗时、token、错误、路由和版本信息。"
+          },
+          {
+            "id": "c",
+            "text": "只记录用户昵称。"
+          },
+          {
+            "id": "d",
+            "text": "不需要记录版本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "没有观测数据就很难排障、评测和计费。",
+        "focus": "观测数据"
+      },
+      {
+        "id": "ai-eng-011-check-02",
+        "kind": "multiple",
+        "prompt": "LLM 服务可观测性通常要覆盖哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "延迟"
+          },
+          {
+            "id": "b",
+            "text": "成本"
+          },
+          {
+            "id": "c",
+            "text": "错误率"
+          },
+          {
+            "id": "d",
+            "text": "模型/Prompt/路由版本"
+          },
+          {
+            "id": "e",
+            "text": "前端按钮颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "观测数据要能支持分析和回放。",
+        "focus": "观测维度"
+      },
+      {
+        "id": "ai-eng-011-check-03",
+        "kind": "multiple",
+        "prompt": "这些观测数据能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "故障定位"
+          },
+          {
+            "id": "b",
+            "text": "成本分析"
+          },
+          {
+            "id": "c",
+            "text": "版本比较"
+          },
+          {
+            "id": "d",
+            "text": "回归检测"
+          },
+          {
+            "id": "e",
+            "text": "自动消除所有问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "观测是优化和治理的基础。",
+        "focus": "价值"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-012",
+    "checks": [
+      {
+        "id": "ai-eng-012-check-01",
+        "kind": "single",
+        "prompt": "如何定位一次 LLM 应用失败是模型、检索、提示词还是工具问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看最终输出。"
+          },
+          {
+            "id": "b",
+            "text": "按链路分段回放和对比。"
+          },
+          {
+            "id": "c",
+            "text": "直接换 UI。"
+          },
+          {
+            "id": "d",
+            "text": "只看平均分。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "复杂系统问题需要分层定位。",
+        "focus": "排障"
+      },
+      {
+        "id": "ai-eng-012-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段有助于定位问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "trace replay"
+          },
+          {
+            "id": "b",
+            "text": "分段测试"
+          },
+          {
+            "id": "c",
+            "text": "版本对比"
+          },
+          {
+            "id": "d",
+            "text": "失败样本分类"
+          },
+          {
+            "id": "e",
+            "text": "只靠感觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "链路证据比单次结果更重要。",
+        "focus": "排障方法"
+      },
+      {
+        "id": "ai-eng-012-check-03",
+        "kind": "multiple",
+        "prompt": "分段排查时通常要区分什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型决策问题"
+          },
+          {
+            "id": "b",
+            "text": "检索问题"
+          },
+          {
+            "id": "c",
+            "text": "工具或工作流问题"
+          },
+          {
+            "id": "d",
+            "text": "Prompt 或配置问题"
+          },
+          {
+            "id": "e",
+            "text": "颜色配置问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同层的问题需要不同修复手段。",
+        "focus": "区分问题"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-013",
+    "checks": [
+      {
+        "id": "ai-eng-013-check-01",
+        "kind": "single",
+        "prompt": "LLM-as-Judge 的评分标准、偏差和一致性为什么要控制？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Judge 一定客观。"
+          },
+          {
+            "id": "b",
+            "text": "因为评判器本身也会有偏差，需要校准和复核。"
+          },
+          {
+            "id": "c",
+            "text": "因为分数越高越安全。"
+          },
+          {
+            "id": "d",
+            "text": "因为 Judge 可以替代 ground truth。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Judge 是评测工具，不是绝对真理。",
+        "focus": "Judge 控制"
+      },
+      {
+        "id": "ai-eng-013-check-02",
+        "kind": "multiple",
+        "prompt": "LLM Judge 可能有哪些偏差？",
+        "options": [
+          {
+            "id": "a",
+            "text": "偏向流畅答案"
+          },
+          {
+            "id": "b",
+            "text": "受提示影响"
+          },
+          {
+            "id": "c",
+            "text": "与人工标准不一致"
+          },
+          {
+            "id": "d",
+            "text": "一致性波动"
+          },
+          {
+            "id": "e",
+            "text": "完全没有偏差"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Judge 也需要评测和校准。",
+        "focus": "Judge 风险"
+      },
+      {
+        "id": "ai-eng-013-check-03",
+        "kind": "multiple",
+        "prompt": "如何控制 LLM-as-Judge 的风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "清晰 rubric"
+          },
+          {
+            "id": "b",
+            "text": "多评委或抽样复核"
+          },
+          {
+            "id": "c",
+            "text": "与人工标注对齐"
+          },
+          {
+            "id": "d",
+            "text": "只用单次输出决定全部结论"
+          },
+          {
+            "id": "e",
+            "text": "不做抽检"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "评判器本身也需要被治理。",
+        "focus": "控制方法"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-014",
+    "checks": [
+      {
+        "id": "ai-eng-014-check-01",
+        "kind": "single",
+        "prompt": "如何构建离线评测集、线上回放集和回归测试集？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只保留一个测试集。"
+          },
+          {
+            "id": "b",
+            "text": "区分调参、回归和线上 replay 的用途。"
+          },
+          {
+            "id": "c",
+            "text": "所有样本混在一起。"
+          },
+          {
+            "id": "d",
+            "text": "只看 benchmark。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "不同数据集承担不同评测职责。",
+        "focus": "评测集体系"
+      },
+      {
+        "id": "ai-eng-014-check-02",
+        "kind": "multiple",
+        "prompt": "这些评测集各自有什么作用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "离线评测集用于快速比较"
+          },
+          {
+            "id": "b",
+            "text": "回放集用于复现线上真实行为"
+          },
+          {
+            "id": "c",
+            "text": "回归集用于防止旧问题回归"
+          },
+          {
+            "id": "d",
+            "text": "Holdout 用于避免过拟合"
+          },
+          {
+            "id": "e",
+            "text": "只用于展示"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "数据集分工清晰，评测才可持续。",
+        "focus": "数据集分工"
+      },
+      {
+        "id": "ai-eng-014-check-03",
+        "kind": "multiple",
+        "prompt": "这些评测集需要什么管理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "版本化"
+          },
+          {
+            "id": "b",
+            "text": "脱敏"
+          },
+          {
+            "id": "c",
+            "text": "标签和元数据"
+          },
+          {
+            "id": "d",
+            "text": "与模型和 Prompt 版本关联"
+          },
+          {
+            "id": "e",
+            "text": "永久不更新"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测集是长期资产，不是一次性文件。",
+        "focus": "管理要求"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-015",
+    "checks": [
+      {
+        "id": "ai-eng-015-check-01",
+        "kind": "single",
+        "prompt": "Prompt 注入、越权工具调用和数据泄露如何防御？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只靠模型自觉。"
+          },
+          {
+            "id": "b",
+            "text": "用 Prompt、权限、网关、校验、审计和沙箱多层防御。"
+          },
+          {
+            "id": "c",
+            "text": "只关掉工具。"
+          },
+          {
+            "id": "d",
+            "text": "只提高 temperature。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "安全必须多层协同，不能只靠单点手段。",
+        "focus": "安全防御"
+      },
+      {
+        "id": "ai-eng-015-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于有效防御层？",
+        "options": [
+          {
+            "id": "a",
+            "text": "输入过滤"
+          },
+          {
+            "id": "b",
+            "text": "权限校验"
+          },
+          {
+            "id": "c",
+            "text": "工具网关"
+          },
+          {
+            "id": "d",
+            "text": "输出审查"
+          },
+          {
+            "id": "e",
+            "text": "让模型自由执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "攻击面越大，防御层越重要。",
+        "focus": "防御层"
+      },
+      {
+        "id": "ai-eng-015-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景更需要安全防御？",
+        "options": [
+          {
+            "id": "a",
+            "text": "外部文档接入"
+          },
+          {
+            "id": "b",
+            "text": "能调用写操作工具"
+          },
+          {
+            "id": "c",
+            "text": "访问敏感数据"
+          },
+          {
+            "id": "d",
+            "text": "对外发送结果"
+          },
+          {
+            "id": "e",
+            "text": "单纯离线文本分类"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "只要涉及外部文本和行动，就有安全风险。",
+        "focus": "风险场景"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-016",
+    "checks": [
+      {
+        "id": "ai-eng-016-check-01",
+        "kind": "single",
+        "prompt": "Guardrails 应如何覆盖输入、检索、工具调用和输出？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只管输出文本。"
+          },
+          {
+            "id": "b",
+            "text": "在每个关键环节加入校验、过滤和拒绝策略。"
+          },
+          {
+            "id": "c",
+            "text": "只在最前面加一句安全提醒。"
+          },
+          {
+            "id": "d",
+            "text": "不需要版本管理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Guardrails 应是链路级能力，不只是最后一层。",
+        "focus": "Guardrails"
+      },
+      {
+        "id": "ai-eng-016-check-02",
+        "kind": "multiple",
+        "prompt": "Guardrails 可覆盖哪些环节？",
+        "options": [
+          {
+            "id": "a",
+            "text": "输入"
+          },
+          {
+            "id": "b",
+            "text": "检索"
+          },
+          {
+            "id": "c",
+            "text": "工具调用"
+          },
+          {
+            "id": "d",
+            "text": "输出"
+          },
+          {
+            "id": "e",
+            "text": "仅 UI 展示"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同环节有不同风险，不能只防一个点。",
+        "focus": "覆盖环节"
+      },
+      {
+        "id": "ai-eng-016-check-03",
+        "kind": "multiple",
+        "prompt": "哪些手段属于 Guardrails？",
+        "options": [
+          {
+            "id": "a",
+            "text": "内容过滤"
+          },
+          {
+            "id": "b",
+            "text": "schema 校验"
+          },
+          {
+            "id": "c",
+            "text": "权限判断"
+          },
+          {
+            "id": "d",
+            "text": "高风险动作拦截"
+          },
+          {
+            "id": "e",
+            "text": "随机放行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Guardrails 是系统级规则控制层。",
+        "focus": "常见手段"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-017",
+    "checks": [
+      {
+        "id": "ai-eng-017-check-01",
+        "kind": "single",
+        "prompt": "AI 应用的隐私、合规和敏感数据脱敏如何落地？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只在文档里写一下。"
+          },
+          {
+            "id": "b",
+            "text": "通过脱敏、权限、最小化暴露和审计机制落地。"
+          },
+          {
+            "id": "c",
+            "text": "只靠模型识别。"
+          },
+          {
+            "id": "d",
+            "text": "完全不记录日志。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "隐私合规是工程治理问题，不是口头承诺。",
+        "focus": "隐私合规"
+      },
+      {
+        "id": "ai-eng-017-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是隐私合规的常见措施？",
+        "options": [
+          {
+            "id": "a",
+            "text": "脱敏"
+          },
+          {
+            "id": "b",
+            "text": "最小化上下文暴露"
+          },
+          {
+            "id": "c",
+            "text": "权限控制"
+          },
+          {
+            "id": "d",
+            "text": "审计日志"
+          },
+          {
+            "id": "e",
+            "text": "把所有敏感信息原样给模型"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "合规要落到数据流、权限和日志上。",
+        "focus": "落地措施"
+      },
+      {
+        "id": "ai-eng-017-check-03",
+        "kind": "multiple",
+        "prompt": "哪些环节容易泄露敏感数据？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt"
+          },
+          {
+            "id": "b",
+            "text": "RAG 检索"
+          },
+          {
+            "id": "c",
+            "text": "工具返回"
+          },
+          {
+            "id": "d",
+            "text": "日志和反馈闭环"
+          },
+          {
+            "id": "e",
+            "text": "空白占位符"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "敏感信息可能在多处流动，需全链路管控。",
+        "focus": "风险点"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-018",
+    "checks": [
+      {
+        "id": "ai-eng-018-check-01",
+        "kind": "single",
+        "prompt": "如何设计安全的用户反馈闭环和人工标注流程？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让所有反馈直接覆盖生产答案。"
+          },
+          {
+            "id": "b",
+            "text": "做脱敏、分级、抽样、复核和版本化标注。"
+          },
+          {
+            "id": "c",
+            "text": "不做任何过滤。"
+          },
+          {
+            "id": "d",
+            "text": "只收集五星评分。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "反馈闭环既是优化入口，也是风险入口。",
+        "focus": "反馈闭环"
+      },
+      {
+        "id": "ai-eng-018-check-02",
+        "kind": "multiple",
+        "prompt": "人工标注流程通常需要什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "脱敏"
+          },
+          {
+            "id": "b",
+            "text": "标注规范"
+          },
+          {
+            "id": "c",
+            "text": "复核机制"
+          },
+          {
+            "id": "d",
+            "text": "版本记录"
+          },
+          {
+            "id": "e",
+            "text": "不记录来源"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "标注流程要可追踪、可复现、可审计。",
+        "focus": "标注流程"
+      },
+      {
+        "id": "ai-eng-018-check-03",
+        "kind": "multiple",
+        "prompt": "反馈闭环如何避免安全风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "限制敏感样本可见范围"
+          },
+          {
+            "id": "b",
+            "text": "审核反馈内容"
+          },
+          {
+            "id": "c",
+            "text": "分级访问标注数据"
+          },
+          {
+            "id": "d",
+            "text": "记录标注来源"
+          },
+          {
+            "id": "e",
+            "text": "全量公开原始数据"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "反馈系统本身也是敏感数据处理系统。",
+        "focus": "风险控制"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-019",
+    "checks": [
+      {
+        "id": "ai-eng-019-check-01",
+        "kind": "single",
+        "prompt": "AI 应用的成本模型如何拆解？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看模型价格。"
+          },
+          {
+            "id": "b",
+            "text": "拆到 token、检索、工具和人工审核等环节。"
+          },
+          {
+            "id": "c",
+            "text": "只看前端渲染。"
+          },
+          {
+            "id": "d",
+            "text": "不需要拆分。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "成本要按链路拆分，才能知道钱花在哪里。",
+        "focus": "成本模型"
+      },
+      {
+        "id": "ai-eng-019-check-02",
+        "kind": "multiple",
+        "prompt": "AI 应用常见成本项有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "token"
+          },
+          {
+            "id": "b",
+            "text": "检索和向量库"
+          },
+          {
+            "id": "c",
+            "text": "工具调用"
+          },
+          {
+            "id": "d",
+            "text": "人工审核"
+          },
+          {
+            "id": "e",
+            "text": "按钮圆角"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "AI 成本不只来自模型，还来自整条链路。",
+        "focus": "成本项"
+      },
+      {
+        "id": "ai-eng-019-check-03",
+        "kind": "multiple",
+        "prompt": "哪些手段有助于控制成本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "小模型分流"
+          },
+          {
+            "id": "b",
+            "text": "缓存"
+          },
+          {
+            "id": "c",
+            "text": "压缩上下文"
+          },
+          {
+            "id": "d",
+            "text": "降低人工审核比例但保留高风险节点"
+          },
+          {
+            "id": "e",
+            "text": "无限制增加调用次数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成本控制通常需要分层和策略治理。",
+        "focus": "优化方向"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-eng-020",
+    "checks": [
+      {
+        "id": "ai-eng-020-check-01",
+        "kind": "single",
+        "prompt": "AI 应用上线后如何持续运营 prompt、知识库、模型和评测集？",
+        "options": [
+          {
+            "id": "a",
+            "text": "上线后就不再维护。"
+          },
+          {
+            "id": "b",
+            "text": "通过版本管理、监控、回流、评测和灰度形成闭环。"
+          },
+          {
+            "id": "c",
+            "text": "只看离线 benchmark。"
+          },
+          {
+            "id": "d",
+            "text": "只靠人工感觉。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "AI 系统是持续演进系统，不是一次性项目。",
+        "focus": "持续运营"
+      },
+      {
+        "id": "ai-eng-020-check-02",
+        "kind": "multiple",
+        "prompt": "持续运营通常要管哪些对象？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt"
+          },
+          {
+            "id": "b",
+            "text": "知识库"
+          },
+          {
+            "id": "c",
+            "text": "模型版本"
+          },
+          {
+            "id": "d",
+            "text": "评测集"
+          },
+          {
+            "id": "e",
+            "text": "页面配色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "这些对象都可能影响线上行为。",
+        "focus": "运营对象"
+      },
+      {
+        "id": "ai-eng-020-check-03",
+        "kind": "multiple",
+        "prompt": "持续运营通常要做哪些动作？",
+        "options": [
+          {
+            "id": "a",
+            "text": "监控"
+          },
+          {
+            "id": "b",
+            "text": "灰度"
+          },
+          {
+            "id": "c",
+            "text": "回归评测"
+          },
+          {
+            "id": "d",
+            "text": "回滚准备"
+          },
+          {
+            "id": "e",
+            "text": "永久静态化"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "持续运营的核心是不断验证和改进。",
+        "focus": "运营动作"
+      }
+    ]
+  }
+]

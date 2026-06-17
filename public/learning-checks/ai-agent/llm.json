@@ -1,0 +1,3642 @@
+[
+  {
+    "questionId": "llm-001",
+    "checks": [
+      {
+        "id": "llm-001-check-01",
+        "kind": "single",
+        "prompt": "什么更准确地描述了 LLM 相比传统机器学习模型的核心特点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只能做单一分类任务，不能迁移到别的任务。"
+          },
+          {
+            "id": "b",
+            "text": "先通过大规模预训练获得通用语言能力，再用提示词或微调适配多任务。"
+          },
+          {
+            "id": "c",
+            "text": "必须为每个业务单独训练一个小模型才能工作。"
+          },
+          {
+            "id": "d",
+            "text": "只能处理自然语言，不能处理代码或结构化信息。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "LLM 的关键不是“只会回答”，而是先学通用表示，再通过上下文、指令和对齐适配多类任务。",
+        "focus": "LLM 定义"
+      },
+      {
+        "id": "llm-001-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法符合 LLM 的工程特征？",
+        "options": [
+          {
+            "id": "a",
+            "text": "能力通常受模型规模、数据、上下文窗口和对齐方式共同影响。"
+          },
+          {
+            "id": "b",
+            "text": "可以通过 Prompt、RAG 和工具调用扩展能力边界。"
+          },
+          {
+            "id": "c",
+            "text": "可能在事实、时效性和精确计算上出错。"
+          },
+          {
+            "id": "d",
+            "text": "天然等同于知识数据库，所有事实都可靠。"
+          },
+          {
+            "id": "e",
+            "text": "只适合做闲聊，不适合做严肃业务。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "LLM 是通用底座，不是事实引擎。工程上常用系统能力补足它的不确定性。",
+        "focus": "LLM 特征"
+      },
+      {
+        "id": "llm-001-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景通常不必优先上复杂的 LLM 系统？",
+        "options": [
+          {
+            "id": "a",
+            "text": "规则明确、输入输出固定的简单转换。"
+          },
+          {
+            "id": "b",
+            "text": "强依赖实时精确数据且可以用确定性接口完成的任务。"
+          },
+          {
+            "id": "c",
+            "text": "只需要稳定分类或简单抽取且传统方法足够的任务。"
+          },
+          {
+            "id": "d",
+            "text": "所有需要高质量自然语言生成的任务。"
+          },
+          {
+            "id": "e",
+            "text": "所有带对话界面的产品。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "是否需要 LLM，先看任务是否需要语言泛化、上下文理解和开放式生成，不要为了“AI 化”而 AI 化。",
+        "focus": "LLM 边界"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-002",
+    "checks": [
+      {
+        "id": "llm-002-check-01",
+        "kind": "single",
+        "prompt": "Token 最准确的理解是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "就是一个汉字。"
+          },
+          {
+            "id": "b",
+            "text": "就是一个英文单词。"
+          },
+          {
+            "id": "c",
+            "text": "是 tokenizer 切分后的模型离散输入单位。"
+          },
+          {
+            "id": "d",
+            "text": "是模型内部唯一的语义标签。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "token 是模型处理文本的基本单位，可能对应字、子词、符号或片段。",
+        "focus": "Token 概念"
+      },
+      {
+        "id": "llm-002-check-02",
+        "kind": "multiple",
+        "prompt": "哪些内容通常都会消耗 token 预算？",
+        "options": [
+          {
+            "id": "a",
+            "text": "system prompt"
+          },
+          {
+            "id": "b",
+            "text": "历史对话"
+          },
+          {
+            "id": "c",
+            "text": "RAG 检索结果"
+          },
+          {
+            "id": "d",
+            "text": "工具返回内容"
+          },
+          {
+            "id": "e",
+            "text": "仅用户当前输入"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上下文预算是整体预算，不只算用户这一句。",
+        "focus": "Token 预算"
+      },
+      {
+        "id": "llm-002-check-03",
+        "kind": "multiple",
+        "prompt": "token 设计或使用不当会带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "上下文截断"
+          },
+          {
+            "id": "b",
+            "text": "成本上升"
+          },
+          {
+            "id": "c",
+            "text": "延迟增加"
+          },
+          {
+            "id": "d",
+            "text": "让模型自动变得更准确"
+          },
+          {
+            "id": "e",
+            "text": "一定提升多语言表现"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "token 数影响上下文、计费和性能，是 Prompt、RAG 和 Agent 设计的基础约束。",
+        "focus": "Token 影响"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-003",
+    "checks": [
+      {
+        "id": "llm-003-check-01",
+        "kind": "single",
+        "prompt": "Tokenizer 的主要作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把模型输出转成自然语言解释。"
+          },
+          {
+            "id": "b",
+            "text": "把文本编码成 token id，并在生成后解码回文本。"
+          },
+          {
+            "id": "c",
+            "text": "把所有文本强制切成固定长度的汉字块。"
+          },
+          {
+            "id": "d",
+            "text": "只负责英文分词。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型训练和推理都依赖 token id，tokenizer 是文本与模型之间的入口。",
+        "focus": "Tokenizer 作用"
+      },
+      {
+        "id": "llm-003-check-02",
+        "kind": "multiple",
+        "prompt": "下面哪些属于常见 tokenizer 思路？",
+        "options": [
+          {
+            "id": "a",
+            "text": "BPE"
+          },
+          {
+            "id": "b",
+            "text": "WordPiece"
+          },
+          {
+            "id": "c",
+            "text": "SentencePiece"
+          },
+          {
+            "id": "d",
+            "text": "哈希排序"
+          },
+          {
+            "id": "e",
+            "text": "线性回归分词"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "这些方法本质上都在字符、子词和词级之间做折中。",
+        "focus": "常见思路"
+      },
+      {
+        "id": "llm-003-check-03",
+        "kind": "multiple",
+        "prompt": "为什么做上下文预算时不能只看字符数？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不同模型的 tokenizer 不同。"
+          },
+          {
+            "id": "b",
+            "text": "中文、英文和代码的压缩率差异很大。"
+          },
+          {
+            "id": "c",
+            "text": "同一句话在不同模型上的 token 数可能不同。"
+          },
+          {
+            "id": "d",
+            "text": "字符数一定等于 token 数。"
+          },
+          {
+            "id": "e",
+            "text": "字符数越少就一定越便宜。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "字符数只能粗略估计，真实工程要按目标模型 tokenizer 统计。",
+        "focus": "工程注意点"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-004",
+    "checks": [
+      {
+        "id": "llm-004-check-01",
+        "kind": "single",
+        "prompt": "上下文窗口更准确的含义是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型每天能处理的最大请求数。"
+          },
+          {
+            "id": "b",
+            "text": "模型单次推理时可见的最大 token 范围。"
+          },
+          {
+            "id": "c",
+            "text": "训练数据集的最大长度。"
+          },
+          {
+            "id": "d",
+            "text": "只包含用户输入，不包含系统指令。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "上下文窗口是推理时的可见预算，输入和输出都会竞争这部分空间。",
+        "focus": "上下文窗口"
+      },
+      {
+        "id": "llm-004-check-02",
+        "kind": "multiple",
+        "prompt": "以下哪些通常会占用上下文窗口？",
+        "options": [
+          {
+            "id": "a",
+            "text": "system prompt"
+          },
+          {
+            "id": "b",
+            "text": "历史消息"
+          },
+          {
+            "id": "c",
+            "text": "检索到的文档片段"
+          },
+          {
+            "id": "d",
+            "text": "工具调用返回"
+          },
+          {
+            "id": "e",
+            "text": "模型训练时的梯度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "窗口关注的是单次推理上下文，不是训练过程。",
+        "focus": "谁在占用窗口"
+      },
+      {
+        "id": "llm-004-check-03",
+        "kind": "multiple",
+        "prompt": "长上下文并不总是更好，原因包括哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "注意力稀释"
+          },
+          {
+            "id": "b",
+            "text": "延迟和成本上升"
+          },
+          {
+            "id": "c",
+            "text": "远距离信息利用质量未必稳定"
+          },
+          {
+            "id": "d",
+            "text": "窗口越大，模型一定越聪明"
+          },
+          {
+            "id": "e",
+            "text": "窗口越大，历史就不需要管理了"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "能放进去不等于能用好，长上下文需要配合裁剪、摘要和检索策略。",
+        "focus": "长上下文风险"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-005",
+    "checks": [
+      {
+        "id": "llm-005-check-01",
+        "kind": "single",
+        "prompt": "Transformer 成为 LLM 主流架构的主要原因是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只因为参数量最大。"
+          },
+          {
+            "id": "b",
+            "text": "它兼顾表达能力、并行训练和可扩展性。"
+          },
+          {
+            "id": "c",
+            "text": "它完全没有计算成本。"
+          },
+          {
+            "id": "d",
+            "text": "它不需要位置编码。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Transformer 的优势是全局依赖建模和训练并行度，适合规模化扩展。",
+        "focus": "Transformer 主流原因"
+      },
+      {
+        "id": "llm-005-check-02",
+        "kind": "multiple",
+        "prompt": "自注意力机制带来的收益有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可直接建模长距离依赖。"
+          },
+          {
+            "id": "b",
+            "text": "训练时比纯串行结构更容易并行。"
+          },
+          {
+            "id": "c",
+            "text": "不同 token 可以聚合全局上下文。"
+          },
+          {
+            "id": "d",
+            "text": "会自动消除幻觉。"
+          },
+          {
+            "id": "e",
+            "text": "能把所有序列长度的计算变成常数时间。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "self-attention 提供的是建模能力和并行性，不是魔法保证。",
+        "focus": "自注意力收益"
+      },
+      {
+        "id": "llm-005-check-03",
+        "kind": "multiple",
+        "prompt": "标准 Transformer 的局限有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "长序列 attention 成本高。"
+          },
+          {
+            "id": "b",
+            "text": "显存和计算会随上下文变大而上升。"
+          },
+          {
+            "id": "c",
+            "text": "长上下文下容易增加推理延迟。"
+          },
+          {
+            "id": "d",
+            "text": "它对长距离信息的处理一定比短序列更好。"
+          },
+          {
+            "id": "e",
+            "text": "它不需要任何工程优化。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Transformer 强在扩展，但长上下文会带来明显的性能和资源压力。",
+        "focus": "Transformer 代价"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-006",
+    "checks": [
+      {
+        "id": "llm-006-check-01",
+        "kind": "single",
+        "prompt": "Transformer 里的 Q、K、V 最合理的理解是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "三种完全无关的随机向量。"
+          },
+          {
+            "id": "b",
+            "text": "Q 表示查询，K 表示可匹配特征，V 表示被聚合内容。"
+          },
+          {
+            "id": "c",
+            "text": "Q 是训练集，K 是测试集，V 是验证集。"
+          },
+          {
+            "id": "d",
+            "text": "它们只在编码器里出现，解码器没有。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Q/K/V 是注意力检索与聚合机制的三个投影视角。",
+        "focus": "QKV 含义"
+      },
+      {
+        "id": "llm-006-check-02",
+        "kind": "multiple",
+        "prompt": "关于 self-attention，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "通常会先根据 Q 和 K 的相似度算权重。"
+          },
+          {
+            "id": "b",
+            "text": "权重会经过 softmax 归一化。"
+          },
+          {
+            "id": "c",
+            "text": "最终结果是对多个 V 的加权和。"
+          },
+          {
+            "id": "d",
+            "text": "它等同于固定窗口的简单拼接。"
+          },
+          {
+            "id": "e",
+            "text": "它不需要任何矩阵运算。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "attention 本质上是“检索 + 加权聚合”，不是简单拼接。",
+        "focus": "attention 计算"
+      },
+      {
+        "id": "llm-006-check-03",
+        "kind": "multiple",
+        "prompt": "多头注意力的好处主要有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以从不同子空间学习关系。"
+          },
+          {
+            "id": "b",
+            "text": "能同时关注不同类型的信息。"
+          },
+          {
+            "id": "c",
+            "text": "有利于捕捉语法、实体和代码结构等不同线索。"
+          },
+          {
+            "id": "d",
+            "text": "会把 attention 的计算复杂度彻底消除。"
+          },
+          {
+            "id": "e",
+            "text": "会自动把错误输入变正确。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多头是表达能力增强，不是把计算问题直接抹掉。",
+        "focus": "多头注意力"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-007",
+    "checks": [
+      {
+        "id": "llm-007-check-01",
+        "kind": "single",
+        "prompt": "通用大模型典型训练流程更接近哪项？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只做一次预训练就足够上线。"
+          },
+          {
+            "id": "b",
+            "text": "预训练 + 指令微调 + 偏好对齐 + 部署优化。"
+          },
+          {
+            "id": "c",
+            "text": "先上线再决定要不要训练。"
+          },
+          {
+            "id": "d",
+            "text": "只做 RLHF，不需要预训练。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "预训练打底，SFT 学会听指令，对齐训练让输出更符合偏好和安全要求。",
+        "focus": "训练阶段"
+      },
+      {
+        "id": "llm-007-check-02",
+        "kind": "multiple",
+        "prompt": "下面哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "预训练主要学习通用语言规律和知识表示。"
+          },
+          {
+            "id": "b",
+            "text": "SFT 主要让模型更会按指令回答。"
+          },
+          {
+            "id": "c",
+            "text": "对齐训练常用于改善偏好和安全边界。"
+          },
+          {
+            "id": "d",
+            "text": "预训练的目标就是把每个业务格式都学死。"
+          },
+          {
+            "id": "e",
+            "text": "所有阶段都只需要少量样本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同阶段解决的问题不同，不能把所有能力都寄托在一个阶段。",
+        "focus": "各阶段作用"
+      },
+      {
+        "id": "llm-007-check-03",
+        "kind": "multiple",
+        "prompt": "哪些工作也常出现在大模型训练或适配流程中？",
+        "options": [
+          {
+            "id": "a",
+            "text": "继续预训练"
+          },
+          {
+            "id": "b",
+            "text": "蒸馏"
+          },
+          {
+            "id": "c",
+            "text": "量化或部署优化"
+          },
+          {
+            "id": "d",
+            "text": "删除上下文窗口"
+          },
+          {
+            "id": "e",
+            "text": "取消评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "训练后面的工程环节同样重要，尤其是成本、时延和部署形态。",
+        "focus": "工程补充"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-008",
+    "checks": [
+      {
+        "id": "llm-008-check-01",
+        "kind": "single",
+        "prompt": "system prompt 的主要作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只负责把用户输入翻译成英文。"
+          },
+          {
+            "id": "b",
+            "text": "设定高优先级的角色、边界、风格和输出规则。"
+          },
+          {
+            "id": "c",
+            "text": "替代所有后端权限校验。"
+          },
+          {
+            "id": "d",
+            "text": "只在第一次对话时生效。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "system prompt 是行为控制层，不是安全的全部。",
+        "focus": "system prompt"
+      },
+      {
+        "id": "llm-008-check-02",
+        "kind": "multiple",
+        "prompt": "system prompt 常用来定义哪些东西？",
+        "options": [
+          {
+            "id": "a",
+            "text": "角色和语气"
+          },
+          {
+            "id": "b",
+            "text": "输出格式"
+          },
+          {
+            "id": "c",
+            "text": "拒答或澄清策略"
+          },
+          {
+            "id": "d",
+            "text": "工具调用原则"
+          },
+          {
+            "id": "e",
+            "text": "数据库索引结构"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "它负责控制模型怎么答、何时答、能不能答，不负责系统底层实现。",
+        "focus": "system prompt 内容"
+      },
+      {
+        "id": "llm-008-check-03",
+        "kind": "multiple",
+        "prompt": "为什么 system prompt 不能单独解决所有安全问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "仍可能被 prompt injection 干扰。"
+          },
+          {
+            "id": "b",
+            "text": "权限和参数校验必须由系统实现。"
+          },
+          {
+            "id": "c",
+            "text": "高风险操作需要审计或人工确认。"
+          },
+          {
+            "id": "d",
+            "text": "它一旦写好就永久不需要维护。"
+          },
+          {
+            "id": "e",
+            "text": "它比代码安全边界更可靠。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "真正的安全要靠 prompt、校验、网关和审计共同完成。",
+        "focus": "限制"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-009",
+    "checks": [
+      {
+        "id": "llm-009-check-01",
+        "kind": "single",
+        "prompt": "关于 temperature 和 top_p，哪项更准确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "temperature 直接控制上下文长度。"
+          },
+          {
+            "id": "b",
+            "text": "temperature 控制分布平滑度，top_p 控制采样候选集合。"
+          },
+          {
+            "id": "c",
+            "text": "top_p 只影响训练，不影响推理。"
+          },
+          {
+            "id": "d",
+            "text": "两者都只能提升事实准确率。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "一个调“随机性”，一个调“候选范围”，都作用于采样阶段。",
+        "focus": "temperature / top_p"
+      },
+      {
+        "id": "llm-009-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务通常更适合低 temperature？",
+        "options": [
+          {
+            "id": "a",
+            "text": "JSON 输出"
+          },
+          {
+            "id": "b",
+            "text": "结构化抽取"
+          },
+          {
+            "id": "c",
+            "text": "代码修复"
+          },
+          {
+            "id": "d",
+            "text": "工具调用"
+          },
+          {
+            "id": "e",
+            "text": "发散式头脑风暴"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "确定性越强的任务，越需要稳定采样而不是创意采样。",
+        "focus": "参数选择"
+      },
+      {
+        "id": "llm-009-check-03",
+        "kind": "multiple",
+        "prompt": "关于采样参数，哪些做法更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先通过评测集比较效果，再定默认值。"
+          },
+          {
+            "id": "b",
+            "text": "不要同时大幅调整多个参数，否则难以归因。"
+          },
+          {
+            "id": "c",
+            "text": "低温只能提高稳定性，不能修复错误知识或错误检索。"
+          },
+          {
+            "id": "d",
+            "text": "只要调低 temperature，就一定不会出错。"
+          },
+          {
+            "id": "e",
+            "text": "参数越激进越适合生产。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "采样参数只是稳定性旋钮，不是知识修复器。",
+        "focus": "调参原则"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-010",
+    "checks": [
+      {
+        "id": "llm-010-check-01",
+        "kind": "single",
+        "prompt": "什么最符合 LLM 幻觉的定义？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型回答太简短。"
+          },
+          {
+            "id": "b",
+            "text": "生成看似合理但实际错误或无依据的内容。"
+          },
+          {
+            "id": "c",
+            "text": "模型拒绝回答用户问题。"
+          },
+          {
+            "id": "d",
+            "text": "模型把文本翻译成了别的语言。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "幻觉的核心是“像真的，但不是对的”。",
+        "focus": "幻觉定义"
+      },
+      {
+        "id": "llm-010-check-02",
+        "kind": "multiple",
+        "prompt": "哪些因素会增加幻觉概率？",
+        "options": [
+          {
+            "id": "a",
+            "text": "知识过时"
+          },
+          {
+            "id": "b",
+            "text": "上下文不足"
+          },
+          {
+            "id": "c",
+            "text": "问题模糊"
+          },
+          {
+            "id": "d",
+            "text": "强迫模型必须回答"
+          },
+          {
+            "id": "e",
+            "text": "严格的事实校验"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "模型越缺证据、越被逼着答，就越容易补全出不可靠内容。",
+        "focus": "幻觉来源"
+      },
+      {
+        "id": "llm-010-check-03",
+        "kind": "multiple",
+        "prompt": "常见的幻觉缓解手段有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "RAG 提供证据"
+          },
+          {
+            "id": "b",
+            "text": "允许拒答或澄清"
+          },
+          {
+            "id": "c",
+            "text": "结构化校验和引用约束"
+          },
+          {
+            "id": "d",
+            "text": "高风险场景人工复核"
+          },
+          {
+            "id": "e",
+            "text": "让模型自由发挥更多"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "幻觉很难彻底消除，工程上更现实的是降低发生概率和影响范围。",
+        "focus": "幻觉缓解"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-011",
+    "checks": [
+      {
+        "id": "llm-011-check-01",
+        "kind": "single",
+        "prompt": "Base model 和 instruction-tuned/chat model 的核心区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Base model 一定比 chat model 更安全。"
+          },
+          {
+            "id": "b",
+            "text": "Base model 更像文本补全器，chat model 更擅长遵循指令和对话格式。"
+          },
+          {
+            "id": "c",
+            "text": "Chat model 不需要预训练。"
+          },
+          {
+            "id": "d",
+            "text": "二者只是在模型文件名上不同。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "base model 学语言分布，chat model 在此基础上经过指令和偏好对齐，更适合直接面向用户。",
+        "focus": "Base 与 Chat"
+      },
+      {
+        "id": "llm-011-check-02",
+        "kind": "multiple",
+        "prompt": "instruction-tuned/chat model 通常更擅长哪些事情？",
+        "options": [
+          {
+            "id": "a",
+            "text": "遵循用户任务指令"
+          },
+          {
+            "id": "b",
+            "text": "多轮对话"
+          },
+          {
+            "id": "c",
+            "text": "输出结构化结果"
+          },
+          {
+            "id": "d",
+            "text": "按安全策略拒答或澄清"
+          },
+          {
+            "id": "e",
+            "text": "自动拥有最新实时数据"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "chat 模型提升的是交互和指令遵循，不代表天然具备实时外部状态。",
+        "focus": "Chat 模型能力"
+      },
+      {
+        "id": "llm-011-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景可能更倾向使用 base model 或需要自定义对齐流程？",
+        "options": [
+          {
+            "id": "a",
+            "text": "领域继续预训练"
+          },
+          {
+            "id": "b",
+            "text": "研究自定义对齐策略"
+          },
+          {
+            "id": "c",
+            "text": "蒸馏或训练专用下游模型"
+          },
+          {
+            "id": "d",
+            "text": "直接做客服聊天并跳过安全评测"
+          },
+          {
+            "id": "e",
+            "text": "只为了让模型更会拒答"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "base model 灵活但门槛高；面向产品的对话应用通常优先选已对齐的 chat 模型。",
+        "focus": "选型判断"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-012",
+    "checks": [
+      {
+        "id": "llm-012-check-01",
+        "kind": "single",
+        "prompt": "few-shot prompting 的含义是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不给任何示例，直接提问。"
+          },
+          {
+            "id": "b",
+            "text": "只给一个示例。"
+          },
+          {
+            "id": "c",
+            "text": "在 Prompt 中给多个输入输出示例，让模型学习任务模式。"
+          },
+          {
+            "id": "d",
+            "text": "对模型参数做少量训练。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "few-shot 是上下文学习，不是更新模型权重。",
+        "focus": "Shot 区分"
+      },
+      {
+        "id": "llm-012-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更可能从 few-shot 示例中受益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分类边界容易混淆的任务"
+          },
+          {
+            "id": "b",
+            "text": "输出格式严格的抽取任务"
+          },
+          {
+            "id": "c",
+            "text": "风格要求强的改写任务"
+          },
+          {
+            "id": "d",
+            "text": "已经完全可由正则表达式稳定处理的任务"
+          },
+          {
+            "id": "e",
+            "text": "与示例无关的实时数据库查询"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "few-shot 的价值在于展示模式、边界和格式，不适合替代确定性系统能力。",
+        "focus": "适合 few-shot"
+      },
+      {
+        "id": "llm-012-check-03",
+        "kind": "multiple",
+        "prompt": "few-shot 示例过多或质量差会带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "占用上下文预算"
+          },
+          {
+            "id": "b",
+            "text": "放大示例偏差"
+          },
+          {
+            "id": "c",
+            "text": "让模型过度模仿错误格式"
+          },
+          {
+            "id": "d",
+            "text": "自动降低所有延迟"
+          },
+          {
+            "id": "e",
+            "text": "保证结果完全确定"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "示例应少而精，并通过评测验证最小有效集合。",
+        "focus": "few-shot 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-013",
+    "checks": [
+      {
+        "id": "llm-013-check-01",
+        "kind": "single",
+        "prompt": "Embedding 在 RAG 中最核心的作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接生成最终自然语言答案。"
+          },
+          {
+            "id": "b",
+            "text": "把查询和文档映射到向量空间，用于语义检索。"
+          },
+          {
+            "id": "c",
+            "text": "替代所有关键词检索。"
+          },
+          {
+            "id": "d",
+            "text": "负责执行外部工具。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "embedding 负责表示和匹配，最终回答通常由生成模型完成。",
+        "focus": "Embedding 定位"
+      },
+      {
+        "id": "llm-013-check-02",
+        "kind": "multiple",
+        "prompt": "embedding 常用于哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "语义检索"
+          },
+          {
+            "id": "b",
+            "text": "相似文本匹配"
+          },
+          {
+            "id": "c",
+            "text": "聚类和去重"
+          },
+          {
+            "id": "d",
+            "text": "真实世界权限校验"
+          },
+          {
+            "id": "e",
+            "text": "精确执行数据库写入"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "embedding 适合语义空间里的相似性任务，不负责执行和权限控制。",
+        "focus": "Embedding 适合"
+      },
+      {
+        "id": "llm-013-check-03",
+        "kind": "multiple",
+        "prompt": "为什么实际 RAG 常把 embedding、关键词检索和 rerank 结合？",
+        "options": [
+          {
+            "id": "a",
+            "text": "embedding 擅长同义表达和语义泛化。"
+          },
+          {
+            "id": "b",
+            "text": "关键词检索擅长专有名词、编号和精确词命中。"
+          },
+          {
+            "id": "c",
+            "text": "rerank 可以对候选结果做更细粒度排序。"
+          },
+          {
+            "id": "d",
+            "text": "三者组合可以保证永远不幻觉。"
+          },
+          {
+            "id": "e",
+            "text": "只要有 embedding，就不需要元数据过滤。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "检索链路要兼顾召回、精排和过滤，单一方法很难覆盖所有场景。",
+        "focus": "检索组合"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-014",
+    "checks": [
+      {
+        "id": "llm-014-check-01",
+        "kind": "single",
+        "prompt": "训练和推理的区别，哪项最准确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "训练和推理都会更新模型权重。"
+          },
+          {
+            "id": "b",
+            "text": "训练更新模型参数，推理使用已训练模型生成结果。"
+          },
+          {
+            "id": "c",
+            "text": "推理只发生在离线环境。"
+          },
+          {
+            "id": "d",
+            "text": "训练成本一定低于推理成本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "训练是学参数，推理是用参数。线上业务通常持续发生的是推理调用。",
+        "focus": "训练与推理"
+      },
+      {
+        "id": "llm-014-check-02",
+        "kind": "multiple",
+        "prompt": "线上推理成本通常受哪些因素影响？",
+        "options": [
+          {
+            "id": "a",
+            "text": "请求量"
+          },
+          {
+            "id": "b",
+            "text": "输入和输出 token 数"
+          },
+          {
+            "id": "c",
+            "text": "模型大小和服务价格"
+          },
+          {
+            "id": "d",
+            "text": "Agent 多轮调用次数"
+          },
+          {
+            "id": "e",
+            "text": "训练集文件名长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "推理成本会随流量和链路调用次数持续放大。",
+        "focus": "推理成本来源"
+      },
+      {
+        "id": "llm-014-check-03",
+        "kind": "multiple",
+        "prompt": "降低推理成本可以考虑哪些方向？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缩短不必要的上下文"
+          },
+          {
+            "id": "b",
+            "text": "使用合适而非一味最强的模型"
+          },
+          {
+            "id": "c",
+            "text": "缓存高频稳定结果"
+          },
+          {
+            "id": "d",
+            "text": "减少无效多轮 Agent 调用"
+          },
+          {
+            "id": "e",
+            "text": "永远把 temperature 调到最高"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成本优化应从 token、模型、缓存和调用链路一起看。",
+        "focus": "优化方向"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-015",
+    "checks": [
+      {
+        "id": "llm-015-check-01",
+        "kind": "single",
+        "prompt": "首 token 延迟指什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "完整答案生成结束的总时间。"
+          },
+          {
+            "id": "b",
+            "text": "从请求发出到收到第一个生成 token 的时间。"
+          },
+          {
+            "id": "c",
+            "text": "tokenizer 训练所需时间。"
+          },
+          {
+            "id": "d",
+            "text": "用户输入第一个字符的时间。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "首 token 延迟直接影响用户对“是否开始响应”的感知。",
+        "focus": "首 token 延迟"
+      },
+      {
+        "id": "llm-015-check-02",
+        "kind": "multiple",
+        "prompt": "LLM 应用延迟通常可能包含哪些部分？",
+        "options": [
+          {
+            "id": "a",
+            "text": "网络和排队"
+          },
+          {
+            "id": "b",
+            "text": "RAG 检索或 rerank"
+          },
+          {
+            "id": "c",
+            "text": "模型 prefill 和 decode"
+          },
+          {
+            "id": "d",
+            "text": "工具调用和后处理"
+          },
+          {
+            "id": "e",
+            "text": "用户浏览器主题颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "真实延迟是链路总和，不能只看模型生成本身。",
+        "focus": "延迟组成"
+      },
+      {
+        "id": "llm-015-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于优化体验或延迟？",
+        "options": [
+          {
+            "id": "a",
+            "text": "流式输出"
+          },
+          {
+            "id": "b",
+            "text": "减少无效上下文"
+          },
+          {
+            "id": "c",
+            "text": "并行可并行的检索或工具调用"
+          },
+          {
+            "id": "d",
+            "text": "对慢工具设置超时和降级"
+          },
+          {
+            "id": "e",
+            "text": "无限制增加输出长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "延迟优化既包括真实耗时，也包括首 token 和可感知反馈。",
+        "focus": "延迟优化"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-016",
+    "checks": [
+      {
+        "id": "llm-016-check-01",
+        "kind": "single",
+        "prompt": "贪心解码和采样解码的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "贪心每步选最高概率 token，采样按概率分布抽取 token。"
+          },
+          {
+            "id": "b",
+            "text": "采样解码一定完全确定。"
+          },
+          {
+            "id": "c",
+            "text": "贪心解码一定事实正确。"
+          },
+          {
+            "id": "d",
+            "text": "二者只在训练阶段使用。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "解码方式决定如何从模型概率分布中选下一个 token。",
+        "focus": "解码方式"
+      },
+      {
+        "id": "llm-016-check-02",
+        "kind": "multiple",
+        "prompt": "为什么聊天模型通常不优先使用 beam search？",
+        "options": [
+          {
+            "id": "a",
+            "text": "容易生成刻板、重复或不自然的回答。"
+          },
+          {
+            "id": "b",
+            "text": "对开放式对话未必提升用户体验。"
+          },
+          {
+            "id": "c",
+            "text": "计算成本和候选维护更高。"
+          },
+          {
+            "id": "d",
+            "text": "beam search 无法用于任何文本任务。"
+          },
+          {
+            "id": "e",
+            "text": "beam search 会自动调用工具。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "beam search 更适合某些有明确目标的序列任务，不一定适合开放式聊天。",
+        "focus": "Beam search"
+      },
+      {
+        "id": "llm-016-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断比较合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "稳定抽取任务可以偏低随机性。"
+          },
+          {
+            "id": "b",
+            "text": "创意任务可以适当增加采样多样性。"
+          },
+          {
+            "id": "c",
+            "text": "解码策略要结合任务成功率评测。"
+          },
+          {
+            "id": "d",
+            "text": "解码参数可以修复错误检索。"
+          },
+          {
+            "id": "e",
+            "text": "所有任务都应使用完全相同的解码设置。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "解码是任务相关的工程参数，不能脱离任务目标和评测。",
+        "focus": "解码选择"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-017",
+    "checks": [
+      {
+        "id": "llm-017-check-01",
+        "kind": "single",
+        "prompt": "scaling law 在大模型语境里主要指什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型越小一定越强。"
+          },
+          {
+            "id": "b",
+            "text": "模型规模、数据和算力增加时，性能常呈现可预测的扩展趋势。"
+          },
+          {
+            "id": "c",
+            "text": "只要扩大上下文，所有任务都会变好。"
+          },
+          {
+            "id": "d",
+            "text": "一种固定的 Prompt 模板。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "scaling law 解释了规模化投入为何能持续提升模型能力，但不是无限保证。",
+        "focus": "Scaling law"
+      },
+      {
+        "id": "llm-017-check-02",
+        "kind": "multiple",
+        "prompt": "scaling law 通常关注哪些变量？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数规模"
+          },
+          {
+            "id": "b",
+            "text": "训练数据规模和质量"
+          },
+          {
+            "id": "c",
+            "text": "训练计算量"
+          },
+          {
+            "id": "d",
+            "text": "UI 主题颜色"
+          },
+          {
+            "id": "e",
+            "text": "API 路由名称"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "大模型能力扩展主要和参数、数据、算力等训练变量相关。",
+        "focus": "关键变量"
+      },
+      {
+        "id": "llm-017-check-03",
+        "kind": "multiple",
+        "prompt": "对 scaling law 的理解，哪些是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它帮助规划模型训练和资源投入。"
+          },
+          {
+            "id": "b",
+            "text": "它不代表任何任务都只靠变大解决。"
+          },
+          {
+            "id": "c",
+            "text": "数据质量、对齐和系统设计仍然重要。"
+          },
+          {
+            "id": "d",
+            "text": "它能保证模型没有安全问题。"
+          },
+          {
+            "id": "e",
+            "text": "它说明评测可以省略。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "规模是重要变量，但落地效果还受任务数据、系统和安全治理影响。",
+        "focus": "局限"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-018",
+    "checks": [
+      {
+        "id": "llm-018-check-01",
+        "kind": "single",
+        "prompt": "预训练模型为什么还需要 instruction tuning？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为预训练没有任何语言能力。"
+          },
+          {
+            "id": "b",
+            "text": "因为预训练模型不一定会按用户任务和格式稳定回答。"
+          },
+          {
+            "id": "c",
+            "text": "因为 instruction tuning 会实时更新知识库。"
+          },
+          {
+            "id": "d",
+            "text": "因为它可以替代所有安全系统。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "instruction tuning 主要提升指令遵循和任务格式，不是实时知识更新。",
+        "focus": "指令微调目的"
+      },
+      {
+        "id": "llm-018-check-02",
+        "kind": "multiple",
+        "prompt": "instruction tuning 通常能改善哪些方面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "听懂任务意图"
+          },
+          {
+            "id": "b",
+            "text": "按格式回答"
+          },
+          {
+            "id": "c",
+            "text": "多轮对话可用性"
+          },
+          {
+            "id": "d",
+            "text": "拒答和澄清行为"
+          },
+          {
+            "id": "e",
+            "text": "所有事实永远正确"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "SFT 是行为适配，不会彻底解决幻觉和事实校验。",
+        "focus": "SFT 改善"
+      },
+      {
+        "id": "llm-018-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "SFT 后仍需要评测。"
+          },
+          {
+            "id": "b",
+            "text": "高质量指令数据比堆低质量数据更重要。"
+          },
+          {
+            "id": "c",
+            "text": "指令微调可以和 RAG、工具调用共同使用。"
+          },
+          {
+            "id": "d",
+            "text": "SFT 后不再需要 Prompt。"
+          },
+          {
+            "id": "e",
+            "text": "SFT 会自动让模型拥有企业私有权限。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "SFT 是能力适配层，生产系统仍要靠数据、检索、权限和评测闭环。",
+        "focus": "工程关系"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-019",
+    "checks": [
+      {
+        "id": "llm-019-check-01",
+        "kind": "single",
+        "prompt": "RLHF 主要解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把字符串切成 token。"
+          },
+          {
+            "id": "b",
+            "text": "让模型输出更符合人类偏好和安全约束。"
+          },
+          {
+            "id": "c",
+            "text": "让模型直接访问数据库。"
+          },
+          {
+            "id": "d",
+            "text": "把上下文窗口变成无限。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RLHF 属于偏好对齐方法，重点不是工具执行或检索。",
+        "focus": "RLHF 目标"
+      },
+      {
+        "id": "llm-019-check-02",
+        "kind": "multiple",
+        "prompt": "偏好对齐通常希望改善哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回答有帮助性"
+          },
+          {
+            "id": "b",
+            "text": "有害内容控制"
+          },
+          {
+            "id": "c",
+            "text": "拒答和边界感"
+          },
+          {
+            "id": "d",
+            "text": "输出风格更符合人类偏好"
+          },
+          {
+            "id": "e",
+            "text": "确保所有外部事实实时正确"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "对齐提升行为质量，但事实性仍需要证据和校验。",
+        "focus": "对齐收益"
+      },
+      {
+        "id": "llm-019-check-03",
+        "kind": "multiple",
+        "prompt": "关于 RLHF、DPO 等方法，哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "都属于让模型偏向更好回答的对齐思路。"
+          },
+          {
+            "id": "b",
+            "text": "DPO 可以不显式训练传统奖励模型。"
+          },
+          {
+            "id": "c",
+            "text": "对齐可能带来过度保守等副作用。"
+          },
+          {
+            "id": "d",
+            "text": "对齐训练等同于 RAG。"
+          },
+          {
+            "id": "e",
+            "text": "对齐后不再需要安全评测。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "对齐方法改善偏好，但仍需关注副作用和回归。",
+        "focus": "RLHF 与 DPO"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-020",
+    "checks": [
+      {
+        "id": "llm-020-check-01",
+        "kind": "single",
+        "prompt": "为什么“能放进去”不等于“能用好”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型完全不能读长文本。"
+          },
+          {
+            "id": "b",
+            "text": "因为长上下文可能带来注意力稀释、成本上升和关键信息定位困难。"
+          },
+          {
+            "id": "c",
+            "text": "因为上下文越长一定越便宜。"
+          },
+          {
+            "id": "d",
+            "text": "因为长上下文只影响训练，不影响推理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "长上下文提高容量，但不保证利用质量。",
+        "focus": "长上下文误区"
+      },
+      {
+        "id": "llm-020-check-02",
+        "kind": "multiple",
+        "prompt": "长上下文模型常见局限有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "成本和延迟更高"
+          },
+          {
+            "id": "b",
+            "text": "远距离信息可能被忽略"
+          },
+          {
+            "id": "c",
+            "text": "噪声内容干扰回答"
+          },
+          {
+            "id": "d",
+            "text": "输出空间也需要预留 token"
+          },
+          {
+            "id": "e",
+            "text": "自动替代所有检索系统"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "长窗口不是免管理的无限内存，仍要组织上下文。",
+        "focus": "长上下文局限"
+      },
+      {
+        "id": "llm-020-check-03",
+        "kind": "multiple",
+        "prompt": "面对长文档或长对话，哪些策略更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "摘要记忆"
+          },
+          {
+            "id": "b",
+            "text": "高质量检索和 rerank"
+          },
+          {
+            "id": "c",
+            "text": "结构化压缩上下文"
+          },
+          {
+            "id": "d",
+            "text": "截断低价值工具输出"
+          },
+          {
+            "id": "e",
+            "text": "永远把所有历史原文塞进去"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "长上下文系统的核心是筛选高价值信息，而不是无脑堆材料。",
+        "focus": "处理策略"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-021",
+    "checks": [
+      {
+        "id": "llm-021-check-01",
+        "kind": "single",
+        "prompt": "真实项目里做模型选型，最合理的第一原则是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远选 benchmark 最高的模型。"
+          },
+          {
+            "id": "b",
+            "text": "围绕业务任务、质量、成本、延迟、安全和集成约束综合评估。"
+          },
+          {
+            "id": "c",
+            "text": "只看单次调用价格。"
+          },
+          {
+            "id": "d",
+            "text": "只看模型参数量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型选型是系统权衡，不是排行榜排序。",
+        "focus": "模型选型"
+      },
+      {
+        "id": "llm-021-check-02",
+        "kind": "multiple",
+        "prompt": "模型选型通常应评估哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率和幻觉率"
+          },
+          {
+            "id": "b",
+            "text": "延迟和吞吐"
+          },
+          {
+            "id": "c",
+            "text": "token 成本和上下文窗口"
+          },
+          {
+            "id": "d",
+            "text": "安全、合规和数据边界"
+          },
+          {
+            "id": "e",
+            "text": "模型名字是否好听"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "生产选型要覆盖质量、性能、成本和治理。",
+        "focus": "选型维度"
+      },
+      {
+        "id": "llm-021-check-03",
+        "kind": "multiple",
+        "prompt": "哪些模型使用策略更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "简单任务用小模型，复杂任务用强模型。"
+          },
+          {
+            "id": "b",
+            "text": "先用离线评测筛选，再小流量验证。"
+          },
+          {
+            "id": "c",
+            "text": "对高风险任务增加人工复核或强校验。"
+          },
+          {
+            "id": "d",
+            "text": "所有链路都使用最贵模型。"
+          },
+          {
+            "id": "e",
+            "text": "不需要按任务区分模型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分层路由通常比单一最强模型更经济、更稳定。",
+        "focus": "分层用模"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-022",
+    "checks": [
+      {
+        "id": "llm-022-check-01",
+        "kind": "single",
+        "prompt": "LLM 应用 token 成本过高时，优先应检查什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户头像大小。"
+          },
+          {
+            "id": "b",
+            "text": "输入上下文、输出长度和多轮调用次数是否失控。"
+          },
+          {
+            "id": "c",
+            "text": "CSS 文件体积。"
+          },
+          {
+            "id": "d",
+            "text": "是否把 temperature 调得太低。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "token 成本主要由输入输出长度和调用次数放大。",
+        "focus": "Token 成本优化"
+      },
+      {
+        "id": "llm-022-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法容易浪费 token？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每轮都塞完整历史"
+          },
+          {
+            "id": "b",
+            "text": "RAG 返回大量低相关片段"
+          },
+          {
+            "id": "c",
+            "text": "工具输出不截断"
+          },
+          {
+            "id": "d",
+            "text": "输出冗长解释而业务只需字段"
+          },
+          {
+            "id": "e",
+            "text": "对高频固定答案做缓存"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上下文污染和输出冗余是常见成本黑洞。",
+        "focus": "常见浪费"
+      },
+      {
+        "id": "llm-022-check-03",
+        "kind": "multiple",
+        "prompt": "哪些手段可以降低 token 成本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt 压缩"
+          },
+          {
+            "id": "b",
+            "text": "历史摘要和裁剪"
+          },
+          {
+            "id": "c",
+            "text": "RAG 精排后只保留高价值片段"
+          },
+          {
+            "id": "d",
+            "text": "限制输出格式和长度"
+          },
+          {
+            "id": "e",
+            "text": "无条件增加 few-shot 示例"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "目标是保留必要信息，减少低价值 token。",
+        "focus": "成本优化手段"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-023",
+    "checks": [
+      {
+        "id": "llm-023-check-01",
+        "kind": "single",
+        "prompt": "大模型应用中缓存的核心价值是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让所有问题都不需要模型。"
+          },
+          {
+            "id": "b",
+            "text": "复用稳定中间结果或最终结果，降低延迟和成本。"
+          },
+          {
+            "id": "c",
+            "text": "替代权限控制。"
+          },
+          {
+            "id": "d",
+            "text": "保证模型永远不幻觉。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "缓存解决重复计算和重复调用问题，但不能替代校验和安全。",
+        "focus": "缓存定位"
+      },
+      {
+        "id": "llm-023-check-02",
+        "kind": "multiple",
+        "prompt": "哪些内容在合适条件下可以缓存？",
+        "options": [
+          {
+            "id": "a",
+            "text": "embedding 结果"
+          },
+          {
+            "id": "b",
+            "text": "RAG 检索结果"
+          },
+          {
+            "id": "c",
+            "text": "稳定 Prompt 的模型输出"
+          },
+          {
+            "id": "d",
+            "text": "工具的只读查询结果"
+          },
+          {
+            "id": "e",
+            "text": "用户敏感写操作的执行许可"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存适合可复用、可过期、无副作用或可控副作用的结果。",
+        "focus": "可缓存对象"
+      },
+      {
+        "id": "llm-023-check-03",
+        "kind": "multiple",
+        "prompt": "缓存设计要注意哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数据过期"
+          },
+          {
+            "id": "b",
+            "text": "权限隔离"
+          },
+          {
+            "id": "c",
+            "text": "个性化上下文污染"
+          },
+          {
+            "id": "d",
+            "text": "缓存键不完整导致串答案"
+          },
+          {
+            "id": "e",
+            "text": "缓存越久一定越安全"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "AI 缓存必须把时间、权限、模型版本和 Prompt 版本纳入设计。",
+        "focus": "缓存风险"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-024",
+    "checks": [
+      {
+        "id": "llm-024-check-01",
+        "kind": "single",
+        "prompt": "同一个 prompt 多次调用结果可能不同，最常见原因是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型每次都会重新训练。"
+          },
+          {
+            "id": "b",
+            "text": "采样策略、服务端实现和并发环境可能引入非确定性。"
+          },
+          {
+            "id": "c",
+            "text": "token 永远随机切分。"
+          },
+          {
+            "id": "d",
+            "text": "system prompt 会自动消失。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "生成时从概率分布中选 token，采样参数会影响稳定性。",
+        "focus": "不确定性来源"
+      },
+      {
+        "id": "llm-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于提高输出稳定性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低 temperature"
+          },
+          {
+            "id": "b",
+            "text": "明确输出格式和约束"
+          },
+          {
+            "id": "c",
+            "text": "使用结构化输出或 schema 校验"
+          },
+          {
+            "id": "d",
+            "text": "固定模型版本和 Prompt 版本"
+          },
+          {
+            "id": "e",
+            "text": "每次随机改写 Prompt"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "稳定性来自低随机性、明确约束和版本可控。",
+        "focus": "提高稳定性"
+      },
+      {
+        "id": "llm-024-check-03",
+        "kind": "multiple",
+        "prompt": "哪些理解是不准确的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "低 temperature 能保证事实正确。"
+          },
+          {
+            "id": "b",
+            "text": "同名模型线上永远不会变。"
+          },
+          {
+            "id": "c",
+            "text": "只试一次成功就说明稳定。"
+          },
+          {
+            "id": "d",
+            "text": "回归评测能帮助发现变化。"
+          },
+          {
+            "id": "e",
+            "text": "固定版本有助于排查问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "稳定不是单次表现，必须通过版本、评测和监控确认。",
+        "focus": "稳定性误区"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-025",
+    "checks": [
+      {
+        "id": "llm-025-check-01",
+        "kind": "single",
+        "prompt": "为什么让 LLM 稳定输出 JSON 很难？",
+        "options": [
+          {
+            "id": "a",
+            "text": "JSON 不是文本。"
+          },
+          {
+            "id": "b",
+            "text": "模型是概率生成，可能漏字段、加解释或输出非法转义。"
+          },
+          {
+            "id": "c",
+            "text": "JSON 只能由数据库生成。"
+          },
+          {
+            "id": "d",
+            "text": "只要写“输出 JSON”就一定可靠。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "自然语言模型默认会生成文本，需要工程约束来提高可解析性。",
+        "focus": "JSON 难点"
+      },
+      {
+        "id": "llm-025-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段能提升结构化输出稳定性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确 schema 和字段含义"
+          },
+          {
+            "id": "b",
+            "text": "使用模型原生 structured output 或 tool calling"
+          },
+          {
+            "id": "c",
+            "text": "后端解析、校验和重试"
+          },
+          {
+            "id": "d",
+            "text": "限制额外解释文本"
+          },
+          {
+            "id": "e",
+            "text": "让字段名每次随机变化"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构化输出要把模型约束和程序校验结合起来。",
+        "focus": "缓解手段"
+      },
+      {
+        "id": "llm-025-check-03",
+        "kind": "multiple",
+        "prompt": "设计 JSON 输出时，哪些做法更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "字段语义清晰"
+          },
+          {
+            "id": "b",
+            "text": "枚举值有限且明确"
+          },
+          {
+            "id": "c",
+            "text": "缺失值策略明确"
+          },
+          {
+            "id": "d",
+            "text": "对高风险字段做后处理校验"
+          },
+          {
+            "id": "e",
+            "text": "把所有业务逻辑都塞进一个自由文本字段"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构越清晰，模型越容易遵循，程序也越容易校验。",
+        "focus": "字段设计"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-026",
+    "checks": [
+      {
+        "id": "llm-026-check-01",
+        "kind": "single",
+        "prompt": "LLM 推理中的 prefill 阶段主要做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "处理输入上下文，计算首个生成 token 前所需的中间状态。"
+          },
+          {
+            "id": "b",
+            "text": "每次只生成一个 token，不读取输入。"
+          },
+          {
+            "id": "c",
+            "text": "训练 tokenizer。"
+          },
+          {
+            "id": "d",
+            "text": "删除 KV Cache。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "prefill 处理整段输入上下文，通常影响首 token 延迟。",
+        "focus": "Prefill / Decode"
+      },
+      {
+        "id": "llm-026-check-02",
+        "kind": "multiple",
+        "prompt": "关于 prefill 和 decode，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "prefill 对输入 token 数敏感。"
+          },
+          {
+            "id": "b",
+            "text": "decode 通常逐 token 生成。"
+          },
+          {
+            "id": "c",
+            "text": "输出越长，decode 时间越容易累积。"
+          },
+          {
+            "id": "d",
+            "text": "prefill 和 decode 完全没有性能差异。"
+          },
+          {
+            "id": "e",
+            "text": "decode 阶段不会使用模型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "输入长短主要影响 prefill，输出长度主要影响 decode 的累计耗时。",
+        "focus": "性能特征"
+      },
+      {
+        "id": "llm-026-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于改善推理性能？",
+        "options": [
+          {
+            "id": "a",
+            "text": "控制输入上下文长度"
+          },
+          {
+            "id": "b",
+            "text": "限制不必要的输出长度"
+          },
+          {
+            "id": "c",
+            "text": "流式返回降低感知等待"
+          },
+          {
+            "id": "d",
+            "text": "合理利用 KV Cache"
+          },
+          {
+            "id": "e",
+            "text": "永远把所有日志塞入 prompt"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能优化要分别看输入处理和输出生成两个阶段。",
+        "focus": "优化判断"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-027",
+    "checks": [
+      {
+        "id": "llm-027-check-01",
+        "kind": "single",
+        "prompt": "KV Cache 的主要作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缓存最终自然语言答案。"
+          },
+          {
+            "id": "b",
+            "text": "缓存历史 token 的 Key/Value，避免每步 decode 重复计算历史上下文。"
+          },
+          {
+            "id": "c",
+            "text": "缓存用户密码。"
+          },
+          {
+            "id": "d",
+            "text": "让训练不需要数据。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "KV Cache 是自回归推理中的关键性能优化。",
+        "focus": "KV Cache"
+      },
+      {
+        "id": "llm-027-check-02",
+        "kind": "multiple",
+        "prompt": "KV Cache 为什么能提升推理效率？",
+        "options": [
+          {
+            "id": "a",
+            "text": "复用历史 token 的 K/V 表示。"
+          },
+          {
+            "id": "b",
+            "text": "减少 decode 阶段重复计算。"
+          },
+          {
+            "id": "c",
+            "text": "对长输出尤其重要。"
+          },
+          {
+            "id": "d",
+            "text": "会把模型参数量变成 0。"
+          },
+          {
+            "id": "e",
+            "text": "会自动提高回答事实性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "它优化的是计算复用，不是知识准确率。",
+        "focus": "KV Cache 收益"
+      },
+      {
+        "id": "llm-027-check-03",
+        "kind": "multiple",
+        "prompt": "KV Cache 也会带来哪些工程压力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "占用显存或内存"
+          },
+          {
+            "id": "b",
+            "text": "与并发和批处理策略相关"
+          },
+          {
+            "id": "c",
+            "text": "长上下文场景缓存更大"
+          },
+          {
+            "id": "d",
+            "text": "完全不受序列长度影响"
+          },
+          {
+            "id": "e",
+            "text": "可以替代权限隔离"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "缓存让推理更快，但资源管理会更复杂。",
+        "focus": "KV Cache 代价"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-028",
+    "checks": [
+      {
+        "id": "llm-028-check-01",
+        "kind": "single",
+        "prompt": "模型量化是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把文本转换成 token。"
+          },
+          {
+            "id": "b",
+            "text": "用更低精度表示模型权重或激活，以降低存储和计算成本。"
+          },
+          {
+            "id": "c",
+            "text": "把模型改成关键词搜索。"
+          },
+          {
+            "id": "d",
+            "text": "只增加参数量，不改变部署。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "量化常见目标是省显存、提吞吐、降成本。",
+        "focus": "量化定义"
+      },
+      {
+        "id": "llm-028-check-02",
+        "kind": "multiple",
+        "prompt": "量化可能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型体积变小"
+          },
+          {
+            "id": "b",
+            "text": "推理成本降低"
+          },
+          {
+            "id": "c",
+            "text": "更容易在资源受限环境部署"
+          },
+          {
+            "id": "d",
+            "text": "一定提升所有任务准确率"
+          },
+          {
+            "id": "e",
+            "text": "自动消除幻觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "量化主要是部署优化，质量收益不是它的主要目标。",
+        "focus": "量化收益"
+      },
+      {
+        "id": "llm-028-check-03",
+        "kind": "multiple",
+        "prompt": "量化需要关注哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "精度损失"
+          },
+          {
+            "id": "b",
+            "text": "某些任务质量下降"
+          },
+          {
+            "id": "c",
+            "text": "不同硬件和推理框架支持差异"
+          },
+          {
+            "id": "d",
+            "text": "token 成本一定变成 0"
+          },
+          {
+            "id": "e",
+            "text": "模型不再需要评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "量化后必须用业务评测集回归，不只看能否跑起来。",
+        "focus": "量化代价"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-029",
+    "checks": [
+      {
+        "id": "llm-029-check-01",
+        "kind": "single",
+        "prompt": "MoE 模型的核心思想是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每次推理都激活所有专家且没有路由。"
+          },
+          {
+            "id": "b",
+            "text": "使用路由器为 token 选择部分专家，从而在较大总参数下控制激活计算量。"
+          },
+          {
+            "id": "c",
+            "text": "把多个 Prompt 拼在一起。"
+          },
+          {
+            "id": "d",
+            "text": "只是一种 RAG 检索策略。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "MoE 的重点是稀疏激活，用部分专家参与每次计算。",
+        "focus": "MoE 定义"
+      },
+      {
+        "id": "llm-029-check-02",
+        "kind": "multiple",
+        "prompt": "MoE 相比同等总参数稠密模型，可能有哪些优势？",
+        "options": [
+          {
+            "id": "a",
+            "text": "激活参数较少，推理计算更经济。"
+          },
+          {
+            "id": "b",
+            "text": "总容量可以做得更大。"
+          },
+          {
+            "id": "c",
+            "text": "不同专家可能学习不同模式。"
+          },
+          {
+            "id": "d",
+            "text": "路由永远不会出错。"
+          },
+          {
+            "id": "e",
+            "text": "不需要训练数据。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "MoE 用稀疏激活换容量和效率，但也带来路由复杂性。",
+        "focus": "MoE 优点"
+      },
+      {
+        "id": "llm-029-check-03",
+        "kind": "multiple",
+        "prompt": "MoE 工程上常见挑战有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "路由负载均衡"
+          },
+          {
+            "id": "b",
+            "text": "专家利用不均"
+          },
+          {
+            "id": "c",
+            "text": "部署和通信复杂度更高"
+          },
+          {
+            "id": "d",
+            "text": "永远比稠密模型更简单"
+          },
+          {
+            "id": "e",
+            "text": "无需关注延迟抖动"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "MoE 的系统复杂度很高，训练和推理都需要额外工程处理。",
+        "focus": "MoE 挑战"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-030",
+    "checks": [
+      {
+        "id": "llm-030-check-01",
+        "kind": "single",
+        "prompt": "大模型的“推理能力”和“记忆知识”的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "二者完全一样。"
+          },
+          {
+            "id": "b",
+            "text": "记忆偏事实存储，推理偏基于条件进行组合、演绎和规划。"
+          },
+          {
+            "id": "c",
+            "text": "推理能力只来自搜索引擎。"
+          },
+          {
+            "id": "d",
+            "text": "记忆知识永远比推理重要。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "推理不是单纯背答案，而是把给定条件组织成可验证步骤或决策。",
+        "focus": "推理 vs 记忆"
+      },
+      {
+        "id": "llm-030-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更能体现推理能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多步骤数学或逻辑分析"
+          },
+          {
+            "id": "b",
+            "text": "复杂代码调试"
+          },
+          {
+            "id": "c",
+            "text": "根据约束做计划"
+          },
+          {
+            "id": "d",
+            "text": "从多个证据中综合判断"
+          },
+          {
+            "id": "e",
+            "text": "复述一个固定百科词条"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "推理强调条件组合和步骤一致性，不只是事实回忆。",
+        "focus": "推理能力表现"
+      },
+      {
+        "id": "llm-030-check-03",
+        "kind": "multiple",
+        "prompt": "评估推理能力时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "看最终答案，也看过程是否可验证。"
+          },
+          {
+            "id": "b",
+            "text": "避免把训练集记忆误当推理。"
+          },
+          {
+            "id": "c",
+            "text": "用业务真实多步骤任务评测。"
+          },
+          {
+            "id": "d",
+            "text": "只看模型语气是否自信。"
+          },
+          {
+            "id": "e",
+            "text": "只测一个样本就能下结论。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "推理评测要防止“说得像推理”，但实际步骤不成立。",
+        "focus": "工程评估"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-031",
+    "checks": [
+      {
+        "id": "llm-031-check-01",
+        "kind": "single",
+        "prompt": "大模型“涌现能力”通常指什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型突然拥有真实意识。"
+          },
+          {
+            "id": "b",
+            "text": "某些能力在规模提升到一定程度后表现出非线性增强。"
+          },
+          {
+            "id": "c",
+            "text": "模型不再需要数据。"
+          },
+          {
+            "id": "d",
+            "text": "所有能力都只能由人工规则写出。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "涌现描述的是能力随规模变化的现象，不应被神秘化。",
+        "focus": "涌现能力"
+      },
+      {
+        "id": "llm-031-check-02",
+        "kind": "multiple",
+        "prompt": "如何更理性地看待涌现能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可能与评测指标和阈值有关。"
+          },
+          {
+            "id": "b",
+            "text": "说明规模会影响复杂能力表现。"
+          },
+          {
+            "id": "c",
+            "text": "不代表模型没有边界。"
+          },
+          {
+            "id": "d",
+            "text": "说明模型一定可靠。"
+          },
+          {
+            "id": "e",
+            "text": "说明无需做安全治理。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "涌现值得关注，但不能替代严肃评测和边界分析。",
+        "focus": "理性看待"
+      },
+      {
+        "id": "llm-031-check-03",
+        "kind": "multiple",
+        "prompt": "涌现能力对工程有什么启示？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不同规模模型要分别评测。"
+          },
+          {
+            "id": "b",
+            "text": "小模型表现不能简单外推到大模型。"
+          },
+          {
+            "id": "c",
+            "text": "业务上线仍要看任务级结果。"
+          },
+          {
+            "id": "d",
+            "text": "只要模型足够大就不用系统设计。"
+          },
+          {
+            "id": "e",
+            "text": "所有失败都能靠继续扩大模型解决。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "规模可能带来新能力，也可能带来新风险，必须实测。",
+        "focus": "工程启示"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-032",
+    "checks": [
+      {
+        "id": "llm-032-check-01",
+        "kind": "single",
+        "prompt": "为什么 benchmark 高分不一定代表线上效果最好？",
+        "options": [
+          {
+            "id": "a",
+            "text": "benchmark 完全没有价值。"
+          },
+          {
+            "id": "b",
+            "text": "benchmark 任务分布可能与真实业务、数据和约束不一致。"
+          },
+          {
+            "id": "c",
+            "text": "线上系统不使用模型。"
+          },
+          {
+            "id": "d",
+            "text": "高分模型一定更便宜。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "benchmark 是参考，不是业务成功率的替代品。",
+        "focus": "Benchmark 与线上"
+      },
+      {
+        "id": "llm-032-check-02",
+        "kind": "multiple",
+        "prompt": "哪些因素会让线上效果不同于 benchmark？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户输入更脏、更长尾"
+          },
+          {
+            "id": "b",
+            "text": "业务格式和安全约束更复杂"
+          },
+          {
+            "id": "c",
+            "text": "RAG、工具和状态链路会引入额外错误"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟影响可用性"
+          },
+          {
+            "id": "e",
+            "text": "benchmark 分数越高，权限越安全"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "线上是系统问题，模型能力只是其中一环。",
+        "focus": "线上差异"
+      },
+      {
+        "id": "llm-032-check-03",
+        "kind": "multiple",
+        "prompt": "怎样更合理地使用 benchmark？",
+        "options": [
+          {
+            "id": "a",
+            "text": "作为初筛参考"
+          },
+          {
+            "id": "b",
+            "text": "配合自建业务评测集"
+          },
+          {
+            "id": "c",
+            "text": "同时观察成本、延迟和安全表现"
+          },
+          {
+            "id": "d",
+            "text": "完全替代线上灰度"
+          },
+          {
+            "id": "e",
+            "text": "只看总分，不看子任务"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "benchmark 应辅助选型，最终仍看业务任务和系统指标。",
+        "focus": "正确使用 benchmark"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-033",
+    "checks": [
+      {
+        "id": "llm-033-check-01",
+        "kind": "single",
+        "prompt": "通用模型在垂直领域效果不好时，最不应该首先做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检查是否缺少领域知识上下文。"
+          },
+          {
+            "id": "b",
+            "text": "建立业务评测集。"
+          },
+          {
+            "id": "c",
+            "text": "评估 RAG 或微调路径。"
+          },
+          {
+            "id": "d",
+            "text": "不做分析，直接大规模训练新模型。"
+          }
+        ],
+        "answerIds": ["d"],
+        "explanation": "领域适配应先定位问题来源，再选择成本合适的路径。",
+        "focus": "领域适配"
+      },
+      {
+        "id": "llm-033-check-02",
+        "kind": "multiple",
+        "prompt": "常见领域适配路径包括哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "RAG 补充领域知识"
+          },
+          {
+            "id": "b",
+            "text": "Prompt 和示例优化"
+          },
+          {
+            "id": "c",
+            "text": "SFT 或领域微调"
+          },
+          {
+            "id": "d",
+            "text": "继续预训练"
+          },
+          {
+            "id": "e",
+            "text": "删除所有业务术语"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "从轻到重通常是 Prompt/RAG/评测，再考虑微调或继续预训练。",
+        "focus": "提升路径"
+      },
+      {
+        "id": "llm-033-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "知识缺失优先考虑 RAG。"
+          },
+          {
+            "id": "b",
+            "text": "输出风格和格式不稳可考虑 SFT。"
+          },
+          {
+            "id": "c",
+            "text": "领域语言分布差异大时可评估继续预训练。"
+          },
+          {
+            "id": "d",
+            "text": "微调一定比 RAG 便宜且效果好。"
+          },
+          {
+            "id": "e",
+            "text": "有领域问题就必须从零训练。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同问题对应不同解法，不能把微调当万能药。",
+        "focus": "路径选择"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-034",
+    "checks": [
+      {
+        "id": "llm-034-check-01",
+        "kind": "single",
+        "prompt": "prompt injection 的核心风险是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户输入太短。"
+          },
+          {
+            "id": "b",
+            "text": "外部或用户文本诱导模型忽略系统规则、泄露信息或越权行动。"
+          },
+          {
+            "id": "c",
+            "text": "tokenizer 把英文拆成子词。"
+          },
+          {
+            "id": "d",
+            "text": "模型返回 JSON。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "prompt injection 利用模型会把文本当指令理解的特性，干扰原有控制边界。",
+        "focus": "Prompt injection"
+      },
+      {
+        "id": "llm-034-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更需要防 prompt injection？",
+        "options": [
+          {
+            "id": "a",
+            "text": "RAG 读取外部网页或文档"
+          },
+          {
+            "id": "b",
+            "text": "Agent 可以调用有副作用工具"
+          },
+          {
+            "id": "c",
+            "text": "模型能访问用户或企业敏感数据"
+          },
+          {
+            "id": "d",
+            "text": "离线写一段无外部输入的文案"
+          },
+          {
+            "id": "e",
+            "text": "单纯把固定字符串转大写"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "外部内容、权限数据和工具执行越多，注入风险越高。",
+        "focus": "高风险场景"
+      },
+      {
+        "id": "llm-034-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是合理的防护思路？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把外部内容标注为数据而非指令"
+          },
+          {
+            "id": "b",
+            "text": "工具权限由后端强校验"
+          },
+          {
+            "id": "c",
+            "text": "高风险动作增加确认和审计"
+          },
+          {
+            "id": "d",
+            "text": "敏感数据最小化进入上下文"
+          },
+          {
+            "id": "e",
+            "text": "只写一句“不要被注入”就足够"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "防护必须靠系统边界，不能只靠模型自律。",
+        "focus": "防护思路"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-035",
+    "checks": [
+      {
+        "id": "llm-035-check-01",
+        "kind": "single",
+        "prompt": "什么情况下“直接回答”通常不如“调用工具后回答”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "解释一个通用概念。"
+          },
+          {
+            "id": "b",
+            "text": "需要实时数据、精确计算或外部系统状态。"
+          },
+          {
+            "id": "c",
+            "text": "写一段创意文案。"
+          },
+          {
+            "id": "d",
+            "text": "用户只问模型是什么。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具适合确定性、实时性和外部执行能力。",
+        "focus": "工具优先"
+      },
+      {
+        "id": "llm-035-check-02",
+        "kind": "multiple",
+        "prompt": "工具调用能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "获取实时信息"
+          },
+          {
+            "id": "b",
+            "text": "执行数据库查询或业务动作"
+          },
+          {
+            "id": "c",
+            "text": "提高可审计性"
+          },
+          {
+            "id": "d",
+            "text": "让结果可被程序校验"
+          },
+          {
+            "id": "e",
+            "text": "让模型不需要权限控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具增强能力，同时也要求权限、参数和结果校验。",
+        "focus": "工具价值"
+      },
+      {
+        "id": "llm-035-check-03",
+        "kind": "multiple",
+        "prompt": "在需要工具的场景里直接回答，可能导致哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "编造实时状态"
+          },
+          {
+            "id": "b",
+            "text": "错误计算"
+          },
+          {
+            "id": "c",
+            "text": "无法确认外部动作是否完成"
+          },
+          {
+            "id": "d",
+            "text": "一定比工具调用更可靠"
+          },
+          {
+            "id": "e",
+            "text": "自动留下完整审计日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "没有工具结果，模型只能根据上下文猜测，很难保证真实世界一致性。",
+        "focus": "直接回答风险"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-036",
+    "checks": [
+      {
+        "id": "llm-036-check-01",
+        "kind": "single",
+        "prompt": "闭源模型和开源模型选型时，最合理的看法是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "闭源一定适合所有企业。"
+          },
+          {
+            "id": "b",
+            "text": "开源一定质量最差。"
+          },
+          {
+            "id": "c",
+            "text": "要结合质量、成本、部署控制、合规和团队能力权衡。"
+          },
+          {
+            "id": "d",
+            "text": "只看是否免费。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "两类模型各有优势，最终看业务约束和组织能力。",
+        "focus": "闭源与开源"
+      },
+      {
+        "id": "llm-036-check-02",
+        "kind": "multiple",
+        "prompt": "闭源模型常见优势有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "顶级模型能力强"
+          },
+          {
+            "id": "b",
+            "text": "接入和维护成本相对低"
+          },
+          {
+            "id": "c",
+            "text": "服务商持续升级能力"
+          },
+          {
+            "id": "d",
+            "text": "权重完全可控"
+          },
+          {
+            "id": "e",
+            "text": "一定可以本地离线部署"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "闭源通常省工程，但控制权和数据边界要评估。",
+        "focus": "闭源优势"
+      },
+      {
+        "id": "llm-036-check-03",
+        "kind": "multiple",
+        "prompt": "开源模型落地时，哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可私有化部署，数据边界更可控。"
+          },
+          {
+            "id": "b",
+            "text": "可做领域微调和深度定制。"
+          },
+          {
+            "id": "c",
+            "text": "需要承担推理服务、优化和运维成本。"
+          },
+          {
+            "id": "d",
+            "text": "不需要任何评测。"
+          },
+          {
+            "id": "e",
+            "text": "只要开源就没有安全风险。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "开源带来自主性，也把工程复杂度交给团队。",
+        "focus": "开源优势与代价"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-037",
+    "checks": [
+      {
+        "id": "llm-037-check-01",
+        "kind": "single",
+        "prompt": "评估 LLM 是否适合客服问答，最核心应看什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回答是否尽量长。"
+          },
+          {
+            "id": "b",
+            "text": "是否准确解决真实用户问题，并遵守业务和安全边界。"
+          },
+          {
+            "id": "c",
+            "text": "模型名称是否流行。"
+          },
+          {
+            "id": "d",
+            "text": "是否每次都使用最高 temperature。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "客服场景重在问题解决、准确性、合规和体验。",
+        "focus": "客服评测核心"
+      },
+      {
+        "id": "llm-037-check-02",
+        "kind": "multiple",
+        "prompt": "客服问答评测集应覆盖哪些样本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "高频问题"
+          },
+          {
+            "id": "b",
+            "text": "边界和异常问题"
+          },
+          {
+            "id": "c",
+            "text": "权限敏感问题"
+          },
+          {
+            "id": "d",
+            "text": "长尾和模糊表达"
+          },
+          {
+            "id": "e",
+            "text": "只覆盖模型最擅长的问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测集只覆盖顺风样本，会高估线上效果。",
+        "focus": "评测集设计"
+      },
+      {
+        "id": "llm-037-check-03",
+        "kind": "multiple",
+        "prompt": "客服 LLM 评测可以关注哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "答案准确率或命中标准答案"
+          },
+          {
+            "id": "b",
+            "text": "幻觉率和错误引用率"
+          },
+          {
+            "id": "c",
+            "text": "转人工率和任务完成率"
+          },
+          {
+            "id": "d",
+            "text": "延迟、成本和用户满意度"
+          },
+          {
+            "id": "e",
+            "text": "输出越长分数越高"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "客服评测要兼顾质量、业务成功率、体验和成本。",
+        "focus": "指标选择"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-038",
+    "checks": [
+      {
+        "id": "llm-038-check-01",
+        "kind": "single",
+        "prompt": "多轮对话系统里的“记忆”本质上是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "和人脑完全一样的意识记忆。"
+          },
+          {
+            "id": "b",
+            "text": "为后续回答保留的可管理上下文、状态或摘要。"
+          },
+          {
+            "id": "c",
+            "text": "模型自动永久记住所有用户信息。"
+          },
+          {
+            "id": "d",
+            "text": "只是一段无意义日志。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "应用记忆是工程状态，不等于人类记忆或模型永久学习。",
+        "focus": "记忆本质"
+      },
+      {
+        "id": "llm-038-check-02",
+        "kind": "multiple",
+        "prompt": "哪些内容可能适合作为对话记忆？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户明确偏好"
+          },
+          {
+            "id": "b",
+            "text": "当前任务进度"
+          },
+          {
+            "id": "c",
+            "text": "关键事实和约束"
+          },
+          {
+            "id": "d",
+            "text": "重要工具结果摘要"
+          },
+          {
+            "id": "e",
+            "text": "所有原始消息永久无筛选保存"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "记忆目标是保留有用状态，不是无限堆历史。",
+        "focus": "记忆内容"
+      },
+      {
+        "id": "llm-038-check-03",
+        "kind": "multiple",
+        "prompt": "记忆系统要注意哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "过期和错误记忆污染回答"
+          },
+          {
+            "id": "b",
+            "text": "隐私和权限隔离"
+          },
+          {
+            "id": "c",
+            "text": "写入策略和删除策略"
+          },
+          {
+            "id": "d",
+            "text": "记忆与当前上下文冲突"
+          },
+          {
+            "id": "e",
+            "text": "记忆越多结果一定越好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "记忆是状态管理问题，必须可控、可更新、可删除。",
+        "focus": "记忆风险"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-039",
+    "checks": [
+      {
+        "id": "llm-039-check-01",
+        "kind": "single",
+        "prompt": "LLM 应用线上效果突然变差时，第一步更应该做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "立即重写所有代码。"
+          },
+          {
+            "id": "b",
+            "text": "先确认变差范围、时间点、样本和最近变更。"
+          },
+          {
+            "id": "c",
+            "text": "直接更换所有模型。"
+          },
+          {
+            "id": "d",
+            "text": "忽略监控，只看一个用户反馈。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "排障先定位影响面和变更点，再进入链路分析。",
+        "focus": "线上变差排查"
+      },
+      {
+        "id": "llm-039-check-02",
+        "kind": "multiple",
+        "prompt": "哪些维度应该纳入排查？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型版本或服务变更"
+          },
+          {
+            "id": "b",
+            "text": "Prompt、RAG 和工具链路变更"
+          },
+          {
+            "id": "c",
+            "text": "数据源、索引和权限变化"
+          },
+          {
+            "id": "d",
+            "text": "日志、评测集和线上样本对比"
+          },
+          {
+            "id": "e",
+            "text": "只看前端按钮颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "LLM 应用是系统链路，问题可能来自模型、数据、工具或状态。",
+        "focus": "排查维度"
+      },
+      {
+        "id": "llm-039-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方法有助于快速定位问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用固定评测集做回归对比"
+          },
+          {
+            "id": "b",
+            "text": "回放失败请求的完整上下文和工具结果"
+          },
+          {
+            "id": "c",
+            "text": "分段检查检索、重排、生成和后处理"
+          },
+          {
+            "id": "d",
+            "text": "对比最近发布和配置变更"
+          },
+          {
+            "id": "e",
+            "text": "只凭模型回答语气判断"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可回放、可分段、可对比是 LLM 系统排障的关键。",
+        "focus": "排障方法"
+      }
+    ]
+  },
+  {
+    "questionId": "llm-040",
+    "checks": [
+      {
+        "id": "llm-040-check-01",
+        "kind": "single",
+        "prompt": "企业内部知识问答系统最核心的 trade-off 通常是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只追求回答越长越好。"
+          },
+          {
+            "id": "b",
+            "text": "在准确性、权限安全、覆盖率、延迟、成本和可维护性之间取舍。"
+          },
+          {
+            "id": "c",
+            "text": "只选择最大模型即可。"
+          },
+          {
+            "id": "d",
+            "text": "完全不需要知识库治理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业知识问答是系统工程，模型能力、检索质量和权限治理都要平衡。",
+        "focus": "企业知识问答 trade-off"
+      },
+      {
+        "id": "llm-040-check-02",
+        "kind": "multiple",
+        "prompt": "设计企业知识问答时，哪些点很关键？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文档清洗、切分和更新机制"
+          },
+          {
+            "id": "b",
+            "text": "权限过滤和审计"
+          },
+          {
+            "id": "c",
+            "text": "检索、rerank 和引用证据"
+          },
+          {
+            "id": "d",
+            "text": "评测集与线上反馈闭环"
+          },
+          {
+            "id": "e",
+            "text": "把所有文档无过滤塞进 prompt"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "知识问答质量往往由知识治理、检索和安全边界共同决定。",
+        "focus": "核心设计点"
+      },
+      {
+        "id": "llm-040-check-03",
+        "kind": "multiple",
+        "prompt": "哪些权衡是真实存在的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "召回更多片段可能提高覆盖，也可能引入噪声。"
+          },
+          {
+            "id": "b",
+            "text": "更强模型可能提升质量，也可能提高成本和延迟。"
+          },
+          {
+            "id": "c",
+            "text": "更严格权限过滤更安全，但可能降低可见知识覆盖。"
+          },
+          {
+            "id": "d",
+            "text": "更频繁索引更新提升时效性，但增加系统复杂度。"
+          },
+          {
+            "id": "e",
+            "text": "只要有 RAG，就不需要人工维护知识库。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "企业场景不能只优化单一指标，必须把可靠性、安全和成本放在一起评估。",
+        "focus": "方案权衡"
+      }
+    ]
+  }
+]

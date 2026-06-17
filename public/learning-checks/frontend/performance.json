@@ -1,0 +1,4552 @@
+[
+  {
+    "questionId": "perf-001",
+    "checks": [
+      {
+        "id": "perf-001-check-01",
+        "kind": "single",
+        "prompt": "当前 Core Web Vitals 的核心指标是哪一组？",
+        "options": [
+          {
+            "id": "a",
+            "text": "LCP、INP、CLS。"
+          },
+          {
+            "id": "b",
+            "text": "FCP、DNS、TCP。"
+          },
+          {
+            "id": "c",
+            "text": "TTFB、HTTP、CSS。"
+          },
+          {
+            "id": "d",
+            "text": "FPS、GPU、RAM。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Core Web Vitals 聚焦加载体验、交互响应和视觉稳定性，当前核心指标是 LCP、INP、CLS。",
+        "focus": "Core Web Vitals"
+      },
+      {
+        "id": "perf-001-check-02",
+        "kind": "multiple",
+        "prompt": "哪些指标解释正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "LCP 衡量视口内最大内容元素完成渲染的时间。"
+          },
+          {
+            "id": "b",
+            "text": "INP 衡量交互到下一次绘制的响应延迟。"
+          },
+          {
+            "id": "c",
+            "text": "CLS 衡量非预期布局偏移的累计分数。"
+          },
+          {
+            "id": "d",
+            "text": "LCP 衡量所有接口请求总耗时。"
+          },
+          {
+            "id": "e",
+            "text": "CLS 越大说明页面越稳定。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "LCP 看加载主内容，INP 看交互反馈，CLS 看布局稳定；CLS 分数越低越好。",
+        "focus": "指标含义"
+      },
+      {
+        "id": "perf-001-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "判断站点是否达标通常看真实用户数据的第 75 百分位。"
+          },
+          {
+            "id": "b",
+            "text": "Lighthouse 适合实验室复现和调试。"
+          },
+          {
+            "id": "c",
+            "text": "RUM 埋点能反映真实用户设备、网络和页面路径。"
+          },
+          {
+            "id": "d",
+            "text": "单次本地跑分可以代表所有用户体验。"
+          },
+          {
+            "id": "e",
+            "text": "Core Web Vitals 只需要在开发环境测一次。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "性能指标要区分实验室数据和真实用户数据。真实体验受设备、网络和业务路径影响很大。",
+        "focus": "测量方式"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-002",
+    "checks": [
+      {
+        "id": "perf-002-check-01",
+        "kind": "single",
+        "prompt": "重排 Reflow 主要发生在什么情况下？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只改变文字颜色。"
+          },
+          {
+            "id": "b",
+            "text": "元素几何信息变化，需要重新计算布局。"
+          },
+          {
+            "id": "c",
+            "text": "只改变透明度且在合成层上。"
+          },
+          {
+            "id": "d",
+            "text": "只更新 localStorage。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "宽高、位置、字体、display 等几何变化可能触发布局计算。",
+        "focus": "Reflow"
+      },
+      {
+        "id": "perf-002-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于减少重排或重绘成本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "批量读写 DOM，避免布局抖动。"
+          },
+          {
+            "id": "b",
+            "text": "动画优先使用 `transform` 和 `opacity`。"
+          },
+          {
+            "id": "c",
+            "text": "用 class 一次性切换多条样式。"
+          },
+          {
+            "id": "d",
+            "text": "对独立区域使用 `contain` 限制影响范围。"
+          },
+          {
+            "id": "e",
+            "text": "每次循环里先写样式再读 `offsetHeight`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "交替读写布局属性容易触发 forced reflow。应批量读取、批量写入。",
+        "focus": "减少重排重绘"
+      },
+      {
+        "id": "perf-002-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "改 `background-color` 通常会触发 Paint。"
+          },
+          {
+            "id": "b",
+            "text": "合成层上的 `transform` 变化通常可只走 Composite。"
+          },
+          {
+            "id": "c",
+            "text": "大面积阴影、滤镜和模糊可能带来高 Paint 成本。"
+          },
+          {
+            "id": "d",
+            "text": "Repaint 一定比 Composite 更快。"
+          },
+          {
+            "id": "e",
+            "text": "所有 CSS 属性变化成本都一样。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同属性触发的渲染阶段不同。优化时要看 Layout、Paint、Composite 的实际开销。",
+        "focus": "Paint 与 Composite"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-003",
+    "checks": [
+      {
+        "id": "perf-003-check-01",
+        "kind": "single",
+        "prompt": "图片懒加载的核心目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "延后加载视口外图片，减少首屏资源竞争。"
+          },
+          {
+            "id": "b",
+            "text": "把所有图片同步加载完。"
+          },
+          {
+            "id": "c",
+            "text": "禁止浏览器缓存图片。"
+          },
+          {
+            "id": "d",
+            "text": "把图片都转成 JSON。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "懒加载让首屏关键资源优先，视口外图片接近可见时再加载。",
+        "focus": "图片懒加载"
+      },
+      {
+        "id": "perf-003-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方式可用于图片懒加载？",
+        "options": [
+          {
+            "id": "a",
+            "text": "原生 `loading=\"lazy\"`。"
+          },
+          {
+            "id": "b",
+            "text": "IntersectionObserver。"
+          },
+          {
+            "id": "c",
+            "text": "滚动监听加节流作为兜底。"
+          },
+          {
+            "id": "d",
+            "text": "每 1ms 遍历所有图片并读取布局。"
+          },
+          {
+            "id": "e",
+            "text": "删除所有 `src` 且永不恢复。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "现代优先原生 lazy 或 IntersectionObserver，滚动监听要作为兼容兜底并节流。",
+        "focus": "实现方式"
+      },
+      {
+        "id": "perf-003-check-03",
+        "kind": "multiple",
+        "prompt": "图片懒加载时还要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "预留宽高或使用 `aspect-ratio`，减少 CLS。"
+          },
+          {
+            "id": "b",
+            "text": "设置合适 rootMargin 提前加载，避免用户看到空白。"
+          },
+          {
+            "id": "c",
+            "text": "加载后取消观察，减少后续开销。"
+          },
+          {
+            "id": "d",
+            "text": "懒加载 LCP 主图一定能优化 LCP。"
+          },
+          {
+            "id": "e",
+            "text": "所有图片都应该懒加载，包括首屏关键图。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "首屏 LCP 图片通常应优先加载，而不是懒加载。懒加载主要用于非首屏资源。",
+        "focus": "避免副作用"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-004",
+    "checks": [
+      {
+        "id": "perf-004-check-01",
+        "kind": "single",
+        "prompt": "搜索框输入联想请求更适合使用什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "防抖。"
+          },
+          {
+            "id": "b",
+            "text": "节流。"
+          },
+          {
+            "id": "c",
+            "text": "长轮询。"
+          },
+          {
+            "id": "d",
+            "text": "递归渲染。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "输入停止一小段时间后再请求，能避免每个字符都触发接口。",
+        "focus": "防抖节流选择"
+      },
+      {
+        "id": "perf-004-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合节流？",
+        "options": [
+          {
+            "id": "a",
+            "text": "scroll 中周期性更新阅读进度。"
+          },
+          {
+            "id": "b",
+            "text": "mousemove 中限制计算频率。"
+          },
+          {
+            "id": "c",
+            "text": "resize 中持续采样布局变化。"
+          },
+          {
+            "id": "d",
+            "text": "用户停止输入后只提交最后一次搜索。"
+          },
+          {
+            "id": "e",
+            "text": "组件卸载时清理订阅。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "节流适合持续事件中稳定频率执行；防抖适合只关心最后一次。",
+        "focus": "节流适用场景"
+      },
+      {
+        "id": "perf-004-check-03",
+        "kind": "multiple",
+        "prompt": "防抖节流优化时，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它们减少函数触发频率，但不直接减少单次函数成本。"
+          },
+          {
+            "id": "b",
+            "text": "需要在组件卸载时取消未执行的 timer。"
+          },
+          {
+            "id": "c",
+            "text": "高频交互中仍要关注主线程任务是否过长。"
+          },
+          {
+            "id": "d",
+            "text": "加了防抖就不会有任何卡顿。"
+          },
+          {
+            "id": "e",
+            "text": "节流函数不需要保留最新参数。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "防抖节流是频率控制，不是性能银弹。单次任务过重仍会造成 INP 问题。",
+        "focus": "性能边界"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-005",
+    "checks": [
+      {
+        "id": "perf-005-check-01",
+        "kind": "single",
+        "prompt": "强缓存命中时，浏览器会怎样？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不发请求，直接使用本地缓存。"
+          },
+          {
+            "id": "b",
+            "text": "一定发送 `If-None-Match`。"
+          },
+          {
+            "id": "c",
+            "text": "一定返回 304。"
+          },
+          {
+            "id": "d",
+            "text": "重新下载完整资源。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "强缓存由 Cache-Control 或 Expires 判断，新鲜期内无需向服务器确认。",
+        "focus": "强缓存"
+      },
+      {
+        "id": "perf-005-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "ETag 配合 If-None-Match。"
+          },
+          {
+            "id": "b",
+            "text": "Last-Modified 配合 If-Modified-Since。"
+          },
+          {
+            "id": "c",
+            "text": "资源未变时服务端可返回 304。"
+          },
+          {
+            "id": "d",
+            "text": "协商缓存命中时一定返回完整响应体。"
+          },
+          {
+            "id": "e",
+            "text": "协商缓存不需要网络请求。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "协商缓存需要一次网络确认，304 响应不返回完整资源体。",
+        "focus": "协商缓存"
+      },
+      {
+        "id": "perf-005-check-03",
+        "kind": "multiple",
+        "prompt": "哪些策略更适合性能优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "带内容 hash 的 JS/CSS 使用长缓存。"
+          },
+          {
+            "id": "b",
+            "text": "HTML 入口谨慎长缓存，避免版本更新困难。"
+          },
+          {
+            "id": "c",
+            "text": "CDN 和浏览器缓存要区分设计。"
+          },
+          {
+            "id": "d",
+            "text": "私有数据避免被公共缓存误缓存。"
+          },
+          {
+            "id": "e",
+            "text": "所有资源统一 `no-store` 性能最好。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存要按资源更新频率和隐私属性设计。统一 no-store 会失去缓存收益。",
+        "focus": "性能缓存策略"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-006",
+    "checks": [
+      {
+        "id": "perf-006-check-01",
+        "kind": "single",
+        "prompt": "代码分割的主要目的是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让所有代码都进入首屏 bundle。"
+          },
+          {
+            "id": "b",
+            "text": "把代码拆成按需加载的 chunk，减少首屏初始负载。"
+          },
+          {
+            "id": "c",
+            "text": "禁止浏览器缓存。"
+          },
+          {
+            "id": "d",
+            "text": "删除类型检查。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Code Splitting 让当前页面只加载必要代码，其他路由或组件延后加载。",
+        "focus": "Code Splitting"
+      },
+      {
+        "id": "perf-006-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方式可实现代码分割？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动态 `import()`。"
+          },
+          {
+            "id": "b",
+            "text": "React.lazy/Suspense 做组件级懒加载。"
+          },
+          {
+            "id": "c",
+            "text": "路由级懒加载。"
+          },
+          {
+            "id": "d",
+            "text": "打包器 vendor/common chunk 拆分。"
+          },
+          {
+            "id": "e",
+            "text": "把所有依赖复制进每个页面。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "代码分割包括语法层面的动态导入和打包策略层面的 chunk 规划。",
+        "focus": "实现方式"
+      },
+      {
+        "id": "perf-006-check-03",
+        "kind": "multiple",
+        "prompt": "过度代码分割可能带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "请求碎片过多。"
+          },
+          {
+            "id": "b",
+            "text": "交互时才加载关键代码导致等待。"
+          },
+          {
+            "id": "c",
+            "text": "chunk 命中率和缓存策略复杂。"
+          },
+          {
+            "id": "d",
+            "text": "Suspense fallback 体验需要设计。"
+          },
+          {
+            "id": "e",
+            "text": "代码分割一定会让所有页面更快。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "拆分要围绕用户路径和关键资源设计，不是 chunk 越多越好。",
+        "focus": "拆分风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-007",
+    "checks": [
+      {
+        "id": "perf-007-check-01",
+        "kind": "single",
+        "prompt": "`preload` 更适合用于什么资源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前页面很快要用到的关键资源。"
+          },
+          {
+            "id": "b",
+            "text": "未来可能访问页面的低优先级资源。"
+          },
+          {
+            "id": "c",
+            "text": "永远不会用到的资源。"
+          },
+          {
+            "id": "d",
+            "text": "清理缓存的资源。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "preload 会提高当前页面资源优先级，应用在关键字体、关键图片、关键脚本等。",
+        "focus": "preload"
+      },
+      {
+        "id": "perf-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "preload 面向当前导航。"
+          },
+          {
+            "id": "b",
+            "text": "prefetch 面向未来可能需要的资源。"
+          },
+          {
+            "id": "c",
+            "text": "preload 需要正确设置 `as`。"
+          },
+          {
+            "id": "d",
+            "text": "字体跨域 preload 常需要 `crossorigin`。"
+          },
+          {
+            "id": "e",
+            "text": "preload 和 prefetch 完全等价。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "preload 是当前关键路径工具，prefetch 是空闲时为未来导航准备。",
+        "focus": "preload 与 prefetch"
+      },
+      {
+        "id": "perf-007-check-03",
+        "kind": "multiple",
+        "prompt": "哪些属于资源提示误用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "preload 了最终没有使用的资源。"
+          },
+          {
+            "id": "b",
+            "text": "给大量第三方域名都 preconnect。"
+          },
+          {
+            "id": "c",
+            "text": "`as` 类型错误导致重复下载。"
+          },
+          {
+            "id": "d",
+            "text": "为 LCP 主图合理设置 preload。"
+          },
+          {
+            "id": "e",
+            "text": "对未来路由低优先级资源使用 prefetch。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "资源提示会影响带宽、连接和优先级，必须基于真实瀑布图验证。",
+        "focus": "资源提示误用"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-008",
+    "checks": [
+      {
+        "id": "perf-008-check-01",
+        "kind": "single",
+        "prompt": "Tree Shaking 最依赖哪类模块语法的静态结构？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`eval` 动态字符串。"
+          },
+          {
+            "id": "b",
+            "text": "ES Module 的 `import/export`。"
+          },
+          {
+            "id": "c",
+            "text": "JSONP 回调。"
+          },
+          {
+            "id": "d",
+            "text": "DOM 事件冒泡。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "ESM 的静态导入导出便于打包器分析哪些导出未被使用。",
+        "focus": "Tree Shaking 前提"
+      },
+      {
+        "id": "perf-008-check-02",
+        "kind": "multiple",
+        "prompt": "哪些因素会影响 Tree Shaking？",
+        "options": [
+          {
+            "id": "a",
+            "text": "使用 ESM。"
+          },
+          {
+            "id": "b",
+            "text": "包的 `sideEffects` 标记。"
+          },
+          {
+            "id": "c",
+            "text": "代码是否存在顶层副作用。"
+          },
+          {
+            "id": "d",
+            "text": "打包器压缩阶段是否能删除未用代码。"
+          },
+          {
+            "id": "e",
+            "text": "变量名越短 Tree Shaking 越好。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Tree Shaking 不只是语法分析，还涉及副作用判断和压缩删除。",
+        "focus": "Tree Shaking 生效条件"
+      },
+      {
+        "id": "perf-008-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况可能让 Tree Shaking 效果变差？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CommonJS 动态 require。"
+          },
+          {
+            "id": "b",
+            "text": "顶层执行有副作用的模块。"
+          },
+          {
+            "id": "c",
+            "text": "整包引入且库未提供可摇树的 ESM 产物。"
+          },
+          {
+            "id": "d",
+            "text": "使用命名导入一定完全无法摇树。"
+          },
+          {
+            "id": "e",
+            "text": "CSS 文件一定能被 JS Tree Shaking 自动安全删除。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "副作用判断要谨慎。CSS 和 polyfill 等模块可能必须保留。",
+        "focus": "常见失效原因"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-009",
+    "checks": [
+      {
+        "id": "perf-009-check-01",
+        "kind": "single",
+        "prompt": "系统优化首屏加载速度时，第一步更应该是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "随机删除几个文件。"
+          },
+          {
+            "id": "b",
+            "text": "用指标和瀑布图定位瓶颈。"
+          },
+          {
+            "id": "c",
+            "text": "把所有资源都 preload。"
+          },
+          {
+            "id": "d",
+            "text": "禁用所有缓存。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "首屏慢可能来自网络、服务端、资源、JS 执行或渲染，先测量再优化。",
+        "focus": "首屏优化第一步"
+      },
+      {
+        "id": "perf-009-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段常用于首屏优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低 HTML、CSS、JS 关键路径体积。"
+          },
+          {
+            "id": "b",
+            "text": "路由级代码分割。"
+          },
+          {
+            "id": "c",
+            "text": "优化 LCP 图片加载优先级和尺寸。"
+          },
+          {
+            "id": "d",
+            "text": "CDN、缓存和压缩传输。"
+          },
+          {
+            "id": "e",
+            "text": "减少首屏长任务。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d", "e"],
+        "explanation": "首屏优化是网络、资源、渲染和执行的组合题。",
+        "focus": "首屏优化手段"
+      },
+      {
+        "id": "perf-009-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是首屏优化误区？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看本地高速网络测试结果。"
+          },
+          {
+            "id": "b",
+            "text": "把非首屏功能也打进首屏 bundle。"
+          },
+          {
+            "id": "c",
+            "text": "懒加载首屏 LCP 主图。"
+          },
+          {
+            "id": "d",
+            "text": "用骨架屏掩盖真实加载过慢但不解决瓶颈。"
+          },
+          {
+            "id": "e",
+            "text": "删除未使用代码和压缩图片。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "骨架屏改善感知，但不能替代资源和关键路径优化。",
+        "focus": "首屏误区"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-010",
+    "checks": [
+      {
+        "id": "perf-010-check-01",
+        "kind": "single",
+        "prompt": "`<script defer>` 的执行时机更接近哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "脚本并行下载，等 HTML 解析完成后按文档顺序执行。"
+          },
+          {
+            "id": "b",
+            "text": "下载完成立即执行，可能打断 HTML 解析且不保证顺序。"
+          },
+          {
+            "id": "c",
+            "text": "永远不执行。"
+          },
+          {
+            "id": "d",
+            "text": "只在用户点击后执行。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "defer 适合依赖 DOM 且需要保持执行顺序的外部脚本。",
+        "focus": "defer"
+      },
+      {
+        "id": "perf-010-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "async 脚本下载完成后尽快执行，可能打断解析。"
+          },
+          {
+            "id": "b",
+            "text": "async 脚本之间不保证执行顺序。"
+          },
+          {
+            "id": "c",
+            "text": "defer 脚本按文档顺序执行。"
+          },
+          {
+            "id": "d",
+            "text": "二者都只适用于外部脚本时最有意义。"
+          },
+          {
+            "id": "e",
+            "text": "async 和 defer 会阻止脚本下载。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "async 更适合独立第三方脚本，defer 更适合应用主脚本。",
+        "focus": "async 与 defer"
+      },
+      {
+        "id": "perf-010-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于减少脚本阻塞？",
+        "options": [
+          {
+            "id": "a",
+            "text": "非关键脚本延后加载。"
+          },
+          {
+            "id": "b",
+            "text": "主应用脚本使用 defer 或现代打包默认策略。"
+          },
+          {
+            "id": "c",
+            "text": "第三方脚本审计体积和执行时长。"
+          },
+          {
+            "id": "d",
+            "text": "拆分首屏不需要的代码。"
+          },
+          {
+            "id": "e",
+            "text": "把所有脚本都放在 head 中同步阻塞执行。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "脚本既占网络也占主线程。优化要同时减少下载阻塞和执行阻塞。",
+        "focus": "脚本加载优化"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-011",
+    "checks": [
+      {
+        "id": "perf-011-check-01",
+        "kind": "single",
+        "prompt": "LCP 通常关注哪个元素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "视口内最大的内容元素完成渲染的时间。"
+          },
+          {
+            "id": "b",
+            "text": "页面最后一个网络请求完成时间。"
+          },
+          {
+            "id": "c",
+            "text": "所有动画的平均 FPS。"
+          },
+          {
+            "id": "d",
+            "text": "localStorage 写入时间。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "LCP 常见元素包括首屏大图、视频 poster、大块文本和背景图。",
+        "focus": "LCP 元素"
+      },
+      {
+        "id": "perf-011-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于优化 LCP？",
+        "options": [
+          {
+            "id": "a",
+            "text": "优化服务端响应和 TTFB。"
+          },
+          {
+            "id": "b",
+            "text": "提高 LCP 图片优先级，避免懒加载首屏主图。"
+          },
+          {
+            "id": "c",
+            "text": "压缩图片并使用合适尺寸和格式。"
+          },
+          {
+            "id": "d",
+            "text": "减少阻塞渲染的 CSS/JS。"
+          },
+          {
+            "id": "e",
+            "text": "把 LCP 图片放到视口外。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "LCP 由服务端、网络、资源优先级、渲染阻塞和元素本身共同决定。",
+        "focus": "LCP 优化"
+      },
+      {
+        "id": "perf-011-check-03",
+        "kind": "multiple",
+        "prompt": "排查 LCP 慢时，哪些信息有价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "LCP 元素具体是谁。"
+          },
+          {
+            "id": "b",
+            "text": "TTFB、资源加载延迟、资源加载时间和元素渲染延迟。"
+          },
+          {
+            "id": "c",
+            "text": "图片是否被 CSS 背景、懒加载或低优先级影响。"
+          },
+          {
+            "id": "d",
+            "text": "只看总 bundle 数量，不看关键路径。"
+          },
+          {
+            "id": "e",
+            "text": "CLS 分数越高 LCP 一定越快。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "LCP 可拆成多个阶段，找出慢在请求前、下载中还是渲染后更重要。",
+        "focus": "LCP 排查"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-012",
+    "checks": [
+      {
+        "id": "perf-012-check-01",
+        "kind": "single",
+        "prompt": "CLS 衡量什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "页面 JavaScript 体积。"
+          },
+          {
+            "id": "b",
+            "text": "页面生命周期中非预期布局偏移的累计分数。"
+          },
+          {
+            "id": "c",
+            "text": "首字节时间。"
+          },
+          {
+            "id": "d",
+            "text": "CSS 文件数量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "CLS 关注视觉稳定性，用户未预期的内容跳动会增加分数。",
+        "focus": "CLS"
+      },
+      {
+        "id": "perf-012-check-02",
+        "kind": "multiple",
+        "prompt": "哪些会导致 CLS 风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "图片或视频没有预留尺寸。"
+          },
+          {
+            "id": "b",
+            "text": "广告位、推荐位动态插入但没预留空间。"
+          },
+          {
+            "id": "c",
+            "text": "Web 字体替换导致文字重排。"
+          },
+          {
+            "id": "d",
+            "text": "在已有内容上方插入新内容。"
+          },
+          {
+            "id": "e",
+            "text": "给图片设置固定宽高或 aspect-ratio。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有尺寸占位和动态插入内容是 CLS 的高频原因。",
+        "focus": "CLS 常见原因"
+      },
+      {
+        "id": "perf-012-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法能降低 CLS？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为媒体资源设置 width/height 或 aspect-ratio。"
+          },
+          {
+            "id": "b",
+            "text": "广告和异步组件预留稳定占位。"
+          },
+          {
+            "id": "c",
+            "text": "优化字体加载和 fallback 度量。"
+          },
+          {
+            "id": "d",
+            "text": "用户触发的展开收起可以降低“非预期”偏移风险。"
+          },
+          {
+            "id": "e",
+            "text": "所有内容加载后再一次性显示空白页面。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CLS 优化不是禁止任何布局变化，而是避免用户没预期的跳动。",
+        "focus": "CLS 优化"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-013",
+    "checks": [
+      {
+        "id": "perf-013-check-01",
+        "kind": "single",
+        "prompt": "合成层优化动画的主要原因是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "某些 transform/opacity 动画可在合成阶段更新，减少 Layout/Paint。"
+          },
+          {
+            "id": "b",
+            "text": "合成层会自动缩小所有图片。"
+          },
+          {
+            "id": "c",
+            "text": "合成层会禁止用户滚动。"
+          },
+          {
+            "id": "d",
+            "text": "合成层能替代所有 CSS。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "合成层适合移动、透明度等视觉变换，但创建和维护图层也有成本。",
+        "focus": "合成层"
+      },
+      {
+        "id": "perf-013-check-02",
+        "kind": "multiple",
+        "prompt": "哪些情况可能创建合成层？",
+        "options": [
+          {
+            "id": "a",
+            "text": "3D transform 或某些 transform 动画。"
+          },
+          {
+            "id": "b",
+            "text": "`will-change: transform`。"
+          },
+          {
+            "id": "c",
+            "text": "video、canvas 等特殊元素。"
+          },
+          {
+            "id": "d",
+            "text": "fixed/sticky 和滤镜等在特定条件下。"
+          },
+          {
+            "id": "e",
+            "text": "所有 div 默认都是独立合成层。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "浏览器会根据属性和启发式提升图层，不同浏览器实现细节可能不同。",
+        "focus": "合成层创建"
+      },
+      {
+        "id": "perf-013-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`will-change` 应短时间、按需使用。"
+          },
+          {
+            "id": "b",
+            "text": "合成层过多会增加内存和 GPU 纹理成本。"
+          },
+          {
+            "id": "c",
+            "text": "动画结束后应移除不再需要的提升提示。"
+          },
+          {
+            "id": "d",
+            "text": "给全站所有元素加 `will-change` 性能最好。"
+          },
+          {
+            "id": "e",
+            "text": "合成层一定不会产生任何 Paint。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "合成层是优化手段，不是免费资源。要用 DevTools Layers/Performance 验证。",
+        "focus": "will-change 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-014",
+    "checks": [
+      {
+        "id": "perf-014-check-01",
+        "kind": "single",
+        "prompt": "固定高度虚拟列表中，spacer 的作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "存储所有业务数据。"
+          },
+          {
+            "id": "b",
+            "text": "撑开总滚动高度，让滚动条长度接近完整列表。"
+          },
+          {
+            "id": "c",
+            "text": "加密列表项。"
+          },
+          {
+            "id": "d",
+            "text": "禁止滚动。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "实际渲染的 DOM 很少，spacer 负责模拟完整列表高度。",
+        "focus": "固定高度虚拟列表"
+      },
+      {
+        "id": "perf-014-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是固定高度虚拟列表的关键？",
+        "options": [
+          {
+            "id": "a",
+            "text": "根据 `scrollTop` 和 `itemHeight` 计算起始索引。"
+          },
+          {
+            "id": "b",
+            "text": "渲染可视区域加 overscan 的项目。"
+          },
+          {
+            "id": "c",
+            "text": "用 transform 把可视内容移动到正确偏移。"
+          },
+          {
+            "id": "d",
+            "text": "滚动处理用 rAF 合并更新。"
+          },
+          {
+            "id": "e",
+            "text": "每次都渲染全部 10 万条数据。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "虚拟列表通过减少 DOM 数量降低布局、绘制和内存压力。",
+        "focus": "实现要点"
+      },
+      {
+        "id": "perf-014-check-03",
+        "kind": "multiple",
+        "prompt": "生产虚拟列表还要考虑什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动态高度缓存和测量。"
+          },
+          {
+            "id": "b",
+            "text": "键盘可访问性和焦点管理。"
+          },
+          {
+            "id": "c",
+            "text": "滚动恢复和锚点定位。"
+          },
+          {
+            "id": "d",
+            "text": "空状态、加载态和错误态。"
+          },
+          {
+            "id": "e",
+            "text": "虚拟列表可以自动解决所有业务分页问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "虚拟列表解决渲染数量问题，不替代数据分页、可访问性和交互状态设计。",
+        "focus": "生产问题"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-015",
+    "checks": [
+      {
+        "id": "perf-015-check-01",
+        "kind": "single",
+        "prompt": "分析 Webpack 打包体积时，最直接的工具思路是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "生成 bundle analyzer 可视化依赖体积。"
+          },
+          {
+            "id": "b",
+            "text": "只看源代码文件数量。"
+          },
+          {
+            "id": "c",
+            "text": "删除 package-lock。"
+          },
+          {
+            "id": "d",
+            "text": "关闭浏览器缓存。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "体积分析要知道哪些依赖进入了哪些 chunk，以及 gzip/brotli 后体积如何。",
+        "focus": "打包体积分析"
+      },
+      {
+        "id": "perf-015-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段有助于减少打包体积？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Tree Shaking。"
+          },
+          {
+            "id": "b",
+            "text": "路由级代码分割。"
+          },
+          {
+            "id": "c",
+            "text": "替换过重依赖或按需引入。"
+          },
+          {
+            "id": "d",
+            "text": "压缩和移除无用 polyfill。"
+          },
+          {
+            "id": "e",
+            "text": "把所有依赖打进每个异步 chunk。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "体积优化要减少重复、无用和首屏不需要的代码。",
+        "focus": "减少包体积"
+      },
+      {
+        "id": "perf-015-check-03",
+        "kind": "multiple",
+        "prompt": "哪些风险需要注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "拆分过细导致请求和调度成本增加。"
+          },
+          {
+            "id": "b",
+            "text": "移除 polyfill 可能影响目标浏览器。"
+          },
+          {
+            "id": "c",
+            "text": "只看未压缩体积可能误判传输成本。"
+          },
+          {
+            "id": "d",
+            "text": "bundle 越小业务功能一定越完整。"
+          },
+          {
+            "id": "e",
+            "text": "所有依赖都应该手写替代。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "体积优化要结合目标浏览器、缓存、首屏路径和维护成本。",
+        "focus": "体积优化风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-016",
+    "checks": [
+      {
+        "id": "perf-016-check-01",
+        "kind": "single",
+        "prompt": "Service Worker 优化性能的关键能力之一是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "拦截请求并按策略读写 Cache Storage。"
+          },
+          {
+            "id": "b",
+            "text": "直接修改 CPU 主频。"
+          },
+          {
+            "id": "c",
+            "text": "自动缩小所有 JavaScript。"
+          },
+          {
+            "id": "d",
+            "text": "替代 HTTPS。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Service Worker 位于页面和网络之间，可实现离线、预缓存和运行时缓存。",
+        "focus": "Service Worker 缓存"
+      },
+      {
+        "id": "perf-016-check-02",
+        "kind": "multiple",
+        "prompt": "哪些策略和场景匹配合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Cache First 适合带版本的静态资源。"
+          },
+          {
+            "id": "b",
+            "text": "Network First 适合需要较新数据的接口。"
+          },
+          {
+            "id": "c",
+            "text": "Stale While Revalidate 先返回缓存再后台更新。"
+          },
+          {
+            "id": "d",
+            "text": "离线 fallback 可用于网络失败时的页面兜底。"
+          },
+          {
+            "id": "e",
+            "text": "所有 API 都应该永久 Cache First。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同资源新鲜度要求不同，缓存策略不能一刀切。",
+        "focus": "缓存策略"
+      },
+      {
+        "id": "perf-016-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是 Service Worker 使用风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缓存旧版本导致用户长时间看不到更新。"
+          },
+          {
+            "id": "b",
+            "text": "缓存清理策略不当导致存储膨胀。"
+          },
+          {
+            "id": "c",
+            "text": "更新生命周期处理不当导致多版本并存问题。"
+          },
+          {
+            "id": "d",
+            "text": "Service Worker 只能在 HTTP 明文中使用。"
+          },
+          {
+            "id": "e",
+            "text": "Service Worker 不会影响网络请求。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Service Worker 很适合性能和离线，但缓存版本和更新策略必须严谨。",
+        "focus": "SW 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-017",
+    "checks": [
+      {
+        "id": "perf-017-check-01",
+        "kind": "single",
+        "prompt": "React 渲染性能优化的核心不是？",
+        "options": [
+          {
+            "id": "a",
+            "text": "减少不必要的重新渲染。"
+          },
+          {
+            "id": "b",
+            "text": "降低单次渲染成本。"
+          },
+          {
+            "id": "c",
+            "text": "拆分高成本交互。"
+          },
+          {
+            "id": "d",
+            "text": "给所有组件无脑套 `memo`。"
+          }
+        ],
+        "answerIds": ["d"],
+        "explanation": "`memo` 有比较成本，只有在 props 稳定且渲染成本值得优化时收益更明确。",
+        "focus": "React 渲染性能"
+      },
+      {
+        "id": "perf-017-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段常用于 React 渲染优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`React.memo` 避免相同 props 下重复渲染。"
+          },
+          {
+            "id": "b",
+            "text": "`useMemo` 缓存昂贵计算结果。"
+          },
+          {
+            "id": "c",
+            "text": "`useCallback` 稳定传给子组件的回调引用。"
+          },
+          {
+            "id": "d",
+            "text": "虚拟列表减少大量 DOM 渲染。"
+          },
+          {
+            "id": "e",
+            "text": "把所有状态都提升到根组件。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "状态越靠上，影响范围可能越大。状态应靠近使用它的组件。",
+        "focus": "React 优化手段"
+      },
+      {
+        "id": "perf-017-check-03",
+        "kind": "multiple",
+        "prompt": "排查 React 渲染慢时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "使用 React Profiler 看哪些组件渲染耗时高。"
+          },
+          {
+            "id": "b",
+            "text": "检查 props 引用是否每次都变化。"
+          },
+          {
+            "id": "c",
+            "text": "检查 Context 更新范围是否过大。"
+          },
+          {
+            "id": "d",
+            "text": "拆分长任务，避免交互阻塞。"
+          },
+          {
+            "id": "e",
+            "text": "只凭肉眼猜测哪个组件慢。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "React 性能优化应先定位，再决定 memo、拆分状态、虚拟化或并发特性。",
+        "focus": "性能排查"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-018",
+    "checks": [
+      {
+        "id": "perf-018-check-01",
+        "kind": "single",
+        "prompt": "关键渲染路径关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "浏览器从 HTML/CSS/JS 到首屏渲染的关键步骤和阻塞资源。"
+          },
+          {
+            "id": "b",
+            "text": "数据库索引如何建立。"
+          },
+          {
+            "id": "c",
+            "text": "组件命名规范。"
+          },
+          {
+            "id": "d",
+            "text": "Git 分支策略。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "关键渲染路径包括 HTML 解析、CSSOM、渲染树、布局、绘制和脚本阻塞。",
+        "focus": "关键渲染路径"
+      },
+      {
+        "id": "perf-018-check-02",
+        "kind": "multiple",
+        "prompt": "哪些会影响关键渲染路径？",
+        "options": [
+          {
+            "id": "a",
+            "text": "阻塞渲染的 CSS。"
+          },
+          {
+            "id": "b",
+            "text": "同步脚本阻塞 HTML 解析。"
+          },
+          {
+            "id": "c",
+            "text": "字体和首屏图片加载。"
+          },
+          {
+            "id": "d",
+            "text": "服务端 TTFB。"
+          },
+          {
+            "id": "e",
+            "text": "页面底部永远不会用到的隐藏文案。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "关键路径只关注首屏必需资源和阻塞步骤，非关键资源应延后。",
+        "focus": "阻塞因素"
+      },
+      {
+        "id": "perf-018-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方式能优化关键渲染路径？",
+        "options": [
+          {
+            "id": "a",
+            "text": "内联少量 critical CSS。"
+          },
+          {
+            "id": "b",
+            "text": "延迟非关键 JS。"
+          },
+          {
+            "id": "c",
+            "text": "减少首屏 CSS/JS 体积。"
+          },
+          {
+            "id": "d",
+            "text": "优化关键资源优先级。"
+          },
+          {
+            "id": "e",
+            "text": "把所有 CSS 和 JS 都同步阻塞加载。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CRP 优化目标是更快构建首屏所需的 DOM/CSSOM 并减少主线程阻塞。",
+        "focus": "优化 CRP"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-019",
+    "checks": [
+      {
+        "id": "perf-019-check-01",
+        "kind": "single",
+        "prompt": "正文 Web 字体性能优化中，`font-display: swap` 的效果是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先用 fallback 字体显示文本，字体加载后替换。"
+          },
+          {
+            "id": "b",
+            "text": "永远隐藏文本。"
+          },
+          {
+            "id": "c",
+            "text": "禁止字体缓存。"
+          },
+          {
+            "id": "d",
+            "text": "把字体转成图片。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "swap 可减少 FOIT，但可能带来字体替换造成的布局变化。",
+        "focus": "font-display"
+      },
+      {
+        "id": "perf-019-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于优化字体加载？",
+        "options": [
+          {
+            "id": "a",
+            "text": "使用 WOFF2。"
+          },
+          {
+            "id": "b",
+            "text": "子集化和 `unicode-range`。"
+          },
+          {
+            "id": "c",
+            "text": "只 preload 首屏关键字体。"
+          },
+          {
+            "id": "d",
+            "text": "选择合适 fallback 并考虑 metric override。"
+          },
+          {
+            "id": "e",
+            "text": "preload 所有语言、所有字重字体。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "字体文件常很大，尤其中文字体。要按首屏和字符集精细加载。",
+        "focus": "字体优化"
+      },
+      {
+        "id": "perf-019-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "自定义字体和 fallback 度量差异可能造成 CLS。"
+          },
+          {
+            "id": "b",
+            "text": "`size-adjust` 等 metric override 可降低替换偏移。"
+          },
+          {
+            "id": "c",
+            "text": "字体加载策略要在可见性和稳定性之间权衡。"
+          },
+          {
+            "id": "d",
+            "text": "Web 字体不会影响性能指标。"
+          },
+          {
+            "id": "e",
+            "text": "所有字体都必须阻塞渲染直到加载完成。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "字体影响文本可见、排版和布局稳定，是首屏优化的重要部分。",
+        "focus": "字体与 CLS"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-020",
+    "checks": [
+      {
+        "id": "perf-020-check-01",
+        "kind": "single",
+        "prompt": "`requestAnimationFrame` 的回调通常在什么时候执行？",
+        "options": [
+          {
+            "id": "a",
+            "text": "浏览器下一次绘制前。"
+          },
+          {
+            "id": "b",
+            "text": "网络请求完成后。"
+          },
+          {
+            "id": "c",
+            "text": "页面关闭后。"
+          },
+          {
+            "id": "d",
+            "text": "DNS 解析前。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "rAF 适合把视觉更新和浏览器刷新节奏对齐。",
+        "focus": "rAF 时机"
+      },
+      {
+        "id": "perf-020-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景适合使用 rAF？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动画帧更新。"
+          },
+          {
+            "id": "b",
+            "text": "滚动中合并视觉更新。"
+          },
+          {
+            "id": "c",
+            "text": "批量 DOM 写入到下一帧。"
+          },
+          {
+            "id": "d",
+            "text": "执行低优先级后台数据清理。"
+          },
+          {
+            "id": "e",
+            "text": "等待用户空闲几秒后发日志。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "低优先级空闲任务更适合 requestIdleCallback 或调度器，而不是 rAF。",
+        "focus": "rAF 使用场景"
+      },
+      {
+        "id": "perf-020-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "rAF 内任务过重仍会掉帧。"
+          },
+          {
+            "id": "b",
+            "text": "动画应优先更新 transform/opacity。"
+          },
+          {
+            "id": "c",
+            "text": "页面不可见时 rAF 可能被降频或暂停。"
+          },
+          {
+            "id": "d",
+            "text": "rAF 会自动把长任务拆成小任务。"
+          },
+          {
+            "id": "e",
+            "text": "使用 rAF 后不需要关注布局抖动。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "rAF 只是调度到绘制前，不会自动优化你的任务内容。",
+        "focus": "rAF 优化注意"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-021",
+    "checks": [
+      {
+        "id": "perf-021-check-01",
+        "kind": "single",
+        "prompt": "为不同屏幕密度和布局宽度提供合适图片资源，常用什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`srcset` 和 `sizes`。"
+          },
+          {
+            "id": "b",
+            "text": "`document.cookie`。"
+          },
+          {
+            "id": "c",
+            "text": "`eval`。"
+          },
+          {
+            "id": "d",
+            "text": "`z-index`。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`srcset/sizes` 让浏览器按设备和布局选择合适图片，避免下载过大资源。",
+        "focus": "响应式图片"
+      },
+      {
+        "id": "perf-021-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于图片性能优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "使用 AVIF/WebP 等现代格式。"
+          },
+          {
+            "id": "b",
+            "text": "按展示尺寸裁剪和压缩。"
+          },
+          {
+            "id": "c",
+            "text": "非首屏图片懒加载。"
+          },
+          {
+            "id": "d",
+            "text": "为首屏关键图设置合理优先级。"
+          },
+          {
+            "id": "e",
+            "text": "所有图片都使用原始超大 PNG。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "图片往往是 LCP 和总传输体积大头，格式、尺寸、优先级和懒加载都重要。",
+        "focus": "图片性能手段"
+      },
+      {
+        "id": "perf-021-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "LCP 主图过大会拖慢 LCP。"
+          },
+          {
+            "id": "b",
+            "text": "图片无尺寸占位会增加 CLS 风险。"
+          },
+          {
+            "id": "c",
+            "text": "懒加载首屏关键图可能让 LCP 变差。"
+          },
+          {
+            "id": "d",
+            "text": "图片优化只影响带宽，不影响渲染指标。"
+          },
+          {
+            "id": "e",
+            "text": "background-image 一定比 img 更适合 LCP。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "图片既影响网络，也影响布局稳定和浏览器优先级判断。",
+        "focus": "图片与指标"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-022",
+    "checks": [
+      {
+        "id": "perf-022-check-01",
+        "kind": "single",
+        "prompt": "前端性能监控的核心目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只在开发机看一次分数。"
+          },
+          {
+            "id": "b",
+            "text": "持续采集真实用户性能数据，发现和定位体验问题。"
+          },
+          {
+            "id": "c",
+            "text": "替代所有业务日志。"
+          },
+          {
+            "id": "d",
+            "text": "自动修复所有慢接口。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RUM 监控能看到真实用户设备、网络、地区和页面路径下的性能。",
+        "focus": "性能监控"
+      },
+      {
+        "id": "perf-022-check-02",
+        "kind": "multiple",
+        "prompt": "哪些指标适合前端性能采集？",
+        "options": [
+          {
+            "id": "a",
+            "text": "LCP、INP、CLS。"
+          },
+          {
+            "id": "b",
+            "text": "TTFB、FCP。"
+          },
+          {
+            "id": "c",
+            "text": "资源加载耗时。"
+          },
+          {
+            "id": "d",
+            "text": "长任务和 JS 错误。"
+          },
+          {
+            "id": "e",
+            "text": "用户银行卡密码。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能采集要避免敏感数据，关注指标、上下文和可定位信息。",
+        "focus": "可采集指标"
+      },
+      {
+        "id": "perf-022-check-03",
+        "kind": "multiple",
+        "prompt": "哪些设计合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "采样控制，避免上报量过大。"
+          },
+          {
+            "id": "b",
+            "text": "使用 sendBeacon 或页面隐藏时可靠上报。"
+          },
+          {
+            "id": "c",
+            "text": "携带页面、路由、设备、网络等维度。"
+          },
+          {
+            "id": "d",
+            "text": "对异常值和重复数据做清洗。"
+          },
+          {
+            "id": "e",
+            "text": "每个动画帧都同步阻塞上报。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "监控本身不能明显拖慢页面。采样、批量和异步上报很重要。",
+        "focus": "监控上报设计"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-023",
+    "checks": [
+      {
+        "id": "perf-023-check-01",
+        "kind": "single",
+        "prompt": "HTTP/2 对前端性能的关键提升是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多路复用、头部压缩和更好的连接利用。"
+          },
+          {
+            "id": "b",
+            "text": "自动压缩所有图片。"
+          },
+          {
+            "id": "c",
+            "text": "让 JS 不再执行。"
+          },
+          {
+            "id": "d",
+            "text": "禁止缓存。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "HTTP/2 降低连接和请求排队成本，但不替代资源优化。",
+        "focus": "HTTP/2 性能提升"
+      },
+      {
+        "id": "perf-023-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "同域多个请求可复用同一连接上的多个 stream。"
+          },
+          {
+            "id": "b",
+            "text": "HPACK 头部压缩降低重复 header 成本。"
+          },
+          {
+            "id": "c",
+            "text": "小文件过度合并的必要性下降。"
+          },
+          {
+            "id": "d",
+            "text": "启用 HTTP/2 后资源体积不重要。"
+          },
+          {
+            "id": "e",
+            "text": "HTTP/2 不需要 TLS 才能在主流浏览器启用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "协议优化减少连接层成本，但浏览器实践中 HTTP/2 基本运行在 HTTPS 上。",
+        "focus": "HTTP/2 影响"
+      },
+      {
+        "id": "perf-023-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是 HTTP/2 下仍需关注的问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "TCP 层丢包可能影响同连接 stream。"
+          },
+          {
+            "id": "b",
+            "text": "关键资源优先级仍需优化。"
+          },
+          {
+            "id": "c",
+            "text": "CDN 和源站都要正确支持。"
+          },
+          {
+            "id": "d",
+            "text": "缓存粒度和 chunk 策略仍重要。"
+          },
+          {
+            "id": "e",
+            "text": "所有请求都必须合成一个文件。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "HTTP/2 改变优化策略，不是取消优化。",
+        "focus": "HTTP/2 误区"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-024",
+    "checks": [
+      {
+        "id": "perf-024-check-01",
+        "kind": "single",
+        "prompt": "前端内存泄漏指什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不再需要的对象仍被引用，无法被垃圾回收。"
+          },
+          {
+            "id": "b",
+            "text": "CSS 文件太小。"
+          },
+          {
+            "id": "c",
+            "text": "HTTP 状态码是 304。"
+          },
+          {
+            "id": "d",
+            "text": "图片使用 WebP。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "泄漏的本质是可达引用链没有断开，导致对象长期存活。",
+        "focus": "内存泄漏"
+      },
+      {
+        "id": "perf-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是前端常见内存泄漏来源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "组件卸载后未移除事件监听。"
+          },
+          {
+            "id": "b",
+            "text": "未清理定时器或 rAF。"
+          },
+          {
+            "id": "c",
+            "text": "闭包长期持有大对象。"
+          },
+          {
+            "id": "d",
+            "text": "DOM 节点被 JS 引用导致 detached DOM。"
+          },
+          {
+            "id": "e",
+            "text": "使用语义化 HTML 标签。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "订阅、定时器、闭包和 DOM 引用是高频泄漏源。",
+        "focus": "常见泄漏场景"
+      },
+      {
+        "id": "perf-024-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方法有助于排查泄漏？",
+        "options": [
+          {
+            "id": "a",
+            "text": "DevTools Memory heap snapshot。"
+          },
+          {
+            "id": "b",
+            "text": "Allocation instrumentation。"
+          },
+          {
+            "id": "c",
+            "text": "重复进入离开页面观察内存是否回落。"
+          },
+          {
+            "id": "d",
+            "text": "查找 detached DOM 和异常增长对象。"
+          },
+          {
+            "id": "e",
+            "text": "只看首屏截图。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "内存泄漏要通过堆快照、分配时间线和复现路径定位引用链。",
+        "focus": "排查内存泄漏"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-025",
+    "checks": [
+      {
+        "id": "perf-025-check-01",
+        "kind": "single",
+        "prompt": "Vite 开发模式快的核心原因之一是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "利用浏览器原生 ESM，按需转换和加载源码模块。"
+          },
+          {
+            "id": "b",
+            "text": "每次启动都完整打包所有代码。"
+          },
+          {
+            "id": "c",
+            "text": "不运行任何开发服务器。"
+          },
+          {
+            "id": "d",
+            "text": "禁用 TypeScript。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Vite dev 不需要像传统 bundler 一样先整体打包应用，冷启动更快。",
+        "focus": "Vite 开发快"
+      },
+      {
+        "id": "perf-025-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "依赖预构建可把 CommonJS/大量小模块转换为更适合浏览器加载的 ESM。"
+          },
+          {
+            "id": "b",
+            "text": "HMR 只更新变更模块及相关边界。"
+          },
+          {
+            "id": "c",
+            "text": "esbuild 用于部分转换，速度很快。"
+          },
+          {
+            "id": "d",
+            "text": "Vite 生产构建完全不需要 Rollup 或打包。"
+          },
+          {
+            "id": "e",
+            "text": "Vite 开发模式下所有浏览器都无需 ESM 支持。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Vite dev 和 build 是两套优化目标：开发重速度，生产重产物优化。",
+        "focus": "Vite 性能来源"
+      },
+      {
+        "id": "perf-025-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况可能影响 Vite 开发体验？",
+        "options": [
+          {
+            "id": "a",
+            "text": "大量未优化依赖或复杂依赖图。"
+          },
+          {
+            "id": "b",
+            "text": "插件转换成本高。"
+          },
+          {
+            "id": "c",
+            "text": "单模块过大导致 HMR 更新慢。"
+          },
+          {
+            "id": "d",
+            "text": "浏览器需要请求大量源码模块。"
+          },
+          {
+            "id": "e",
+            "text": "项目越大 Vite 冷启动一定越接近 0ms。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Vite 很快但不是无成本。依赖、插件和模块颗粒度仍会影响体验。",
+        "focus": "Vite 边界"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-026",
+    "checks": [
+      {
+        "id": "perf-026-check-01",
+        "kind": "single",
+        "prompt": "浏览器主线程上连续执行超过多少毫秒的任务通常会被视为 Long Task？",
+        "options": [
+          {
+            "id": "a",
+            "text": "5ms。"
+          },
+          {
+            "id": "b",
+            "text": "50ms。"
+          },
+          {
+            "id": "c",
+            "text": "5000ms。"
+          },
+          {
+            "id": "d",
+            "text": "1s 固定动画帧。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Long Task 会阻塞用户输入处理和渲染，是 INP 风险的重要来源。",
+        "focus": "Long Task"
+      },
+      {
+        "id": "perf-026-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于降低 INP？",
+        "options": [
+          {
+            "id": "a",
+            "text": "拆分长任务，让主线程有机会响应输入。"
+          },
+          {
+            "id": "b",
+            "text": "减少交互处理函数中的同步重计算。"
+          },
+          {
+            "id": "c",
+            "text": "把重 CPU 任务移到 Web Worker。"
+          },
+          {
+            "id": "d",
+            "text": "使用虚拟列表减少一次性 DOM 工作。"
+          },
+          {
+            "id": "e",
+            "text": "在点击事件里同步解析巨大 JSON 并阻塞数秒。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "INP 关注用户交互到下一次绘制，主线程长任务会直接拖慢反馈。",
+        "focus": "提升 INP"
+      },
+      {
+        "id": "perf-026-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方式可以拆分或调度长任务？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分片处理并让出主线程。"
+          },
+          {
+            "id": "b",
+            "text": "`scheduler.postTask` 或类似调度能力可用时按优先级调度。"
+          },
+          {
+            "id": "c",
+            "text": "requestIdleCallback 处理低优先级任务。"
+          },
+          {
+            "id": "d",
+            "text": "Web Worker 处理纯计算。"
+          },
+          {
+            "id": "e",
+            "text": "把所有逻辑放进一个更大的同步循环。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "拆分任务的目标是减少连续阻塞，让输入和绘制能插入执行。",
+        "focus": "长任务拆分"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-027",
+    "checks": [
+      {
+        "id": "perf-027-check-01",
+        "kind": "single",
+        "prompt": "CDN 对前端性能最直接的收益是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "靠近用户分发资源，降低延迟并减轻源站压力。"
+          },
+          {
+            "id": "b",
+            "text": "自动修复 JS 错误。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有缓存。"
+          },
+          {
+            "id": "d",
+            "text": "让浏览器跳过渲染。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "CDN 通过边缘节点和缓存减少传输距离和回源次数。",
+        "focus": "CDN 性能收益"
+      },
+      {
+        "id": "perf-027-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "静态资源使用内容 hash 和长缓存。"
+          },
+          {
+            "id": "b",
+            "text": "配置 Brotli/Gzip。"
+          },
+          {
+            "id": "c",
+            "text": "监控命中率和回源耗时。"
+          },
+          {
+            "id": "d",
+            "text": "按地区和运营商观察性能差异。"
+          },
+          {
+            "id": "e",
+            "text": "所有用户私有接口都公共缓存到 CDN。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CDN 缓存要避免隐私泄漏，同时关注命中率和回源链路。",
+        "focus": "CDN 优化实践"
+      },
+      {
+        "id": "perf-027-check-03",
+        "kind": "multiple",
+        "prompt": "哪些问题可能导致 CDN 加速不明显？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缓存命中率低。"
+          },
+          {
+            "id": "b",
+            "text": "缓存 key 配置不合理。"
+          },
+          {
+            "id": "c",
+            "text": "源站回源慢。"
+          },
+          {
+            "id": "d",
+            "text": "用户被调度到不合适节点。"
+          },
+          {
+            "id": "e",
+            "text": "图片设置了宽高属性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "CDN 不只是接入域名，还要看缓存策略、调度和回源质量。",
+        "focus": "CDN 问题排查"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-028",
+    "checks": [
+      {
+        "id": "perf-028-check-01",
+        "kind": "single",
+        "prompt": "页面白屏时间长，最直接影响用户感知的是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户长时间看不到任何有意义内容。"
+          },
+          {
+            "id": "b",
+            "text": "代码注释数量。"
+          },
+          {
+            "id": "c",
+            "text": "Git commit 数量。"
+          },
+          {
+            "id": "d",
+            "text": "CSS 类名长度。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "白屏优化的目标是尽快展示稳定、有意义的首屏反馈。",
+        "focus": "白屏时间"
+      },
+      {
+        "id": "perf-028-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法可减少白屏时间？",
+        "options": [
+          {
+            "id": "a",
+            "text": "服务端渲染或静态预渲染。"
+          },
+          {
+            "id": "b",
+            "text": "内联关键 CSS。"
+          },
+          {
+            "id": "c",
+            "text": "延迟非关键 JS。"
+          },
+          {
+            "id": "d",
+            "text": "应用壳和骨架屏。"
+          },
+          {
+            "id": "e",
+            "text": "降低主 bundle 体积。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d", "e"],
+        "explanation": "减少白屏既可以更快渲染真实内容，也可以先提供结构化反馈。",
+        "focus": "减少白屏"
+      },
+      {
+        "id": "perf-028-check-03",
+        "kind": "multiple",
+        "prompt": "白屏时应排查哪些方面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "HTML 是否及时返回。"
+          },
+          {
+            "id": "b",
+            "text": "CSS/JS 是否阻塞渲染。"
+          },
+          {
+            "id": "c",
+            "text": "首屏 JS 是否报错。"
+          },
+          {
+            "id": "d",
+            "text": "根节点是否挂载失败。"
+          },
+          {
+            "id": "e",
+            "text": "只检查 favicon 是否存在。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "白屏可能来自网络、资源阻塞、运行时错误或渲染入口失败。",
+        "focus": "白屏排查"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-029",
+    "checks": [
+      {
+        "id": "perf-029-check-01",
+        "kind": "single",
+        "prompt": "浏览器渲染流水线的常见顺序是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Style -> Layout -> Paint -> Composite。"
+          },
+          {
+            "id": "b",
+            "text": "Composite -> Paint -> Layout -> Style。"
+          },
+          {
+            "id": "c",
+            "text": "DNS -> CSS -> SQL -> Paint。"
+          },
+          {
+            "id": "d",
+            "text": "Cookie -> Token -> JWT -> HTML。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "样式计算后进行布局、绘制，再把图层合成到屏幕。",
+        "focus": "渲染流水线"
+      },
+      {
+        "id": "perf-029-check-02",
+        "kind": "multiple",
+        "prompt": "哪些阶段和瓶颈匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Style：复杂选择器和大量样式失效会增加成本。"
+          },
+          {
+            "id": "b",
+            "text": "Layout：几何变化和强制同步布局会增加成本。"
+          },
+          {
+            "id": "c",
+            "text": "Paint：阴影、滤镜、大面积背景可能增加成本。"
+          },
+          {
+            "id": "d",
+            "text": "Composite：图层过多会增加内存和合成成本。"
+          },
+          {
+            "id": "e",
+            "text": "Layout 阶段负责 DNS 解析。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同瓶颈要用不同工具和策略，不应混为一谈。",
+        "focus": "阶段瓶颈"
+      },
+      {
+        "id": "perf-029-check-03",
+        "kind": "multiple",
+        "prompt": "哪些优化方向正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "避免频繁改变布局属性。"
+          },
+          {
+            "id": "b",
+            "text": "用 transform/opacity 做动画。"
+          },
+          {
+            "id": "c",
+            "text": "谨慎使用 will-change。"
+          },
+          {
+            "id": "d",
+            "text": "用 Performance 面板验证实际阶段。"
+          },
+          {
+            "id": "e",
+            "text": "所有元素都提升合成层。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "渲染优化需要基于实际火焰图和图层信息，而不是固定套公式。",
+        "focus": "流水线优化"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-030",
+    "checks": [
+      {
+        "id": "perf-030-check-01",
+        "kind": "single",
+        "prompt": "前端性能监控 SDK 最核心的职责是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "采集、聚合并可靠上报性能指标和上下文。"
+          },
+          {
+            "id": "b",
+            "text": "替用户填写表单。"
+          },
+          {
+            "id": "c",
+            "text": "自动修改服务端代码。"
+          },
+          {
+            "id": "d",
+            "text": "禁止浏览器缓存。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "SDK 要尽量低侵入、低开销地收集可定位的性能数据。",
+        "focus": "性能 SDK 职责"
+      },
+      {
+        "id": "perf-030-check-02",
+        "kind": "multiple",
+        "prompt": "完整性能 SDK 可以包含哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Web Vitals 采集。"
+          },
+          {
+            "id": "b",
+            "text": "Navigation/Resource Timing 采集。"
+          },
+          {
+            "id": "c",
+            "text": "Long Task 和错误采集。"
+          },
+          {
+            "id": "d",
+            "text": "路由切换和自定义打点。"
+          },
+          {
+            "id": "e",
+            "text": "采样、批量和重试上报。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d", "e"],
+        "explanation": "性能 SDK 要覆盖指标、资源、错误、上下文和上报可靠性。",
+        "focus": "SDK 能力"
+      },
+      {
+        "id": "perf-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是性能 SDK 需要避免的问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "同步阻塞主线程上报。"
+          },
+          {
+            "id": "b",
+            "text": "上报敏感用户数据。"
+          },
+          {
+            "id": "c",
+            "text": "重复上报或无限重试造成流量风暴。"
+          },
+          {
+            "id": "d",
+            "text": "SDK 自身异常影响业务页面。"
+          },
+          {
+            "id": "e",
+            "text": "采样控制。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "SDK 自身也必须稳定和轻量，不能为了监控引入新的性能或隐私问题。",
+        "focus": "SDK 设计风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-031",
+    "checks": [
+      {
+        "id": "perf-031-check-01",
+        "kind": "single",
+        "prompt": "大型 SPA 首屏优化的架构核心是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有页面一次性加载所有代码和数据。"
+          },
+          {
+            "id": "b",
+            "text": "让首屏路径只加载首屏必需的代码、数据和资源。"
+          },
+          {
+            "id": "c",
+            "text": "禁止任何缓存。"
+          },
+          {
+            "id": "d",
+            "text": "首屏只显示空白。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "大型 SPA 的首屏问题常来自初始 bundle、路由、数据和权限初始化过重。",
+        "focus": "大型 SPA 首屏"
+      },
+      {
+        "id": "perf-031-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于架构层面的首屏优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "路由级代码分割。"
+          },
+          {
+            "id": "b",
+            "text": "按页面拆分数据请求，避免全局阻塞。"
+          },
+          {
+            "id": "c",
+            "text": "SSR/SSG 或边缘渲染。"
+          },
+          {
+            "id": "d",
+            "text": "微前端或模块拆分时控制首屏依赖边界。"
+          },
+          {
+            "id": "e",
+            "text": "所有低频后台页面都进入首页 bundle。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "架构优化要控制依赖边界和首屏关键路径，而不只是压缩几个文件。",
+        "focus": "架构优化手段"
+      },
+      {
+        "id": "perf-031-check-03",
+        "kind": "multiple",
+        "prompt": "哪些问题会拖慢大型 SPA 首屏？",
+        "options": [
+          {
+            "id": "a",
+            "text": "全量路由配置同步加载巨大组件。"
+          },
+          {
+            "id": "b",
+            "text": "首屏前等待所有用户配置、字典和权限接口。"
+          },
+          {
+            "id": "c",
+            "text": "第三方 SDK 同步阻塞初始化。"
+          },
+          {
+            "id": "d",
+            "text": "过大的状态初始化和 JSON 解析。"
+          },
+          {
+            "id": "e",
+            "text": "对非首屏页面做懒加载。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "大型 SPA 要识别“必须先完成”和“可以延后”的初始化工作。",
+        "focus": "大型 SPA 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-032",
+    "checks": [
+      {
+        "id": "perf-032-check-01",
+        "kind": "single",
+        "prompt": "优化 Webpack 构建速度前，最应该先做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分析构建耗时，定位 loader、plugin、模块数量等瓶颈。"
+          },
+          {
+            "id": "b",
+            "text": "随机删除依赖。"
+          },
+          {
+            "id": "c",
+            "text": "关闭所有错误提示。"
+          },
+          {
+            "id": "d",
+            "text": "把源码复制三份。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "构建慢可能来自转译、类型检查、压缩、插件或依赖图，先定位再优化。",
+        "focus": "Webpack 构建速度"
+      },
+      {
+        "id": "perf-032-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段可能提升 Webpack 构建速度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缩小 loader include/exclude 范围。"
+          },
+          {
+            "id": "b",
+            "text": "使用持久化缓存。"
+          },
+          {
+            "id": "c",
+            "text": "合理使用 esbuild/swc 替代部分 Babel/Terser 工作。"
+          },
+          {
+            "id": "d",
+            "text": "将类型检查移出主构建流程或并行处理。"
+          },
+          {
+            "id": "e",
+            "text": "对 node_modules 全量重复转译。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "构建优化要减少重复工作、缩小处理范围，并利用缓存和更快工具。",
+        "focus": "构建速度优化"
+      },
+      {
+        "id": "perf-032-check-03",
+        "kind": "multiple",
+        "prompt": "哪些风险需要注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缓存失效策略错误导致产物不更新。"
+          },
+          {
+            "id": "b",
+            "text": "跳过类型检查可能让错误进入 CI 或生产。"
+          },
+          {
+            "id": "c",
+            "text": "loader 配置过窄导致部分文件未被处理。"
+          },
+          {
+            "id": "d",
+            "text": "构建越快，运行时性能一定越好。"
+          },
+          {
+            "id": "e",
+            "text": "删除 source map 永远没有调试成本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "构建速度和运行时性能不是一回事，优化时要保持正确性和可调试性。",
+        "focus": "构建优化风险"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-033",
+    "checks": [
+      {
+        "id": "perf-033-check-01",
+        "kind": "single",
+        "prompt": "完整前端缓存策略最应该按什么分层设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "按资源类型、更新频率、隐私属性和使用场景。"
+          },
+          {
+            "id": "b",
+            "text": "所有资源统一缓存 10 年。"
+          },
+          {
+            "id": "c",
+            "text": "所有资源统一 no-store。"
+          },
+          {
+            "id": "d",
+            "text": "只看文件扩展名。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "HTML、hash 静态资源、API、图片、用户私有数据适合不同缓存策略。",
+        "focus": "缓存策略分层"
+      },
+      {
+        "id": "perf-033-check-02",
+        "kind": "multiple",
+        "prompt": "前端缓存体系可能包含哪些层？",
+        "options": [
+          {
+            "id": "a",
+            "text": "HTTP 浏览器缓存。"
+          },
+          {
+            "id": "b",
+            "text": "CDN 共享缓存。"
+          },
+          {
+            "id": "c",
+            "text": "Service Worker Cache Storage。"
+          },
+          {
+            "id": "d",
+            "text": "内存缓存和 IndexedDB/localStorage 等业务缓存。"
+          },
+          {
+            "id": "e",
+            "text": "CSS z-index 缓存。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同缓存层生命周期、失效方式、容量和可见性都不同。",
+        "focus": "缓存层次"
+      },
+      {
+        "id": "perf-033-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于缓存一致性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "静态资源内容 hash。"
+          },
+          {
+            "id": "b",
+            "text": "HTML 入口较短缓存或协商缓存。"
+          },
+          {
+            "id": "c",
+            "text": "API 缓存带版本、用户和权限上下文。"
+          },
+          {
+            "id": "d",
+            "text": "Service Worker 做版本化清理。"
+          },
+          {
+            "id": "e",
+            "text": "永远不清理旧缓存。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存优化的难点是“快”和“新”的平衡，以及避免用户拿到错版本或错数据。",
+        "focus": "缓存一致性"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-034",
+    "checks": [
+      {
+        "id": "perf-034-check-01",
+        "kind": "single",
+        "prompt": "`content-visibility: auto` 主要优化什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "跳过视口外内容的渲染工作。"
+          },
+          {
+            "id": "b",
+            "text": "自动压缩网络资源。"
+          },
+          {
+            "id": "c",
+            "text": "加密 DOM。"
+          },
+          {
+            "id": "d",
+            "text": "禁止滚动。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "它让浏览器对视口外内容延迟布局和绘制，适合长页面独立区块。",
+        "focus": "content-visibility"
+      },
+      {
+        "id": "perf-034-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "通常配合 `contain-intrinsic-size` 提供占位尺寸。"
+          },
+          {
+            "id": "b",
+            "text": "适合长列表、长文档、视口外复杂模块。"
+          },
+          {
+            "id": "c",
+            "text": "要关注滚动条跳动和锚点定位。"
+          },
+          {
+            "id": "d",
+            "text": "所有元素都加上一定没有副作用。"
+          },
+          {
+            "id": "e",
+            "text": "它会让元素从 DOM 中删除。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`content-visibility` 优化渲染工作，不改变 DOM 是否存在。",
+        "focus": "使用方式"
+      },
+      {
+        "id": "perf-034-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "content-visibility 让浏览器跳过部分渲染，但 DOM 节点仍存在。"
+          },
+          {
+            "id": "b",
+            "text": "虚拟列表会减少实际渲染的 DOM 数量。"
+          },
+          {
+            "id": "c",
+            "text": "超大列表仍可能需要虚拟列表。"
+          },
+          {
+            "id": "d",
+            "text": "content-visibility 能完全替代所有分页和虚拟列表。"
+          },
+          {
+            "id": "e",
+            "text": "虚拟列表不会影响可访问性和滚动恢复。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "两者优化层级不同。content-visibility 更轻量，虚拟列表更彻底但复杂。",
+        "focus": "和虚拟列表对比"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-035",
+    "checks": [
+      {
+        "id": "perf-035-check-01",
+        "kind": "single",
+        "prompt": "性能友好的 CSS 动画通常优先使用哪些属性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`transform` 和 `opacity`。"
+          },
+          {
+            "id": "b",
+            "text": "`width` 和 `height`。"
+          },
+          {
+            "id": "c",
+            "text": "`top` 和 `left`。"
+          },
+          {
+            "id": "d",
+            "text": "`box-shadow` 大面积模糊。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "transform/opacity 更容易在合成阶段更新，减少布局和绘制压力。",
+        "focus": "CSS 动画属性"
+      },
+      {
+        "id": "perf-035-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "避免大量元素同时启动复杂动画。"
+          },
+          {
+            "id": "b",
+            "text": "控制动画区域和持续时间。"
+          },
+          {
+            "id": "c",
+            "text": "使用 `prefers-reduced-motion` 尊重用户偏好。"
+          },
+          {
+            "id": "d",
+            "text": "用 Performance 面板检查掉帧和 Paint。"
+          },
+          {
+            "id": "e",
+            "text": "动画 `height: auto` 永远最流畅。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "动画优化不仅看属性，还看元素数量、区域大小和用户可访问性。",
+        "focus": "动画优化"
+      },
+      {
+        "id": "perf-035-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法是误区？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`will-change` 加得越多越好。"
+          },
+          {
+            "id": "b",
+            "text": "CSS 动画一定不占主线程。"
+          },
+          {
+            "id": "c",
+            "text": "filter/backdrop-filter 动画一定零成本。"
+          },
+          {
+            "id": "d",
+            "text": "transform 顺序会影响最终视觉。"
+          },
+          {
+            "id": "e",
+            "text": "减少动态效果偏好需要被尊重。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "CSS 动画也可能触发样式、绘制和合成成本，必须实测。",
+        "focus": "动画误区"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-036",
+    "checks": [
+      {
+        "id": "perf-036-check-01",
+        "kind": "single",
+        "prompt": "Brotli 相比 Gzip 的常见特点是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "通常压缩率更高，尤其适合文本资源。"
+          },
+          {
+            "id": "b",
+            "text": "只能压缩图片。"
+          },
+          {
+            "id": "c",
+            "text": "浏览器完全不支持。"
+          },
+          {
+            "id": "d",
+            "text": "会改变 JavaScript 语义。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Brotli 和 Gzip 都常用于压缩 HTML/CSS/JS/JSON 等文本资源。",
+        "focus": "Brotli"
+      },
+      {
+        "id": "perf-036-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "服务端根据 `Accept-Encoding` 返回 gzip/br。"
+          },
+          {
+            "id": "b",
+            "text": "设置正确的 `Content-Encoding`。"
+          },
+          {
+            "id": "c",
+            "text": "静态资源可预压缩生成 `.br`、`.gz`。"
+          },
+          {
+            "id": "d",
+            "text": "小文件过度压缩收益有限，还要考虑 CPU 成本。"
+          },
+          {
+            "id": "e",
+            "text": "已经压缩过的图片再 gzip 一定收益巨大。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "文本资源压缩收益大，图片/视频等已压缩格式通常收益小。",
+        "focus": "压缩配置"
+      },
+      {
+        "id": "perf-036-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Vary: Accept-Encoding` 可避免缓存返回错误编码版本。"
+          },
+          {
+            "id": "b",
+            "text": "CDN 可在边缘提供压缩版本。"
+          },
+          {
+            "id": "c",
+            "text": "压缩降低传输体积，但不减少 JS 解析执行成本。"
+          },
+          {
+            "id": "d",
+            "text": "Brotli 后 JS 就不需要 Tree Shaking。"
+          },
+          {
+            "id": "e",
+            "text": "Content-Encoding 可以随便写，不影响浏览器解析。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "压缩优化网络传输，不解决运行时代码执行和解析成本。",
+        "focus": "压缩与缓存"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-037",
+    "checks": [
+      {
+        "id": "perf-037-check-01",
+        "kind": "single",
+        "prompt": "TTFB 衡量的是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "从请求开始到收到响应第一个字节的时间。"
+          },
+          {
+            "id": "b",
+            "text": "页面全部图片加载完成时间。"
+          },
+          {
+            "id": "c",
+            "text": "用户点击到动画结束时间。"
+          },
+          {
+            "id": "d",
+            "text": "CSS 选择器匹配数量。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "TTFB 反映服务端处理、网络连接、CDN 回源等首字节前耗时。",
+        "focus": "TTFB"
+      },
+      {
+        "id": "perf-037-check-02",
+        "kind": "multiple",
+        "prompt": "哪些可能导致 TTFB 高？",
+        "options": [
+          {
+            "id": "a",
+            "text": "服务端计算慢。"
+          },
+          {
+            "id": "b",
+            "text": "数据库或下游服务慢。"
+          },
+          {
+            "id": "c",
+            "text": "CDN 未命中导致回源慢。"
+          },
+          {
+            "id": "d",
+            "text": "DNS/TCP/TLS 链路耗时高。"
+          },
+          {
+            "id": "e",
+            "text": "图片没有设置 alt。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "TTFB 高不一定是前端代码造成的，但前端需要能分段定位。",
+        "focus": "TTFB 变高原因"
+      },
+      {
+        "id": "perf-037-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法可能降低 TTFB？",
+        "options": [
+          {
+            "id": "a",
+            "text": "服务端缓存或边缘缓存 HTML/API。"
+          },
+          {
+            "id": "b",
+            "text": "优化数据库查询和下游依赖。"
+          },
+          {
+            "id": "c",
+            "text": "使用 CDN、连接复用和 TLS 会话恢复。"
+          },
+          {
+            "id": "d",
+            "text": "流式渲染尽早发送首字节。"
+          },
+          {
+            "id": "e",
+            "text": "把所有 JS 改成同步执行。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "TTFB 优化常跨前后端和基础设施，不是纯客户端问题。",
+        "focus": "TTFB 优化"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-038",
+    "checks": [
+      {
+        "id": "perf-038-check-01",
+        "kind": "single",
+        "prompt": "IntersectionObserver 主要观察什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "目标元素与视口或指定根元素的相交情况。"
+          },
+          {
+            "id": "b",
+            "text": "JavaScript 变量是否相等。"
+          },
+          {
+            "id": "c",
+            "text": "DNS 是否解析完成。"
+          },
+          {
+            "id": "d",
+            "text": "Cookie 是否过期。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "它适合懒加载、曝光统计、无限滚动和入场动画触发等场景。",
+        "focus": "IntersectionObserver"
+      },
+      {
+        "id": "perf-038-check-02",
+        "kind": "multiple",
+        "prompt": "哪些适合 IntersectionObserver？",
+        "options": [
+          {
+            "id": "a",
+            "text": "图片懒加载。"
+          },
+          {
+            "id": "b",
+            "text": "曝光埋点。"
+          },
+          {
+            "id": "c",
+            "text": "无限滚动加载下一页。"
+          },
+          {
+            "id": "d",
+            "text": "滚动入场动画触发。"
+          },
+          {
+            "id": "e",
+            "text": "高精度逐像素滚动同步动画。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "IO 是异步观察可见性，不适合每帧精确同步动画。",
+        "focus": "应用场景"
+      },
+      {
+        "id": "perf-038-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`rootMargin` 可提前或延后触发。"
+          },
+          {
+            "id": "b",
+            "text": "`threshold` 控制相交比例触发点。"
+          },
+          {
+            "id": "c",
+            "text": "不再观察时应 `unobserve` 或 `disconnect`。"
+          },
+          {
+            "id": "d",
+            "text": "IO 回调会在每个滚动像素同步执行。"
+          },
+          {
+            "id": "e",
+            "text": "IO 不受容器滚动影响。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "IO 减少手动滚动计算，但仍要正确配置 root、阈值和清理。",
+        "focus": "使用细节"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-039",
+    "checks": [
+      {
+        "id": "perf-039-check-01",
+        "kind": "single",
+        "prompt": "`requestAnimationFrame` 和 `requestIdleCallback` 最大区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "rAF 面向下一帧视觉更新，rIC 面向浏览器空闲时执行低优先级任务。"
+          },
+          {
+            "id": "b",
+            "text": "二者完全相同。"
+          },
+          {
+            "id": "c",
+            "text": "rIC 用于绘制前强制同步布局。"
+          },
+          {
+            "id": "d",
+            "text": "rAF 只用于网络请求。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "rAF 贴近渲染节奏，rIC 适合不紧急的后台工作。",
+        "focus": "rAF vs rIC"
+      },
+      {
+        "id": "perf-039-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更适合 rIC？",
+        "options": [
+          {
+            "id": "a",
+            "text": "低优先级日志处理。"
+          },
+          {
+            "id": "b",
+            "text": "空闲时预计算非关键数据。"
+          },
+          {
+            "id": "c",
+            "text": "非关键缓存清理。"
+          },
+          {
+            "id": "d",
+            "text": "点击后必须立即反馈的 UI 更新。"
+          },
+          {
+            "id": "e",
+            "text": "每帧动画位置更新。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "rIC 可能延迟执行，不适合用户可见的关键反馈。",
+        "focus": "requestIdleCallback"
+      },
+      {
+        "id": "perf-039-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "rIC 兼容性需要考虑。"
+          },
+          {
+            "id": "b",
+            "text": "rIC 可设置 timeout 避免一直等不到空闲。"
+          },
+          {
+            "id": "c",
+            "text": "rAF 内仍要避免长任务。"
+          },
+          {
+            "id": "d",
+            "text": "rIC 一定在 16ms 内执行。"
+          },
+          {
+            "id": "e",
+            "text": "rAF 会在后台标签页保持满帧运行。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "浏览器会根据页面可见性和主线程负载调度这些回调，不应假设固定时机。",
+        "focus": "调度注意"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-040",
+    "checks": [
+      {
+        "id": "perf-040-check-01",
+        "kind": "single",
+        "prompt": "为什么 INP 比 FID 更全面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "INP 关注页面生命周期中的交互延迟，覆盖处理、排队和渲染反馈。"
+          },
+          {
+            "id": "b",
+            "text": "INP 只测第一次输入延迟。"
+          },
+          {
+            "id": "c",
+            "text": "INP 只测图片加载。"
+          },
+          {
+            "id": "d",
+            "text": "INP 只看 DNS 时间。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "FID 只关注首次输入延迟，INP 更能反映整体交互响应性。",
+        "focus": "INP 替代 FID"
+      },
+      {
+        "id": "perf-040-check-02",
+        "kind": "multiple",
+        "prompt": "哪些匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "LCP：优化 TTFB、关键资源和主内容渲染。"
+          },
+          {
+            "id": "b",
+            "text": "INP：减少长任务和交互处理成本。"
+          },
+          {
+            "id": "c",
+            "text": "CLS：预留尺寸和避免非预期布局移动。"
+          },
+          {
+            "id": "d",
+            "text": "LCP：通过增加首屏 JS 体积优化。"
+          },
+          {
+            "id": "e",
+            "text": "CLS：让广告位无占位动态插入。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "每个指标都有对应瓶颈，优化策略不能混用。",
+        "focus": "三大指标优化方向"
+      },
+      {
+        "id": "perf-040-check-03",
+        "kind": "multiple",
+        "prompt": "落地 Core Web Vitals 时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "区分实验室数据和真实用户数据。"
+          },
+          {
+            "id": "b",
+            "text": "按页面类型和设备网络维度分析。"
+          },
+          {
+            "id": "c",
+            "text": "建立性能预算和回归监控。"
+          },
+          {
+            "id": "d",
+            "text": "只优化首页，不看核心业务路径。"
+          },
+          {
+            "id": "e",
+            "text": "只要平均值达标就一定没有用户体验问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "第 75 百分位和分维度分析能避免平均值掩盖大量用户的慢体验。",
+        "focus": "指标落地"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-041",
+    "checks": [
+      {
+        "id": "perf-041-check-01",
+        "kind": "single",
+        "prompt": "首屏 LCP 图片最不应该怎么处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "压缩并提供合适尺寸。"
+          },
+          {
+            "id": "b",
+            "text": "使用合适格式。"
+          },
+          {
+            "id": "c",
+            "text": "默认懒加载并降低优先级。"
+          },
+          {
+            "id": "d",
+            "text": "必要时 preload。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "LCP 图片是关键资源，懒加载和低优先级可能延迟最大内容绘制。",
+        "focus": "LCP 图片优先级"
+      },
+      {
+        "id": "perf-041-check-02",
+        "kind": "multiple",
+        "prompt": "哪些组合更完整？",
+        "options": [
+          {
+            "id": "a",
+            "text": "AVIF/WebP + fallback。"
+          },
+          {
+            "id": "b",
+            "text": "`srcset/sizes` 响应式图片。"
+          },
+          {
+            "id": "c",
+            "text": "非首屏 lazy loading。"
+          },
+          {
+            "id": "d",
+            "text": "宽高占位减少 CLS。"
+          },
+          {
+            "id": "e",
+            "text": "所有图片都用 base64 内联。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "base64 内联会增大 HTML/CSS 体积、影响缓存粒度，不适合所有图片。",
+        "focus": "图片优化组合"
+      },
+      {
+        "id": "perf-041-check-03",
+        "kind": "multiple",
+        "prompt": "图片交付层面还应关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CDN 缓存。"
+          },
+          {
+            "id": "b",
+            "text": "按设备裁剪多尺寸。"
+          },
+          {
+            "id": "c",
+            "text": "避免把展示 200px 的图下载成 4000px。"
+          },
+          {
+            "id": "d",
+            "text": "监控图片资源在瀑布图中的优先级。"
+          },
+          {
+            "id": "e",
+            "text": "图片越大越清晰，所以无需压缩。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "图片优化要同时关注视觉质量和传输成本。",
+        "focus": "图片交付"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-042",
+    "checks": [
+      {
+        "id": "perf-042-check-01",
+        "kind": "single",
+        "prompt": "React 项目中实现路由级代码分割，常用哪种方式？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动态 import 配合 React.lazy/Suspense 或路由框架懒加载能力。"
+          },
+          {
+            "id": "b",
+            "text": "把所有路由同步 import 到入口文件。"
+          },
+          {
+            "id": "c",
+            "text": "使用 JSONP 替代组件。"
+          },
+          {
+            "id": "d",
+            "text": "删除路由。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "路由级懒加载能把非当前页面代码延后加载。",
+        "focus": "React 路由懒加载"
+      },
+      {
+        "id": "perf-042-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为懒加载组件设计合适 fallback。"
+          },
+          {
+            "id": "b",
+            "text": "对高概率下一页可用 prefetch。"
+          },
+          {
+            "id": "c",
+            "text": "错误边界处理 chunk 加载失败。"
+          },
+          {
+            "id": "d",
+            "text": "避免把公共依赖重复打进多个 chunk。"
+          },
+          {
+            "id": "e",
+            "text": "懒加载所有按钮点击后的微小组件一定收益最大。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "代码分割要关注用户路径、fallback 体验、错误处理和公共依赖复用。",
+        "focus": "React Code Splitting 注意"
+      },
+      {
+        "id": "perf-042-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 chunk 策略更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "首屏关键路径保持小而稳定。"
+          },
+          {
+            "id": "b",
+            "text": "低频重功能单独拆分。"
+          },
+          {
+            "id": "c",
+            "text": "公共依赖按缓存和复用情况拆分。"
+          },
+          {
+            "id": "d",
+            "text": "每个函数一个 chunk。"
+          },
+          {
+            "id": "e",
+            "text": "所有业务页面合成一个巨大 chunk。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "chunk 粒度要在请求数、缓存、复用和交互等待之间平衡。",
+        "focus": "chunk 策略"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-043",
+    "checks": [
+      {
+        "id": "perf-043-check-01",
+        "kind": "single",
+        "prompt": "虚拟列表主要解决什么性能问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "大量列表项同时渲染造成 DOM、布局和绘制成本过高。"
+          },
+          {
+            "id": "b",
+            "text": "HTTP 证书过期。"
+          },
+          {
+            "id": "c",
+            "text": "SQL 注入。"
+          },
+          {
+            "id": "d",
+            "text": "图片格式选择。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "虚拟列表只渲染视口附近的项，显著降低 DOM 数量。",
+        "focus": "虚拟列表解决什么"
+      },
+      {
+        "id": "perf-043-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "固定高度列表可用 `scrollTop / itemHeight` 快速计算范围。"
+          },
+          {
+            "id": "b",
+            "text": "动态高度需要测量和高度缓存。"
+          },
+          {
+            "id": "c",
+            "text": "overscan 可以改善快速滚动白屏。"
+          },
+          {
+            "id": "d",
+            "text": "列表容器需要稳定的滚动高度。"
+          },
+          {
+            "id": "e",
+            "text": "虚拟列表必须一次性渲染所有项才能计算滚动条。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "虚拟列表的关键是“少渲染但保留滚动体验”。",
+        "focus": "虚拟列表实现"
+      },
+      {
+        "id": "perf-043-check-03",
+        "kind": "multiple",
+        "prompt": "生产虚拟列表要注意哪些体验问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "焦点和键盘导航。"
+          },
+          {
+            "id": "b",
+            "text": "滚动到指定项。"
+          },
+          {
+            "id": "c",
+            "text": "SEO 和打印等特殊场景。"
+          },
+          {
+            "id": "d",
+            "text": "动态内容高度变化。"
+          },
+          {
+            "id": "e",
+            "text": "虚拟化后所有无障碍问题自动消失。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "虚拟化改变 DOM 存在范围，对可访问性和特殊场景有影响。",
+        "focus": "虚拟列表体验"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-044",
+    "checks": [
+      {
+        "id": "perf-044-check-01",
+        "kind": "single",
+        "prompt": "PerformanceObserver 的作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "订阅浏览器性能条目并异步接收指标。"
+          },
+          {
+            "id": "b",
+            "text": "观察 React state 是否变化。"
+          },
+          {
+            "id": "c",
+            "text": "检查 CSS 语法。"
+          },
+          {
+            "id": "d",
+            "text": "替代 HTTP 缓存。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "PerformanceObserver 可采集 paint、resource、longtask、layout-shift、event 等性能条目。",
+        "focus": "PerformanceObserver"
+      },
+      {
+        "id": "perf-044-check-02",
+        "kind": "multiple",
+        "prompt": "哪些条目类型常用于前端性能采集？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`resource`。"
+          },
+          {
+            "id": "b",
+            "text": "`navigation`。"
+          },
+          {
+            "id": "c",
+            "text": "`largest-contentful-paint`。"
+          },
+          {
+            "id": "d",
+            "text": "`layout-shift`。"
+          },
+          {
+            "id": "e",
+            "text": "`longtask`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d", "e"],
+        "explanation": "不同条目对应资源加载、导航、LCP、CLS 和长任务等信息。",
+        "focus": "可观察条目"
+      },
+      {
+        "id": "perf-044-check-03",
+        "kind": "multiple",
+        "prompt": "使用 PerformanceObserver 时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "使用 buffered 读取观察前已经发生的条目。"
+          },
+          {
+            "id": "b",
+            "text": "页面隐藏或卸载前上报最终指标。"
+          },
+          {
+            "id": "c",
+            "text": "过滤用户输入导致的 layout shift，避免误算 CLS。"
+          },
+          {
+            "id": "d",
+            "text": "控制上报频率和数据量。"
+          },
+          {
+            "id": "e",
+            "text": "同步阻塞主线程等待所有指标。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能采集要准确且低开销，指标生命周期和页面可见性都要处理。",
+        "focus": "采集注意"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-045",
+    "checks": [
+      {
+        "id": "perf-045-check-01",
+        "kind": "single",
+        "prompt": "Tree Shaking 的目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "压缩图片。"
+          },
+          {
+            "id": "b",
+            "text": "移除未被使用的导出和代码。"
+          },
+          {
+            "id": "c",
+            "text": "加密接口。"
+          },
+          {
+            "id": "d",
+            "text": "创建 TCP 连接。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Tree Shaking 通过静态分析和压缩删除 dead code，减少产物体积。",
+        "focus": "Tree Shaking 目标"
+      },
+      {
+        "id": "perf-045-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于 Tree Shaking 正常工作？",
+        "options": [
+          {
+            "id": "a",
+            "text": "使用 ESM 版本依赖。"
+          },
+          {
+            "id": "b",
+            "text": "避免不必要的顶层副作用。"
+          },
+          {
+            "id": "c",
+            "text": "正确配置 `sideEffects`。"
+          },
+          {
+            "id": "d",
+            "text": "用 bundle analyzer 验证产物。"
+          },
+          {
+            "id": "e",
+            "text": "所有模块都改成动态 require。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "动态 CommonJS 依赖会降低静态分析效果。",
+        "focus": "确保生效"
+      },
+      {
+        "id": "perf-045-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `sideEffects`，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "标记为 false 表示未使用模块可安全删除，前提是确实无副作用。"
+          },
+          {
+            "id": "b",
+            "text": "CSS、polyfill、全局注册等可能是副作用。"
+          },
+          {
+            "id": "c",
+            "text": "错误标记可能导致必要代码被删。"
+          },
+          {
+            "id": "d",
+            "text": "`sideEffects: false` 对任何包都绝对安全。"
+          },
+          {
+            "id": "e",
+            "text": "sideEffects 只影响运行时，不影响打包。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "sideEffects 是摇树的重要信号，配置错误会导致线上 bug。",
+        "focus": "sideEffects"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-046",
+    "checks": [
+      {
+        "id": "perf-046-check-01",
+        "kind": "single",
+        "prompt": "防抖和节流最大的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "防抖等停止后执行，节流按固定频率执行。"
+          },
+          {
+            "id": "b",
+            "text": "防抖只能用于网络，节流只能用于 CSS。"
+          },
+          {
+            "id": "c",
+            "text": "二者完全一样。"
+          },
+          {
+            "id": "d",
+            "text": "节流永远只执行最后一次。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "防抖关注最后一次，节流关注固定时间窗口内最多执行一次。",
+        "focus": "debounce vs throttle"
+      },
+      {
+        "id": "perf-046-check-02",
+        "kind": "multiple",
+        "prompt": "哪些匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "搜索输入：防抖。"
+          },
+          {
+            "id": "b",
+            "text": "窗口 resize 后重新布局：防抖或节流取决于是否需要过程中反馈。"
+          },
+          {
+            "id": "c",
+            "text": "滚动进度更新：节流或 rAF。"
+          },
+          {
+            "id": "d",
+            "text": "按钮防重复提交：防抖、禁用按钮或请求状态锁。"
+          },
+          {
+            "id": "e",
+            "text": "所有事件都应该防抖 5 秒。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "选择策略要看用户是否需要连续反馈，以及业务是否只关心最终状态。",
+        "focus": "场景匹配"
+      },
+      {
+        "id": "perf-046-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是高质量实现需要考虑的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "leading/trailing 行为。"
+          },
+          {
+            "id": "b",
+            "text": "cancel/flush。"
+          },
+          {
+            "id": "c",
+            "text": "保留 this 和参数。"
+          },
+          {
+            "id": "d",
+            "text": "组件卸载清理。"
+          },
+          {
+            "id": "e",
+            "text": "所有实例共享一个全局 timer。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "防抖节流看似小函数，边界和生命周期会直接影响稳定性。",
+        "focus": "实现质量"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-047",
+    "checks": [
+      {
+        "id": "perf-047-check-01",
+        "kind": "single",
+        "prompt": "Web Worker 主要用于什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把重 CPU 任务移出主线程，减少 UI 阻塞。"
+          },
+          {
+            "id": "b",
+            "text": "操作 DOM。"
+          },
+          {
+            "id": "c",
+            "text": "设置 Cookie。"
+          },
+          {
+            "id": "d",
+            "text": "替代 CSS。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "Worker 运行在独立线程，不能直接访问 DOM，但可做计算、解析和编码等任务。",
+        "focus": "Web Worker"
+      },
+      {
+        "id": "perf-047-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务适合 Web Worker？",
+        "options": [
+          {
+            "id": "a",
+            "text": "大数据解析和计算。"
+          },
+          {
+            "id": "b",
+            "text": "图片处理或编码的部分逻辑。"
+          },
+          {
+            "id": "c",
+            "text": "复杂搜索、排序、diff。"
+          },
+          {
+            "id": "d",
+            "text": "WASM 计算任务。"
+          },
+          {
+            "id": "e",
+            "text": "直接修改页面按钮文本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Worker 适合纯计算或可消息传递的数据处理，DOM 更新仍在主线程。",
+        "focus": "Worker 适用场景"
+      },
+      {
+        "id": "perf-047-check-03",
+        "kind": "multiple",
+        "prompt": "使用 Worker 时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数据传输有序列化或拷贝成本。"
+          },
+          {
+            "id": "b",
+            "text": "可用 Transferable 转移 ArrayBuffer 等所有权。"
+          },
+          {
+            "id": "c",
+            "text": "Worker 生命周期和错误处理要管理。"
+          },
+          {
+            "id": "d",
+            "text": "小任务移到 Worker 可能得不偿失。"
+          },
+          {
+            "id": "e",
+            "text": "Worker 会自动让所有代码并行且无通信成本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Worker 能减少主线程阻塞，但通信和生命周期管理也是成本。",
+        "focus": "Worker 成本"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-048",
+    "checks": [
+      {
+        "id": "perf-048-check-01",
+        "kind": "single",
+        "prompt": "要做每帧视觉动画更新，更适合使用什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "requestAnimationFrame。"
+          },
+          {
+            "id": "b",
+            "text": "requestIdleCallback。"
+          },
+          {
+            "id": "c",
+            "text": "localStorage。"
+          },
+          {
+            "id": "d",
+            "text": "alert。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "rAF 和浏览器绘制节奏对齐，适合动画和视觉更新。",
+        "focus": "动画更新"
+      },
+      {
+        "id": "perf-048-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "rAF：滚动视觉同步。"
+          },
+          {
+            "id": "b",
+            "text": "rAF：canvas 动画。"
+          },
+          {
+            "id": "c",
+            "text": "rIC：低优先级日志整理。"
+          },
+          {
+            "id": "d",
+            "text": "rIC：空闲时预计算非关键数据。"
+          },
+          {
+            "id": "e",
+            "text": "rIC：用户点击后的立即反馈。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "rIC 可能被延迟，不能承担关键交互反馈。",
+        "focus": "rAF/rIC 场景"
+      },
+      {
+        "id": "perf-048-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于调度质量？",
+        "options": [
+          {
+            "id": "a",
+            "text": "长任务分片。"
+          },
+          {
+            "id": "b",
+            "text": "根据任务优先级选择 rAF、rIC、setTimeout、Worker 等工具。"
+          },
+          {
+            "id": "c",
+            "text": "关键交互优先于后台任务。"
+          },
+          {
+            "id": "d",
+            "text": "所有任务都塞进 rAF。"
+          },
+          {
+            "id": "e",
+            "text": "所有任务都塞进 rIC。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同调度工具适合不同优先级和时机，不能一招吃遍。",
+        "focus": "调度质量"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-049",
+    "checks": [
+      {
+        "id": "perf-049-check-01",
+        "kind": "single",
+        "prompt": "detached DOM 泄漏通常指什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "DOM 节点已从页面移除，但仍被 JavaScript 引用导致无法回收。"
+          },
+          {
+            "id": "b",
+            "text": "DOM 节点设置了 display none。"
+          },
+          {
+            "id": "c",
+            "text": "CSS 文件未加载。"
+          },
+          {
+            "id": "d",
+            "text": "图片没有 alt。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "节点不在文档树中不代表可回收，只要还有引用链就会存活。",
+        "focus": "detached DOM"
+      },
+      {
+        "id": "perf-049-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于修复内存泄漏？",
+        "options": [
+          {
+            "id": "a",
+            "text": "组件卸载时清理事件监听。"
+          },
+          {
+            "id": "b",
+            "text": "清理 timer、rAF、订阅和 observer。"
+          },
+          {
+            "id": "c",
+            "text": "释放大对象引用。"
+          },
+          {
+            "id": "d",
+            "text": "对缓存设置容量或过期策略。"
+          },
+          {
+            "id": "e",
+            "text": "把所有变量挂到 window 上方便调试。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "全局引用、缓存和未清理订阅都是长期存活引用的来源。",
+        "focus": "修复泄漏"
+      },
+      {
+        "id": "perf-049-check-03",
+        "kind": "multiple",
+        "prompt": "哪些排查流程合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "构造稳定复现场景。"
+          },
+          {
+            "id": "b",
+            "text": "多次进入离开页面后做 heap snapshot 对比。"
+          },
+          {
+            "id": "c",
+            "text": "查看 Retainers 找引用链。"
+          },
+          {
+            "id": "d",
+            "text": "观察是否存在持续增长的对象类型。"
+          },
+          {
+            "id": "e",
+            "text": "刷新一次页面后认定没有泄漏。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "内存泄漏需要重复操作和引用链分析，单次刷新不能证明问题不存在。",
+        "focus": "排查流程"
+      }
+    ]
+  },
+  {
+    "questionId": "perf-050",
+    "checks": [
+      {
+        "id": "perf-050-check-01",
+        "kind": "single",
+        "prompt": "系统性优化首屏时，最合理的路径是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "建立指标 -> 定位瓶颈 -> 针对优化 -> 监控回归。"
+          },
+          {
+            "id": "b",
+            "text": "先把所有代码重写。"
+          },
+          {
+            "id": "c",
+            "text": "只换一个 UI 库。"
+          },
+          {
+            "id": "d",
+            "text": "删除所有日志后结束。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "性能优化是闭环，不是一次性技巧堆叠。",
+        "focus": "系统性首屏优化"
+      },
+      {
+        "id": "perf-050-check-02",
+        "kind": "multiple",
+        "prompt": "首屏优化可以从哪些维度入手？",
+        "options": [
+          {
+            "id": "a",
+            "text": "服务端和 TTFB。"
+          },
+          {
+            "id": "b",
+            "text": "网络传输、CDN、缓存和压缩。"
+          },
+          {
+            "id": "c",
+            "text": "资源体积、代码分割和图片字体优化。"
+          },
+          {
+            "id": "d",
+            "text": "渲染阻塞、长任务和主线程执行。"
+          },
+          {
+            "id": "e",
+            "text": "SSR/SSG/流式渲染等架构方案。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d", "e"],
+        "explanation": "首屏是端到端问题，单点优化常常不够。",
+        "focus": "优化维度"
+      },
+      {
+        "id": "perf-050-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法能防止性能回退？",
+        "options": [
+          {
+            "id": "a",
+            "text": "性能预算。"
+          },
+          {
+            "id": "b",
+            "text": "CI 中检查 bundle 体积或 Lighthouse 指标。"
+          },
+          {
+            "id": "c",
+            "text": "线上 RUM 监控和告警。"
+          },
+          {
+            "id": "d",
+            "text": "PR 中评估新增第三方依赖成本。"
+          },
+          {
+            "id": "e",
+            "text": "只在项目上线当天看一次指标。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有持续监控和预算，性能会随着需求和依赖逐渐退化。",
+        "focus": "防止回退"
+      }
+    ]
+  }
+]

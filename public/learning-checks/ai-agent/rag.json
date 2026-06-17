@@ -1,0 +1,3642 @@
+[
+  {
+    "questionId": "rag-001",
+    "checks": [
+      {
+        "id": "rag-001-check-01",
+        "kind": "single",
+        "prompt": "什么是 RAG？它主要解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让模型永远不需要上下文。"
+          },
+          {
+            "id": "b",
+            "text": "先检索外部知识，再让模型基于证据生成答案。"
+          },
+          {
+            "id": "c",
+            "text": "只用向量数据库替代 LLM。"
+          },
+          {
+            "id": "d",
+            "text": "让模型自动训练知识库。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 的核心是 retrieval + generation，用外部证据缓解知识过期、领域缺失和幻觉。",
+        "focus": "RAG 定义"
+      },
+      {
+        "id": "rag-001-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 通常适合解决哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "企业知识问答"
+          },
+          {
+            "id": "b",
+            "text": "文档助手"
+          },
+          {
+            "id": "c",
+            "text": "客服 FAQ"
+          },
+          {
+            "id": "d",
+            "text": "内部搜索"
+          },
+          {
+            "id": "e",
+            "text": "纯创意写作"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 更适合需要外部知识支撑的任务，而不是纯发散生成。",
+        "focus": "适用问题"
+      },
+      {
+        "id": "rag-001-check-03",
+        "kind": "multiple",
+        "prompt": "关于 RAG 的价值，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "能改善知识时效性"
+          },
+          {
+            "id": "b",
+            "text": "能减少凭空猜测"
+          },
+          {
+            "id": "c",
+            "text": "能让回答更有依据"
+          },
+          {
+            "id": "d",
+            "text": "能彻底消除幻觉"
+          },
+          {
+            "id": "e",
+            "text": "能替代所有模型能力"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "RAG 提供证据和上下文，但不是绝对正确性保证。",
+        "focus": "价值边界"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-002",
+    "checks": [
+      {
+        "id": "rag-002-check-01",
+        "kind": "single",
+        "prompt": "一个典型 RAG 系统的整体流程更接近哪项？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只做文本生成。"
+          },
+          {
+            "id": "b",
+            "text": "文档接入、切分、向量化、检索、重排、拼上下文、生成答案。"
+          },
+          {
+            "id": "c",
+            "text": "只做 prompt 拼接。"
+          },
+          {
+            "id": "d",
+            "text": "只做数据库写入。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 是一条完整链路，不只是向量检索。",
+        "focus": "典型流程"
+      },
+      {
+        "id": "rag-002-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 的离线阶段通常包括哪些步骤？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文档采集"
+          },
+          {
+            "id": "b",
+            "text": "清洗"
+          },
+          {
+            "id": "c",
+            "text": "切 chunk"
+          },
+          {
+            "id": "d",
+            "text": "建索引或入库"
+          },
+          {
+            "id": "e",
+            "text": "用户提问实时生成"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "离线阶段决定知识如何被组织和检索。",
+        "focus": "离线阶段"
+      },
+      {
+        "id": "rag-002-check-03",
+        "kind": "multiple",
+        "prompt": "RAG 在线阶段通常会做哪些事情？",
+        "options": [
+          {
+            "id": "a",
+            "text": "处理查询"
+          },
+          {
+            "id": "b",
+            "text": "召回相关片段"
+          },
+          {
+            "id": "c",
+            "text": "必要时重排和压缩"
+          },
+          {
+            "id": "d",
+            "text": "拼上下文并生成答案"
+          },
+          {
+            "id": "e",
+            "text": "重新训练基础模型"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "在线阶段关注召回质量和上下文组织质量。",
+        "focus": "在线阶段"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-003",
+    "checks": [
+      {
+        "id": "rag-003-check-01",
+        "kind": "single",
+        "prompt": "RAG 里的“知识库”通常包括什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只包括 PDF。"
+          },
+          {
+            "id": "b",
+            "text": "文档、网页、FAQ、手册、工单、数据库和内部 Wiki 等可检索内容。"
+          },
+          {
+            "id": "c",
+            "text": "只包括模型参数。"
+          },
+          {
+            "id": "d",
+            "text": "只包括聊天历史。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "知识库本质上是可检索和可引用的外部信息集合。",
+        "focus": "知识库数据源"
+      },
+      {
+        "id": "rag-003-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于常见知识库数据源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Markdown 文档"
+          },
+          {
+            "id": "b",
+            "text": "PDF 或 Word"
+          },
+          {
+            "id": "c",
+            "text": "数据库记录"
+          },
+          {
+            "id": "d",
+            "text": "FAQ 和帮助中心"
+          },
+          {
+            "id": "e",
+            "text": "浏览器缓存"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同数据源清洗和切分策略可能不同。",
+        "focus": "常见数据源"
+      },
+      {
+        "id": "rag-003-check-03",
+        "kind": "multiple",
+        "prompt": "知识库建设里通常还需要关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "权限一致性"
+          },
+          {
+            "id": "b",
+            "text": "时效性"
+          },
+          {
+            "id": "c",
+            "text": "内容质量"
+          },
+          {
+            "id": "d",
+            "text": "只要导入就行"
+          },
+          {
+            "id": "e",
+            "text": "不需要版本管理"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "接入只是开始，治理才是长期难点。",
+        "focus": "数据治理"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-004",
+    "checks": [
+      {
+        "id": "rag-004-check-01",
+        "kind": "single",
+        "prompt": "为什么 RAG 系统里需要做 chunk 切分？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为整篇文档一定更准确。"
+          },
+          {
+            "id": "b",
+            "text": "因为文档过长时，细粒度召回和引用需要更小的知识单元。"
+          },
+          {
+            "id": "c",
+            "text": "因为 chunk 会让知识自动变新。"
+          },
+          {
+            "id": "d",
+            "text": "因为切分后就不需要检索了。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "chunk 切分是在召回粒度和上下文完整性之间做平衡。",
+        "focus": "Chunk 切分"
+      },
+      {
+        "id": "rag-004-check-02",
+        "kind": "multiple",
+        "prompt": "合理切分通常能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提高召回粒度"
+          },
+          {
+            "id": "b",
+            "text": "改善引用定位"
+          },
+          {
+            "id": "c",
+            "text": "降低无关噪声混入"
+          },
+          {
+            "id": "d",
+            "text": "自动消除所有幻觉"
+          },
+          {
+            "id": "e",
+            "text": "取消上下文预算限制"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "切分的目标是让检索和引用更可控。",
+        "focus": "切分收益"
+      },
+      {
+        "id": "rag-004-check-03",
+        "kind": "multiple",
+        "prompt": "chunk 切分不合理会带来什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "太大则语义稀释"
+          },
+          {
+            "id": "b",
+            "text": "太小则上下文不完整"
+          },
+          {
+            "id": "c",
+            "text": "结构边界被切坏"
+          },
+          {
+            "id": "d",
+            "text": "一定提高准确率"
+          },
+          {
+            "id": "e",
+            "text": "自动提升时效性"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "切分不是越细越好，而是要匹配文档结构和任务目标。",
+        "focus": "切分风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-005",
+    "checks": [
+      {
+        "id": "rag-005-check-01",
+        "kind": "single",
+        "prompt": "什么是 embedding？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让模型直接输出答案的步骤。"
+          },
+          {
+            "id": "b",
+            "text": "把文本映射到向量空间，用距离表示语义相似度。"
+          },
+          {
+            "id": "c",
+            "text": "把数据库表结构压缩成 JSON。"
+          },
+          {
+            "id": "d",
+            "text": "把所有文档拼成一个长 prompt。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "embedding 负责表示和匹配，不负责生成最终回答。",
+        "focus": "Embedding"
+      },
+      {
+        "id": "rag-005-check-02",
+        "kind": "multiple",
+        "prompt": "Embedding 在 RAG 中通常用于哪些事情？",
+        "options": [
+          {
+            "id": "a",
+            "text": "查询向量化"
+          },
+          {
+            "id": "b",
+            "text": "文档向量化"
+          },
+          {
+            "id": "c",
+            "text": "语义召回"
+          },
+          {
+            "id": "d",
+            "text": "相似度匹配"
+          },
+          {
+            "id": "e",
+            "text": "权限审批"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "embedding 让查询和文档在同一语义空间里比较。",
+        "focus": "Embedding 作用"
+      },
+      {
+        "id": "rag-005-check-03",
+        "kind": "multiple",
+        "prompt": "关于 embedding，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它不等同于生成模型"
+          },
+          {
+            "id": "b",
+            "text": "它对精确词命中不一定最强"
+          },
+          {
+            "id": "c",
+            "text": "它会受模型和语料分布影响"
+          },
+          {
+            "id": "d",
+            "text": "它能替代所有检索方式"
+          },
+          {
+            "id": "e",
+            "text": "它能自动校正事实"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "embedding 是检索底座之一，不是万能检索器。",
+        "focus": "局限"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-006",
+    "checks": [
+      {
+        "id": "rag-006-check-01",
+        "kind": "single",
+        "prompt": "向量数据库在 RAG 里主要负责什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接回答用户问题。"
+          },
+          {
+            "id": "b",
+            "text": "存储向量、建立索引并快速召回相关候选片段。"
+          },
+          {
+            "id": "c",
+            "text": "训练 LLM 参数。"
+          },
+          {
+            "id": "d",
+            "text": "生成最终自然语言答案。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "向量数据库负责相似度检索，不负责生成。",
+        "focus": "向量数据库"
+      },
+      {
+        "id": "rag-006-check-02",
+        "kind": "multiple",
+        "prompt": "向量数据库通常提供哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "相似度搜索"
+          },
+          {
+            "id": "b",
+            "text": "元数据过滤"
+          },
+          {
+            "id": "c",
+            "text": "近似最近邻检索"
+          },
+          {
+            "id": "d",
+            "text": "分区和分页"
+          },
+          {
+            "id": "e",
+            "text": "人工审计"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "真正可用的 RAG 往往需要检索和过滤组合。",
+        "focus": "常见能力"
+      },
+      {
+        "id": "rag-006-check-03",
+        "kind": "multiple",
+        "prompt": "选向量数据库时通常要关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索速度"
+          },
+          {
+            "id": "b",
+            "text": "过滤能力"
+          },
+          {
+            "id": "c",
+            "text": "可扩展性"
+          },
+          {
+            "id": "d",
+            "text": "运维成本"
+          },
+          {
+            "id": "e",
+            "text": "UI 是否花哨"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "向量数据库选型不只是快，还要看过滤和治理能力。",
+        "focus": "选型关注"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-007",
+    "checks": [
+      {
+        "id": "rag-007-check-01",
+        "kind": "single",
+        "prompt": "RAG 中 top-k 是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型生成的最大字数。"
+          },
+          {
+            "id": "b",
+            "text": "检索时返回前 k 个最相关候选。"
+          },
+          {
+            "id": "c",
+            "text": "文档切分长度。"
+          },
+          {
+            "id": "d",
+            "text": "训练批大小。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "top-k 是召回数量参数。",
+        "focus": "top-k"
+      },
+      {
+        "id": "rag-007-check-02",
+        "kind": "multiple",
+        "prompt": "top-k 增大可能带来哪些变化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "覆盖率提升"
+          },
+          {
+            "id": "b",
+            "text": "噪声增加"
+          },
+          {
+            "id": "c",
+            "text": "上下文成本增加"
+          },
+          {
+            "id": "d",
+            "text": "结果污染风险上升"
+          },
+          {
+            "id": "e",
+            "text": "一定提升准确率"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "top-k 不是越大越好，要和 rerank、上下文预算一起调。",
+        "focus": "top-k 权衡"
+      },
+      {
+        "id": "rag-007-check-03",
+        "kind": "multiple",
+        "prompt": "top-k 调优为什么要联动 chunk 和 rerank？",
+        "options": [
+          {
+            "id": "a",
+            "text": "chunk 大小影响候选粒度"
+          },
+          {
+            "id": "b",
+            "text": "rerank 决定最终上下文质量"
+          },
+          {
+            "id": "c",
+            "text": "top-k 和召回噪声相关"
+          },
+          {
+            "id": "d",
+            "text": "只改 top-k 就能解决所有问题"
+          },
+          {
+            "id": "e",
+            "text": "chunk 与 top-k 完全无关"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "召回、重排和上下文预算是联动系统。",
+        "focus": "调优关系"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-008",
+    "checks": [
+      {
+        "id": "rag-008-check-01",
+        "kind": "single",
+        "prompt": "关键词检索和向量检索的核心区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "关键词检索更语义，向量检索更字面。"
+          },
+          {
+            "id": "b",
+            "text": "关键词更依赖字面匹配，向量更依赖语义相似。"
+          },
+          {
+            "id": "c",
+            "text": "两者完全一样。"
+          },
+          {
+            "id": "d",
+            "text": "向量检索只能做排序不能做召回。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "一个擅长精确命中，一个擅长语义泛化。",
+        "focus": "关键词 vs 向量"
+      },
+      {
+        "id": "rag-008-check-02",
+        "kind": "multiple",
+        "prompt": "关键词检索更适合哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "专有名词"
+          },
+          {
+            "id": "b",
+            "text": "编号"
+          },
+          {
+            "id": "c",
+            "text": "精确字段"
+          },
+          {
+            "id": "d",
+            "text": "任意同义改写"
+          },
+          {
+            "id": "e",
+            "text": "完全模糊的意图"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "企业场景里，专有名词和编号往往需要字面命中。",
+        "focus": "适用场景"
+      },
+      {
+        "id": "rag-008-check-03",
+        "kind": "multiple",
+        "prompt": "实际业务中，为什么两者常结合使用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "语义召回和字面命中互补"
+          },
+          {
+            "id": "b",
+            "text": "能覆盖更多输入类型"
+          },
+          {
+            "id": "c",
+            "text": "更适合精确字段和同义表达"
+          },
+          {
+            "id": "d",
+            "text": "组合后就不需要评测"
+          },
+          {
+            "id": "e",
+            "text": "组合后就不需要权限"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "混合检索能兼顾召回面和精确性。",
+        "focus": "实际组合"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-009",
+    "checks": [
+      {
+        "id": "rag-009-check-01",
+        "kind": "single",
+        "prompt": "什么是 hybrid search？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只用一种检索器。"
+          },
+          {
+            "id": "b",
+            "text": "结合关键词检索和向量检索等多种信号。"
+          },
+          {
+            "id": "c",
+            "text": "只做文本生成。"
+          },
+          {
+            "id": "d",
+            "text": "只做查询重写。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "混合检索利用多路召回互补。",
+        "focus": "Hybrid Search"
+      },
+      {
+        "id": "rag-009-check-02",
+        "kind": "multiple",
+        "prompt": "为什么很多 RAG 系统会走向混合检索？",
+        "options": [
+          {
+            "id": "a",
+            "text": "语义表达和字面匹配各有优势"
+          },
+          {
+            "id": "b",
+            "text": "专有名词、编号和模糊问法并存"
+          },
+          {
+            "id": "c",
+            "text": "企业知识常同时有精确和模糊需求"
+          },
+          {
+            "id": "d",
+            "text": "因为向量检索完全没用"
+          },
+          {
+            "id": "e",
+            "text": "因为关键词检索永远最强"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "真实业务输入很杂，单一检索策略很难覆盖。",
+        "focus": "为什么常用"
+      },
+      {
+        "id": "rag-009-check-03",
+        "kind": "multiple",
+        "prompt": "混合检索设计时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "融合策略"
+          },
+          {
+            "id": "b",
+            "text": "去重"
+          },
+          {
+            "id": "c",
+            "text": "排序权重"
+          },
+          {
+            "id": "d",
+            "text": "权限过滤"
+          },
+          {
+            "id": "e",
+            "text": "只要路由随机即可"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "混合不是简单相加，融合和治理同样重要。",
+        "focus": "混合风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-010",
+    "checks": [
+      {
+        "id": "rag-010-check-01",
+        "kind": "single",
+        "prompt": "什么是 rerank？",
+        "options": [
+          {
+            "id": "a",
+            "text": "对文档重新训练。"
+          },
+          {
+            "id": "b",
+            "text": "对召回候选做更精细的相关性重排。"
+          },
+          {
+            "id": "c",
+            "text": "对用户问题做翻译。"
+          },
+          {
+            "id": "d",
+            "text": "对所有文本做压缩。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "rerank 的目标是把“召回到的”候选排得更准。",
+        "focus": "Rerank"
+      },
+      {
+        "id": "rag-010-check-02",
+        "kind": "multiple",
+        "prompt": "为什么很多 RAG 系统需要 rerank？",
+        "options": [
+          {
+            "id": "a",
+            "text": "初始召回通常偏宽"
+          },
+          {
+            "id": "b",
+            "text": "候选里可能有噪声"
+          },
+          {
+            "id": "c",
+            "text": "需要更精细的相关性判断"
+          },
+          {
+            "id": "d",
+            "text": "rerank 可以替代所有召回"
+          },
+          {
+            "id": "e",
+            "text": "rerank 不需要模型"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "召回负责找得到，rerank 负责排得准。",
+        "focus": "为什么需要"
+      },
+      {
+        "id": "rag-010-check-03",
+        "kind": "multiple",
+        "prompt": "rerank 不能直接替代召回的原因是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它通常只处理候选集"
+          },
+          {
+            "id": "b",
+            "text": "它比召回更贵"
+          },
+          {
+            "id": "c",
+            "text": "它依赖前置召回覆盖"
+          },
+          {
+            "id": "d",
+            "text": "它能覆盖全库所有文档"
+          },
+          {
+            "id": "e",
+            "text": "它不受候选质量影响"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "rerank 提精度，但前提是召回先把相关候选找上来。",
+        "focus": "局限"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-011",
+    "checks": [
+      {
+        "id": "rag-011-check-01",
+        "kind": "single",
+        "prompt": "设计 chunk 切分策略时，最核心要考虑什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看 chunk 长度。"
+          },
+          {
+            "id": "b",
+            "text": "文档结构、语义边界、任务目标和上下文预算。"
+          },
+          {
+            "id": "c",
+            "text": "只看文件格式。"
+          },
+          {
+            "id": "d",
+            "text": "只看作者名字。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "切分策略要兼顾结构完整和检索粒度。",
+        "focus": "切分策略"
+      },
+      {
+        "id": "rag-011-check-02",
+        "kind": "multiple",
+        "prompt": "chunk 切分时常考虑哪些因素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "标题层级"
+          },
+          {
+            "id": "b",
+            "text": "段落和语义边界"
+          },
+          {
+            "id": "c",
+            "text": "表格或代码块结构"
+          },
+          {
+            "id": "d",
+            "text": "目标模型上下文窗口"
+          },
+          {
+            "id": "e",
+            "text": "UI 颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同文档类型需要不同切分策略。",
+        "focus": "影响因素"
+      },
+      {
+        "id": "rag-011-check-03",
+        "kind": "multiple",
+        "prompt": "关于切分策略，哪些理解不准确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "越小越好"
+          },
+          {
+            "id": "b",
+            "text": "所有文档都用同一种切法"
+          },
+          {
+            "id": "c",
+            "text": "不需要考虑结构边界"
+          },
+          {
+            "id": "d",
+            "text": "要结合任务和上下文"
+          },
+          {
+            "id": "e",
+            "text": "可根据文档类型调整"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "切分策略是任务相关的，而不是固定参数。",
+        "focus": "切分误区"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-012",
+    "checks": [
+      {
+        "id": "rag-012-check-01",
+        "kind": "single",
+        "prompt": "chunk overlap 的主要作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "增大数据库体积。"
+          },
+          {
+            "id": "b",
+            "text": "保留跨 chunk 的上下文连续性。"
+          },
+          {
+            "id": "c",
+            "text": "让模型自动更新知识。"
+          },
+          {
+            "id": "d",
+            "text": "取代 rerank。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "重叠是为了减少切断边界信息带来的损失。",
+        "focus": "overlap"
+      },
+      {
+        "id": "rag-012-check-02",
+        "kind": "multiple",
+        "prompt": "为什么很多场景会设置 overlap？",
+        "options": [
+          {
+            "id": "a",
+            "text": "标题和段落可能跨边界"
+          },
+          {
+            "id": "b",
+            "text": "定义和解释可能被切开"
+          },
+          {
+            "id": "c",
+            "text": "表格行或代码片段可能断裂"
+          },
+          {
+            "id": "d",
+            "text": "为了让 chunk 越大越好"
+          },
+          {
+            "id": "e",
+            "text": "为了消除所有噪声"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "overlap 用来缓解边界切断问题。",
+        "focus": "适用原因"
+      },
+      {
+        "id": "rag-012-check-03",
+        "kind": "multiple",
+        "prompt": "设置 overlap 可能带来什么代价？",
+        "options": [
+          {
+            "id": "a",
+            "text": "重复内容增多"
+          },
+          {
+            "id": "b",
+            "text": "索引体积上升"
+          },
+          {
+            "id": "c",
+            "text": "去重和排序更复杂"
+          },
+          {
+            "id": "d",
+            "text": "自动提升所有准确率"
+          },
+          {
+            "id": "e",
+            "text": "让检索不再需要过滤"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "overlap 是质量和成本之间的折中。",
+        "focus": "代价"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-013",
+    "checks": [
+      {
+        "id": "rag-013-check-01",
+        "kind": "single",
+        "prompt": "为什么元数据过滤在企业级 RAG 里非常重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为只看文本内容就够了。"
+          },
+          {
+            "id": "b",
+            "text": "因为权限、部门、时间和文档类型等约束常常比语义更关键。"
+          },
+          {
+            "id": "c",
+            "text": "因为它能替代 embedding。"
+          },
+          {
+            "id": "d",
+            "text": "因为它只用于 UI 展示。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业 RAG 不只是“找相似”，还要“找对人能看的内容”。",
+        "focus": "元数据过滤"
+      },
+      {
+        "id": "rag-013-check-02",
+        "kind": "multiple",
+        "prompt": "元数据过滤常用于哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "权限"
+          },
+          {
+            "id": "b",
+            "text": "部门"
+          },
+          {
+            "id": "c",
+            "text": "时间范围"
+          },
+          {
+            "id": "d",
+            "text": "文档类型"
+          },
+          {
+            "id": "e",
+            "text": "用户头像大小"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "过滤可以把召回限制在合法和相关的子集里。",
+        "focus": "过滤维度"
+      },
+      {
+        "id": "rag-013-check-03",
+        "kind": "multiple",
+        "prompt": "元数据过滤能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提高权限安全"
+          },
+          {
+            "id": "b",
+            "text": "降低噪声"
+          },
+          {
+            "id": "c",
+            "text": "提高召回相关性"
+          },
+          {
+            "id": "d",
+            "text": "代替所有检索"
+          },
+          {
+            "id": "e",
+            "text": "自动解决幻觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过滤是企业级治理能力，不是可有可无的附加项。",
+        "focus": "过滤价值"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-014",
+    "checks": [
+      {
+        "id": "rag-014-check-01",
+        "kind": "single",
+        "prompt": "什么是 query rewrite？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把答案直接复制到检索器。"
+          },
+          {
+            "id": "b",
+            "text": "对用户问题做改写、补全或标准化，以提升检索效果。"
+          },
+          {
+            "id": "c",
+            "text": "把文档重命名。"
+          },
+          {
+            "id": "d",
+            "text": "给向量重新训练。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "改写的目标是让查询更适合检索器理解。",
+        "focus": "Query Rewrite"
+      },
+      {
+        "id": "rag-014-check-02",
+        "kind": "multiple",
+        "prompt": "query rewrite 通常能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "补全省略信息"
+          },
+          {
+            "id": "b",
+            "text": "消解口语化表达"
+          },
+          {
+            "id": "c",
+            "text": "标准化术语"
+          },
+          {
+            "id": "d",
+            "text": "改善检索召回"
+          },
+          {
+            "id": "e",
+            "text": "直接生成最终答案"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "rewrite 面向检索，不是直接回答用户。",
+        "focus": "适用作用"
+      },
+      {
+        "id": "rag-014-check-03",
+        "kind": "multiple",
+        "prompt": "query rewrite 可能带来哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "改错用户意图"
+          },
+          {
+            "id": "b",
+            "text": "加入不该有的假设"
+          },
+          {
+            "id": "c",
+            "text": "放大歧义"
+          },
+          {
+            "id": "d",
+            "text": "一定提升召回"
+          },
+          {
+            "id": "e",
+            "text": "自动保证引用正确"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "改写要尽量忠实于原意，不能过度脑补。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-015",
+    "checks": [
+      {
+        "id": "rag-015-check-01",
+        "kind": "single",
+        "prompt": "什么是 multi-query retrieval？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只用一个查询做一次召回。"
+          },
+          {
+            "id": "b",
+            "text": "针对同一问题生成多个查询变体分别检索，再合并结果。"
+          },
+          {
+            "id": "c",
+            "text": "只在训练阶段使用的多任务学习。"
+          },
+          {
+            "id": "d",
+            "text": "让模型返回多个答案。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多查询检索是提升覆盖率的一种召回策略。",
+        "focus": "Multi-query"
+      },
+      {
+        "id": "rag-015-check-02",
+        "kind": "multiple",
+        "prompt": "multi-query retrieval 适合什么场景？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户问法多样"
+          },
+          {
+            "id": "b",
+            "text": "术语存在多种表达"
+          },
+          {
+            "id": "c",
+            "text": "需要提高召回覆盖"
+          },
+          {
+            "id": "d",
+            "text": "只有一个固定关键词"
+          },
+          {
+            "id": "e",
+            "text": "不需要检索"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "它适合 query 表达不稳定或同义词丰富的场景。",
+        "focus": "适用场景"
+      },
+      {
+        "id": "rag-015-check-03",
+        "kind": "multiple",
+        "prompt": "multi-query retrieval 的代价可能有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索次数增加"
+          },
+          {
+            "id": "b",
+            "text": "去重和融合更复杂"
+          },
+          {
+            "id": "c",
+            "text": "成本和延迟上升"
+          },
+          {
+            "id": "d",
+            "text": "必然减少所有噪声"
+          },
+          {
+            "id": "e",
+            "text": "不需要排序"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多路召回扩大覆盖，也增加编排成本。",
+        "focus": "代价"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-016",
+    "checks": [
+      {
+        "id": "rag-016-check-01",
+        "kind": "single",
+        "prompt": "为什么“召回到了”不等于“模型就能答对”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为召回没有用。"
+          },
+          {
+            "id": "b",
+            "text": "因为召回到的片段还需要排序、压缩、理解和正确引用。"
+          },
+          {
+            "id": "c",
+            "text": "因为模型不看上下文。"
+          },
+          {
+            "id": "d",
+            "text": "因为答案一定在召回后自动正确。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "召回只是提供材料，最终正确性还依赖后续链路。",
+        "focus": "召回 vs 正确"
+      },
+      {
+        "id": "rag-016-check-02",
+        "kind": "multiple",
+        "prompt": "即使召回到了，仍可能答不对，原因包括哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "证据不够集中"
+          },
+          {
+            "id": "b",
+            "text": "上下文被噪声淹没"
+          },
+          {
+            "id": "c",
+            "text": "模型误读证据"
+          },
+          {
+            "id": "d",
+            "text": "检索到的不是最相关片段"
+          },
+          {
+            "id": "e",
+            "text": "召回后就不需要生成"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 是多阶段系统，每一段都可能出错。",
+        "focus": "答不对原因"
+      },
+      {
+        "id": "rag-016-check-03",
+        "kind": "multiple",
+        "prompt": "为了提升“召回到了也能答对”的概率，可以做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "改善 chunk"
+          },
+          {
+            "id": "b",
+            "text": "加 rerank"
+          },
+          {
+            "id": "c",
+            "text": "做上下文压缩"
+          },
+          {
+            "id": "d",
+            "text": "让答案引用证据"
+          },
+          {
+            "id": "e",
+            "text": "只增加 top-k 到无限大"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "解决路径通常是检索、排序、压缩和生成共同优化。",
+        "focus": "提升路径"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-017",
+    "checks": [
+      {
+        "id": "rag-017-check-01",
+        "kind": "single",
+        "prompt": "为什么很多 RAG 系统要求模型返回引用来源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只是为了排版好看。"
+          },
+          {
+            "id": "b",
+            "text": "为了让答案可追溯、可审查、可验证。"
+          },
+          {
+            "id": "c",
+            "text": "因为引用能替代检索。"
+          },
+          {
+            "id": "d",
+            "text": "因为引用会自动消除幻觉。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "引用让回答从“像真的”变成“可检查”。",
+        "focus": "引用来源"
+      },
+      {
+        "id": "rag-017-check-02",
+        "kind": "multiple",
+        "prompt": "引用来源通常能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "人工复核"
+          },
+          {
+            "id": "b",
+            "text": "错误定位"
+          },
+          {
+            "id": "c",
+            "text": "事实追溯"
+          },
+          {
+            "id": "d",
+            "text": "用户信任"
+          },
+          {
+            "id": "e",
+            "text": "免除权限控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "引用是企业知识问答的重要可审计能力。",
+        "focus": "引用价值"
+      },
+      {
+        "id": "rag-017-check-03",
+        "kind": "multiple",
+        "prompt": "引用设计不当可能出现什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "引错来源"
+          },
+          {
+            "id": "b",
+            "text": "编造引用"
+          },
+          {
+            "id": "c",
+            "text": "与正文不一致"
+          },
+          {
+            "id": "d",
+            "text": "自动提升真实性"
+          },
+          {
+            "id": "e",
+            "text": "不需要核验"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "引用本身也要校验，不能只靠模型自报。",
+        "focus": "引用风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-018",
+    "checks": [
+      {
+        "id": "rag-018-check-01",
+        "kind": "single",
+        "prompt": "如果知识库里没有答案，RAG 系统应该怎么处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "继续编一个最像的答案。"
+          },
+          {
+            "id": "b",
+            "text": "明确说明未找到依据，必要时请求补充或转人工。"
+          },
+          {
+            "id": "c",
+            "text": "假装知识库里有。"
+          },
+          {
+            "id": "d",
+            "text": "直接返回空白。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "无答案时诚实拒答比编造更可靠。",
+        "focus": "无答案处理"
+      },
+      {
+        "id": "rag-018-check-02",
+        "kind": "multiple",
+        "prompt": "无答案或证据不足时，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "请求补充信息"
+          },
+          {
+            "id": "b",
+            "text": "提示知识库未覆盖"
+          },
+          {
+            "id": "c",
+            "text": "转人工或其他渠道"
+          },
+          {
+            "id": "d",
+            "text": "返回不确定结论并说明依据不足"
+          },
+          {
+            "id": "e",
+            "text": "强行补全细节"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "系统应有明确的缺证据处理路径。",
+        "focus": "合理策略"
+      },
+      {
+        "id": "rag-018-check-03",
+        "kind": "multiple",
+        "prompt": "知识库里没答案但模型还硬答，可能造成什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "幻觉"
+          },
+          {
+            "id": "b",
+            "text": "误导用户"
+          },
+          {
+            "id": "c",
+            "text": "降低信任"
+          },
+          {
+            "id": "d",
+            "text": "提高可审查性"
+          },
+          {
+            "id": "e",
+            "text": "保证事实性"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "RAG 的诚实度比“看起来完整”更重要。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-019",
+    "checks": [
+      {
+        "id": "rag-019-check-01",
+        "kind": "single",
+        "prompt": "为什么知识库更新机制对 RAG 很关键？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为更新越慢越稳定。"
+          },
+          {
+            "id": "b",
+            "text": "因为知识时效性直接影响答案正确性。"
+          },
+          {
+            "id": "c",
+            "text": "因为更新只影响 UI。"
+          },
+          {
+            "id": "d",
+            "text": "因为更新可以替代检索。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "知识库过期会让再好的检索和生成都答旧内容。",
+        "focus": "更新机制"
+      },
+      {
+        "id": "rag-019-check-02",
+        "kind": "multiple",
+        "prompt": "知识库更新机制通常要考虑什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "增量更新"
+          },
+          {
+            "id": "b",
+            "text": "删除和失效"
+          },
+          {
+            "id": "c",
+            "text": "版本切换"
+          },
+          {
+            "id": "d",
+            "text": "索引重建策略"
+          },
+          {
+            "id": "e",
+            "text": "永远不更新"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "更新治理决定知识是否新鲜、可靠和可追踪。",
+        "focus": "更新问题"
+      },
+      {
+        "id": "rag-019-check-03",
+        "kind": "multiple",
+        "prompt": "更新机制不好会带来什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "旧知识残留"
+          },
+          {
+            "id": "b",
+            "text": "新旧版本冲突"
+          },
+          {
+            "id": "c",
+            "text": "索引不一致"
+          },
+          {
+            "id": "d",
+            "text": "自动提高答案准确率"
+          },
+          {
+            "id": "e",
+            "text": "解决权限问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "知识库不是静态文件夹，而是持续演化的系统。",
+        "focus": "更新风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-020",
+    "checks": [
+      {
+        "id": "rag-020-check-01",
+        "kind": "single",
+        "prompt": "为什么企业内部多部门共用一个 RAG 平台时，权限隔离很重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有部门都能看到所有文档更方便。"
+          },
+          {
+            "id": "b",
+            "text": "因为不同用户能访问的知识范围通常不同。"
+          },
+          {
+            "id": "c",
+            "text": "因为权限只影响模型速度。"
+          },
+          {
+            "id": "d",
+            "text": "因为检索不需要鉴权。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业 RAG 既是检索系统，也是权限系统。",
+        "focus": "权限隔离"
+      },
+      {
+        "id": "rag-020-check-02",
+        "kind": "multiple",
+        "prompt": "权限隔离通常要覆盖哪些层面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文档可见范围"
+          },
+          {
+            "id": "b",
+            "text": "检索召回结果"
+          },
+          {
+            "id": "c",
+            "text": "最终引用和答案输出"
+          },
+          {
+            "id": "d",
+            "text": "审计日志"
+          },
+          {
+            "id": "e",
+            "text": "用户界面颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "权限泄露可能发生在召回、生成和日志各阶段。",
+        "focus": "隔离内容"
+      },
+      {
+        "id": "rag-020-check-03",
+        "kind": "multiple",
+        "prompt": "权限隔离做不好，可能带来什么风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "敏感信息泄露"
+          },
+          {
+            "id": "b",
+            "text": "跨部门越权"
+          },
+          {
+            "id": "c",
+            "text": "合规问题"
+          },
+          {
+            "id": "d",
+            "text": "自动提升准确率"
+          },
+          {
+            "id": "e",
+            "text": "让系统更容易审计"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "企业级 RAG 里，安全比召回多一点更重要。",
+        "focus": "安全风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-021",
+    "checks": [
+      {
+        "id": "rag-021-check-01",
+        "kind": "single",
+        "prompt": "面对结构复杂的文档，应该如何设计切分策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有文档都按固定字数切。"
+          },
+          {
+            "id": "b",
+            "text": "根据标题层级、表格、代码块和附录等结构做分层切分。"
+          },
+          {
+            "id": "c",
+            "text": "只按页数切。"
+          },
+          {
+            "id": "d",
+            "text": "不做切分，整篇入库。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "结构复杂的文档更需要保留语义边界和层级关系。",
+        "focus": "复杂文档切分"
+      },
+      {
+        "id": "rag-021-check-02",
+        "kind": "multiple",
+        "prompt": "设计复杂文档切分时，通常要考虑哪些因素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文档层级结构"
+          },
+          {
+            "id": "b",
+            "text": "表格和代码块完整性"
+          },
+          {
+            "id": "c",
+            "text": "目标任务需要的粒度"
+          },
+          {
+            "id": "d",
+            "text": "目标模型上下文预算"
+          },
+          {
+            "id": "e",
+            "text": "文件名长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂文档切分更像信息建模，不只是截断。",
+        "focus": "设计依据"
+      },
+      {
+        "id": "rag-021-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于保留复杂文档语义？",
+        "options": [
+          {
+            "id": "a",
+            "text": "按标题层级切分"
+          },
+          {
+            "id": "b",
+            "text": "对表格和代码块做特殊处理"
+          },
+          {
+            "id": "c",
+            "text": "必要时保留父标题上下文"
+          },
+          {
+            "id": "d",
+            "text": "把所有内容平均切成同样长度"
+          },
+          {
+            "id": "e",
+            "text": "直接丢掉结构"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "复杂文档切分要兼顾局部片段和上下文结构。",
+        "focus": "常见做法"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-022",
+    "checks": [
+      {
+        "id": "rag-022-check-01",
+        "kind": "single",
+        "prompt": "在 RAG 评测中，召回率和准确率分别该怎么理解？",
+        "options": [
+          {
+            "id": "a",
+            "text": "召回率是模型是否会说话。"
+          },
+          {
+            "id": "b",
+            "text": "召回率看有没有找回该找的内容，准确率看最终答得对不对。"
+          },
+          {
+            "id": "c",
+            "text": "两者完全一样。"
+          },
+          {
+            "id": "d",
+            "text": "准确率只看 token 数。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "召回衡量检索，准确率衡量最终答案质量。",
+        "focus": "评测含义"
+      },
+      {
+        "id": "rag-022-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 评测通常应分哪些层？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索层"
+          },
+          {
+            "id": "b",
+            "text": "重排层"
+          },
+          {
+            "id": "c",
+            "text": "生成层"
+          },
+          {
+            "id": "d",
+            "text": "引用层"
+          },
+          {
+            "id": "e",
+            "text": "主题色层"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 问题常出在不同阶段，不能只看最终答案。",
+        "focus": "评测分层"
+      },
+      {
+        "id": "rag-022-check-03",
+        "kind": "multiple",
+        "prompt": "除了召回和准确率，RAG 评测还常看什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "引用准确率"
+          },
+          {
+            "id": "b",
+            "text": "幻觉率"
+          },
+          {
+            "id": "c",
+            "text": "延迟和成本"
+          },
+          {
+            "id": "d",
+            "text": "用户满意度"
+          },
+          {
+            "id": "e",
+            "text": "UI 按钮点击数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 评测要覆盖质量、可追溯性和性能。",
+        "focus": "看什么指标"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-023",
+    "checks": [
+      {
+        "id": "rag-023-check-01",
+        "kind": "single",
+        "prompt": "评估企业 RAG 系统时，评测集应该怎么构建？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只放最简单的问题。"
+          },
+          {
+            "id": "b",
+            "text": "覆盖高频、长尾、边界、权限和冲突样本。"
+          },
+          {
+            "id": "c",
+            "text": "只用模型自己生成的问题。"
+          },
+          {
+            "id": "d",
+            "text": "只看一两个演示案例。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "评测集要贴近真实分布并覆盖风险样本。",
+        "focus": "评测集构建"
+      },
+      {
+        "id": "rag-023-check-02",
+        "kind": "multiple",
+        "prompt": "企业 RAG 评测集应包含哪些类型样本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "高频问法"
+          },
+          {
+            "id": "b",
+            "text": "模糊问法"
+          },
+          {
+            "id": "c",
+            "text": "权限敏感问法"
+          },
+          {
+            "id": "d",
+            "text": "冲突文档问法"
+          },
+          {
+            "id": "e",
+            "text": "只包含模型最擅长的样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "只测简单样本会高估系统效果。",
+        "focus": "样本类型"
+      },
+      {
+        "id": "rag-023-check-03",
+        "kind": "multiple",
+        "prompt": "评测集除了打分，还能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回归测试"
+          },
+          {
+            "id": "b",
+            "text": "问题复盘"
+          },
+          {
+            "id": "c",
+            "text": "失败模式分类"
+          },
+          {
+            "id": "d",
+            "text": "线上变更比较"
+          },
+          {
+            "id": "e",
+            "text": "替代权限控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测集是长期资产，不只是一次性测分工具。",
+        "focus": "评测用途"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-024",
+    "checks": [
+      {
+        "id": "rag-024-check-01",
+        "kind": "single",
+        "prompt": "为什么 rerank 模型通常比 embedding 召回更“精”，但不能直接替代召回？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 rerank 不需要输入候选。"
+          },
+          {
+            "id": "b",
+            "text": "因为 rerank 通常在候选集上做更细判断，但覆盖范围受前置召回限制。"
+          },
+          {
+            "id": "c",
+            "text": "因为 rerank 一定更便宜。"
+          },
+          {
+            "id": "d",
+            "text": "因为 rerank 比召回更随机。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "rerank 精度高，但前提是先有足够好的候选集。",
+        "focus": "Rerank vs 召回"
+      },
+      {
+        "id": "rag-024-check-02",
+        "kind": "multiple",
+        "prompt": "rerank 不能替代召回的原因有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它更贵"
+          },
+          {
+            "id": "b",
+            "text": "它通常只看候选集"
+          },
+          {
+            "id": "c",
+            "text": "它依赖前置召回覆盖"
+          },
+          {
+            "id": "d",
+            "text": "它可以遍历全库"
+          },
+          {
+            "id": "e",
+            "text": "它不需要输入文本"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "召回负责找得到，rerank 负责排得准。",
+        "focus": "精而不能代替"
+      },
+      {
+        "id": "rag-024-check-03",
+        "kind": "multiple",
+        "prompt": "召回和 rerank 的协同目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先保证覆盖"
+          },
+          {
+            "id": "b",
+            "text": "再提升排序精度"
+          },
+          {
+            "id": "c",
+            "text": "控制成本和延迟"
+          },
+          {
+            "id": "d",
+            "text": "让所有文档都进入上下文"
+          },
+          {
+            "id": "e",
+            "text": "取消检索过滤"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "两者是互补的，不是替代关系。",
+        "focus": "协同方式"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-025",
+    "checks": [
+      {
+        "id": "rag-025-check-01",
+        "kind": "single",
+        "prompt": "什么是上下文压缩？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把所有文档原样塞进 prompt。"
+          },
+          {
+            "id": "b",
+            "text": "对检索内容、历史或工具结果做摘要、裁剪或重写，以节省上下文。"
+          },
+          {
+            "id": "c",
+            "text": "重新训练 embedding。"
+          },
+          {
+            "id": "d",
+            "text": "把答案长度变短。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "上下文压缩是把高价值信息放进有限窗口。",
+        "focus": "Context Compression"
+      },
+      {
+        "id": "rag-025-check-02",
+        "kind": "multiple",
+        "prompt": "上下文压缩为什么对 RAG 很重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "上下文窗口有限"
+          },
+          {
+            "id": "b",
+            "text": "噪声会干扰回答"
+          },
+          {
+            "id": "c",
+            "text": "成本和延迟会增加"
+          },
+          {
+            "id": "d",
+            "text": "长片段可能占满窗口"
+          },
+          {
+            "id": "e",
+            "text": "压缩后就不需要检索"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "压缩是检索和生成之间的重要桥梁。",
+        "focus": "重要性"
+      },
+      {
+        "id": "rag-025-check-03",
+        "kind": "multiple",
+        "prompt": "上下文压缩可能带来什么风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "信息丢失"
+          },
+          {
+            "id": "b",
+            "text": "语义失真"
+          },
+          {
+            "id": "c",
+            "text": "细节遗漏"
+          },
+          {
+            "id": "d",
+            "text": "自动提高精度"
+          },
+          {
+            "id": "e",
+            "text": "自动保证引用正确"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "压缩要保留关键证据，不是简单缩短字数。",
+        "focus": "压缩风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-026",
+    "checks": [
+      {
+        "id": "rag-026-check-01",
+        "kind": "single",
+        "prompt": "什么是 lost in the middle 问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型只看最后一个字。"
+          },
+          {
+            "id": "b",
+            "text": "在长上下文里，中间关键信息更容易被忽略。"
+          },
+          {
+            "id": "c",
+            "text": "模型会自动删除中间文本。"
+          },
+          {
+            "id": "d",
+            "text": "只在训练时发生。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "长上下文里信息位置会影响可利用性。",
+        "focus": "lost in the middle"
+      },
+      {
+        "id": "rag-026-check-02",
+        "kind": "multiple",
+        "prompt": "lost in the middle 为什么会影响 RAG？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索片段可能被放在中间"
+          },
+          {
+            "id": "b",
+            "text": "关键信息可能被噪声包围"
+          },
+          {
+            "id": "c",
+            "text": "模型不一定平等利用所有位置"
+          },
+          {
+            "id": "d",
+            "text": "它会自动提高召回"
+          },
+          {
+            "id": "e",
+            "text": "它只影响图像任务"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "上下文排布本身就是检索质量的一部分。",
+        "focus": "影响 RAG"
+      },
+      {
+        "id": "rag-026-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于缓解 lost in the middle？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把关键证据放前面或后面"
+          },
+          {
+            "id": "b",
+            "text": "做上下文压缩"
+          },
+          {
+            "id": "c",
+            "text": "使用更强的排序策略"
+          },
+          {
+            "id": "d",
+            "text": "无脑堆更长上下文"
+          },
+          {
+            "id": "e",
+            "text": "不做任何排布"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "上下文位置管理能显著影响模型可用信息。",
+        "focus": "缓解方式"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-027",
+    "checks": [
+      {
+        "id": "rag-027-check-01",
+        "kind": "single",
+        "prompt": "RAG 系统里为什么仍然会出现幻觉？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 RAG 完全没有检索。"
+          },
+          {
+            "id": "b",
+            "text": "因为检索、排序、压缩、理解和生成各环节都可能出错。"
+          },
+          {
+            "id": "c",
+            "text": "因为有检索就一定没问题。"
+          },
+          {
+            "id": "d",
+            "text": "因为幻觉只发生在对话系统。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 能降低幻觉，但不能彻底消除。",
+        "focus": "幻觉原因"
+      },
+      {
+        "id": "rag-027-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 幻觉可能来自哪些原因？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索漏召回"
+          },
+          {
+            "id": "b",
+            "text": "召回噪声过多"
+          },
+          {
+            "id": "c",
+            "text": "模型误读证据"
+          },
+          {
+            "id": "d",
+            "text": "没有足够证据却强行作答"
+          },
+          {
+            "id": "e",
+            "text": "证据校验充分"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "幻觉常常是检索和生成共同失败的结果。",
+        "focus": "幻觉来源"
+      },
+      {
+        "id": "rag-027-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于缓解 RAG 幻觉？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更好的召回和 rerank"
+          },
+          {
+            "id": "b",
+            "text": "引用约束"
+          },
+          {
+            "id": "c",
+            "text": "无依据时允许拒答"
+          },
+          {
+            "id": "d",
+            "text": "做事实校验"
+          },
+          {
+            "id": "e",
+            "text": "让模型自由发挥更多"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "幻觉治理需要证据和校验，而不是放大生成自由度。",
+        "focus": "缓解方法"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-028",
+    "checks": [
+      {
+        "id": "rag-028-check-01",
+        "kind": "single",
+        "prompt": "什么是多跳检索？",
+        "options": [
+          {
+            "id": "a",
+            "text": "一次召回多个无关片段。"
+          },
+          {
+            "id": "b",
+            "text": "需要通过多个中间步骤或多个证据片段才能找到答案的检索。"
+          },
+          {
+            "id": "c",
+            "text": "只做一次向量搜索。"
+          },
+          {
+            "id": "d",
+            "text": "只在多模态任务里出现。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多跳检索要串联多个相关证据才能答题。",
+        "focus": "Multi-hop"
+      },
+      {
+        "id": "rag-028-check-02",
+        "kind": "multiple",
+        "prompt": "为什么多跳检索比普通 RAG 更难？",
+        "options": [
+          {
+            "id": "a",
+            "text": "需要中间推理"
+          },
+          {
+            "id": "b",
+            "text": "需要逐步扩大搜索范围"
+          },
+          {
+            "id": "c",
+            "text": "容易在中间步骤丢信息"
+          },
+          {
+            "id": "d",
+            "text": "它和普通检索完全一样"
+          },
+          {
+            "id": "e",
+            "text": "不需要评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多跳问题同时考检索、推理和路径设计。",
+        "focus": "难点"
+      },
+      {
+        "id": "rag-028-check-03",
+        "kind": "multiple",
+        "prompt": "哪些任务更可能需要多跳检索？",
+        "options": [
+          {
+            "id": "a",
+            "text": "跨文档关联"
+          },
+          {
+            "id": "b",
+            "text": "需要先查 A 再查 B"
+          },
+          {
+            "id": "c",
+            "text": "依赖链式证据"
+          },
+          {
+            "id": "d",
+            "text": "单句事实问答"
+          },
+          {
+            "id": "e",
+            "text": "完全不需要外部证据"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多跳适合证据分散、需要链式组合的问题。",
+        "focus": "适用任务"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-029",
+    "checks": [
+      {
+        "id": "rag-029-check-01",
+        "kind": "single",
+        "prompt": "知识库里存在内容冲突或多版本文档时，RAG 应该怎么处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "随机选一个版本。"
+          },
+          {
+            "id": "b",
+            "text": "明确版本优先级、时间戳或权威来源，并在回答里标明依据。"
+          },
+          {
+            "id": "c",
+            "text": "直接把所有版本拼在一起。"
+          },
+          {
+            "id": "d",
+            "text": "忽略冲突。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多版本或冲突内容必须有治理策略。",
+        "focus": "冲突文档"
+      },
+      {
+        "id": "rag-029-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于处理多版本文档冲突？",
+        "options": [
+          {
+            "id": "a",
+            "text": "时间戳排序"
+          },
+          {
+            "id": "b",
+            "text": "权威来源优先"
+          },
+          {
+            "id": "c",
+            "text": "明确过期策略"
+          },
+          {
+            "id": "d",
+            "text": "回答中标明版本"
+          },
+          {
+            "id": "e",
+            "text": "不保留版本信息"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "冲突不是纯检索问题，也是知识治理问题。",
+        "focus": "处理方式"
+      },
+      {
+        "id": "rag-029-check-03",
+        "kind": "multiple",
+        "prompt": "如果不处理冲突或多版本问题，可能造成什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "答案前后不一致"
+          },
+          {
+            "id": "b",
+            "text": "用户拿到旧政策"
+          },
+          {
+            "id": "c",
+            "text": "审计困难"
+          },
+          {
+            "id": "d",
+            "text": "自动提高正确率"
+          },
+          {
+            "id": "e",
+            "text": "降低治理复杂度"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "版本治理决定回答是否可信、可追踪。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-030",
+    "checks": [
+      {
+        "id": "rag-030-check-01",
+        "kind": "single",
+        "prompt": "知识图谱和 RAG 是什么关系？",
+        "options": [
+          {
+            "id": "a",
+            "text": "完全替代关系。"
+          },
+          {
+            "id": "b",
+            "text": "更多是互补关系。"
+          },
+          {
+            "id": "c",
+            "text": "二者完全无关。"
+          },
+          {
+            "id": "d",
+            "text": "知识图谱只能用于聊天。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "知识图谱擅长结构化关系，RAG 擅长文本证据检索。",
+        "focus": "知识图谱"
+      },
+      {
+        "id": "rag-030-check-02",
+        "kind": "multiple",
+        "prompt": "知识图谱和 RAG 分别擅长什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "知识图谱擅长实体关系"
+          },
+          {
+            "id": "b",
+            "text": "知识图谱擅长结构化推理"
+          },
+          {
+            "id": "c",
+            "text": "RAG 擅长非结构化文本证据"
+          },
+          {
+            "id": "d",
+            "text": "RAG 擅长文档级上下文"
+          },
+          {
+            "id": "e",
+            "text": "两者都不需要数据治理"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构化和非结构化知识常常需要组合。",
+        "focus": "互补点"
+      },
+      {
+        "id": "rag-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合把知识图谱和 RAG 结合？",
+        "options": [
+          {
+            "id": "a",
+            "text": "企业知识导航"
+          },
+          {
+            "id": "b",
+            "text": "实体关系查询"
+          },
+          {
+            "id": "c",
+            "text": "规则和文档混合问答"
+          },
+          {
+            "id": "d",
+            "text": "纯创意写作"
+          },
+          {
+            "id": "e",
+            "text": "完全不需要事实依据"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "当结构关系和文本证据都重要时，组合通常更强。",
+        "focus": "组合场景"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-031",
+    "checks": [
+      {
+        "id": "rag-031-check-01",
+        "kind": "single",
+        "prompt": "为什么有些系统会先做查询分类，再决定走哪种检索路径？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有问题都应该走同一路径。"
+          },
+          {
+            "id": "b",
+            "text": "因为不同类型问题适合不同检索策略和工具。"
+          },
+          {
+            "id": "c",
+            "text": "因为分类能替代检索。"
+          },
+          {
+            "id": "d",
+            "text": "因为分类可以删除权限控制。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "先分流再检索，可以提高效率和相关性。",
+        "focus": "查询分类"
+      },
+      {
+        "id": "rag-031-check-02",
+        "kind": "multiple",
+        "prompt": "查询分类可以基于哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "问题类型"
+          },
+          {
+            "id": "b",
+            "text": "风险等级"
+          },
+          {
+            "id": "c",
+            "text": "需要的证据形态"
+          },
+          {
+            "id": "d",
+            "text": "权限范围"
+          },
+          {
+            "id": "e",
+            "text": "字体颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "路由前置能把查询送到更合适的检索路径。",
+        "focus": "分类维度"
+      },
+      {
+        "id": "rag-031-check-03",
+        "kind": "multiple",
+        "prompt": "查询分类带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更高的召回精度"
+          },
+          {
+            "id": "b",
+            "text": "更低的噪声"
+          },
+          {
+            "id": "c",
+            "text": "更合适的成本控制"
+          },
+          {
+            "id": "d",
+            "text": "自动消除幻觉"
+          },
+          {
+            "id": "e",
+            "text": "取消评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同问题类型往往需要不同的检索策略。",
+        "focus": "价值"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-032",
+    "checks": [
+      {
+        "id": "rag-032-check-01",
+        "kind": "single",
+        "prompt": "RAG 系统里可以缓存哪些环节？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只缓存最终答案。"
+          },
+          {
+            "id": "b",
+            "text": "查询改写、embedding、检索结果、rerank 或稳定回答。"
+          },
+          {
+            "id": "c",
+            "text": "只缓存原始文档全文。"
+          },
+          {
+            "id": "d",
+            "text": "不需要任何缓存。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 里很多中间环节都可复用，但要注意时效和权限。",
+        "focus": "RAG 缓存"
+      },
+      {
+        "id": "rag-032-check-02",
+        "kind": "multiple",
+        "prompt": "缓存 RAG 环节能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低延迟"
+          },
+          {
+            "id": "b",
+            "text": "降低重复计算"
+          },
+          {
+            "id": "c",
+            "text": "降低成本"
+          },
+          {
+            "id": "d",
+            "text": "提高稳定性"
+          },
+          {
+            "id": "e",
+            "text": "自动替代权限隔离"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存适合稳定、可复用、可控过期的结果。",
+        "focus": "缓存收益"
+      },
+      {
+        "id": "rag-032-check-03",
+        "kind": "multiple",
+        "prompt": "RAG 缓存时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "版本变化"
+          },
+          {
+            "id": "b",
+            "text": "权限隔离"
+          },
+          {
+            "id": "c",
+            "text": "数据过期"
+          },
+          {
+            "id": "d",
+            "text": "个性化上下文污染"
+          },
+          {
+            "id": "e",
+            "text": "缓存永不过期最安全"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存键和过期策略设计不好会串答案或泄露内容。",
+        "focus": "缓存注意"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-033",
+    "checks": [
+      {
+        "id": "rag-033-check-01",
+        "kind": "single",
+        "prompt": "RAG 系统上线前后，最应该重点看哪些线上指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看回复字数。"
+          },
+          {
+            "id": "b",
+            "text": "任务成功率、引用准确率、幻觉率、延迟和成本。"
+          },
+          {
+            "id": "c",
+            "text": "只看模型名称。"
+          },
+          {
+            "id": "d",
+            "text": "只看点击数。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "线上指标要反映质量、可追溯性和性能。",
+        "focus": "上线指标"
+      },
+      {
+        "id": "rag-033-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 线上监控通常应覆盖哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索命中情况"
+          },
+          {
+            "id": "b",
+            "text": "重排和上下文压缩效果"
+          },
+          {
+            "id": "c",
+            "text": "生成结果质量"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟"
+          },
+          {
+            "id": "e",
+            "text": "UI 配色变化"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 监控需要覆盖链路各阶段。",
+        "focus": "监控维度"
+      },
+      {
+        "id": "rag-033-check-03",
+        "kind": "multiple",
+        "prompt": "哪些现象可以作为 RAG 回归信号？",
+        "options": [
+          {
+            "id": "a",
+            "text": "引用错误增加"
+          },
+          {
+            "id": "b",
+            "text": "答非所问增多"
+          },
+          {
+            "id": "c",
+            "text": "延迟突然升高"
+          },
+          {
+            "id": "d",
+            "text": "成本飙升"
+          },
+          {
+            "id": "e",
+            "text": "用户输入长度变短"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "线上回归往往先体现在质量、引用和性能上。",
+        "focus": "回归信号"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-034",
+    "checks": [
+      {
+        "id": "rag-034-check-01",
+        "kind": "single",
+        "prompt": "Embedding 模型选型时，应该重点关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型名字是否流行。"
+          },
+          {
+            "id": "b",
+            "text": "与业务语料、语言、召回目标和成本的匹配度。"
+          },
+          {
+            "id": "c",
+            "text": "输出字数是否最长。"
+          },
+          {
+            "id": "d",
+            "text": "是否能直接生成回答。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "embedding 选型本质上是表示能力和业务分布匹配问题。",
+        "focus": "Embedding 选型"
+      },
+      {
+        "id": "rag-034-check-02",
+        "kind": "multiple",
+        "prompt": "Embedding 选型通常要看哪些因素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "语义召回效果"
+          },
+          {
+            "id": "b",
+            "text": "多语言表现"
+          },
+          {
+            "id": "c",
+            "text": "成本和延迟"
+          },
+          {
+            "id": "d",
+            "text": "业务语料匹配度"
+          },
+          {
+            "id": "e",
+            "text": "UI 风格"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "embedding 并非越大越好，关键是和任务匹配。",
+        "focus": "选型因素"
+      },
+      {
+        "id": "rag-034-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景对 embedding 选型更敏感？",
+        "options": [
+          {
+            "id": "a",
+            "text": "专有名词多的企业知识"
+          },
+          {
+            "id": "b",
+            "text": "代码库检索"
+          },
+          {
+            "id": "c",
+            "text": "多语言知识库"
+          },
+          {
+            "id": "d",
+            "text": "简单固定问答"
+          },
+          {
+            "id": "e",
+            "text": "不需要检索的闲聊"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同语料分布会显著影响 embedding 效果。",
+        "focus": "场景差异"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-035",
+    "checks": [
+      {
+        "id": "rag-035-check-01",
+        "kind": "single",
+        "prompt": "多轮对话中的 RAG 为什么比单轮检索更难？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为多轮不需要检索。"
+          },
+          {
+            "id": "b",
+            "text": "因为需要同时处理当前问题、历史上下文、指代和状态更新。"
+          },
+          {
+            "id": "c",
+            "text": "因为多轮一定更短。"
+          },
+          {
+            "id": "d",
+            "text": "因为多轮没有权限问题。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多轮 RAG 要处理会话状态和查询演化。",
+        "focus": "多轮 RAG"
+      },
+      {
+        "id": "rag-035-check-02",
+        "kind": "multiple",
+        "prompt": "多轮 RAG 额外会面临哪些复杂度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "指代消解"
+          },
+          {
+            "id": "b",
+            "text": "历史轮次压缩"
+          },
+          {
+            "id": "c",
+            "text": "记忆污染"
+          },
+          {
+            "id": "d",
+            "text": "当前意图漂移"
+          },
+          {
+            "id": "e",
+            "text": "不需要上下文管理"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多轮会话里的检索对象不只是当前一句话。",
+        "focus": "额外复杂度"
+      },
+      {
+        "id": "rag-035-check-03",
+        "kind": "multiple",
+        "prompt": "多轮 RAG 可以考虑哪些设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "会话摘要"
+          },
+          {
+            "id": "b",
+            "text": "历史检索"
+          },
+          {
+            "id": "c",
+            "text": "当前意图提炼"
+          },
+          {
+            "id": "d",
+            "text": "状态化记忆"
+          },
+          {
+            "id": "e",
+            "text": "永远保留全部原文"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多轮 RAG 的核心是会话状态管理和信息筛选。",
+        "focus": "设计思路"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-036",
+    "checks": [
+      {
+        "id": "rag-036-check-01",
+        "kind": "single",
+        "prompt": "为什么“文档清洗”是 RAG 项目里被低估但关键的一步？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为脏文档更容易召回。"
+          },
+          {
+            "id": "b",
+            "text": "因为脏数据会直接影响切分、索引、召回和最终答案。"
+          },
+          {
+            "id": "c",
+            "text": "因为清洗只影响 UI。"
+          },
+          {
+            "id": "d",
+            "text": "因为清洗可以替代检索。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "垃圾进，垃圾出，RAG 尤其明显。",
+        "focus": "文档清洗"
+      },
+      {
+        "id": "rag-036-check-02",
+        "kind": "multiple",
+        "prompt": "文档清洗通常可能包括哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "去噪"
+          },
+          {
+            "id": "b",
+            "text": "去重"
+          },
+          {
+            "id": "c",
+            "text": "去页眉页脚或无关元素"
+          },
+          {
+            "id": "d",
+            "text": "格式统一"
+          },
+          {
+            "id": "e",
+            "text": "删除所有标题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "清洗的目标是减少噪声并保留结构信息。",
+        "focus": "清洗内容"
+      },
+      {
+        "id": "rag-036-check-03",
+        "kind": "multiple",
+        "prompt": "文档清洗不当可能造成什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "关键内容丢失"
+          },
+          {
+            "id": "b",
+            "text": "结构被破坏"
+          },
+          {
+            "id": "c",
+            "text": "检索噪声增加"
+          },
+          {
+            "id": "d",
+            "text": "自动提升准确率"
+          },
+          {
+            "id": "e",
+            "text": "自动解决冲突文档"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "清洗不能简单粗暴，否则会伤害知识表达。",
+        "focus": "清洗风险"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-037",
+    "checks": [
+      {
+        "id": "rag-037-check-01",
+        "kind": "single",
+        "prompt": "为什么 RAG 特别容易受到来自文档内容的 prompt injection 影响？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为文档不会进入上下文。"
+          },
+          {
+            "id": "b",
+            "text": "因为外部文档一旦被当作上下文输入，模型容易把里面的指令也当成可执行文本。"
+          },
+          {
+            "id": "c",
+            "text": "因为检索器会自动过滤所有恶意内容。"
+          },
+          {
+            "id": "d",
+            "text": "因为文档内容一定可信。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 把外部文本接进来，就把攻击面也接进来了。",
+        "focus": "文档注入"
+      },
+      {
+        "id": "rag-037-check-02",
+        "kind": "multiple",
+        "prompt": "哪些内容可能成为文档注入载体？",
+        "options": [
+          {
+            "id": "a",
+            "text": "网页正文"
+          },
+          {
+            "id": "b",
+            "text": "PDF 文档"
+          },
+          {
+            "id": "c",
+            "text": "FAQ 内容"
+          },
+          {
+            "id": "d",
+            "text": "第三方说明文档"
+          },
+          {
+            "id": "e",
+            "text": "受控的结构化元数据"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "只要是不可信文本，就要当作潜在注入源处理。",
+        "focus": "风险来源"
+      },
+      {
+        "id": "rag-037-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于缓解文档注入风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确外部内容是数据不是指令"
+          },
+          {
+            "id": "b",
+            "text": "对敏感动作做工具权限控制"
+          },
+          {
+            "id": "c",
+            "text": "过滤高风险内容"
+          },
+          {
+            "id": "d",
+            "text": "做红队测试"
+          },
+          {
+            "id": "e",
+            "text": "让模型完全相信所有文档"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "外部文档必须受系统边界保护，不能直接视为可信命令。",
+        "focus": "防护思路"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-038",
+    "checks": [
+      {
+        "id": "rag-038-check-01",
+        "kind": "single",
+        "prompt": "设计企业内部知识助手的 RAG 架构时，最需要重点考虑什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只追求召回更多文档。"
+          },
+          {
+            "id": "b",
+            "text": "准确性、权限、安全、覆盖率、延迟和成本之间的平衡。"
+          },
+          {
+            "id": "c",
+            "text": "只用最大模型。"
+          },
+          {
+            "id": "d",
+            "text": "不需要知识治理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业知识助手是系统工程，不是单点模型问题。",
+        "focus": "企业知识助手"
+      },
+      {
+        "id": "rag-038-check-02",
+        "kind": "multiple",
+        "prompt": "企业知识助手通常要权衡哪些方面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "召回覆盖 vs 噪声"
+          },
+          {
+            "id": "b",
+            "text": "准确性 vs 成本"
+          },
+          {
+            "id": "c",
+            "text": "权限安全 vs 可见范围"
+          },
+          {
+            "id": "d",
+            "text": "时效性 vs 运维复杂度"
+          },
+          {
+            "id": "e",
+            "text": "只看界面美观"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "企业场景里的每个优化都可能牺牲另一个指标。",
+        "focus": "关键权衡"
+      },
+      {
+        "id": "rag-038-check-03",
+        "kind": "multiple",
+        "prompt": "企业知识助手的 RAG 架构通常需要哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索和重排"
+          },
+          {
+            "id": "b",
+            "text": "权限过滤"
+          },
+          {
+            "id": "c",
+            "text": "引用和审计"
+          },
+          {
+            "id": "d",
+            "text": "版本和更新治理"
+          },
+          {
+            "id": "e",
+            "text": "所有文档无脑进 prompt"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "知识助手要能治理知识、权限和证据链。",
+        "focus": "架构能力"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-039",
+    "checks": [
+      {
+        "id": "rag-039-check-01",
+        "kind": "single",
+        "prompt": "如果线上用户反馈“RAG 经常答非所问”，你会如何排查？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先换 UI 主题。"
+          },
+          {
+            "id": "b",
+            "text": "按检索、重排、压缩、生成和权限链路逐段排查。"
+          },
+          {
+            "id": "c",
+            "text": "直接删掉检索层。"
+          },
+          {
+            "id": "d",
+            "text": "只看最终回答文本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "答非所问可能来自检索、排序、上下文和生成任何一段。",
+        "focus": "排障"
+      },
+      {
+        "id": "rag-039-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 排障通常要看哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "查询是否被正确理解"
+          },
+          {
+            "id": "b",
+            "text": "检索结果是否相关"
+          },
+          {
+            "id": "c",
+            "text": "上下文是否被噪声淹没"
+          },
+          {
+            "id": "d",
+            "text": "模型是否误读证据"
+          },
+          {
+            "id": "e",
+            "text": "页面是否换了颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 问题常常是多段链路叠加，不应只看单点。",
+        "focus": "排障维度"
+      },
+      {
+        "id": "rag-039-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方法有助于系统排查 RAG 问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回放失败请求"
+          },
+          {
+            "id": "b",
+            "text": "查看检索候选和最终上下文"
+          },
+          {
+            "id": "c",
+            "text": "做分段评测"
+          },
+          {
+            "id": "d",
+            "text": "对比版本变更"
+          },
+          {
+            "id": "e",
+            "text": "只看单次主观感觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可回放、可分段、可对比是排障关键。",
+        "focus": "排障方法"
+      }
+    ]
+  },
+  {
+    "questionId": "rag-040",
+    "checks": [
+      {
+        "id": "rag-040-check-01",
+        "kind": "single",
+        "prompt": "RAG 系统设计里最核心的 trade-off 是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文档越多越好。"
+          },
+          {
+            "id": "b",
+            "text": "在召回覆盖、精度、成本、延迟、权限和时效性之间平衡。"
+          },
+          {
+            "id": "c",
+            "text": "只追求最大 chunk。"
+          },
+          {
+            "id": "d",
+            "text": "只追求最强模型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 设计本质上是在多目标之间取平衡。",
+        "focus": "核心 trade-off"
+      },
+      {
+        "id": "rag-040-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 设计中的真实权衡有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "召回面 vs 噪声"
+          },
+          {
+            "id": "b",
+            "text": "chunk 粒度 vs 上下文完整性"
+          },
+          {
+            "id": "c",
+            "text": "权限安全 vs 可见范围"
+          },
+          {
+            "id": "d",
+            "text": "新鲜度 vs 运维复杂度"
+          },
+          {
+            "id": "e",
+            "text": "字体大小 vs 图标颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同业务目标会把 RAG 推向不同平衡点。",
+        "focus": "真实权衡"
+      },
+      {
+        "id": "rag-040-check-03",
+        "kind": "multiple",
+        "prompt": "做 RAG trade-off 决策时，哪些依据更重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "业务目标"
+          },
+          {
+            "id": "b",
+            "text": "数据分布"
+          },
+          {
+            "id": "c",
+            "text": "失败代价"
+          },
+          {
+            "id": "d",
+            "text": "评测结果"
+          },
+          {
+            "id": "e",
+            "text": "谁写得更顺眼"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 取舍应由业务和证据驱动，而不是主观偏好。",
+        "focus": "决策依据"
+      }
+    ]
+  }
+]

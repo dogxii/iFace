@@ -1,0 +1,3642 @@
+[
+  {
+    "questionId": "prompt-001",
+    "checks": [
+      {
+        "id": "prompt-001-check-01",
+        "kind": "single",
+        "prompt": "什么最准确描述 Prompt Engineering？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给模型加礼貌用语，让回答看起来更友好。"
+          },
+          {
+            "id": "b",
+            "text": "围绕任务、上下文、约束和输出格式设计并迭代模型输入。"
+          },
+          {
+            "id": "c",
+            "text": "只适用于闲聊，不适用于结构化任务。"
+          },
+          {
+            "id": "d",
+            "text": "通过改 Prompt 直接修改模型权重。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt Engineering 是把通用模型能力转成稳定产品能力的输入协议设计，不是简单润色文案。",
+        "focus": "Prompt工程定义"
+      },
+      {
+        "id": "prompt-001-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt Engineering 在 LLM 应用里通常带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更快验证业务想法"
+          },
+          {
+            "id": "b",
+            "text": "降低直接训练或微调的成本"
+          },
+          {
+            "id": "c",
+            "text": "提高格式、风格和行为边界的可控性"
+          },
+          {
+            "id": "d",
+            "text": "自动替代权限控制和事实校验"
+          },
+          {
+            "id": "e",
+            "text": "保证模型永远不幻觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Prompt 是控制层的一部分，能降低试错成本，但不能替代模型外的安全和校验机制。",
+        "focus": "工程价值"
+      },
+      {
+        "id": "prompt-001-check-03",
+        "kind": "multiple",
+        "prompt": "哪些问题通常不能只靠 Prompt 彻底解决？",
+        "options": [
+          {
+            "id": "a",
+            "text": "实时事实查询"
+          },
+          {
+            "id": "b",
+            "text": "后端权限控制"
+          },
+          {
+            "id": "c",
+            "text": "工具参数强校验"
+          },
+          {
+            "id": "d",
+            "text": "高风险动作审计"
+          },
+          {
+            "id": "e",
+            "text": "明确输出字段顺序"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 可以约束模型行为，但实时数据、权限和执行边界需要系统能力兜底。",
+        "focus": "适用边界"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-002",
+    "checks": [
+      {
+        "id": "prompt-002-check-01",
+        "kind": "single",
+        "prompt": "system prompt 和 user prompt 的主要区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "user prompt 总是优先级最高。"
+          },
+          {
+            "id": "b",
+            "text": "system prompt 定义全局规则，user prompt 表达当前任务输入。"
+          },
+          {
+            "id": "c",
+            "text": "system prompt 只能写输出格式。"
+          },
+          {
+            "id": "d",
+            "text": "二者不需要区分。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "分层设计能把稳定系统策略和动态用户需求分开管理。",
+        "focus": "角色分层"
+      },
+      {
+        "id": "prompt-002-check-02",
+        "kind": "multiple",
+        "prompt": "为什么要把 system prompt 和 user prompt 分开？",
+        "options": [
+          {
+            "id": "a",
+            "text": "系统规则更容易复用"
+          },
+          {
+            "id": "b",
+            "text": "动态输入更容易替换"
+          },
+          {
+            "id": "c",
+            "text": "异常输出更容易定位原因"
+          },
+          {
+            "id": "d",
+            "text": "更容易降低提示注入风险"
+          },
+          {
+            "id": "e",
+            "text": "可以让用户覆盖安全规则"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "系统层负责稳定边界，用户层负责当前任务；二者混在一起会难以治理。",
+        "focus": "分开设计"
+      },
+      {
+        "id": "prompt-002-check-03",
+        "kind": "multiple",
+        "prompt": "当 user prompt 要求违反 system prompt 时，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "遵循 system prompt 和外部安全策略"
+          },
+          {
+            "id": "b",
+            "text": "必要时说明无法执行的原因"
+          },
+          {
+            "id": "c",
+            "text": "不让用户输入覆盖高优先级规则"
+          },
+          {
+            "id": "d",
+            "text": "按用户要求忽略系统规则"
+          },
+          {
+            "id": "e",
+            "text": "随机选择一个要求执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "冲突策略要明确，否则模型容易在冲突指令之间摇摆。",
+        "focus": "冲突处理"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-003",
+    "checks": [
+      {
+        "id": "prompt-003-check-01",
+        "kind": "single",
+        "prompt": "一个高质量 Prompt 通常最应该讲清楚什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型供应商和价格。"
+          },
+          {
+            "id": "b",
+            "text": "任务目标、输入上下文、约束、成功标准和输出格式。"
+          },
+          {
+            "id": "c",
+            "text": "尽量多的角色称号。"
+          },
+          {
+            "id": "d",
+            "text": "与任务无关的背景故事。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "高质量 Prompt 要让模型知道做什么、依据什么做、不能做什么，以及按什么格式交付。",
+        "focus": "基本组成"
+      },
+      {
+        "id": "prompt-003-check-02",
+        "kind": "multiple",
+        "prompt": "哪些通常属于高质量 Prompt 的关键元素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确任务目标"
+          },
+          {
+            "id": "b",
+            "text": "必要输入上下文"
+          },
+          {
+            "id": "c",
+            "text": "约束条件和优先级"
+          },
+          {
+            "id": "d",
+            "text": "输出格式或 schema"
+          },
+          {
+            "id": "e",
+            "text": "无限制自由发挥"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 的结构越清晰，模型越不需要猜任务边界。",
+        "focus": "关键元素"
+      },
+      {
+        "id": "prompt-003-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 Prompt 写法容易导致输出不稳定？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务目标模糊，例如只写“分析一下”"
+          },
+          {
+            "id": "b",
+            "text": "缺少字段语义和输出格式"
+          },
+          {
+            "id": "c",
+            "text": "约束条件互相冲突"
+          },
+          {
+            "id": "d",
+            "text": "明确缺失信息处理方式"
+          },
+          {
+            "id": "e",
+            "text": "给出成功标准"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "很多失败来自任务定义和验收标准不清，而不是模型完全不会。",
+        "focus": "常见缺陷"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-004",
+    "checks": [
+      {
+        "id": "prompt-004-check-01",
+        "kind": "single",
+        "prompt": "zero-shot、one-shot、few-shot 的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "都必须更新模型参数。"
+          },
+          {
+            "id": "b",
+            "text": "分别是不提供示例、提供一个示例、提供多个示例。"
+          },
+          {
+            "id": "c",
+            "text": "few-shot 是只给半个示例。"
+          },
+          {
+            "id": "d",
+            "text": "zero-shot 只能用于图像任务。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "这些方法都属于上下文提示方式，不是训练方式。",
+        "focus": "Shot 区分"
+      },
+      {
+        "id": "prompt-004-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更可能需要 few-shot？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分类边界模糊"
+          },
+          {
+            "id": "b",
+            "text": "输出格式复杂"
+          },
+          {
+            "id": "c",
+            "text": "风格要求强"
+          },
+          {
+            "id": "d",
+            "text": "正则表达式已经能稳定处理"
+          },
+          {
+            "id": "e",
+            "text": "只需要固定字符串返回"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "few-shot 的价值在于展示模式、边界和格式。",
+        "focus": "few-shot 适用"
+      },
+      {
+        "id": "prompt-004-check-03",
+        "kind": "multiple",
+        "prompt": "few-shot 示例可能带来哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "占用 token"
+          },
+          {
+            "id": "b",
+            "text": "放大示例偏差"
+          },
+          {
+            "id": "c",
+            "text": "让模型过度模仿错误格式"
+          },
+          {
+            "id": "d",
+            "text": "自动提升实时事实准确率"
+          },
+          {
+            "id": "e",
+            "text": "保证输出完全确定"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "示例要少而精，坏示例比没有示例更危险。",
+        "focus": "示例风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-005",
+    "checks": [
+      {
+        "id": "prompt-005-check-01",
+        "kind": "single",
+        "prompt": "为什么在 Prompt 中明确输出格式很重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型默认会输出稳定 JSON。"
+          },
+          {
+            "id": "b",
+            "text": "因为工程系统需要可解析、可校验的结果。"
+          },
+          {
+            "id": "c",
+            "text": "因为格式要求能自动修复错误事实。"
+          },
+          {
+            "id": "d",
+            "text": "因为格式越复杂越稳定。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "格式约束提升的是解析和后处理稳定性，不是事实校验能力。",
+        "focus": "输出格式"
+      },
+      {
+        "id": "prompt-005-check-02",
+        "kind": "multiple",
+        "prompt": "结构化输出 Prompt 应尽量明确哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "字段名"
+          },
+          {
+            "id": "b",
+            "text": "字段类型"
+          },
+          {
+            "id": "c",
+            "text": "枚举范围和缺失策略"
+          },
+          {
+            "id": "d",
+            "text": "是否允许额外文本"
+          },
+          {
+            "id": "e",
+            "text": "模型内部隐藏状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "字段语义和 schema 越清楚，程序越容易校验模型输出。",
+        "focus": "格式字段"
+      },
+      {
+        "id": "prompt-005-check-03",
+        "kind": "multiple",
+        "prompt": "为什么明确输出格式后仍需要服务端校验？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型可能漏字段"
+          },
+          {
+            "id": "b",
+            "text": "模型可能输出非法 JSON"
+          },
+          {
+            "id": "c",
+            "text": "模型可能字段语义错误"
+          },
+          {
+            "id": "d",
+            "text": "服务端校验会降低所有成本"
+          },
+          {
+            "id": "e",
+            "text": "格式约束会让校验完全多余"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Prompt 约束只能提高概率，不能替代确定性解析和业务校验。",
+        "focus": "仍需校验"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-006",
+    "checks": [
+      {
+        "id": "prompt-006-check-01",
+        "kind": "single",
+        "prompt": "Prompt 里的角色设定主要影响什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接修改模型知识库。"
+          },
+          {
+            "id": "b",
+            "text": "回答角度、表达风格、术语密度和边界感。"
+          },
+          {
+            "id": "c",
+            "text": "自动赋予工具权限。"
+          },
+          {
+            "id": "d",
+            "text": "自动消除幻觉。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "角色设定是行为引导，不是能力注入。",
+        "focus": "角色设定"
+      },
+      {
+        "id": "prompt-006-check-02",
+        "kind": "multiple",
+        "prompt": "角色设定通常有哪些作用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "帮助模型进入任务语境"
+          },
+          {
+            "id": "b",
+            "text": "控制语气和专业深度"
+          },
+          {
+            "id": "c",
+            "text": "明确面向对象"
+          },
+          {
+            "id": "d",
+            "text": "替代任务目标"
+          },
+          {
+            "id": "e",
+            "text": "替代事实证据"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "角色要和任务、上下文、约束结合才稳定。",
+        "focus": "角色收益"
+      },
+      {
+        "id": "prompt-006-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法是角色设定的常见误区？",
+        "options": [
+          {
+            "id": "a",
+            "text": "“你是专家”就足够"
+          },
+          {
+            "id": "b",
+            "text": "角色越夸张越可靠"
+          },
+          {
+            "id": "c",
+            "text": "角色设定能凭空带来领域知识"
+          },
+          {
+            "id": "d",
+            "text": "角色设定可以辅助风格控制"
+          },
+          {
+            "id": "e",
+            "text": "角色应服从系统安全边界"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "角色设定不能替代具体任务说明和证据。",
+        "focus": "角色误区"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-007",
+    "checks": [
+      {
+        "id": "prompt-007-check-01",
+        "kind": "single",
+        "prompt": "在 Prompt 里写“不要做什么”有用吗？",
+        "options": [
+          {
+            "id": "a",
+            "text": "完全没用。"
+          },
+          {
+            "id": "b",
+            "text": "有用，但最好配合禁止项、触发条件和替代行为。"
+          },
+          {
+            "id": "c",
+            "text": "只要写得越多越好。"
+          },
+          {
+            "id": "d",
+            "text": "只能用于翻译任务。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "负向约束要可执行，遇到边界情况要告诉模型该怎么做。",
+        "focus": "约束写法"
+      },
+      {
+        "id": "prompt-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些约束比“不要胡说”更可执行？",
+        "options": [
+          {
+            "id": "a",
+            "text": "无依据时回答“资料中未提及”"
+          },
+          {
+            "id": "b",
+            "text": "缺少字段时返回 null"
+          },
+          {
+            "id": "c",
+            "text": "冲突时列出冲突来源"
+          },
+          {
+            "id": "d",
+            "text": "一定要自信回答"
+          },
+          {
+            "id": "e",
+            "text": "不管证据如何都补全"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "具体行为比抽象口号更稳定。",
+        "focus": "可执行约束"
+      },
+      {
+        "id": "prompt-007-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况容易造成约束冲突？",
+        "options": [
+          {
+            "id": "a",
+            "text": "要求必须回答，同时要求无证据不得回答"
+          },
+          {
+            "id": "b",
+            "text": "要求极简，同时要求解释所有细节"
+          },
+          {
+            "id": "c",
+            "text": "示例输出违反系统规则"
+          },
+          {
+            "id": "d",
+            "text": "明确优先级"
+          },
+          {
+            "id": "e",
+            "text": "明确拒答策略"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "冲突会让模型折中、随机偏向或输出不稳定。",
+        "focus": "约束冲突"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-008",
+    "checks": [
+      {
+        "id": "prompt-008-check-01",
+        "kind": "single",
+        "prompt": "为什么生产环境通常使用 Prompt 模板？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模板能替代模型。"
+          },
+          {
+            "id": "b",
+            "text": "因为模板便于参数化、复用、测试、版本管理和回滚。"
+          },
+          {
+            "id": "c",
+            "text": "因为模板一定比手写更短。"
+          },
+          {
+            "id": "d",
+            "text": "因为模板不需要安全审查。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模板把 Prompt 变成可维护资产，而不是随手拼字符串。",
+        "focus": "模板化"
+      },
+      {
+        "id": "prompt-008-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 模板通常应管理哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "固定规则"
+          },
+          {
+            "id": "b",
+            "text": "动态变量"
+          },
+          {
+            "id": "c",
+            "text": "示例和输出 schema"
+          },
+          {
+            "id": "d",
+            "text": "版本号和变更记录"
+          },
+          {
+            "id": "e",
+            "text": "用户浏览器主题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "模板管理的是影响模型行为的输入结构和规则。",
+        "focus": "模板管理"
+      },
+      {
+        "id": "prompt-008-check-03",
+        "kind": "multiple",
+        "prompt": "直接拼字符串相比模板更容易出现什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "变量注入"
+          },
+          {
+            "id": "b",
+            "text": "格式遗漏"
+          },
+          {
+            "id": "c",
+            "text": "线上差异难追踪"
+          },
+          {
+            "id": "d",
+            "text": "自动提升准确率"
+          },
+          {
+            "id": "e",
+            "text": "自动降低延迟"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多来源输入下，模板化和转义策略很重要。",
+        "focus": "字符串拼接风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-009",
+    "checks": [
+      {
+        "id": "prompt-009-check-01",
+        "kind": "single",
+        "prompt": "Prompt 是不是越详细越好？",
+        "options": [
+          {
+            "id": "a",
+            "text": "是，越长越好。"
+          },
+          {
+            "id": "b",
+            "text": "不是，关键是信息密度、优先级和规则一致性。"
+          },
+          {
+            "id": "c",
+            "text": "只要超过固定字数就会更好。"
+          },
+          {
+            "id": "d",
+            "text": "长度完全不影响成本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "过长 Prompt 会增加成本、延迟和冲突概率。",
+        "focus": "Prompt 长度"
+      },
+      {
+        "id": "prompt-009-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 过长可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "token 成本增加"
+          },
+          {
+            "id": "b",
+            "text": "重点被淹没"
+          },
+          {
+            "id": "c",
+            "text": "规则冲突更难排查"
+          },
+          {
+            "id": "d",
+            "text": "挤压真实上下文空间"
+          },
+          {
+            "id": "e",
+            "text": "自动消除所有歧义"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "详细要服务任务，不是无脑堆说明。",
+        "focus": "过长副作用"
+      },
+      {
+        "id": "prompt-009-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法比继续加字更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "删除低价值内容"
+          },
+          {
+            "id": "b",
+            "text": "合并重复规则"
+          },
+          {
+            "id": "c",
+            "text": "显式标注优先级"
+          },
+          {
+            "id": "d",
+            "text": "把所有历史原文都塞进去"
+          },
+          {
+            "id": "e",
+            "text": "增加无关示例"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "好的 Prompt 经常是更清晰，而不是更长。",
+        "focus": "优化方向"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-010",
+    "checks": [
+      {
+        "id": "prompt-010-check-01",
+        "kind": "single",
+        "prompt": "如果一个 Prompt 效果不好，第一步更应该做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "立刻整体重写。"
+          },
+          {
+            "id": "b",
+            "text": "固定输入、模型和参数，复现失败样本。"
+          },
+          {
+            "id": "c",
+            "text": "只把 temperature 调高。"
+          },
+          {
+            "id": "d",
+            "text": "直接上线新版本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "先可复现，才谈得上定位和优化。",
+        "focus": "排查起点"
+      },
+      {
+        "id": "prompt-010-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 调试时通常要排查哪些方面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务目标是否清楚"
+          },
+          {
+            "id": "b",
+            "text": "上下文是否足够"
+          },
+          {
+            "id": "c",
+            "text": "约束是否冲突"
+          },
+          {
+            "id": "d",
+            "text": "输出格式是否可执行"
+          },
+          {
+            "id": "e",
+            "text": "页面字体是否一致"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "问题可能来自输入协议，也可能来自模型能力或系统链路。",
+        "focus": "排查维度"
+      },
+      {
+        "id": "prompt-010-check-03",
+        "kind": "multiple",
+        "prompt": "哪些证据有助于调试 Prompt？",
+        "options": [
+          {
+            "id": "a",
+            "text": "失败样本"
+          },
+          {
+            "id": "b",
+            "text": "模型版本和参数"
+          },
+          {
+            "id": "c",
+            "text": "完整上下文和工具结果"
+          },
+          {
+            "id": "d",
+            "text": "评测集对比"
+          },
+          {
+            "id": "e",
+            "text": "单次主观感觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 调试要靠可复现数据，而不是看一次 demo。",
+        "focus": "调试证据"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-011",
+    "checks": [
+      {
+        "id": "prompt-011-check-01",
+        "kind": "single",
+        "prompt": "few-shot 示例应该怎么设计，才能真正提高效果？",
+        "options": [
+          {
+            "id": "a",
+            "text": "样例越多越好。"
+          },
+          {
+            "id": "b",
+            "text": "代表性强、边界清晰、格式一致、质量可靠。"
+          },
+          {
+            "id": "c",
+            "text": "只放最简单的成功样例。"
+          },
+          {
+            "id": "d",
+            "text": "随机从任意日志里复制。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "few-shot 的收益来自高质量示范，而不是数量堆叠。",
+        "focus": "few-shot 质量"
+      },
+      {
+        "id": "prompt-011-check-02",
+        "kind": "multiple",
+        "prompt": "高质量 few-shot 示例通常应覆盖哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "高频典型样本"
+          },
+          {
+            "id": "b",
+            "text": "边界样本"
+          },
+          {
+            "id": "c",
+            "text": "容易混淆的样本"
+          },
+          {
+            "id": "d",
+            "text": "必要反例或失败处理"
+          },
+          {
+            "id": "e",
+            "text": "与任务无关的闲聊"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "示例要覆盖真实分布和容易出错的边界。",
+        "focus": "示例覆盖"
+      },
+      {
+        "id": "prompt-011-check-03",
+        "kind": "multiple",
+        "prompt": "few-shot 示例库需要注意哪些治理问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "版本化"
+          },
+          {
+            "id": "b",
+            "text": "避免测试集泄漏"
+          },
+          {
+            "id": "c",
+            "text": "与评测结果关联"
+          },
+          {
+            "id": "d",
+            "text": "永久不更新"
+          },
+          {
+            "id": "e",
+            "text": "只保留开发者喜欢的样例"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "示例本身也是 Prompt 资产，需要和模板一起治理。",
+        "focus": "示例治理"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-012",
+    "checks": [
+      {
+        "id": "prompt-012-check-01",
+        "kind": "single",
+        "prompt": "Chain-of-Thought Prompting 的核心是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让模型只输出最终一个词。"
+          },
+          {
+            "id": "b",
+            "text": "引导模型先进行中间步骤分解，再给出结论。"
+          },
+          {
+            "id": "c",
+            "text": "让模型直接访问数据库。"
+          },
+          {
+            "id": "d",
+            "text": "删除所有上下文。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "CoT 的价值在于把复杂问题拆成更小的推理步骤。",
+        "focus": "CoT"
+      },
+      {
+        "id": "prompt-012-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更可能从 CoT 中受益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数学推理"
+          },
+          {
+            "id": "b",
+            "text": "逻辑判断"
+          },
+          {
+            "id": "c",
+            "text": "复杂代码分析"
+          },
+          {
+            "id": "d",
+            "text": "多约束规划"
+          },
+          {
+            "id": "e",
+            "text": "简单字段复制"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "需要多步组织条件的任务更适合分步推理。",
+        "focus": "CoT 适合"
+      },
+      {
+        "id": "prompt-012-check-03",
+        "kind": "multiple",
+        "prompt": "显式输出 CoT 有哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "增加 token 成本"
+          },
+          {
+            "id": "b",
+            "text": "生成看似合理但错误的解释"
+          },
+          {
+            "id": "c",
+            "text": "暴露不该展示的中间分析"
+          },
+          {
+            "id": "d",
+            "text": "自动保证答案正确"
+          },
+          {
+            "id": "e",
+            "text": "自动降低延迟"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "生产中通常更关注可验证结论和依据，而不是完整暴露推理过程。",
+        "focus": "CoT 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-013",
+    "checks": [
+      {
+        "id": "prompt-013-check-01",
+        "kind": "single",
+        "prompt": "self-consistency prompting 是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每次强制输出完全相同文本。"
+          },
+          {
+            "id": "b",
+            "text": "多次采样候选答案，再用投票或一致性选择结果。"
+          },
+          {
+            "id": "c",
+            "text": "只给一个示例。"
+          },
+          {
+            "id": "d",
+            "text": "一种 Prompt 存储格式。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "它通过多条候选路径降低单次偶然错误影响。",
+        "focus": "Self-consistency"
+      },
+      {
+        "id": "prompt-013-check-02",
+        "kind": "multiple",
+        "prompt": "self-consistency 更适合哪些任务？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数学题"
+          },
+          {
+            "id": "b",
+            "text": "逻辑推理"
+          },
+          {
+            "id": "c",
+            "text": "分类判断"
+          },
+          {
+            "id": "d",
+            "text": "开放式创意写作"
+          },
+          {
+            "id": "e",
+            "text": "没有可判定答案的闲聊"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "答案可判定时，多样采样和投票更有意义。",
+        "focus": "适用任务"
+      },
+      {
+        "id": "prompt-013-check-03",
+        "kind": "multiple",
+        "prompt": "使用 self-consistency 时要注意哪些代价？",
+        "options": [
+          {
+            "id": "a",
+            "text": "成本更高"
+          },
+          {
+            "id": "b",
+            "text": "延迟更高"
+          },
+          {
+            "id": "c",
+            "text": "多个样本可能共享同一偏差"
+          },
+          {
+            "id": "d",
+            "text": "完全不需要评测"
+          },
+          {
+            "id": "e",
+            "text": "自动修复检索错误"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "它增强稳定性，但不替代事实证据和校验。",
+        "focus": "使用代价"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-014",
+    "checks": [
+      {
+        "id": "prompt-014-check-01",
+        "kind": "single",
+        "prompt": "要让模型稳定输出结构化字段，Prompt 最应该明确什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让模型自由发挥。"
+          },
+          {
+            "id": "b",
+            "text": "字段名、含义、类型、取值范围、必填规则和缺失策略。"
+          },
+          {
+            "id": "c",
+            "text": "只写“输出 JSON”。"
+          },
+          {
+            "id": "d",
+            "text": "只要求文风优美。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "稳定结构化输出依赖字段语义和 schema，不只是 JSON 字样。",
+        "focus": "结构化字段"
+      },
+      {
+        "id": "prompt-014-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于稳定结构化输出？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提供 schema"
+          },
+          {
+            "id": "b",
+            "text": "禁止额外解释"
+          },
+          {
+            "id": "c",
+            "text": "使用原生 structured output 或 tool calling"
+          },
+          {
+            "id": "d",
+            "text": "服务端校验和有限重试"
+          },
+          {
+            "id": "e",
+            "text": "让字段名每次随机变化"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构化输出要结合模型约束和程序校验。",
+        "focus": "稳定输出"
+      },
+      {
+        "id": "prompt-014-check-03",
+        "kind": "multiple",
+        "prompt": "什么时候应考虑拆分结构化输出任务？",
+        "options": [
+          {
+            "id": "a",
+            "text": "字段很多"
+          },
+          {
+            "id": "b",
+            "text": "嵌套很深"
+          },
+          {
+            "id": "c",
+            "text": "字段语义容易混淆"
+          },
+          {
+            "id": "d",
+            "text": "只有一个布尔字段"
+          },
+          {
+            "id": "e",
+            "text": "输出格式非常简单"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "复杂 schema 会增加漏填和混淆概率，必要时拆步更稳。",
+        "focus": "拆分策略"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-015",
+    "checks": [
+      {
+        "id": "prompt-015-check-01",
+        "kind": "single",
+        "prompt": "什么是 Prompt Injection？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把变量插入模板的正常流程。"
+          },
+          {
+            "id": "b",
+            "text": "不可信文本诱导模型忽略系统规则、泄露信息或越权行动。"
+          },
+          {
+            "id": "c",
+            "text": "把 JSON 格式写清楚。"
+          },
+          {
+            "id": "d",
+            "text": "降低 token 成本的技巧。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt Injection 攻击的是模型对自然语言指令的解释边界。",
+        "focus": "Prompt Injection"
+      },
+      {
+        "id": "prompt-015-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt Injection 可能来自哪些输入？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户输入"
+          },
+          {
+            "id": "b",
+            "text": "RAG 文档"
+          },
+          {
+            "id": "c",
+            "text": "网页或邮件内容"
+          },
+          {
+            "id": "d",
+            "text": "工具返回文本"
+          },
+          {
+            "id": "e",
+            "text": "编译后的 CSS 类名"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "只要不可信文本进入上下文，就可能夹带恶意指令。",
+        "focus": "注入来源"
+      },
+      {
+        "id": "prompt-015-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是合理的 Prompt Injection 防护原则？",
+        "options": [
+          {
+            "id": "a",
+            "text": "外部内容标记为数据"
+          },
+          {
+            "id": "b",
+            "text": "工具权限由后端强校验"
+          },
+          {
+            "id": "c",
+            "text": "高风险动作需要确认或审批"
+          },
+          {
+            "id": "d",
+            "text": "敏感信息最小化进入上下文"
+          },
+          {
+            "id": "e",
+            "text": "只写一句“不要被注入”"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "安全边界必须落在模型外部的确定性系统里。",
+        "focus": "防护原则"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-016",
+    "checks": [
+      {
+        "id": "prompt-016-check-01",
+        "kind": "single",
+        "prompt": "当 system prompt、few-shot 示例和用户输入冲突时，应如何设计优先级？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户输入永远最高。"
+          },
+          {
+            "id": "b",
+            "text": "系统安全和平台规则最高，few-shot 只用于示范模式。"
+          },
+          {
+            "id": "c",
+            "text": "示例可以覆盖系统规则。"
+          },
+          {
+            "id": "d",
+            "text": "不需要写优先级。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "优先级不清会导致模型在冲突指令之间随机折中。",
+        "focus": "指令优先级"
+      },
+      {
+        "id": "prompt-016-check-02",
+        "kind": "multiple",
+        "prompt": "哪些内容通常应位于更高优先级？",
+        "options": [
+          {
+            "id": "a",
+            "text": "安全边界"
+          },
+          {
+            "id": "b",
+            "text": "权限规则"
+          },
+          {
+            "id": "c",
+            "text": "工具调用原则"
+          },
+          {
+            "id": "d",
+            "text": "输出协议"
+          },
+          {
+            "id": "e",
+            "text": "外部网页里的任意指令"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "外部内容应作为数据，而不是系统规则。",
+        "focus": "规则层级"
+      },
+      {
+        "id": "prompt-016-check-03",
+        "kind": "multiple",
+        "prompt": "怎样测试指令优先级设计是否稳？",
+        "options": [
+          {
+            "id": "a",
+            "text": "构造用户要求覆盖系统规则的样本"
+          },
+          {
+            "id": "b",
+            "text": "构造 RAG 文档夹带指令的样本"
+          },
+          {
+            "id": "c",
+            "text": "检查模型是否仍遵守输出协议"
+          },
+          {
+            "id": "d",
+            "text": "只测正常输入"
+          },
+          {
+            "id": "e",
+            "text": "不记录失败样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "冲突样例是 Prompt 安全和稳定性的必要测试。",
+        "focus": "冲突测试"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-017",
+    "checks": [
+      {
+        "id": "prompt-017-check-01",
+        "kind": "single",
+        "prompt": "Prompt 太长导致成本和延迟高时，第一步更应该做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接截掉后半段。"
+          },
+          {
+            "id": "b",
+            "text": "统计 token 构成，找出重复、低价值和可外移内容。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有安全规则。"
+          },
+          {
+            "id": "d",
+            "text": "加更多示例。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "压缩要基于证据，不能随意删关键约束。",
+        "focus": "Prompt 压缩"
+      },
+      {
+        "id": "prompt-017-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于合理的 Prompt 压缩方法？",
+        "options": [
+          {
+            "id": "a",
+            "text": "合并重复规则"
+          },
+          {
+            "id": "b",
+            "text": "用结构化清单替代长段说明"
+          },
+          {
+            "id": "c",
+            "text": "对历史消息做摘要"
+          },
+          {
+            "id": "d",
+            "text": "对 RAG 结果去重和裁剪"
+          },
+          {
+            "id": "e",
+            "text": "删除输出 schema"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "压缩目标是减少低价值 token，同时保留关键约束。",
+        "focus": "压缩方法"
+      },
+      {
+        "id": "prompt-017-check-03",
+        "kind": "multiple",
+        "prompt": "哪些内容通常不宜随便压缩或删除？",
+        "options": [
+          {
+            "id": "a",
+            "text": "安全边界"
+          },
+          {
+            "id": "b",
+            "text": "字段语义"
+          },
+          {
+            "id": "c",
+            "text": "输出格式"
+          },
+          {
+            "id": "d",
+            "text": "关键业务约束"
+          },
+          {
+            "id": "e",
+            "text": "重复背景废话"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "删掉关键约束会让质量退化，即使成本下降也不值得。",
+        "focus": "不宜随便压缩"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-018",
+    "checks": [
+      {
+        "id": "prompt-018-check-01",
+        "kind": "single",
+        "prompt": "为什么 Prompt 优化不能只靠“感觉好像更顺了”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为主观感觉完全没价值。"
+          },
+          {
+            "id": "b",
+            "text": "因为改动可能让一部分样本变好、另一部分样本变差。"
+          },
+          {
+            "id": "c",
+            "text": "因为 Prompt 不影响模型输出。"
+          },
+          {
+            "id": "d",
+            "text": "因为只要能跑就行。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt 优化要看任务级指标，而不是单个 demo 的观感。",
+        "focus": "Prompt 评测"
+      },
+      {
+        "id": "prompt-018-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 评测应关注哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率"
+          },
+          {
+            "id": "b",
+            "text": "格式稳定性"
+          },
+          {
+            "id": "c",
+            "text": "幻觉率或错误率"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟"
+          },
+          {
+            "id": "e",
+            "text": "文本越长越好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "生产评测要覆盖质量、成本、性能和安全。",
+        "focus": "指标"
+      },
+      {
+        "id": "prompt-018-check-03",
+        "kind": "multiple",
+        "prompt": "Prompt 评测集应该覆盖哪些样本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "高频样本"
+          },
+          {
+            "id": "b",
+            "text": "边界样本"
+          },
+          {
+            "id": "c",
+            "text": "无答案样本"
+          },
+          {
+            "id": "d",
+            "text": "历史失败样本"
+          },
+          {
+            "id": "e",
+            "text": "只覆盖最简单样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "只看简单样本会高估线上效果。",
+        "focus": "样本覆盖"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-019",
+    "checks": [
+      {
+        "id": "prompt-019-check-01",
+        "kind": "single",
+        "prompt": "Prompt 也会“过拟合”是什么意思？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt 会训练模型参数。"
+          },
+          {
+            "id": "b",
+            "text": "针对少量样本反复调 Prompt，导致测试表现好但泛化差。"
+          },
+          {
+            "id": "c",
+            "text": "Prompt 不能版本管理。"
+          },
+          {
+            "id": "d",
+            "text": "Prompt 不影响输出。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "人工调 Prompt 也可能过度贴合调试样本。",
+        "focus": "Prompt 过拟合"
+      },
+      {
+        "id": "prompt-019-check-02",
+        "kind": "multiple",
+        "prompt": "哪些现象可能说明 Prompt 过拟合？",
+        "options": [
+          {
+            "id": "a",
+            "text": "离线分升高但线上指标不升"
+          },
+          {
+            "id": "b",
+            "text": "规则越来越长"
+          },
+          {
+            "id": "c",
+            "text": "修一个样本坏一批样本"
+          },
+          {
+            "id": "d",
+            "text": "holdout 集稳定提升"
+          },
+          {
+            "id": "e",
+            "text": "线上长尾也明显改善"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过拟合通常表现为调试集有效，真实分布无效。",
+        "focus": "过拟合信号"
+      },
+      {
+        "id": "prompt-019-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法能降低 Prompt 过拟合风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "区分调参集和 holdout 集"
+          },
+          {
+            "id": "b",
+            "text": "使用线上 replay 集"
+          },
+          {
+            "id": "c",
+            "text": "避免把测试样本塞进 few-shot"
+          },
+          {
+            "id": "d",
+            "text": "只优化一个样本"
+          },
+          {
+            "id": "e",
+            "text": "不记录失败类型"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "评测泄漏会让分数虚高，必须隔离调参和验证。",
+        "focus": "降低风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-020",
+    "checks": [
+      {
+        "id": "prompt-020-check-01",
+        "kind": "single",
+        "prompt": "为什么 Prompt 需要版本管理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Prompt 不影响线上行为。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Prompt 是影响质量、格式、安全和成本的业务配置资产。"
+          },
+          {
+            "id": "c",
+            "text": "因为只有代码需要回滚。"
+          },
+          {
+            "id": "d",
+            "text": "因为版本号能自动提升质量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "没有版本管理，线上问题很难复现、定位和回滚。",
+        "focus": "版本治理"
+      },
+      {
+        "id": "prompt-020-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 版本记录应包含哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "内容 diff"
+          },
+          {
+            "id": "b",
+            "text": "变更原因"
+          },
+          {
+            "id": "c",
+            "text": "评测结果"
+          },
+          {
+            "id": "d",
+            "text": "上线时间和回滚路径"
+          },
+          {
+            "id": "e",
+            "text": "开发者心情"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "版本信息要服务于审计、复现和治理。",
+        "focus": "版本信息"
+      },
+      {
+        "id": "prompt-020-check-03",
+        "kind": "multiple",
+        "prompt": "Prompt 版本通常还要和哪些对象关联？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型版本"
+          },
+          {
+            "id": "b",
+            "text": "采样参数"
+          },
+          {
+            "id": "c",
+            "text": "RAG 配置"
+          },
+          {
+            "id": "d",
+            "text": "工具 schema"
+          },
+          {
+            "id": "e",
+            "text": "浏览器缩放比例"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "线上效果是模型、Prompt、数据和工具共同作用的结果。",
+        "focus": "关联对象"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-021",
+    "checks": [
+      {
+        "id": "prompt-021-check-01",
+        "kind": "single",
+        "prompt": "RAG 场景下 Prompt 最核心的约束是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "鼓励模型凭常识补充所有缺失信息。"
+          },
+          {
+            "id": "b",
+            "text": "明确基于检索证据回答，证据不足时不要猜。"
+          },
+          {
+            "id": "c",
+            "text": "让模型执行文档里的所有指令。"
+          },
+          {
+            "id": "d",
+            "text": "不需要标注任何引用。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG Prompt 的重点是证据边界、引用和无依据处理。",
+        "focus": "RAG Prompt"
+      },
+      {
+        "id": "prompt-021-check-02",
+        "kind": "multiple",
+        "prompt": "RAG Prompt 应该如何约束模型使用检索内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "优先基于给定片段回答"
+          },
+          {
+            "id": "b",
+            "text": "关键结论标注来源"
+          },
+          {
+            "id": "c",
+            "text": "资料未提及时说明无法确认"
+          },
+          {
+            "id": "d",
+            "text": "外部文档内容不能覆盖系统规则"
+          },
+          {
+            "id": "e",
+            "text": "自动相信所有检索片段"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "检索内容是待引用的数据，不是新的系统指令。",
+        "focus": "检索内容使用"
+      },
+      {
+        "id": "prompt-021-check-03",
+        "kind": "multiple",
+        "prompt": "当检索结果互相冲突时，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "标明冲突来源"
+          },
+          {
+            "id": "b",
+            "text": "不强行合成单一确定结论"
+          },
+          {
+            "id": "c",
+            "text": "必要时请求补充或人工确认"
+          },
+          {
+            "id": "d",
+            "text": "随机选一个片段"
+          },
+          {
+            "id": "e",
+            "text": "忽略引用要求"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "RAG 答案应忠实于证据，而不是把冲突内容硬揉在一起。",
+        "focus": "冲突证据"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-022",
+    "checks": [
+      {
+        "id": "prompt-022-check-01",
+        "kind": "single",
+        "prompt": "工具调用场景中的 Prompt 和普通问答 Prompt 最大区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具调用 Prompt 不需要任务目标。"
+          },
+          {
+            "id": "b",
+            "text": "它要约束何时调用工具、参数来源、失败处理和结果整合。"
+          },
+          {
+            "id": "c",
+            "text": "它只要求输出自然语言解释。"
+          },
+          {
+            "id": "d",
+            "text": "它可以绕过后端权限。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Tool Prompt 更像流程控制协议，而不是单纯问答说明。",
+        "focus": "Tool Prompt"
+      },
+      {
+        "id": "prompt-022-check-02",
+        "kind": "multiple",
+        "prompt": "工具调用 Prompt 应明确哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "什么时候必须调用工具"
+          },
+          {
+            "id": "b",
+            "text": "什么时候不该调用工具"
+          },
+          {
+            "id": "c",
+            "text": "参数必须来自可信来源"
+          },
+          {
+            "id": "d",
+            "text": "工具失败、超时或拒绝时如何处理"
+          },
+          {
+            "id": "e",
+            "text": "允许模型伪造工具结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具调用要防止误调、漏调、乱填参数和伪造结果。",
+        "focus": "工具规则"
+      },
+      {
+        "id": "prompt-022-check-03",
+        "kind": "multiple",
+        "prompt": "为什么高风险工具不能只靠 Prompt 控制？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型可能被注入干扰"
+          },
+          {
+            "id": "b",
+            "text": "权限必须由后端强制执行"
+          },
+          {
+            "id": "c",
+            "text": "参数需要确定性校验"
+          },
+          {
+            "id": "d",
+            "text": "写操作可能需要审批或确认"
+          },
+          {
+            "id": "e",
+            "text": "Prompt 比所有代码边界都可靠"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具权限和执行边界必须落在工具网关或工作流系统里。",
+        "focus": "高风险动作"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-023",
+    "checks": [
+      {
+        "id": "prompt-023-check-01",
+        "kind": "single",
+        "prompt": "多轮对话 Prompt 和单轮问答的本质差异是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多轮不需要 system prompt。"
+          },
+          {
+            "id": "b",
+            "text": "多轮需要管理历史、状态、指代、记忆和上下文裁剪。"
+          },
+          {
+            "id": "c",
+            "text": "多轮一定更简单。"
+          },
+          {
+            "id": "d",
+            "text": "多轮不受 token 限制。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多轮对话是持续状态管理问题，不只是把消息一直追加。",
+        "focus": "多轮对话"
+      },
+      {
+        "id": "prompt-023-check-02",
+        "kind": "multiple",
+        "prompt": "多轮对话里常见挑战有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "指代消解"
+          },
+          {
+            "id": "b",
+            "text": "用户改口"
+          },
+          {
+            "id": "c",
+            "text": "角色漂移"
+          },
+          {
+            "id": "d",
+            "text": "历史污染"
+          },
+          {
+            "id": "e",
+            "text": "完全不需要记忆策略"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "历史信息有价值也有噪声，需要明确保留和覆盖规则。",
+        "focus": "多轮挑战"
+      },
+      {
+        "id": "prompt-023-check-03",
+        "kind": "multiple",
+        "prompt": "哪些信息更值得在多轮上下文中保留？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前任务目标"
+          },
+          {
+            "id": "b",
+            "text": "用户最近确认的事实"
+          },
+          {
+            "id": "c",
+            "text": "未完成状态"
+          },
+          {
+            "id": "d",
+            "text": "关键工具结果摘要"
+          },
+          {
+            "id": "e",
+            "text": "所有无关闲聊原文"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多轮上下文应保留高价值状态，压缩低价值历史。",
+        "focus": "上下文保留"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-024",
+    "checks": [
+      {
+        "id": "prompt-024-check-01",
+        "kind": "single",
+        "prompt": "提高 Prompt 对长尾输入和异常输入的鲁棒性，核心是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只优化正常样本。"
+          },
+          {
+            "id": "b",
+            "text": "明确异常处理策略，并用长尾、噪声和对抗样本评测。"
+          },
+          {
+            "id": "c",
+            "text": "所有异常都强行回答。"
+          },
+          {
+            "id": "d",
+            "text": "删除安全边界。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "鲁棒性关注非理想输入下是否能澄清、拒答、降级或安全终止。",
+        "focus": "鲁棒性"
+      },
+      {
+        "id": "prompt-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于常见长尾或异常输入？",
+        "options": [
+          {
+            "id": "a",
+            "text": "错别字、口语和省略"
+          },
+          {
+            "id": "b",
+            "text": "多意图混杂"
+          },
+          {
+            "id": "c",
+            "text": "超长输入"
+          },
+          {
+            "id": "d",
+            "text": "提示注入或越权请求"
+          },
+          {
+            "id": "e",
+            "text": "完全标准的单句问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "真实用户输入会包含噪声、缺失和恶意样本。",
+        "focus": "长尾输入"
+      },
+      {
+        "id": "prompt-024-check-03",
+        "kind": "multiple",
+        "prompt": "哪些策略有助于提高鲁棒性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确何时澄清"
+          },
+          {
+            "id": "b",
+            "text": "明确何时拒答"
+          },
+          {
+            "id": "c",
+            "text": "高风险样本走工具验证或人工处理"
+          },
+          {
+            "id": "d",
+            "text": "维护失败样本库"
+          },
+          {
+            "id": "e",
+            "text": "只看平均分"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "少量长尾高风险失败可能被平均指标掩盖。",
+        "focus": "鲁棒策略"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-025",
+    "checks": [
+      {
+        "id": "prompt-025-check-01",
+        "kind": "single",
+        "prompt": "Prompt 工程里的可解释性为什么重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以保证模型永远正确。"
+          },
+          {
+            "id": "b",
+            "text": "有助于理解输出来源，定位规则、上下文或模型问题。"
+          },
+          {
+            "id": "c",
+            "text": "可以替代日志和评测。"
+          },
+          {
+            "id": "d",
+            "text": "只影响文案美观。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "可解释性服务调试、审计、复现和团队协作。",
+        "focus": "可解释性"
+      },
+      {
+        "id": "prompt-025-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法能提高 Prompt 系统可解释性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分清 system、template、user、context"
+          },
+          {
+            "id": "b",
+            "text": "记录 Prompt 版本"
+          },
+          {
+            "id": "c",
+            "text": "记录检索片段和工具结果"
+          },
+          {
+            "id": "d",
+            "text": "给关键规则编号或命名"
+          },
+          {
+            "id": "e",
+            "text": "把所有规则混成一段长文"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构清楚，问题才容易定位。",
+        "focus": "可解释设计"
+      },
+      {
+        "id": "prompt-025-check-03",
+        "kind": "multiple",
+        "prompt": "可解释性对调试有哪些帮助？",
+        "options": [
+          {
+            "id": "a",
+            "text": "判断是检索问题还是生成问题"
+          },
+          {
+            "id": "b",
+            "text": "判断是哪条规则触发拒答"
+          },
+          {
+            "id": "c",
+            "text": "复现线上失败请求"
+          },
+          {
+            "id": "d",
+            "text": "自动修复所有问题"
+          },
+          {
+            "id": "e",
+            "text": "让评测不再需要"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "可解释性让定位更快，但仍要修复和回归验证。",
+        "focus": "调试价值"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-026",
+    "checks": [
+      {
+        "id": "prompt-026-check-01",
+        "kind": "single",
+        "prompt": "设计可维护 Prompt 系统时，最合理的分层是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有内容拼成一个字符串。"
+          },
+          {
+            "id": "b",
+            "text": "将系统规则、任务模板、动态变量、上下文和输出 schema 分层管理。"
+          },
+          {
+            "id": "c",
+            "text": "每个请求随机生成规则。"
+          },
+          {
+            "id": "d",
+            "text": "只保留 user prompt。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "分层能降低变更风险，并方便评测、回放和回滚。",
+        "focus": "Prompt 分层"
+      },
+      {
+        "id": "prompt-026-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 系统通常可以拆分哪些层？",
+        "options": [
+          {
+            "id": "a",
+            "text": "全局安全规则"
+          },
+          {
+            "id": "b",
+            "text": "任务模板"
+          },
+          {
+            "id": "c",
+            "text": "示例库"
+          },
+          {
+            "id": "d",
+            "text": "RAG 上下文和工具说明"
+          },
+          {
+            "id": "e",
+            "text": "用户浏览器缓存"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同层的变化频率、责任边界和治理方式不同。",
+        "focus": "分层内容"
+      },
+      {
+        "id": "prompt-026-check-03",
+        "kind": "multiple",
+        "prompt": "可维护 Prompt 系统应具备哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "版本管理"
+          },
+          {
+            "id": "b",
+            "text": "权限和审批"
+          },
+          {
+            "id": "c",
+            "text": "自动评测"
+          },
+          {
+            "id": "d",
+            "text": "灰度和回滚"
+          },
+          {
+            "id": "e",
+            "text": "任何人直接改线上 Prompt"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 是线上行为资产，治理强度应接近代码和配置。",
+        "focus": "可维护能力"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-027",
+    "checks": [
+      {
+        "id": "prompt-027-check-01",
+        "kind": "single",
+        "prompt": "什么时候应继续优化 Prompt，什么时候考虑微调或换模型？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只要失败就立即换模型。"
+          },
+          {
+            "id": "b",
+            "text": "表达、约束、格式问题先优化 Prompt；能力边界问题再考虑微调或换模型。"
+          },
+          {
+            "id": "c",
+            "text": "永远只靠 Prompt。"
+          },
+          {
+            "id": "d",
+            "text": "微调一定更便宜。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "先判断问题类型，再决定投入层级。",
+        "focus": "优化还是换方案"
+      },
+      {
+        "id": "prompt-027-check-02",
+        "kind": "multiple",
+        "prompt": "哪些情况更适合继续优化 Prompt？",
+        "options": [
+          {
+            "id": "a",
+            "text": "输出格式不稳"
+          },
+          {
+            "id": "b",
+            "text": "规则表达不清"
+          },
+          {
+            "id": "c",
+            "text": "约束冲突"
+          },
+          {
+            "id": "d",
+            "text": "缺少少量代表性示例"
+          },
+          {
+            "id": "e",
+            "text": "模型完全不具备相关能力"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "输入协议问题优先在 Prompt 层解决。",
+        "focus": "适合 Prompt 优化"
+      },
+      {
+        "id": "prompt-027-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况可能需要 RAG、微调或换模型？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缺少领域知识"
+          },
+          {
+            "id": "b",
+            "text": "需要稳定学习专门输出风格"
+          },
+          {
+            "id": "c",
+            "text": "基础推理能力不足"
+          },
+          {
+            "id": "d",
+            "text": "只是 Prompt 太啰嗦"
+          },
+          {
+            "id": "e",
+            "text": "只是缺一个字段说明"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "当问题是“不会做”而不是“没讲清”，就要考虑系统或模型层方案。",
+        "focus": "应换层级"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-028",
+    "checks": [
+      {
+        "id": "prompt-028-check-01",
+        "kind": "single",
+        "prompt": "Prompt 同时要求“简洁回答”和“详尽解释”导致不稳定，应该怎么改？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把两个要求都写得更长。"
+          },
+          {
+            "id": "b",
+            "text": "明确优先级，或拆成不同输出模式。"
+          },
+          {
+            "id": "c",
+            "text": "让模型自己猜。"
+          },
+          {
+            "id": "d",
+            "text": "删除所有输出要求。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "冲突目标应被拆分或设优先级，不能混在同一层里。",
+        "focus": "冲突目标"
+      },
+      {
+        "id": "prompt-028-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方式可以缓解这种冲突？",
+        "options": [
+          {
+            "id": "a",
+            "text": "定义默认模式"
+          },
+          {
+            "id": "b",
+            "text": "提供 concise / detailed 开关"
+          },
+          {
+            "id": "c",
+            "text": "输出中区分摘要和展开说明"
+          },
+          {
+            "id": "d",
+            "text": "按用户场景选择模板"
+          },
+          {
+            "id": "e",
+            "text": "不做任何优先级说明"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "把冲突要求变成明确模式，比堆叠要求更稳定。",
+        "focus": "缓解方式"
+      },
+      {
+        "id": "prompt-028-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合拆成多个 Prompt 或模式？",
+        "options": [
+          {
+            "id": "a",
+            "text": "快速摘要"
+          },
+          {
+            "id": "b",
+            "text": "详细教程"
+          },
+          {
+            "id": "c",
+            "text": "面向不同用户水平的回答"
+          },
+          {
+            "id": "d",
+            "text": "只有一个固定标签输出"
+          },
+          {
+            "id": "e",
+            "text": "单一无分支任务"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同产品目标应该用不同模板或模式承载。",
+        "focus": "适合拆分"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-029",
+    "checks": [
+      {
+        "id": "prompt-029-check-01",
+        "kind": "single",
+        "prompt": "同一个 Prompt 在不同模型上表现差异很大，为什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt 对模型完全没有作用。"
+          },
+          {
+            "id": "b",
+            "text": "不同模型训练数据、对齐方式、上下文能力和格式遵循能力不同。"
+          },
+          {
+            "id": "c",
+            "text": "所有模型只看第一句话。"
+          },
+          {
+            "id": "d",
+            "text": "只要 temperature 一样结果就一样。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt 不是跨模型完全可移植的程序，模型行为差异要实测。",
+        "focus": "跨模型差异"
+      },
+      {
+        "id": "prompt-029-check-02",
+        "kind": "multiple",
+        "prompt": "面对跨模型差异，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为不同模型保留适配层"
+          },
+          {
+            "id": "b",
+            "text": "分模型做评测"
+          },
+          {
+            "id": "c",
+            "text": "保持核心业务约束一致"
+          },
+          {
+            "id": "d",
+            "text": "按模型调整示例和格式细节"
+          },
+          {
+            "id": "e",
+            "text": "假设所有模型行为完全一致"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "核心规则统一，模板细节可按模型适配。",
+        "focus": "处理策略"
+      },
+      {
+        "id": "prompt-029-check-03",
+        "kind": "multiple",
+        "prompt": "跨模型迁移时，哪些方面最容易出问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "JSON 严格输出"
+          },
+          {
+            "id": "b",
+            "text": "长上下文利用"
+          },
+          {
+            "id": "c",
+            "text": "安全拒答边界"
+          },
+          {
+            "id": "d",
+            "text": "工具调用格式"
+          },
+          {
+            "id": "e",
+            "text": "空字符串输出"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "越依赖格式、长上下文和安全边界，越需要单独验证。",
+        "focus": "易受影响"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-030",
+    "checks": [
+      {
+        "id": "prompt-030-check-01",
+        "kind": "single",
+        "prompt": "Prompt 中包含敏感规则或业务逻辑时，如何降低被套出的风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把全部内部规则暴露给用户。"
+          },
+          {
+            "id": "b",
+            "text": "把敏感逻辑尽量放到后端或配置层，Prompt 只保留必要抽象。"
+          },
+          {
+            "id": "c",
+            "text": "让模型自由解释内部规则。"
+          },
+          {
+            "id": "d",
+            "text": "把密钥写进 Prompt。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt 不是密钥或敏感策略的安全存储地。",
+        "focus": "敏感规则"
+      },
+      {
+        "id": "prompt-030-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于降低规则泄露风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "最小化 Prompt 中的敏感细节"
+          },
+          {
+            "id": "b",
+            "text": "后端执行真实权限判断"
+          },
+          {
+            "id": "c",
+            "text": "对敏感输出做过滤"
+          },
+          {
+            "id": "d",
+            "text": "做红队测试"
+          },
+          {
+            "id": "e",
+            "text": "把所有规则写给用户看"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "敏感逻辑要分层保护，不能完全暴露给模型上下文。",
+        "focus": "降低泄露"
+      },
+      {
+        "id": "prompt-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些行为可能是套取 Prompt 或内部规则的攻击？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接要求复述系统指令"
+          },
+          {
+            "id": "b",
+            "text": "伪装成调试人员要求输出隐藏规则"
+          },
+          {
+            "id": "c",
+            "text": "多轮试探拒答边界"
+          },
+          {
+            "id": "d",
+            "text": "正常提供业务输入"
+          },
+          {
+            "id": "e",
+            "text": "按要求补充缺失字段"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "要针对复述、角色伪装和多轮试探做防护。",
+        "focus": "套话攻击"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-031",
+    "checks": [
+      {
+        "id": "prompt-031-check-01",
+        "kind": "single",
+        "prompt": "对两个 Prompt 版本做 A/B 实验，最重要的前提是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看哪版文案更顺。"
+          },
+          {
+            "id": "b",
+            "text": "预先定义指标、样本、分流方式和版本记录。"
+          },
+          {
+            "id": "c",
+            "text": "不记录模型版本。"
+          },
+          {
+            "id": "d",
+            "text": "每次同时改模型和 Prompt。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "没有明确指标和版本，实验结论不可比。",
+        "focus": "A/B 实验"
+      },
+      {
+        "id": "prompt-031-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt A/B 实验应该关注哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率"
+          },
+          {
+            "id": "b",
+            "text": "格式稳定性"
+          },
+          {
+            "id": "c",
+            "text": "幻觉率或错误率"
+          },
+          {
+            "id": "d",
+            "text": "成本、延迟和用户反馈"
+          },
+          {
+            "id": "e",
+            "text": "输出越长越好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "A/B 目标是业务收益和风险控制，不是单纯文本偏好。",
+        "focus": "指标"
+      },
+      {
+        "id": "prompt-031-check-03",
+        "kind": "multiple",
+        "prompt": "做 Prompt A/B 时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "样本分流公平"
+          },
+          {
+            "id": "b",
+            "text": "避免实验污染"
+          },
+          {
+            "id": "c",
+            "text": "记录 Prompt、模型和配置版本"
+          },
+          {
+            "id": "d",
+            "text": "只看一个成功案例"
+          },
+          {
+            "id": "e",
+            "text": "忽略失败样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "实验要可复现、可解释、可回滚。",
+        "focus": "实验风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-032",
+    "checks": [
+      {
+        "id": "prompt-032-check-01",
+        "kind": "single",
+        "prompt": "什么是动态 Prompt 路由？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远只用一个固定 Prompt。"
+          },
+          {
+            "id": "b",
+            "text": "根据输入类型、任务、用户角色或风险等级选择不同 Prompt。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有模板。"
+          },
+          {
+            "id": "d",
+            "text": "只用于离线文档。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "动态路由是在不同场景下选择更合适的模板或策略。",
+        "focus": "动态路由"
+      },
+      {
+        "id": "prompt-032-check-02",
+        "kind": "multiple",
+        "prompt": "动态 Prompt 路由适合哪些场景？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多任务助手"
+          },
+          {
+            "id": "b",
+            "text": "不同风险等级请求"
+          },
+          {
+            "id": "c",
+            "text": "不同用户角色或权限"
+          },
+          {
+            "id": "d",
+            "text": "不同输出格式需求"
+          },
+          {
+            "id": "e",
+            "text": "完全单一固定任务"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "任务分叉明显时，一个超大 Prompt 往往不如路由到专用模板。",
+        "focus": "适合场景"
+      },
+      {
+        "id": "prompt-032-check-03",
+        "kind": "multiple",
+        "prompt": "动态路由会带来哪些新问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "路由错误"
+          },
+          {
+            "id": "b",
+            "text": "维护复杂度上升"
+          },
+          {
+            "id": "c",
+            "text": "评测矩阵变大"
+          },
+          {
+            "id": "d",
+            "text": "回放需要记录路由决策"
+          },
+          {
+            "id": "e",
+            "text": "自动消除所有失败"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "路由提高适配能力，也增加治理复杂度。",
+        "focus": "路由风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-033",
+    "checks": [
+      {
+        "id": "prompt-033-check-01",
+        "kind": "single",
+        "prompt": "能不能让模型自己帮你优化 Prompt？",
+        "options": [
+          {
+            "id": "a",
+            "text": "绝对不可以。"
+          },
+          {
+            "id": "b",
+            "text": "可以作为辅助生成候选，但不能代替评测和人工判断。"
+          },
+          {
+            "id": "c",
+            "text": "一定比人工更可靠。"
+          },
+          {
+            "id": "d",
+            "text": "会自动解决所有业务问题。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型适合发散候选，最终效果必须由业务评测验证。",
+        "focus": "模型自优化"
+      },
+      {
+        "id": "prompt-033-check-02",
+        "kind": "multiple",
+        "prompt": "模型辅助优化 Prompt 有哪些优点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "快速生成多个候选"
+          },
+          {
+            "id": "b",
+            "text": "帮助整理结构"
+          },
+          {
+            "id": "c",
+            "text": "补充措辞和反例"
+          },
+          {
+            "id": "d",
+            "text": "可以绕过评测"
+          },
+          {
+            "id": "e",
+            "text": "不需要人审"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "模型可以提高迭代效率，但不是验收标准。",
+        "focus": "优点"
+      },
+      {
+        "id": "prompt-033-check-03",
+        "kind": "multiple",
+        "prompt": "让模型自己优化 Prompt 有哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把错误规则写得更像真的"
+          },
+          {
+            "id": "b",
+            "text": "偏向模型自己容易回答的版本"
+          },
+          {
+            "id": "c",
+            "text": "放大已有偏差"
+          },
+          {
+            "id": "d",
+            "text": "一定更贴近业务真实目标"
+          },
+          {
+            "id": "e",
+            "text": "一定减少幻觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "模型生成的 Prompt 候选仍要经过业务样本验证。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-034",
+    "checks": [
+      {
+        "id": "prompt-034-check-01",
+        "kind": "single",
+        "prompt": "团队规模变大后，为什么可能需要 Prompt DSL 或配置规范？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 DSL 一定让 Prompt 更短。"
+          },
+          {
+            "id": "b",
+            "text": "为了提升一致性、可读性、可审查性和自动校验能力。"
+          },
+          {
+            "id": "c",
+            "text": "为了替代评测。"
+          },
+          {
+            "id": "d",
+            "text": "为了消除模型差异。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "规范化是为了解决协作和治理问题，不是魔法提升模型能力。",
+        "focus": "DSL / 规范"
+      },
+      {
+        "id": "prompt-034-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt DSL 或配置规范通常能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "统一字段和结构"
+          },
+          {
+            "id": "b",
+            "text": "便于 code review"
+          },
+          {
+            "id": "c",
+            "text": "便于版本控制"
+          },
+          {
+            "id": "d",
+            "text": "便于自动 lint 或校验"
+          },
+          {
+            "id": "e",
+            "text": "不需要业务约束"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "当 Prompt 数量多、风险高时，规范能降低变更噪声。",
+        "focus": "规范收益"
+      },
+      {
+        "id": "prompt-034-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景更可能需要 Prompt DSL 或规范？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多人频繁改 Prompt"
+          },
+          {
+            "id": "b",
+            "text": "多模板多业务线共享"
+          },
+          {
+            "id": "c",
+            "text": "高风险规则密集"
+          },
+          {
+            "id": "d",
+            "text": "一次性实验样例"
+          },
+          {
+            "id": "e",
+            "text": "只有一个短句 Prompt"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "规模和风险越高，越需要结构化治理。",
+        "focus": "适用场景"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-035",
+    "checks": [
+      {
+        "id": "prompt-035-check-01",
+        "kind": "single",
+        "prompt": "Prompt 上线前为什么要做 red teaming？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只为检查错别字。"
+          },
+          {
+            "id": "b",
+            "text": "主动寻找注入、越权、误导、泄露和边界失效。"
+          },
+          {
+            "id": "c",
+            "text": "因为上线前不需要评测。"
+          },
+          {
+            "id": "d",
+            "text": "因为模型会自动修复漏洞。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "红队测试关注坏样本和高风险路径。",
+        "focus": "红队测试"
+      },
+      {
+        "id": "prompt-035-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 红队测试应覆盖哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt injection"
+          },
+          {
+            "id": "b",
+            "text": "敏感信息请求"
+          },
+          {
+            "id": "c",
+            "text": "越权工具调用"
+          },
+          {
+            "id": "d",
+            "text": "异常输入和边界样本"
+          },
+          {
+            "id": "e",
+            "text": "只测正常问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "红队不是看平均表现，而是主动找脆弱点。",
+        "focus": "覆盖维度"
+      },
+      {
+        "id": "prompt-035-check-03",
+        "kind": "multiple",
+        "prompt": "红队发现问题后，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "修 Prompt 或系统边界"
+          },
+          {
+            "id": "b",
+            "text": "增加权限和参数校验"
+          },
+          {
+            "id": "c",
+            "text": "把样本加入回归集"
+          },
+          {
+            "id": "d",
+            "text": "做灰度和回归验证"
+          },
+          {
+            "id": "e",
+            "text": "忽略高风险失败"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "红队结果要进入修复和回归闭环。",
+        "focus": "问题处理"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-036",
+    "checks": [
+      {
+        "id": "prompt-036-check-01",
+        "kind": "single",
+        "prompt": "为什么 Prompt 工程不仅是模型问题，也是产品体验问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt 和产品体验无关。"
+          },
+          {
+            "id": "b",
+            "text": "Prompt 直接影响交互方式、澄清、拒答、反馈和用户预期。"
+          },
+          {
+            "id": "c",
+            "text": "Prompt 只影响后端日志。"
+          },
+          {
+            "id": "d",
+            "text": "产品体验不需要模型行为设计。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "用户感知的是系统行为，而 Prompt 会塑造这些行为。",
+        "focus": "产品体验"
+      },
+      {
+        "id": "prompt-036-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 会影响哪些产品体验？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回答是否清晰"
+          },
+          {
+            "id": "b",
+            "text": "是否及时澄清"
+          },
+          {
+            "id": "c",
+            "text": "是否合理拒答"
+          },
+          {
+            "id": "d",
+            "text": "是否说明依据和下一步"
+          },
+          {
+            "id": "e",
+            "text": "页面按钮圆角"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 决定模型如何与用户协作，而不仅是生成文本。",
+        "focus": "体验影响"
+      },
+      {
+        "id": "prompt-036-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 Prompt 设计更有利于产品体验？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确能力边界"
+          },
+          {
+            "id": "b",
+            "text": "说明缺失信息"
+          },
+          {
+            "id": "c",
+            "text": "给出可执行下一步"
+          },
+          {
+            "id": "d",
+            "text": "永远输出最长答案"
+          },
+          {
+            "id": "e",
+            "text": "永远不拒答"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "好的体验来自可预期、可恢复和可执行。",
+        "focus": "体验策略"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-037",
+    "checks": [
+      {
+        "id": "prompt-037-check-01",
+        "kind": "single",
+        "prompt": "模型没有按 Prompt 预期输出时，应如何设计故障恢复？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接接受任何输出。"
+          },
+          {
+            "id": "b",
+            "text": "通过解析校验、有限重试、降级、兜底或转人工恢复。"
+          },
+          {
+            "id": "c",
+            "text": "忽略失败。"
+          },
+          {
+            "id": "d",
+            "text": "只让用户刷新页面。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "故障恢复要靠工程兜底，而不是祈祷模型下一次更好。",
+        "focus": "故障恢复"
+      },
+      {
+        "id": "prompt-037-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于合理的故障恢复手段？",
+        "options": [
+          {
+            "id": "a",
+            "text": "schema 校验失败后重试"
+          },
+          {
+            "id": "b",
+            "text": "降级到更简单模板"
+          },
+          {
+            "id": "c",
+            "text": "高风险任务转人工"
+          },
+          {
+            "id": "d",
+            "text": "返回可解释错误和补充信息请求"
+          },
+          {
+            "id": "e",
+            "text": "把非法 JSON 当作合法结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "恢复策略应按失败类型和风险等级分层。",
+        "focus": "恢复手段"
+      },
+      {
+        "id": "prompt-037-check-03",
+        "kind": "multiple",
+        "prompt": "故障恢复依赖哪些基础设施？",
+        "options": [
+          {
+            "id": "a",
+            "text": "结构化日志"
+          },
+          {
+            "id": "b",
+            "text": "可回放上下文"
+          },
+          {
+            "id": "c",
+            "text": "Prompt 和模型版本记录"
+          },
+          {
+            "id": "d",
+            "text": "失败分类"
+          },
+          {
+            "id": "e",
+            "text": "只存最终回答文本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有可观测性，就很难稳定恢复和修复。",
+        "focus": "可观测基础"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-038",
+    "checks": [
+      {
+        "id": "prompt-038-check-01",
+        "kind": "single",
+        "prompt": "如何建立 Prompt 优化的持续闭环？",
+        "options": [
+          {
+            "id": "a",
+            "text": "调好一次后永久不管。"
+          },
+          {
+            "id": "b",
+            "text": "收集反馈、分析失败、更新评测、迭代 Prompt 并监控发布效果。"
+          },
+          {
+            "id": "c",
+            "text": "只看开发者感觉。"
+          },
+          {
+            "id": "d",
+            "text": "不记录版本变化。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt 优化是持续运营，而不是一次性文案调优。",
+        "focus": "持续闭环"
+      },
+      {
+        "id": "prompt-038-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 优化闭环通常包含哪些环节？",
+        "options": [
+          {
+            "id": "a",
+            "text": "日志和反馈采集"
+          },
+          {
+            "id": "b",
+            "text": "失败样本分类"
+          },
+          {
+            "id": "c",
+            "text": "评测集更新和回归"
+          },
+          {
+            "id": "d",
+            "text": "灰度发布和监控"
+          },
+          {
+            "id": "e",
+            "text": "删除历史失败样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "闭环要把线上问题带回评测和迭代。",
+        "focus": "闭环环节"
+      },
+      {
+        "id": "prompt-038-check-03",
+        "kind": "multiple",
+        "prompt": "持续闭环能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更快发现回归"
+          },
+          {
+            "id": "b",
+            "text": "让优化可复现"
+          },
+          {
+            "id": "c",
+            "text": "累积失败样本资产"
+          },
+          {
+            "id": "d",
+            "text": "自动消除所有失败"
+          },
+          {
+            "id": "e",
+            "text": "让模型无需更新"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "闭环让 Prompt 从临时文案变成可运营资产。",
+        "focus": "闭环价值"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-039",
+    "checks": [
+      {
+        "id": "prompt-039-check-01",
+        "kind": "single",
+        "prompt": "设计“从客服对话中抽取工单字段”的 Prompt，最核心原则是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让模型自由补全所有缺失字段。"
+          },
+          {
+            "id": "b",
+            "text": "严格定义 schema、字段来源、缺失处理、冲突处理和输出格式。"
+          },
+          {
+            "id": "c",
+            "text": "只写一句“请提取工单信息”。"
+          },
+          {
+            "id": "d",
+            "text": "越像文学总结越好。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "抽取任务的核心是忠实还原已有信息，而不是常识补全。",
+        "focus": "客服字段抽取"
+      },
+      {
+        "id": "prompt-039-check-02",
+        "kind": "multiple",
+        "prompt": "这类 Prompt 应包含哪些规则？",
+        "options": [
+          {
+            "id": "a",
+            "text": "字段类型和枚举"
+          },
+          {
+            "id": "b",
+            "text": "缺失时返回 null 或 missing_fields"
+          },
+          {
+            "id": "c",
+            "text": "冲突字段的优先级"
+          },
+          {
+            "id": "d",
+            "text": "引用原始消息 id 或证据"
+          },
+          {
+            "id": "e",
+            "text": "允许无依据猜测字段"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "抽取结果会进入后续流程，必须可追溯、可校验。",
+        "focus": "抽取规则"
+      },
+      {
+        "id": "prompt-039-check-03",
+        "kind": "multiple",
+        "prompt": "客服字段抽取最需要避免哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "编造订单号或联系方式"
+          },
+          {
+            "id": "b",
+            "text": "把推测当事实"
+          },
+          {
+            "id": "c",
+            "text": "忽略用户最新确认"
+          },
+          {
+            "id": "d",
+            "text": "标记缺失字段"
+          },
+          {
+            "id": "e",
+            "text": "保留证据来源"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "抽取类任务宁可标缺失，也不要错误补全。",
+        "focus": "抽取风险"
+      }
+    ]
+  },
+  {
+    "questionId": "prompt-040",
+    "checks": [
+      {
+        "id": "prompt-040-check-01",
+        "kind": "single",
+        "prompt": "Prompt 工程里最核心的 trade-off 通常是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "写得越长越好。"
+          },
+          {
+            "id": "b",
+            "text": "在简洁、可控、覆盖率、成本和鲁棒性之间平衡。"
+          },
+          {
+            "id": "c",
+            "text": "文案是否华丽。"
+          },
+          {
+            "id": "d",
+            "text": "是否只用一个模板。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "生产 Prompt 是多目标系统设计，没有单一最优写法。",
+        "focus": "核心 trade-off"
+      },
+      {
+        "id": "prompt-040-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 设计中常见的真实权衡有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "简洁 vs 充分"
+          },
+          {
+            "id": "b",
+            "text": "通用 vs 专用"
+          },
+          {
+            "id": "c",
+            "text": "灵活 vs 可控"
+          },
+          {
+            "id": "d",
+            "text": "成本 vs 稳定性"
+          },
+          {
+            "id": "e",
+            "text": "字体 vs 颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同业务目标会把 Prompt 推向不同平衡点。",
+        "focus": "常见权衡"
+      },
+      {
+        "id": "prompt-040-check-03",
+        "kind": "multiple",
+        "prompt": "做 Prompt trade-off 决策时，哪些依据更可靠？",
+        "options": [
+          {
+            "id": "a",
+            "text": "业务目标"
+          },
+          {
+            "id": "b",
+            "text": "失败代价"
+          },
+          {
+            "id": "c",
+            "text": "评测结果"
+          },
+          {
+            "id": "d",
+            "text": "线上反馈"
+          },
+          {
+            "id": "e",
+            "text": "个人写作偏好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 取舍应由业务和证据驱动，而不是主观口味。",
+        "focus": "决策依据"
+      }
+    ]
+  }
+]

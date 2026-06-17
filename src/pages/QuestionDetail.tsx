@@ -5,6 +5,7 @@ import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Kbd, Skeleton, Spinner } from '@/components/ui'
 import { AIPanelWithStyles } from '@/components/ui/AIPanel'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
+import { LearningCheckPanel } from '@/components/ui/LearningCheckPanel'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
@@ -25,6 +26,7 @@ import {
   setQuestionStarred,
 } from '@/lib/db'
 import { buildReviewNoteMarkdown, formatReviewNoteTime } from '@/lib/feedbackNote'
+import { type LearningCheckQuestion, loadLearningChecksForQuestion } from '@/lib/learningCheck'
 import { createPracticeSessionPath, readPracticeSession } from '@/lib/practiceSession'
 import {
   buildAnswerFeedbackContext,
@@ -2751,6 +2753,71 @@ function AnswerOverrideHeaderMeta({
   )
 }
 
+type AnswerPanelView = 'answer' | 'check'
+
+interface AnswerPanelTabsProps {
+  activeView: AnswerPanelView
+  answerLabel: string
+  onChange: (view: AnswerPanelView) => void
+}
+
+function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPanelTabsProps) {
+  const items: Array<{ view: AnswerPanelView; label: string }> = [
+    { view: 'answer', label: answerLabel },
+    { view: 'check', label: '测试一下' },
+  ]
+
+  return (
+    <div
+      role="tablist"
+      aria-label="答案学习视图"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 3,
+        padding: 3,
+        borderRadius: 10,
+        border: '1px solid var(--border-subtle)',
+        background: 'var(--surface-2)',
+      }}
+    >
+      {items.map((item) => {
+        const active = activeView === item.view
+        return (
+          <button
+            key={item.view}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => onChange(item.view)}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              minHeight: 28,
+              padding: '0 10px',
+              borderRadius: 8,
+              border: '1px solid',
+              borderColor: active ? 'rgba(var(--primary-rgb),0.22)' : 'transparent',
+              background: active ? 'var(--surface)' : 'transparent',
+              color: active ? 'var(--text)' : 'var(--text-3)',
+              fontSize: 12,
+              fontWeight: active ? 700 : 600,
+              cursor: 'pointer',
+              boxShadow: active ? 'var(--shadow-sm)' : 'none',
+              transition: 'all 0.15s',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span>{item.label}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 function AnswerAIButton({
   title,
   active = false,
@@ -3996,6 +4063,7 @@ export default function QuestionDetail() {
     questionId: string
     text: string
   } | null>(null)
+  const [answerPanelView, setAnswerPanelView] = useState<AnswerPanelView>('answer')
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
   const [answerOverride, setAnswerOverride] = useState<QuestionAnswerOverride | null>(null)
@@ -4015,6 +4083,7 @@ export default function QuestionDetail() {
   const [celebrationStreak, setCelebrationStreak] = useState(0)
   const [sessionFinished, setSessionFinished] = useState(false)
   const [noteRefreshKey, setNoteRefreshKey] = useState(0)
+  const [learningChecks, setLearningChecks] = useState<LearningCheckQuestion[]>([])
   const answerRef = useRef<HTMLDivElement>(null)
   const answerContentRef = useRef<HTMLDivElement>(null)
   const answerAnnotationToolbarRef = useRef<HTMLDivElement>(null)
@@ -4072,6 +4141,8 @@ export default function QuestionDetail() {
     : inlineSessionIds.length > 0
       ? `ids:${inlineSessionIds.join(',')}`
       : 'browse'
+
+  const hasLearningCheck = learningChecks.length > 0
 
   // Adjacent IDs from the full question list (for non-session browsing)
   // Sorted same as default list order (insertion order = file order by id)
@@ -4190,6 +4261,7 @@ export default function QuestionDetail() {
     setJustMarked(null)
     setLastPressedKey(null)
     setAiInitialPrompt(null)
+    setAnswerPanelView('answer')
     setSessionFinished(false)
     setNoteDrawerOpen(false)
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -4198,6 +4270,31 @@ export default function QuestionDetail() {
       if (id) clearSessionReview(id)
     }
   }, [id, sessionIdentity, shouldAutoRevealAnswer])
+
+  useEffect(() => {
+    let cancelled = false
+    setLearningChecks([])
+
+    if (!question) return
+
+    loadLearningChecksForQuestion(question)
+      .then((checks) => {
+        if (!cancelled) setLearningChecks(checks)
+      })
+      .catch(() => {
+        if (!cancelled) setLearningChecks([])
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [question])
+
+  useEffect(() => {
+    if (!hasLearningCheck && answerPanelView === 'check') {
+      setAnswerPanelView('answer')
+    }
+  }, [answerPanelView, hasLearningCheck])
 
   useEffect(() => {
     if (searchParams.get('note') !== '1') return
@@ -4291,7 +4388,7 @@ export default function QuestionDetail() {
     setAnswerCommentOpen(false)
     setAnswerCommentDraft('')
     setActiveAnswerCommentId(null)
-  }, [answerEditMode, answerVisible, displayedAnswerHash])
+  }, [answerEditMode, answerPanelView, answerVisible, displayedAnswerHash])
 
   useEffect(() => {
     if (!activeAnswerCommentId) return
@@ -4303,7 +4400,9 @@ export default function QuestionDetail() {
   }, [activeAnswerCommentId, visibleAnswerAnnotations])
 
   useEffect(() => {
-    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (!answerVisible || answerPanelView !== 'answer' || answerEditMode || answerOverrideLoading) {
+      return
+    }
     const root = answerContentRef.current
     if (!root) return
 
@@ -4338,7 +4437,13 @@ export default function QuestionDetail() {
       observer?.disconnect()
       cleanupHighlights?.()
     }
-  }, [answerEditMode, answerOverrideLoading, answerVisible, visibleAnswerAnnotations])
+  }, [
+    answerEditMode,
+    answerOverrideLoading,
+    answerPanelView,
+    answerVisible,
+    visibleAnswerAnnotations,
+  ])
 
   useEffect(() => {
     if (!answerSelection) return
@@ -4477,7 +4582,9 @@ export default function QuestionDetail() {
   }, [id, starred])
 
   const refreshAnswerSelection = useCallback(() => {
-    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (!answerVisible || answerPanelView !== 'answer' || answerEditMode || answerOverrideLoading) {
+      return
+    }
     if (answerCommentOpen || answerAnnotationSaving) return
     const root = answerContentRef.current
     if (!root) return
@@ -4499,6 +4606,7 @@ export default function QuestionDetail() {
     answerCommentOpen,
     answerEditMode,
     answerOverrideLoading,
+    answerPanelView,
     answerVisible,
   ])
 
@@ -4702,7 +4810,9 @@ export default function QuestionDetail() {
   )
 
   useEffect(() => {
-    if (!answerVisible || answerEditMode || answerOverrideLoading) return
+    if (!answerVisible || answerPanelView !== 'answer' || answerEditMode || answerOverrideLoading) {
+      return
+    }
 
     const clearScheduledRefresh = () => {
       if (answerSelectionTimerRef.current === null) return
@@ -4742,7 +4852,13 @@ export default function QuestionDetail() {
       document.removeEventListener('touchend', handleSelectEnd)
       document.removeEventListener('keyup', handleSelectEnd)
     }
-  }, [answerEditMode, answerOverrideLoading, answerVisible, scheduleAnswerSelectionRefresh])
+  }, [
+    answerEditMode,
+    answerOverrideLoading,
+    answerPanelView,
+    answerVisible,
+    scheduleAnswerSelectionRefresh,
+  ])
 
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
@@ -4766,6 +4882,7 @@ export default function QuestionDetail() {
         return
       }
       if (noteDrawerOpen) return
+      if (answerPanelView === 'check') return
       if (markingRef.current) return
 
       switch (e.key) {
@@ -4804,12 +4921,14 @@ export default function QuestionDetail() {
     nextId,
     prevId,
     aiDrawerOpen,
+    answerPanelView,
     noteDrawerOpen,
     settingsOpen,
   ])
 
   const handleStartAnswerEdit = useCallback(() => {
     if (!question) return
+    setAnswerPanelView('answer')
     setAnswerDraft(answerOverride?.content ?? question.answer)
     setAnswerEditMode(true)
     setAnswerSaveStatus('idle')
@@ -4922,6 +5041,7 @@ export default function QuestionDetail() {
       ? '参考答案'
       : '自定义答案'
     : '参考答案'
+  const showAnswerContent = answerPanelView === 'answer'
   const answerContextQuestion = {
     ...question,
     answer: displayedAnswerText,
@@ -5385,14 +5505,31 @@ export default function QuestionDetail() {
                     flexShrink: 0,
                   }}
                 />
-                <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-                  {answerHeading}
-                </h2>
+                {hasLearningCheck ? (
+                  <AnswerPanelTabs
+                    activeView={answerPanelView}
+                    answerLabel={answerHeading}
+                    onChange={(view) => {
+                      if (view === 'check') {
+                        setAnswerEditMode(false)
+                        setAnswerSelection(null)
+                      }
+                      setAnswerPanelView(view)
+                    }}
+                  />
+                ) : (
+                  <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                    {answerHeading}
+                  </h2>
+                )}
                 {hasCustomAnswer && !answerEditMode && (
                   <AnswerOverrideHeaderMeta
                     updatedAt={answerOverride?.updatedAt ?? null}
                     showingOriginal={showOriginalAnswer}
-                    onToggleOriginal={() => setShowOriginalAnswer((value) => !value)}
+                    onToggleOriginal={() => {
+                      setAnswerPanelView('answer')
+                      setShowOriginalAnswer((value) => !value)
+                    }}
                   />
                 )}
               </div>
@@ -5478,8 +5615,14 @@ export default function QuestionDetail() {
               </div>
             </div>
 
-            {/* Markdown answer */}
-            {answerEditMode ? (
+            {/* Answer body */}
+            {answerPanelView === 'check' ? (
+              <LearningCheckPanel
+                key={`learning-check-${question.id}`}
+                checks={learningChecks}
+                onBackToAnswer={() => setAnswerPanelView('answer')}
+              />
+            ) : answerEditMode ? (
               <AnswerOverrideEditor
                 draft={answerDraft}
                 saveStatus={answerSaveStatus}
@@ -5502,7 +5645,7 @@ export default function QuestionDetail() {
               </section>
             )}
 
-            {answerSelection && !answerEditMode && !answerOverrideLoading && (
+            {showAnswerContent && answerSelection && !answerEditMode && !answerOverrideLoading && (
               <AnswerAnnotationToolbar
                 toolbarRef={answerAnnotationToolbarRef}
                 selection={answerSelection}
@@ -5518,7 +5661,7 @@ export default function QuestionDetail() {
               />
             )}
 
-            {!answerEditMode && !answerOverrideLoading && (
+            {showAnswerContent && !answerEditMode && !answerOverrideLoading && (
               <AnswerCommentMarkers
                 rootRef={answerContentRef}
                 annotations={visibleAnswerAnnotations}
@@ -5592,7 +5735,7 @@ export default function QuestionDetail() {
             </div>
 
             {/* ── My Answer Input — "answer-alongside" mode: compact inside answer card ── */}
-            {showAnswerInputInside && !hideAnswerInput && (
+            {showAnswerContent && showAnswerInputInside && !hideAnswerInput && (
               <MyAnswerInput
                 key={`answer-inside-${id ?? ''}`}
                 questionId={id ?? ''}
