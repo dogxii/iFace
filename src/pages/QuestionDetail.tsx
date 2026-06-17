@@ -2849,6 +2849,126 @@ function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPanelTabsP
   )
 }
 
+interface MobileQuestionNavProps {
+  answerVisible: boolean
+  answerPanelView: AnswerPanelView
+  hasLearningCheck: boolean
+  prevDisabled: boolean
+  nextDisabled: boolean
+  onPrev: () => void
+  onNext: () => void
+  onPrimary: () => void
+}
+
+function MobileQuestionNav({
+  answerVisible,
+  answerPanelView,
+  hasLearningCheck,
+  prevDisabled,
+  nextDisabled,
+  onPrev,
+  onNext,
+  onPrimary,
+}: MobileQuestionNavProps) {
+  const primaryLabel = !answerVisible
+    ? '查看答案'
+    : answerPanelView === 'check'
+      ? '参考答案'
+      : hasLearningCheck
+        ? '测试一下'
+        : '参考答案'
+
+  const navButtonStyle = (disabled: boolean): React.CSSProperties => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    minWidth: 0,
+    height: 44,
+    padding: '0 10px',
+    borderRadius: 12,
+    border: '1px solid var(--border-subtle)',
+    background: 'var(--surface)',
+    color: disabled ? 'var(--text-3)' : 'var(--text-2)',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.48 : 1,
+    whiteSpace: 'nowrap',
+  })
+
+  return (
+    <div className="mobile-question-nav">
+      <button
+        type="button"
+        onClick={onPrev}
+        disabled={prevDisabled}
+        style={navButtonStyle(prevDisabled)}
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        上一题
+      </button>
+      <button
+        type="button"
+        onClick={onPrimary}
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 0,
+          height: 44,
+          padding: '0 14px',
+          borderRadius: 12,
+          border: '1px solid rgba(var(--primary-rgb),0.24)',
+          background: 'var(--primary-light)',
+          color: 'var(--primary)',
+          fontSize: 13,
+          fontWeight: 700,
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {primaryLabel}
+      </button>
+      <button
+        type="button"
+        onClick={onNext}
+        disabled={nextDisabled}
+        style={navButtonStyle(nextDisabled)}
+      >
+        下一题
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <line x1="5" y1="12" x2="19" y2="12" />
+          <polyline points="12 5 19 12 12 19" />
+        </svg>
+      </button>
+    </div>
+  )
+}
+
 function AnswerAIButton({
   title,
   active = false,
@@ -4596,6 +4716,25 @@ export default function QuestionDetail() {
     [navigate, questionNavigationSearch],
   )
 
+  const handleMobilePrimaryAction = useCallback(() => {
+    blurActiveControl()
+    if (!answerVisible) {
+      handleRevealAnswer()
+      return
+    }
+
+    if (answerPanelView === 'check') {
+      setAnswerPanelView('answer')
+      return
+    }
+
+    if (hasLearningCheck) {
+      setAnswerEditMode(false)
+      setAnswerSelection(null)
+      setAnswerPanelView('check')
+    }
+  }, [answerPanelView, answerVisible, handleRevealAnswer, hasLearningCheck])
+
   const handleRetrySession = useCallback(() => {
     if (sessionStats.retryIds.length === 0) return
     for (const retryId of sessionStats.retryIds) {
@@ -6029,6 +6168,23 @@ export default function QuestionDetail() {
         <StreakCelebration streak={celebrationStreak} onDone={() => setCelebrationStreak(0)} />
       )}
 
+      <MobileQuestionNav
+        answerVisible={answerVisible}
+        answerPanelView={answerPanelView}
+        hasLearningCheck={hasLearningCheck}
+        prevDisabled={!prevId}
+        nextDisabled={!nextId}
+        onPrev={() => {
+          blurActiveControl()
+          navigateTo(prevId)
+        }}
+        onNext={() => {
+          blurActiveControl()
+          navigateTo(nextId)
+        }}
+        onPrimary={handleMobilePrimaryAction}
+      />
+
       <style>{`
 				@keyframes ai-dot-bounce {
 					0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
@@ -6045,6 +6201,9 @@ export default function QuestionDetail() {
 				}
 				@media (max-width: 1023px) {
 					.ai-fab { display: flex !important; }
+				}
+				.mobile-question-nav {
+					display: none;
 				}
 				@media (min-width: 1024px) {
 					.ai-drawer-backdrop { display: none !important; }
@@ -6087,6 +6246,33 @@ export default function QuestionDetail() {
 					}
 					.related-practice-row {
 						grid-template-columns: 1fr !important;
+					}
+				}
+				@media (max-width: 640px) {
+					.page-container {
+						padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+					}
+					.mobile-question-nav {
+						position: fixed;
+						left: 0;
+						right: 0;
+						bottom: 0;
+						z-index: 135;
+						display: grid;
+						grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+						gap: 8px;
+						align-items: center;
+						padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+						background: color-mix(in srgb, var(--surface) 94%, transparent);
+						border-top: 1px solid var(--border-subtle);
+						box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.08);
+						backdrop-filter: blur(16px);
+					}
+					.ai-fab {
+						bottom: calc(76px + env(safe-area-inset-bottom)) !important;
+						right: 16px !important;
+						width: 48px !important;
+						height: 48px !important;
 					}
 				}
 			`}</style>
