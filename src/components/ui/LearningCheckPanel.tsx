@@ -488,7 +488,7 @@ export function LearningCheckPanel({ checks }: LearningCheckPanelProps) {
           onClick={() => submitResponse(draftSelection)}
           disabled={draftSelection.length === 0}
           style={{
-            alignSelf: 'flex-start',
+            alignSelf: 'flex-end',
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -541,7 +541,15 @@ export function LearningCheckPanel({ checks }: LearningCheckPanelProps) {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 8,
+          flexWrap: 'wrap',
+        }}
+      >
         {submitted && (
           <button
             type="button"
