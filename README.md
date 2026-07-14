@@ -111,11 +111,11 @@ bun dev
 
 ## 📈 项目 Star 历史
 
-<a href="https://www.star-history.com/?repos=dogxii%2Fiface&type=date&legend=top-left">
+<a href="https://www.star-history.com/">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=dogxii/iface&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=dogxii/iface&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=dogxii/iface&type=date&legend=top-left" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=dogxii/iface&type=date&theme=dark&legend=top-left&sealed_token=Ab6e5wvagO8VDp77ndUJumM1ZqCxDPXH38fCbzxz20YtayY8x_A1_x3tS77ug8GVYtnFvfHz3mrUgsv-ReIOsdIDH4laZ41w7F1m9f4zSyt9gWVfTPbK_I0viZYD5Hh8oOdhokMiIFFPZJNq8-IglYzsv2sbaRlnoFpMiIpw6g6cwD6QgNFVS6GxVRjT" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=dogxii/iface&type=date&legend=top-left&sealed_token=Ab6e5wvagO8VDp77ndUJumM1ZqCxDPXH38fCbzxz20YtayY8x_A1_x3tS77ug8GVYtnFvfHz3mrUgsv-ReIOsdIDH4laZ41w7F1m9f4zSyt9gWVfTPbK_I0viZYD5Hh8oOdhokMiIFFPZJNq8-IglYzsv2sbaRlnoFpMiIpw6g6cwD6QgNFVS6GxVRjT" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=dogxii/iface&type=date&legend=top-left&sealed_token=Ab6e5wvagO8VDp77ndUJumM1ZqCxDPXH38fCbzxz20YtayY8x_A1_x3tS77ug8GVYtnFvfHz3mrUgsv-ReIOsdIDH4laZ41w7F1m9f4zSyt9gWVfTPbK_I0viZYD5Hh8oOdhokMiIFFPZJNq8-IglYzsv2sbaRlnoFpMiIpw6g6cwD6QgNFVS6GxVRjT" />
  </picture>
 </a>
 
