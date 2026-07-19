@@ -1581,16 +1581,8 @@ export default function QuestionList() {
           <select
             value={sort}
             onChange={(e) => handleSortChange(e.target.value)}
-            style={{
-              fontSize: 'var(--control-font-size)',
-              padding: '6px 10px',
-              borderRadius: 8,
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
+            className="select-base"
+            style={{ width: 'auto', minWidth: 120 }}
           >
             {SORT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>

@@ -137,17 +137,7 @@ function SelectInput<T extends string>({
     <select
       value={value}
       onChange={(event) => onChange(event.target.value as T)}
-      style={{
-        height: 38,
-        width: '100%',
-        border: '1px solid var(--border)',
-        borderRadius: 8,
-        background: 'var(--surface)',
-        color: 'var(--text)',
-        padding: '0 10px',
-        fontSize: 'var(--control-font-size)',
-        outline: 'none',
-      }}
+      className="select-base"
     >
       {options.map((option) => (
         <option key={option} value={option}>
@@ -796,7 +786,7 @@ export default function MockInterview() {
                         onChange={(event) =>
                           updateForm({ durationMinutes: Number(event.target.value) })
                         }
-                        className="mock-select"
+                        className="select-base mock-select"
                       >
                         {[15, 30, 45, 60].map((minute) => (
                           <option key={minute} value={minute}>
@@ -812,7 +802,7 @@ export default function MockInterview() {
                         onChange={(event) =>
                           updateForm({ targetQuestionCount: Number(event.target.value) })
                         }
-                        className="mock-select"
+                        className="select-base mock-select"
                       >
                         {[4, 6, 8, 10].map((count) => (
                           <option key={count} value={count}>
@@ -1262,14 +1252,6 @@ export default function MockInterview() {
 
         .mock-select {
           height: 38px;
-          width: 100%;
-          border: 1px solid var(--border);
-          border-radius: 8px;
-          background: var(--surface);
-          color: var(--text);
-          padding: 0 10px;
-          font-size: var(--control-font-size);
-          outline: none;
         }
 
         .mock-history-list {

@@ -260,6 +260,12 @@ function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }
   )
 }
 
+function getRangeProgressStyle(value: number, min: number, max: number): React.CSSProperties {
+  const progress = max > min ? ((value - min) / (max - min)) * 100 : 0
+  const clamped = Math.min(100, Math.max(0, progress))
+  return { '--range-progress': `${clamped}%` } as React.CSSProperties
+}
+
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
 
 function Toggle({
@@ -1399,7 +1405,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                   step={5}
                   value={dailyGoal}
                   onChange={(e) => setDailyGoal(parseInt(e.target.value, 10))}
-                  style={{ width: '100%', accentColor: 'var(--primary)' }}
+                  className="range-base"
+                  style={getRangeProgressStyle(dailyGoal, DAILY_GOAL_MIN, DAILY_GOAL_MAX)}
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
@@ -1980,8 +1987,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                       model: provider.defaultModel,
                     })
                   }}
-                  className="input-base"
-                  style={{ cursor: 'pointer' }}
+                  className="input-base select-base"
                 >
                   {AI_PROVIDER_PRESETS.map((provider) => (
                     <option key={provider.id} value={provider.id}>
@@ -2013,8 +2019,7 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                       patch({ model: v })
                     }
                   }}
-                  className="input-base"
-                  style={{ cursor: 'pointer' }}
+                  className="input-base select-base"
                 >
                   {modelOptions.map((model) => (
                     <option key={model.value} value={model.value}>
@@ -2123,7 +2128,8 @@ export function SettingsDrawer({ open, onClose }: SettingsDrawerProps) {
                       step="0.1"
                       value={localConfig.temperature}
                       onChange={(e) => patch({ temperature: parseFloat(e.target.value) })}
-                      style={{ width: '100%', accentColor: 'var(--primary)' }}
+                      className="range-base"
+                      style={getRangeProgressStyle(localConfig.temperature, 0, 2)}
                     />
                   </Field>
                   <Field label="最大 Token 数" hint="控制单次回复的最大长度">

@@ -183,9 +183,7 @@ export default function Tools() {
         >
           工具
         </h1>
-        <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
-          不一定每天用，但关键时刻很有用的面试辅助功能
-        </p>
+        <p style={{ fontSize: 13, color: 'var(--text-3)' }}>面试辅助功能</p>
       </div>
 
       {toolSections.map((section) => (

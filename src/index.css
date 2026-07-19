@@ -665,6 +665,7 @@ body {
   transition:
     border-color 0.15s var(--ease-in-out),
     box-shadow 0.15s var(--ease-in-out);
+  -webkit-appearance: none;
   appearance: none;
 }
 
@@ -677,6 +678,126 @@ body {
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
+.select-base {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.45rem 2.1rem 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%238b8b99' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 16px 16px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--control-font-size);
+  line-height: 1.4;
+  outline: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-xs);
+  color-scheme: light;
+  transition:
+    border-color 0.15s var(--ease-in-out),
+    box-shadow 0.15s var(--ease-in-out),
+    background-color 0.15s var(--ease-in-out);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.select-base:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.select-base:disabled {
+  color: var(--text-3);
+  cursor: default;
+  opacity: 0.65;
+}
+
+.select-base::-ms-expand {
+  display: none;
+}
+
+.select-base option {
+  background-color: var(--surface);
+  color: var(--text);
+}
+
+.dark .select-base {
+  background-image: url("data:image/svg+xml,%3Csvg width='16' height='16' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 10l5 5 5-5' stroke='%235a5a6e' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  color-scheme: dark;
+}
+
+.range-base {
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  accent-color: var(--primary);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-base:focus {
+  outline: none;
+}
+
+.range-base:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.range-base::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--primary), var(--primary)) 0 / var(--range-progress, 0%) 100% no-repeat,
+    var(--surface-3);
+}
+
+.range-base::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range-base::-moz-range-track {
+  height: 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.range-base::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary);
+}
+
+.range-base::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--primary);
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.range-base:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 @supports (-webkit-touch-callout: none) {
   :root {
     --control-font-size: 16px;
@@ -686,6 +807,12 @@ body {
   select,
   textarea {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 767px), (pointer: coarse) {
+  :root {
+    --control-font-size: 16px;
   }
 }
 
