@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from 'react-dom'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
-import { Badge, Button, Kbd, Skeleton, Spinner } from '@/components/ui'
+import { Button, Kbd, Skeleton, Spinner } from '@/components/ui'
 import { AIPanelWithStyles } from '@/components/ui/AIPanel'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { LearningCheckPanel } from '@/components/ui/LearningCheckPanel'
@@ -43,8 +43,6 @@ import {
   type QuestionAnswerOverride,
   type QuestionNote,
   type QuestionNoteImage,
-  STATUS_LABELS,
-  STATUS_STYLES,
   type StudyStatus,
 } from '@/types'
 
@@ -532,148 +530,6 @@ function SessionCompletionCard({
         <Button variant="ghost" size="sm" onClick={onDashboard}>
           回概览
         </Button>
-      </div>
-    </div>
-  )
-}
-
-// ─── Related Practice ────────────────────────────────────────────────────────
-
-interface RelatedPracticeItem {
-  question: Question
-  status: StudyStatus
-  matchedTags: string[]
-}
-
-interface RelatedPracticeCardProps {
-  items: RelatedPracticeItem[]
-  onStartPractice: () => void
-}
-
-function RelatedPracticeCard({ items, onStartPractice }: RelatedPracticeCardProps) {
-  if (items.length === 0) return null
-
-  return (
-    <div
-      className="card animate-fade-in"
-      style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14 }}
-    >
-      <div
-        className="related-practice-header"
-        style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: 12,
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <p
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: 'var(--text-3)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: 5,
-            }}
-          >
-            同主题加练
-          </p>
-          <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--text)', lineHeight: 1.35 }}>
-            继续巩固相近考点
-          </h2>
-          <p style={{ fontSize: 13, color: 'var(--text-2)', marginTop: 5, lineHeight: 1.6 }}>
-            已按标签、模块和掌握状态挑出最相关的题目。
-          </p>
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={onStartPractice}
-          icon={
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-          }
-        >
-          练这 {items.length} 题
-        </Button>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {items.slice(0, 3).map((item) => {
-          const difficultyStyle = DIFFICULTY_STYLES[item.question.difficulty]
-          const statusStyle = STATUS_STYLES[item.status]
-          const detailParts = [
-            item.question.module,
-            item.matchedTags.length > 0 ? item.matchedTags.slice(0, 2).join(' / ') : null,
-          ].filter(Boolean)
-
-          return (
-            <Link
-              key={item.question.id}
-              to={`/questions/${item.question.id}`}
-              className="related-practice-row"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) auto',
-                gap: 12,
-                alignItems: 'center',
-                padding: '11px 12px',
-                borderRadius: 10,
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--surface-2)',
-                textDecoration: 'none',
-                color: 'inherit',
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <p
-                  style={{
-                    fontSize: 13,
-                    fontWeight: 600,
-                    color: 'var(--text)',
-                    lineHeight: 1.45,
-                    marginBottom: 5,
-                  }}
-                >
-                  {item.question.question}
-                </p>
-                <p
-                  style={{
-                    fontSize: 11,
-                    color: 'var(--text-3)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {detailParts.join(' · ')}
-                </p>
-              </div>
-              <div
-                style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}
-              >
-                <Badge size="sm" variant="ghost" style={difficultyStyle}>
-                  {DIFFICULTY_LABELS[item.question.difficulty]}
-                </Badge>
-                <Badge size="sm" variant="ghost" style={statusStyle}>
-                  {STATUS_LABELS[item.status]}
-                </Badge>
-              </div>
-            </Link>
-          )
-        })}
       </div>
     </div>
   )
@@ -4311,47 +4167,6 @@ export default function QuestionDetail() {
     }
   }, [records, sessionIds])
 
-  const relatedPracticeItems = useMemo(() => {
-    if (!question || allQuestions.length === 0) return []
-
-    const currentTags = new Set(question.tags.map((tag) => tag.toLowerCase()))
-    const statusRank: Record<StudyStatus, number> = {
-      review: 2,
-      unlearned: 1,
-      mastered: 0,
-    }
-
-    return allQuestions
-      .filter((candidate) => candidate.id !== question.id)
-      .map((candidate) => {
-        const matchedTags = candidate.tags.filter((tag) => currentTags.has(tag.toLowerCase()))
-        const status = records[candidate.id]?.status ?? 'unlearned'
-        const sameModule = candidate.module === question.module
-        const sameDifficulty = candidate.difficulty === question.difficulty
-        const score =
-          matchedTags.length * 8 +
-          (sameModule ? 5 : 0) +
-          (sameDifficulty ? 2 : 0) +
-          statusRank[status] * 3
-
-        return {
-          question: candidate,
-          status,
-          matchedTags,
-          score,
-        }
-      })
-      .filter((item) => item.score >= 5)
-      .sort((a, b) => {
-        if (b.score !== a.score) return b.score - a.score
-        if (statusRank[b.status] !== statusRank[a.status]) {
-          return statusRank[b.status] - statusRank[a.status]
-        }
-        return a.question.id.localeCompare(b.question.id)
-      })
-      .slice(0, 5)
-  }, [allQuestions, question, records])
-
   const hasCustomAnswer = Boolean(question && answerOverride?.content.trim())
   const effectiveAnswerText = question
     ? hasCustomAnswer
@@ -4691,12 +4506,6 @@ export default function QuestionDetail() {
     navigate(createPracticeSessionPath(sessionStats.retryIds[0], sessionStats.retryIds))
   }, [navigate, sessionStats.retryIds, shouldAutoRevealAnswer])
 
-  const handleStartRelatedPractice = useCallback(() => {
-    const ids = relatedPracticeItems.map((item) => item.question.id)
-    if (ids.length === 0) return
-    navigate(createPracticeSessionPath(ids[0], ids))
-  }, [navigate, relatedPracticeItems])
-
   const handleNoteSaved = useCallback(() => {
     setHasNote(true)
     setNoteRefreshKey((value) => value + 1)
@@ -4994,8 +4803,6 @@ export default function QuestionDetail() {
 
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
-  const showRelatedPractice =
-    answerVisible && relatedPracticeItems.length > 0 && (!isInSession || showSessionSummary)
   const showMobileQuestionNav = mobileQuestionNavEnabled
   const showMobileAiFab = aiFabVisible && !aiDrawerOpen
 
@@ -5912,13 +5719,6 @@ export default function QuestionDetail() {
             onRetry={handleRetrySession}
             onBackToPractice={() => navigate('/practice')}
             onDashboard={() => navigate('/')}
-          />
-        )}
-
-        {showRelatedPractice && (
-          <RelatedPracticeCard
-            items={relatedPracticeItems}
-            onStartPractice={handleStartRelatedPractice}
           />
         )}
 
