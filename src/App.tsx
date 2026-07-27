@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { Navbar } from '@/components/layout/Navbar'
@@ -124,6 +125,7 @@ export default function App() {
         </main>
         <OnboardingGuide />
         <PWAUpdatePrompt />
+        <Analytics />
       </div>
     </BrowserRouter>
   )

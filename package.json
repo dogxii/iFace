@@ -27,6 +27,7 @@
     "check:all": "bun run check && bun run check:version && bun run check:release && bun run check:quality-gate && bun run check:docs && bun run check:external-records && bun run check:backup && bun run check:questions && bun run check:sync && bun run check:ai && bun run build && bun run check:pwa"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "idb": "^8.0.3",
     "mammoth": "^1.12.0",
     "pdfjs-dist": "^5.7.284",
