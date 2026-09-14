@@ -192,10 +192,6 @@ export function OnboardingGuide() {
     [categoryMap],
   )
 
-  const visibleCount = categories.filter(
-    ([key]) => !hiddenCategories.has(key),
-  ).length
-
   const close = useCallback(() => {
     markOnboardingDone()
     setOpen(false)
