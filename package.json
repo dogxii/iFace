@@ -12,6 +12,7 @@
     "check": "biome check .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "build:learning-checks": "bun scripts/buildLearningChecks.ts",
     "check:ai": "bun scripts/checkAI.ts",
     "check:backup": "bun scripts/checkBackup.ts",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.6",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.7",
