@@ -64,18 +64,35 @@ export default defineConfig({
           '**/assets/pdf.worker-*.mjs',
           '**/assets/pdf-*.js',
           '**/assets/mammoth.browser-*.js',
+          // Question banks are copied into IndexedDB on first load and learning checks are
+          // fetched per module, so both are cached at runtime instead of precached (~4.6 MB).
+          '**/questions/**',
+          '**/learning-checks/**',
         ],
         // Never let the Service Worker intercept /api/* requests —
         // those must always reach the Vercel serverless functions via the network.
         navigateFallbackDenylist: [/^\/api\//],
+        // RegExp patterns are matched against the full URL, so same-origin routes match on
+        // the pathname instead.
         runtimeCaching: [
           {
-            // Force all /api/* fetches through the network — no caching ever.
-            urlPattern: /^\/api\/.*/i,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkOnly',
           },
           {
-            urlPattern: /^\/assets\/(?:pdf|pdf\.worker|mammoth\.browser)-.*\.(?:js|mjs)$/i,
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/questions/') ||
+              url.pathname.startsWith('/learning-checks/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'question-data',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 120 },
+            },
+          },
+          {
+            urlPattern: ({ url }) =>
+              /^\/assets\/(?:pdf|pdf\.worker|mammoth\.browser)-.*\.(?:js|mjs)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
               cacheName: 'document-parser-chunks',
