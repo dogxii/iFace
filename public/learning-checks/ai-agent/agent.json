@@ -1,0 +1,3642 @@
+[
+  {
+    "questionId": "agent-001",
+    "checks": [
+      {
+        "id": "agent-001-check-01",
+        "kind": "single",
+        "prompt": "AI Agent 和普通聊天机器人最大的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Agent 只能回答固定 FAQ。"
+          },
+          {
+            "id": "b",
+            "text": "Agent 围绕目标感知、决策并执行动作，而不只是生成回复。"
+          },
+          {
+            "id": "c",
+            "text": "聊天机器人一定不能使用 LLM。"
+          },
+          {
+            "id": "d",
+            "text": "Agent 不需要状态和工具。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 的关键是目标驱动、行动能力、状态管理和闭环执行。",
+        "focus": "Agent 定义"
+      },
+      {
+        "id": "agent-001-check-02",
+        "kind": "multiple",
+        "prompt": "哪些能力更常见于 Agent 系统？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具调用"
+          },
+          {
+            "id": "b",
+            "text": "任务分解"
+          },
+          {
+            "id": "c",
+            "text": "状态管理"
+          },
+          {
+            "id": "d",
+            "text": "执行结果观察和验证"
+          },
+          {
+            "id": "e",
+            "text": "只返回固定文案"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 不只是“会说”，还要“知道下一步做什么、做完没有”。",
+        "focus": "Agent 能力"
+      },
+      {
+        "id": "agent-001-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景通常不需要复杂 Agent？",
+        "options": [
+          {
+            "id": "a",
+            "text": "简单 FAQ 问答"
+          },
+          {
+            "id": "b",
+            "text": "单次文本摘要"
+          },
+          {
+            "id": "c",
+            "text": "固定规则转换"
+          },
+          {
+            "id": "d",
+            "text": "跨多个系统完成任务"
+          },
+          {
+            "id": "e",
+            "text": "需要失败恢复的多步流程"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Agent 带来能力也带来复杂度，简单任务不应过度架构化。",
+        "focus": "不必用 Agent"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-002",
+    "checks": [
+      {
+        "id": "agent-002-check-01",
+        "kind": "single",
+        "prompt": "AI Agent 和普通 LLM 应用的边界更接近哪项？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只要用 LLM 就一定是 Agent。"
+          },
+          {
+            "id": "b",
+            "text": "Agent 强调持续状态、任务分解、工具协同和行动闭环。"
+          },
+          {
+            "id": "c",
+            "text": "RAG 问答一定是多 Agent。"
+          },
+          {
+            "id": "d",
+            "text": "普通 LLM 应用不能有 Prompt。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "边界不在是否用模型，而在是否围绕目标持续行动和闭环。",
+        "focus": "LLM 应用边界"
+      },
+      {
+        "id": "agent-002-check-02",
+        "kind": "multiple",
+        "prompt": "哪些特征说明系统更接近 Agent？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多步执行"
+          },
+          {
+            "id": "b",
+            "text": "根据观察结果调整下一步"
+          },
+          {
+            "id": "c",
+            "text": "调用外部系统"
+          },
+          {
+            "id": "d",
+            "text": "维护任务状态"
+          },
+          {
+            "id": "e",
+            "text": "单次生成一段解释"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 是连续任务链路，普通 LLM 应用常是一次输入一次输出。",
+        "focus": "更像 Agent"
+      },
+      {
+        "id": "agent-002-check-03",
+        "kind": "multiple",
+        "prompt": "哪些任务更适合普通 LLM 应用而非 Agent？",
+        "options": [
+          {
+            "id": "a",
+            "text": "单篇文章摘要"
+          },
+          {
+            "id": "b",
+            "text": "一次性分类"
+          },
+          {
+            "id": "c",
+            "text": "简单字段抽取"
+          },
+          {
+            "id": "d",
+            "text": "多系统审批流"
+          },
+          {
+            "id": "e",
+            "text": "失败后需要自动恢复的任务"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "只要不需要多步行动闭环，就不必默认上 Agent。",
+        "focus": "工程判断"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-003",
+    "checks": [
+      {
+        "id": "agent-003-check-01",
+        "kind": "single",
+        "prompt": "最基础的 Agent 执行循环通常包含什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只生成一次自然语言回答。"
+          },
+          {
+            "id": "b",
+            "text": "接收目标、读状态、决策、行动、观察、更新并判断是否结束。"
+          },
+          {
+            "id": "c",
+            "text": "只做向量检索。"
+          },
+          {
+            "id": "d",
+            "text": "只维护聊天历史。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent Loop 的核心是行动后的观察和状态更新。",
+        "focus": "Agent Loop"
+      },
+      {
+        "id": "agent-003-check-02",
+        "kind": "multiple",
+        "prompt": "哪些步骤通常属于 Agent loop？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Goal"
+          },
+          {
+            "id": "b",
+            "text": "Decide"
+          },
+          {
+            "id": "c",
+            "text": "Act"
+          },
+          {
+            "id": "d",
+            "text": "Observe"
+          },
+          {
+            "id": "e",
+            "text": "永不终止"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "循环必须有终止判断，否则容易无限执行。",
+        "focus": "循环步骤"
+      },
+      {
+        "id": "agent-003-check-03",
+        "kind": "multiple",
+        "prompt": "为什么要显式设计 Agent loop？",
+        "options": [
+          {
+            "id": "a",
+            "text": "便于调试"
+          },
+          {
+            "id": "b",
+            "text": "便于监控"
+          },
+          {
+            "id": "c",
+            "text": "便于失败恢复"
+          },
+          {
+            "id": "d",
+            "text": "让所有工具自动安全"
+          },
+          {
+            "id": "e",
+            "text": "取消状态管理"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "循环越清晰，系统越容易回放、定位和治理。",
+        "focus": "明确循环的价值"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-004",
+    "checks": [
+      {
+        "id": "agent-004-check-01",
+        "kind": "single",
+        "prompt": "Agent 中的 Planning 是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接随机调用工具。"
+          },
+          {
+            "id": "b",
+            "text": "在执行前把目标拆分成可操作步骤或子任务。"
+          },
+          {
+            "id": "c",
+            "text": "删除用户目标。"
+          },
+          {
+            "id": "d",
+            "text": "只生成最终答案。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Planning 降低复杂任务的一次性决策难度。",
+        "focus": "Planning"
+      },
+      {
+        "id": "agent-004-check-02",
+        "kind": "multiple",
+        "prompt": "Planning 能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "减少遗漏步骤"
+          },
+          {
+            "id": "b",
+            "text": "便于阶段性检查"
+          },
+          {
+            "id": "c",
+            "text": "便于失败重试"
+          },
+          {
+            "id": "d",
+            "text": "保证所有计划一定正确"
+          },
+          {
+            "id": "e",
+            "text": "消除工具权限风险"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "计划提高可控性，但仍要执行、观察和修正。",
+        "focus": "Planning 收益"
+      },
+      {
+        "id": "agent-004-check-03",
+        "kind": "multiple",
+        "prompt": "关于规划粒度，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "过粗容易遗漏关键步骤"
+          },
+          {
+            "id": "b",
+            "text": "过细会增加成本和延迟"
+          },
+          {
+            "id": "c",
+            "text": "可用滚动规划而非一次性长计划"
+          },
+          {
+            "id": "d",
+            "text": "计划越长越稳定"
+          },
+          {
+            "id": "e",
+            "text": "所有任务都必须先写完整计划"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "规划是权衡，不是越详细越好。",
+        "focus": "规划粒度"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-005",
+    "checks": [
+      {
+        "id": "agent-005-check-01",
+        "kind": "single",
+        "prompt": "Agent memory 和普通多轮对话历史有什么区别？",
+        "options": [
+          {
+            "id": "a",
+            "text": "memory 就是保存所有原始消息。"
+          },
+          {
+            "id": "b",
+            "text": "memory 关注对后续行动有价值的状态、事实和中间结果。"
+          },
+          {
+            "id": "c",
+            "text": "memory 不需要权限隔离。"
+          },
+          {
+            "id": "d",
+            "text": "memory 越多越好。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent memory 是任务状态管理，不是无限堆聊天记录。",
+        "focus": "Memory"
+      },
+      {
+        "id": "agent-005-check-02",
+        "kind": "multiple",
+        "prompt": "哪些信息可能适合进入 Agent memory？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前任务进度"
+          },
+          {
+            "id": "b",
+            "text": "用户确认的偏好或约束"
+          },
+          {
+            "id": "c",
+            "text": "关键工具结果摘要"
+          },
+          {
+            "id": "d",
+            "text": "待恢复的中间状态"
+          },
+          {
+            "id": "e",
+            "text": "所有无关闲聊原文"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "memory 要保留高价值、可复用、可治理的信息。",
+        "focus": "Memory 内容"
+      },
+      {
+        "id": "agent-005-check-03",
+        "kind": "multiple",
+        "prompt": "Agent memory 设计要注意哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "过期信息污染决策"
+          },
+          {
+            "id": "b",
+            "text": "错误记忆被持续复用"
+          },
+          {
+            "id": "c",
+            "text": "权限和隐私隔离"
+          },
+          {
+            "id": "d",
+            "text": "保存越多越可靠"
+          },
+          {
+            "id": "e",
+            "text": "不需要删除策略"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "memory 必须有写入、更新、过期和删除策略。",
+        "focus": "Memory 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-006",
+    "checks": [
+      {
+        "id": "agent-006-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 架构通常需要工具调用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型不能生成文字。"
+          },
+          {
+            "id": "b",
+            "text": "因为工具能提供实时查询、精确计算和外部执行能力。"
+          },
+          {
+            "id": "c",
+            "text": "因为工具可以替代所有推理。"
+          },
+          {
+            "id": "d",
+            "text": "因为工具越多越安全。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型负责理解和决策，工具负责确定性能力和外部动作。",
+        "focus": "工具调用"
+      },
+      {
+        "id": "agent-006-check-02",
+        "kind": "multiple",
+        "prompt": "工具调用通常能提升哪些方面？",
+        "options": [
+          {
+            "id": "a",
+            "text": "实时信息获取"
+          },
+          {
+            "id": "b",
+            "text": "可审计性"
+          },
+          {
+            "id": "c",
+            "text": "外部系统执行"
+          },
+          {
+            "id": "d",
+            "text": "精确计算或查询"
+          },
+          {
+            "id": "e",
+            "text": "自动免除权限控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具增强能力，同时也带来权限和执行风险。",
+        "focus": "工具价值"
+      },
+      {
+        "id": "agent-006-check-03",
+        "kind": "multiple",
+        "prompt": "接入工具后需要重点关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数校验"
+          },
+          {
+            "id": "b",
+            "text": "权限控制"
+          },
+          {
+            "id": "c",
+            "text": "幂等和回滚"
+          },
+          {
+            "id": "d",
+            "text": "审计日志"
+          },
+          {
+            "id": "e",
+            "text": "让模型自由执行所有动作"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 能行动后，安全边界必须更强。",
+        "focus": "工具风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-007",
+    "checks": [
+      {
+        "id": "agent-007-check-01",
+        "kind": "single",
+        "prompt": "单 Agent 和多 Agent 的选择，哪项更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多 Agent 永远更好。"
+          },
+          {
+            "id": "b",
+            "text": "单 Agent 更简单，多 Agent 适合职责清晰、任务异构或需要并行协作的场景。"
+          },
+          {
+            "id": "c",
+            "text": "单 Agent 不能调用工具。"
+          },
+          {
+            "id": "d",
+            "text": "多 Agent 不需要通信协议。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多 Agent 带来分工，也带来协调和排障成本。",
+        "focus": "单 Agent / 多 Agent"
+      },
+      {
+        "id": "agent-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合多 Agent？",
+        "options": [
+          {
+            "id": "a",
+            "text": "规划、执行、审查职责明确"
+          },
+          {
+            "id": "b",
+            "text": "子任务领域差异大"
+          },
+          {
+            "id": "c",
+            "text": "可并行处理多个独立任务"
+          },
+          {
+            "id": "d",
+            "text": "一个简单 FAQ"
+          },
+          {
+            "id": "e",
+            "text": "只需要单次摘要"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多 Agent 的收益来自分工和并行，不是概念炫技。",
+        "focus": "多 Agent 适合"
+      },
+      {
+        "id": "agent-007-check-03",
+        "kind": "multiple",
+        "prompt": "多 Agent 可能带来哪些隐性成本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "通信开销"
+          },
+          {
+            "id": "b",
+            "text": "协调复杂度"
+          },
+          {
+            "id": "c",
+            "text": "失败归因更难"
+          },
+          {
+            "id": "d",
+            "text": "状态一致性问题"
+          },
+          {
+            "id": "e",
+            "text": "自动降低所有延迟"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多 Agent 系统最难的往往不是单个 Agent，而是协作边界。",
+        "focus": "多 Agent 成本"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-008",
+    "checks": [
+      {
+        "id": "agent-008-check-01",
+        "kind": "single",
+        "prompt": "为什么状态管理是 Agent 架构的核心问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Agent 只需要无状态问答。"
+          },
+          {
+            "id": "b",
+            "text": "状态决定 Agent 知道什么、做到哪一步、下一步做什么和何时结束。"
+          },
+          {
+            "id": "c",
+            "text": "状态只用于 UI 展示。"
+          },
+          {
+            "id": "d",
+            "text": "状态越混乱越灵活。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 是连续执行系统，状态混乱会直接导致行动错误。",
+        "focus": "状态管理"
+      },
+      {
+        "id": "agent-008-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 状态通常包括哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务进度"
+          },
+          {
+            "id": "b",
+            "text": "工具结果"
+          },
+          {
+            "id": "c",
+            "text": "中间结论"
+          },
+          {
+            "id": "d",
+            "text": "异常信息"
+          },
+          {
+            "id": "e",
+            "text": "只包括最后一句用户输入"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "状态是任务执行的结构化事实，不只是聊天历史。",
+        "focus": "状态内容"
+      },
+      {
+        "id": "agent-008-check-03",
+        "kind": "multiple",
+        "prompt": "稳定状态设计能支持哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可恢复"
+          },
+          {
+            "id": "b",
+            "text": "可回放"
+          },
+          {
+            "id": "c",
+            "text": "可调试"
+          },
+          {
+            "id": "d",
+            "text": "可审计"
+          },
+          {
+            "id": "e",
+            "text": "自动取消终止条件"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "状态结构清晰，Agent 才能可靠恢复和定位问题。",
+        "focus": "稳定状态设计"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-009",
+    "checks": [
+      {
+        "id": "agent-009-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 需要 observation 阶段？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了重复生成同一段话。"
+          },
+          {
+            "id": "b",
+            "text": "为了读取动作结果，并据此决定下一步或修正计划。"
+          },
+          {
+            "id": "c",
+            "text": "为了跳过工具返回。"
+          },
+          {
+            "id": "d",
+            "text": "为了让系统永不终止。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "没有观察，Agent 无法知道工具执行是否成功、结果是否符合预期。",
+        "focus": "Observation"
+      },
+      {
+        "id": "agent-009-check-02",
+        "kind": "multiple",
+        "prompt": "observation 阶段通常要关注哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具返回结果"
+          },
+          {
+            "id": "b",
+            "text": "错误码或异常"
+          },
+          {
+            "id": "c",
+            "text": "外部状态变化"
+          },
+          {
+            "id": "d",
+            "text": "是否满足终止条件"
+          },
+          {
+            "id": "e",
+            "text": "忽略执行结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "观察是闭环执行的反馈来源。",
+        "focus": "观察内容"
+      },
+      {
+        "id": "agent-009-check-03",
+        "kind": "multiple",
+        "prompt": "如果 Agent 连续执行而不观察，可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "重复执行"
+          },
+          {
+            "id": "b",
+            "text": "基于错误假设继续行动"
+          },
+          {
+            "id": "c",
+            "text": "无法及时失败恢复"
+          },
+          {
+            "id": "d",
+            "text": "一定降低成本"
+          },
+          {
+            "id": "e",
+            "text": "自动提高准确率"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "观察缺失会让 Agent 变成盲目执行器。",
+        "focus": "跳过观察的风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-010",
+    "checks": [
+      {
+        "id": "agent-010-check-01",
+        "kind": "single",
+        "prompt": "Reflection 在 Agent 架构中的作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让 Agent 永远重复执行。"
+          },
+          {
+            "id": "b",
+            "text": "对已有步骤或结果进行自我检查、总结和修正。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有工具调用。"
+          },
+          {
+            "id": "d",
+            "text": "替代权限控制。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Reflection 用于提升质量和发现错误，但不是万能保证。",
+        "focus": "Reflection"
+      },
+      {
+        "id": "agent-010-check-02",
+        "kind": "multiple",
+        "prompt": "Reflection 可能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "发现计划遗漏"
+          },
+          {
+            "id": "b",
+            "text": "检查输出是否满足要求"
+          },
+          {
+            "id": "c",
+            "text": "总结失败原因"
+          },
+          {
+            "id": "d",
+            "text": "改进下一步动作"
+          },
+          {
+            "id": "e",
+            "text": "自动消除所有幻觉"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "反思是质量改进手段，仍需外部验证和成本控制。",
+        "focus": "Reflection 价值"
+      },
+      {
+        "id": "agent-010-check-03",
+        "kind": "multiple",
+        "prompt": "使用 Reflection 时要注意哪些代价？",
+        "options": [
+          {
+            "id": "a",
+            "text": "增加模型调用"
+          },
+          {
+            "id": "b",
+            "text": "增加延迟"
+          },
+          {
+            "id": "c",
+            "text": "可能自我确认错误结论"
+          },
+          {
+            "id": "d",
+            "text": "完全免费"
+          },
+          {
+            "id": "e",
+            "text": "不需要评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Reflection 要用于高价值环节，避免无意义循环。",
+        "focus": "Reflection 代价"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-011",
+    "checks": [
+      {
+        "id": "agent-011-check-01",
+        "kind": "single",
+        "prompt": "ReAct 模式为什么经典？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它完全不需要工具。"
+          },
+          {
+            "id": "b",
+            "text": "它把推理和行动交替组织，让模型边想边做边观察。"
+          },
+          {
+            "id": "c",
+            "text": "它只适合纯文本摘要。"
+          },
+          {
+            "id": "d",
+            "text": "它取消了 observation。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "ReAct 的核心是 Reasoning + Acting + Observation 的交替循环。",
+        "focus": "ReAct"
+      },
+      {
+        "id": "agent-011-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于 ReAct 模式特点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "根据当前观察决定下一步"
+          },
+          {
+            "id": "b",
+            "text": "适合探索式任务"
+          },
+          {
+            "id": "c",
+            "text": "可以逐步调用工具"
+          },
+          {
+            "id": "d",
+            "text": "先生成完整静态计划再永不调整"
+          },
+          {
+            "id": "e",
+            "text": "不需要终止条件"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "ReAct 更偏动态滚动决策，而不是一次性固定计划。",
+        "focus": "ReAct 特点"
+      },
+      {
+        "id": "agent-011-check-03",
+        "kind": "multiple",
+        "prompt": "ReAct 系统需要注意哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "循环过长"
+          },
+          {
+            "id": "b",
+            "text": "工具调用噪声"
+          },
+          {
+            "id": "c",
+            "text": "中间推理被错误观察带偏"
+          },
+          {
+            "id": "d",
+            "text": "自动避免所有错误"
+          },
+          {
+            "id": "e",
+            "text": "不需要日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "ReAct 灵活，但更需要终止条件和可观测性。",
+        "focus": "ReAct 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-012",
+    "checks": [
+      {
+        "id": "agent-012-check-01",
+        "kind": "single",
+        "prompt": "Plan-and-Execute 和 ReAct 的主要区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Plan-and-Execute 不需要执行。"
+          },
+          {
+            "id": "b",
+            "text": "Plan-and-Execute 先形成计划再执行，ReAct 更强调边观察边决策。"
+          },
+          {
+            "id": "c",
+            "text": "ReAct 不能调用工具。"
+          },
+          {
+            "id": "d",
+            "text": "二者完全一样。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "一个偏先规划后执行，一个偏滚动决策和观察。",
+        "focus": "Plan-and-Execute"
+      },
+      {
+        "id": "agent-012-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更适合 Plan-and-Execute？",
+        "options": [
+          {
+            "id": "a",
+            "text": "步骤相对明确的复杂任务"
+          },
+          {
+            "id": "b",
+            "text": "需要阶段性验收的流程"
+          },
+          {
+            "id": "c",
+            "text": "可以先拆解再执行的任务"
+          },
+          {
+            "id": "d",
+            "text": "完全不可预测的开放探索"
+          },
+          {
+            "id": "e",
+            "text": "单句闲聊"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "当任务结构清晰时，先规划能提高可控性。",
+        "focus": "Plan-and-Execute 适合"
+      },
+      {
+        "id": "agent-012-check-03",
+        "kind": "multiple",
+        "prompt": "关于两种模式，哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Plan-and-Execute 便于全局规划"
+          },
+          {
+            "id": "b",
+            "text": "ReAct 便于根据实时观察调整"
+          },
+          {
+            "id": "c",
+            "text": "二者可以混合使用"
+          },
+          {
+            "id": "d",
+            "text": "Plan-and-Execute 永远不会失败"
+          },
+          {
+            "id": "e",
+            "text": "ReAct 永远成本最低"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "架构模式应按任务不确定性和成本约束选择。",
+        "focus": "对比权衡"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-013",
+    "checks": [
+      {
+        "id": "agent-013-check-01",
+        "kind": "single",
+        "prompt": "Supervisor 模式主要解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让所有 Agent 随机行动。"
+          },
+          {
+            "id": "b",
+            "text": "在多 Agent 系统中负责协调、分派、汇总和控制流程。"
+          },
+          {
+            "id": "c",
+            "text": "取消所有子 Agent。"
+          },
+          {
+            "id": "d",
+            "text": "替代工具权限校验。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Supervisor 是多 Agent 协调层，不是安全边界的全部。",
+        "focus": "Supervisor"
+      },
+      {
+        "id": "agent-013-check-02",
+        "kind": "multiple",
+        "prompt": "Supervisor 通常可能负责哪些事情？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务分派"
+          },
+          {
+            "id": "b",
+            "text": "选择合适子 Agent"
+          },
+          {
+            "id": "c",
+            "text": "汇总结果"
+          },
+          {
+            "id": "d",
+            "text": "处理冲突或失败"
+          },
+          {
+            "id": "e",
+            "text": "让子 Agent 越权执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Supervisor 降低协作混乱，但也会成为关键瓶颈。",
+        "focus": "Supervisor 职责"
+      },
+      {
+        "id": "agent-013-check-03",
+        "kind": "multiple",
+        "prompt": "Supervisor 模式需要注意哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "单点瓶颈"
+          },
+          {
+            "id": "b",
+            "text": "路由错误"
+          },
+          {
+            "id": "c",
+            "text": "子 Agent 结果冲突"
+          },
+          {
+            "id": "d",
+            "text": "自动提升所有质量"
+          },
+          {
+            "id": "e",
+            "text": "不需要通信协议"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "协调者本身也需要评测、日志和失败处理。",
+        "focus": "Supervisor 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-014",
+    "checks": [
+      {
+        "id": "agent-014-check-01",
+        "kind": "single",
+        "prompt": "Agent 系统中的 routing 层通常负责什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "随机选择工具。"
+          },
+          {
+            "id": "b",
+            "text": "根据任务、上下文、权限或风险选择模型、工具、流程或 Agent。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有上下文。"
+          },
+          {
+            "id": "d",
+            "text": "只做 UI 跳转。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "路由层决定请求走哪条能力路径。",
+        "focus": "Routing"
+      },
+      {
+        "id": "agent-014-check-02",
+        "kind": "multiple",
+        "prompt": "Agent routing 可以基于哪些信号？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户意图"
+          },
+          {
+            "id": "b",
+            "text": "任务风险等级"
+          },
+          {
+            "id": "c",
+            "text": "权限和数据范围"
+          },
+          {
+            "id": "d",
+            "text": "所需工具或模型能力"
+          },
+          {
+            "id": "e",
+            "text": "随机数优先"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "路由应可解释、可回放，而不是黑箱随机。",
+        "focus": "路由依据"
+      },
+      {
+        "id": "agent-014-check-03",
+        "kind": "multiple",
+        "prompt": "路由层设计不当可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具误选"
+          },
+          {
+            "id": "b",
+            "text": "高风险任务走低安全路径"
+          },
+          {
+            "id": "c",
+            "text": "成本和延迟失控"
+          },
+          {
+            "id": "d",
+            "text": "自动消除注入风险"
+          },
+          {
+            "id": "e",
+            "text": "不需要监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "路由错误会放大到整条 Agent 链路。",
+        "focus": "路由风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-015",
+    "checks": [
+      {
+        "id": "agent-015-check-01",
+        "kind": "single",
+        "prompt": "Workflow 和 Agent 的边界怎么理解？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Workflow 一定不能用 LLM。"
+          },
+          {
+            "id": "b",
+            "text": "Workflow 更强调预定义流程，Agent 更强调根据目标和观察动态决策。"
+          },
+          {
+            "id": "c",
+            "text": "Agent 一定没有流程。"
+          },
+          {
+            "id": "d",
+            "text": "二者完全冲突，不能混合。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "真实系统常是 workflow 提供骨架，Agent 处理不确定环节。",
+        "focus": "Workflow vs Agent"
+      },
+      {
+        "id": "agent-015-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合 workflow？",
+        "options": [
+          {
+            "id": "a",
+            "text": "流程固定"
+          },
+          {
+            "id": "b",
+            "text": "合规要求明确"
+          },
+          {
+            "id": "c",
+            "text": "步骤可枚举"
+          },
+          {
+            "id": "d",
+            "text": "需要开放式探索"
+          },
+          {
+            "id": "e",
+            "text": "动作完全不可预测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "确定性强的流程不必交给自由 Agent。",
+        "focus": "Workflow 适合"
+      },
+      {
+        "id": "agent-015-check-03",
+        "kind": "multiple",
+        "prompt": "为什么常见 workflow + agent 混合架构？",
+        "options": [
+          {
+            "id": "a",
+            "text": "workflow 保证边界"
+          },
+          {
+            "id": "b",
+            "text": "Agent 处理模糊决策"
+          },
+          {
+            "id": "c",
+            "text": "更容易控制风险"
+          },
+          {
+            "id": "d",
+            "text": "让所有步骤都自由发挥"
+          },
+          {
+            "id": "e",
+            "text": "取消审计需求"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "混合架构兼顾确定性和灵活性。",
+        "focus": "混合架构"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-016",
+    "checks": [
+      {
+        "id": "agent-016-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 的外部动作需要考虑幂等性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Agent 不会失败。"
+          },
+          {
+            "id": "b",
+            "text": "因为重试、超时或重复执行可能造成重复下单、重复发消息等副作用。"
+          },
+          {
+            "id": "c",
+            "text": "因为幂等性只影响前端样式。"
+          },
+          {
+            "id": "d",
+            "text": "因为所有工具都是只读的。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 会执行真实外部动作，重复执行的代价必须控制。",
+        "focus": "幂等性"
+      },
+      {
+        "id": "agent-016-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于幂等性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "幂等 key"
+          },
+          {
+            "id": "b",
+            "text": "操作前查询状态"
+          },
+          {
+            "id": "c",
+            "text": "去重和防重复提交"
+          },
+          {
+            "id": "d",
+            "text": "明确重试语义"
+          },
+          {
+            "id": "e",
+            "text": "失败后无条件重试写操作"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "幂等设计能降低重试和恢复带来的副作用。",
+        "focus": "幂等设计"
+      },
+      {
+        "id": "agent-016-check-03",
+        "kind": "multiple",
+        "prompt": "哪些动作特别需要幂等保护？",
+        "options": [
+          {
+            "id": "a",
+            "text": "支付"
+          },
+          {
+            "id": "b",
+            "text": "下单"
+          },
+          {
+            "id": "c",
+            "text": "发通知"
+          },
+          {
+            "id": "d",
+            "text": "修改权限"
+          },
+          {
+            "id": "e",
+            "text": "本地只读解释概念"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "有副作用的动作都要考虑重复执行风险。",
+        "focus": "高风险动作"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-017",
+    "checks": [
+      {
+        "id": "agent-017-check-01",
+        "kind": "single",
+        "prompt": "Agent 系统里为什么不能简单“一失败就再来一次”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为重试永远没用。"
+          },
+          {
+            "id": "b",
+            "text": "因为失败原因不同，盲目重试可能重复副作用、放大成本或掩盖错误。"
+          },
+          {
+            "id": "c",
+            "text": "因为所有失败都是用户问题。"
+          },
+          {
+            "id": "d",
+            "text": "因为重试不影响任何状态。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "重试要区分临时错误、参数错误、权限错误和业务失败。",
+        "focus": "重试策略"
+      },
+      {
+        "id": "agent-017-check-02",
+        "kind": "multiple",
+        "prompt": "设计重试时应考虑哪些因素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "是否有副作用"
+          },
+          {
+            "id": "b",
+            "text": "错误是否可恢复"
+          },
+          {
+            "id": "c",
+            "text": "是否幂等"
+          },
+          {
+            "id": "d",
+            "text": "最大重试次数和退避策略"
+          },
+          {
+            "id": "e",
+            "text": "永久无限重试"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "重试是策略，不是默认动作。",
+        "focus": "重试判断"
+      },
+      {
+        "id": "agent-017-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况通常不宜直接自动重试？",
+        "options": [
+          {
+            "id": "a",
+            "text": "权限拒绝"
+          },
+          {
+            "id": "b",
+            "text": "参数非法"
+          },
+          {
+            "id": "c",
+            "text": "非幂等写操作状态不明"
+          },
+          {
+            "id": "d",
+            "text": "短暂网络抖动且操作幂等"
+          },
+          {
+            "id": "e",
+            "text": "只读查询超时且可重试"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不可恢复或有副作用风险的失败，需要澄清、人工或补偿流程。",
+        "focus": "不宜重试"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-018",
+    "checks": [
+      {
+        "id": "agent-018-check-01",
+        "kind": "single",
+        "prompt": "复杂 Agent 任务为什么需要 checkpoint 或持久化状态？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了让任务更难调试。"
+          },
+          {
+            "id": "b",
+            "text": "为了支持恢复、回放、审计和长任务中断后续跑。"
+          },
+          {
+            "id": "c",
+            "text": "为了删除任务进度。"
+          },
+          {
+            "id": "d",
+            "text": "因为所有任务都是瞬时完成。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "长链路任务不能只存在内存里，否则失败后难以恢复。",
+        "focus": "Checkpoint"
+      },
+      {
+        "id": "agent-018-check-02",
+        "kind": "multiple",
+        "prompt": "checkpoint 通常应记录哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前步骤和状态"
+          },
+          {
+            "id": "b",
+            "text": "已完成动作"
+          },
+          {
+            "id": "c",
+            "text": "工具输入输出摘要"
+          },
+          {
+            "id": "d",
+            "text": "错误和重试记录"
+          },
+          {
+            "id": "e",
+            "text": "无关 UI 动画状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "checkpoint 要服务于恢复和审计。",
+        "focus": "Checkpoint 内容"
+      },
+      {
+        "id": "agent-018-check-03",
+        "kind": "multiple",
+        "prompt": "checkpoint 能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "失败恢复"
+          },
+          {
+            "id": "b",
+            "text": "日志回放"
+          },
+          {
+            "id": "c",
+            "text": "避免重复执行已完成步骤"
+          },
+          {
+            "id": "d",
+            "text": "自动保证计划正确"
+          },
+          {
+            "id": "e",
+            "text": "取消权限控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "持久化状态是可靠 Agent 的基础能力之一。",
+        "focus": "价值"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-019",
+    "checks": [
+      {
+        "id": "agent-019-check-01",
+        "kind": "single",
+        "prompt": "为什么企业级 Agent 常需要 Human-in-the-Loop？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有任务都必须人工完成。"
+          },
+          {
+            "id": "b",
+            "text": "因为高风险、不确定或不可逆动作需要人工确认、审批或兜底。"
+          },
+          {
+            "id": "c",
+            "text": "因为模型不能生成任何内容。"
+          },
+          {
+            "id": "d",
+            "text": "因为人工可以替代所有日志。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "人在环路是风险控制和质量兜底机制。",
+        "focus": "Human-in-the-Loop"
+      },
+      {
+        "id": "agent-019-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景适合 Human-in-the-Loop？",
+        "options": [
+          {
+            "id": "a",
+            "text": "金额较大的操作"
+          },
+          {
+            "id": "b",
+            "text": "权限变更"
+          },
+          {
+            "id": "c",
+            "text": "低置信度判断"
+          },
+          {
+            "id": "d",
+            "text": "法务或合规风险"
+          },
+          {
+            "id": "e",
+            "text": "简单只读查询"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "人工介入应聚焦高风险和高不确定场景。",
+        "focus": "适合引入人工"
+      },
+      {
+        "id": "agent-019-check-03",
+        "kind": "multiple",
+        "prompt": "人工节点设计要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给出可审查上下文"
+          },
+          {
+            "id": "b",
+            "text": "明确审批结果如何写回状态"
+          },
+          {
+            "id": "c",
+            "text": "记录审计日志"
+          },
+          {
+            "id": "d",
+            "text": "让人工盲签"
+          },
+          {
+            "id": "e",
+            "text": "审批后不更新任务状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "人工节点也必须成为可追踪的流程状态。",
+        "focus": "人工节点设计"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-020",
+    "checks": [
+      {
+        "id": "agent-020-check-01",
+        "kind": "single",
+        "prompt": "任务分解为什么影响 Agent 成功率？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分解只会增加复杂度，没有收益。"
+          },
+          {
+            "id": "b",
+            "text": "合理分解能降低每一步难度，并支持检查、重试和并行。"
+          },
+          {
+            "id": "c",
+            "text": "分解越细越好。"
+          },
+          {
+            "id": "d",
+            "text": "分解后不需要终止条件。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "分解质量决定执行链路的可控性。",
+        "focus": "任务分解"
+      },
+      {
+        "id": "agent-020-check-02",
+        "kind": "multiple",
+        "prompt": "任务分解过粗可能带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "步骤遗漏"
+          },
+          {
+            "id": "b",
+            "text": "错误难定位"
+          },
+          {
+            "id": "c",
+            "text": "一步失败影响大"
+          },
+          {
+            "id": "d",
+            "text": "成本一定最低且质量最好"
+          },
+          {
+            "id": "e",
+            "text": "自动提升观察质量"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过粗会让 Agent 难以检查和恢复。",
+        "focus": "过粗风险"
+      },
+      {
+        "id": "agent-020-check-03",
+        "kind": "multiple",
+        "prompt": "任务分解过细可能带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "调用次数增加"
+          },
+          {
+            "id": "b",
+            "text": "延迟和成本上升"
+          },
+          {
+            "id": "c",
+            "text": "状态管理更复杂"
+          },
+          {
+            "id": "d",
+            "text": "一定提高成功率"
+          },
+          {
+            "id": "e",
+            "text": "不再需要规划"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分解要匹配任务复杂度，避免把流程碎片化。",
+        "focus": "过细风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-021",
+    "checks": [
+      {
+        "id": "agent-021-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 系统必须显式设计终止条件？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Agent 永远只执行一步。"
+          },
+          {
+            "id": "b",
+            "text": "因为没有终止条件可能无限循环、重复调用工具或持续消耗成本。"
+          },
+          {
+            "id": "c",
+            "text": "因为终止条件只影响 UI。"
+          },
+          {
+            "id": "d",
+            "text": "因为终止条件会取消任务目标。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "终止条件决定什么时候停止、成功、失败或转人工。",
+        "focus": "终止条件"
+      },
+      {
+        "id": "agent-021-check-02",
+        "kind": "multiple",
+        "prompt": "哪些可以作为 Agent 的终止信号？",
+        "options": [
+          {
+            "id": "a",
+            "text": "目标已满足"
+          },
+          {
+            "id": "b",
+            "text": "达到最大步数或预算"
+          },
+          {
+            "id": "c",
+            "text": "遇到不可恢复错误"
+          },
+          {
+            "id": "d",
+            "text": "需要人工确认"
+          },
+          {
+            "id": "e",
+            "text": "永远继续执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "终止条件既包括成功，也包括失败和降级。",
+        "focus": "终止信号"
+      },
+      {
+        "id": "agent-021-check-03",
+        "kind": "multiple",
+        "prompt": "缺少终止条件会带来哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "无限循环"
+          },
+          {
+            "id": "b",
+            "text": "成本失控"
+          },
+          {
+            "id": "c",
+            "text": "重复副作用动作"
+          },
+          {
+            "id": "d",
+            "text": "自动提升准确率"
+          },
+          {
+            "id": "e",
+            "text": "自动降低延迟"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Agent 越能行动，越需要明确停止边界。",
+        "focus": "缺失风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-022",
+    "checks": [
+      {
+        "id": "agent-022-check-01",
+        "kind": "single",
+        "prompt": "在 Agent 架构中引入 evaluator 或 critic 的价值是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让系统永远不需要执行。"
+          },
+          {
+            "id": "b",
+            "text": "对计划、过程或结果做独立检查，提高质量和安全性。"
+          },
+          {
+            "id": "c",
+            "text": "替代所有工具调用。"
+          },
+          {
+            "id": "d",
+            "text": "取消状态管理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Evaluator/Critic 是验证和质量控制层。",
+        "focus": "Evaluator / Critic"
+      },
+      {
+        "id": "agent-022-check-02",
+        "kind": "multiple",
+        "prompt": "evaluator 或 critic 可以检查哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "计划是否完整"
+          },
+          {
+            "id": "b",
+            "text": "工具参数是否合理"
+          },
+          {
+            "id": "c",
+            "text": "输出是否满足要求"
+          },
+          {
+            "id": "d",
+            "text": "是否存在安全风险"
+          },
+          {
+            "id": "e",
+            "text": "用户浏览器主题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "检查可以发生在执行前、执行中和执行后。",
+        "focus": "检查对象"
+      },
+      {
+        "id": "agent-022-check-03",
+        "kind": "multiple",
+        "prompt": "引入 critic 需要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "增加调用成本"
+          },
+          {
+            "id": "b",
+            "text": "增加延迟"
+          },
+          {
+            "id": "c",
+            "text": "critic 本身也可能误判"
+          },
+          {
+            "id": "d",
+            "text": "一定免费"
+          },
+          {
+            "id": "e",
+            "text": "不需要评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "验证层要用于高价值或高风险环节，并通过评测验证效果。",
+        "focus": "使用代价"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-023",
+    "checks": [
+      {
+        "id": "agent-023-check-01",
+        "kind": "single",
+        "prompt": "为什么说 Agent 的本质问题之一是上下文工程？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为上下文越多越好。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Agent 每一步都要决定给模型哪些目标、状态、记忆、工具结果和约束。"
+          },
+          {
+            "id": "c",
+            "text": "因为上下文只包含用户最后一句话。"
+          },
+          {
+            "id": "d",
+            "text": "因为上下文不影响工具选择。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 的决策质量高度依赖上下文选择和组织方式。",
+        "focus": "上下文工程"
+      },
+      {
+        "id": "agent-023-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 上下文通常可能包含哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前目标"
+          },
+          {
+            "id": "b",
+            "text": "任务状态"
+          },
+          {
+            "id": "c",
+            "text": "历史关键结论"
+          },
+          {
+            "id": "d",
+            "text": "工具结果和约束"
+          },
+          {
+            "id": "e",
+            "text": "所有无关日志原文"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上下文要高信噪比，而不是无限堆材料。",
+        "focus": "上下文内容"
+      },
+      {
+        "id": "agent-023-check-03",
+        "kind": "multiple",
+        "prompt": "上下文工程做不好会导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "关键信息缺失"
+          },
+          {
+            "id": "b",
+            "text": "噪声干扰决策"
+          },
+          {
+            "id": "c",
+            "text": "token 成本和延迟上升"
+          },
+          {
+            "id": "d",
+            "text": "工具输出污染"
+          },
+          {
+            "id": "e",
+            "text": "自动提高任务成功率"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上下文质量决定 Agent 是否能稳定做出下一步决策。",
+        "focus": "上下文风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-024",
+    "checks": [
+      {
+        "id": "agent-024-check-01",
+        "kind": "single",
+        "prompt": "为什么很多 Agent 系统会把 planner 和 executor 分开？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为执行器不需要计划。"
+          },
+          {
+            "id": "b",
+            "text": "为了把任务分解决策和具体执行动作解耦，便于控制、审计和替换。"
+          },
+          {
+            "id": "c",
+            "text": "为了让两个组件互相不知道状态。"
+          },
+          {
+            "id": "d",
+            "text": "为了取消验证层。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "拆分职责可以降低单个组件复杂度，并强化边界。",
+        "focus": "Planner / Executor"
+      },
+      {
+        "id": "agent-024-check-02",
+        "kind": "multiple",
+        "prompt": "planner / executor 分离有哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "计划更容易审查"
+          },
+          {
+            "id": "b",
+            "text": "执行器可以更确定性"
+          },
+          {
+            "id": "c",
+            "text": "便于权限隔离"
+          },
+          {
+            "id": "d",
+            "text": "便于替换模型或工具"
+          },
+          {
+            "id": "e",
+            "text": "自动消除所有失败"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "规划负责“做什么”，执行负责“怎么安全地做”。",
+        "focus": "拆分收益"
+      },
+      {
+        "id": "agent-024-check-03",
+        "kind": "multiple",
+        "prompt": "分离 planner 和 executor 时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "计划格式要结构化"
+          },
+          {
+            "id": "b",
+            "text": "执行结果要反馈给 planner"
+          },
+          {
+            "id": "c",
+            "text": "权限和参数校验不能省"
+          },
+          {
+            "id": "d",
+            "text": "planner 可以随意生成不可执行步骤"
+          },
+          {
+            "id": "e",
+            "text": "executor 不需要返回错误"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分层后更需要清晰协议和反馈回路。",
+        "focus": "设计注意"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-025",
+    "checks": [
+      {
+        "id": "agent-025-check-01",
+        "kind": "single",
+        "prompt": "Agent 系统中哪些任务适合并行化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "必须严格依赖前一步结果的写操作。"
+          },
+          {
+            "id": "b",
+            "text": "相互独立的检索、分析、候选生成或子任务处理。"
+          },
+          {
+            "id": "c",
+            "text": "所有步骤都无脑并行。"
+          },
+          {
+            "id": "d",
+            "text": "只有最终回答适合并行。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "并行化适合依赖关系弱、可合并结果的子任务。",
+        "focus": "并行化"
+      },
+      {
+        "id": "agent-025-check-02",
+        "kind": "multiple",
+        "prompt": "并行化可能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低总等待时间"
+          },
+          {
+            "id": "b",
+            "text": "同时探索多个候选"
+          },
+          {
+            "id": "c",
+            "text": "提高召回覆盖"
+          },
+          {
+            "id": "d",
+            "text": "自动保证结果一致"
+          },
+          {
+            "id": "e",
+            "text": "取消结果合并"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "并行能提速和扩展覆盖，但需要汇总和冲突处理。",
+        "focus": "并行收益"
+      },
+      {
+        "id": "agent-025-check-03",
+        "kind": "multiple",
+        "prompt": "Agent 并行化会带来哪些新问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "结果冲突"
+          },
+          {
+            "id": "b",
+            "text": "资源竞争"
+          },
+          {
+            "id": "c",
+            "text": "状态一致性"
+          },
+          {
+            "id": "d",
+            "text": "合并逻辑复杂"
+          },
+          {
+            "id": "e",
+            "text": "成本一定下降"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "并行要设计依赖、隔离和合并策略。",
+        "focus": "并行风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-026",
+    "checks": [
+      {
+        "id": "agent-026-check-01",
+        "kind": "single",
+        "prompt": "多 Agent 系统中最难设计的部分通常是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给每个 Agent 起名字。"
+          },
+          {
+            "id": "b",
+            "text": "职责边界、通信协议、状态一致性和冲突协调。"
+          },
+          {
+            "id": "c",
+            "text": "让所有 Agent 输出自然语言。"
+          },
+          {
+            "id": "d",
+            "text": "取消所有日志。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多 Agent 难在协作系统，而不是单个模型调用。",
+        "focus": "多 Agent 难点"
+      },
+      {
+        "id": "agent-026-check-02",
+        "kind": "multiple",
+        "prompt": "多 Agent 协作中常见难题有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "职责重叠"
+          },
+          {
+            "id": "b",
+            "text": "消息膨胀"
+          },
+          {
+            "id": "c",
+            "text": "冲突结论"
+          },
+          {
+            "id": "d",
+            "text": "失败归因困难"
+          },
+          {
+            "id": "e",
+            "text": "自动降低复杂度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多 Agent 的复杂度来自交互和协调。",
+        "focus": "多 Agent 协作难题"
+      },
+      {
+        "id": "agent-026-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法能降低多 Agent 复杂度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确角色边界"
+          },
+          {
+            "id": "b",
+            "text": "使用结构化消息"
+          },
+          {
+            "id": "c",
+            "text": "设置 supervisor 或仲裁机制"
+          },
+          {
+            "id": "d",
+            "text": "记录完整 trace"
+          },
+          {
+            "id": "e",
+            "text": "让所有 Agent 随意聊天"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多 Agent 需要协议化协作，而不是自由对话堆叠。",
+        "focus": "降低复杂度"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-027",
+    "checks": [
+      {
+        "id": "agent-027-check-01",
+        "kind": "single",
+        "prompt": "为什么多 Agent 通信最好设计成结构化协议？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为自然语言完全不能用。"
+          },
+          {
+            "id": "b",
+            "text": "因为结构化协议更可解析、可验证、可回放，能减少歧义。"
+          },
+          {
+            "id": "c",
+            "text": "因为协议能替代所有安全控制。"
+          },
+          {
+            "id": "d",
+            "text": "因为协议一定更短。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "结构化通信让多 Agent 协作更像系统接口。",
+        "focus": "结构化通信"
+      },
+      {
+        "id": "agent-027-check-02",
+        "kind": "multiple",
+        "prompt": "多 Agent 通信协议可以包含哪些字段？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务 id"
+          },
+          {
+            "id": "b",
+            "text": "角色和意图"
+          },
+          {
+            "id": "c",
+            "text": "输入、输出和状态"
+          },
+          {
+            "id": "d",
+            "text": "错误码和置信度"
+          },
+          {
+            "id": "e",
+            "text": "随机废话"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "协议字段帮助路由、校验、追踪和恢复。",
+        "focus": "协议字段"
+      },
+      {
+        "id": "agent-027-check-03",
+        "kind": "multiple",
+        "prompt": "完全依赖自然语言通信可能带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "歧义"
+          },
+          {
+            "id": "b",
+            "text": "漏字段"
+          },
+          {
+            "id": "c",
+            "text": "难以自动校验"
+          },
+          {
+            "id": "d",
+            "text": "难以稳定路由"
+          },
+          {
+            "id": "e",
+            "text": "自动提升安全性"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "自然语言适合表达，协议适合系统协作。",
+        "focus": "自然语言风险"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-028",
+    "checks": [
+      {
+        "id": "agent-028-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 系统中的验证层比纯聊天系统更重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Agent 不会影响外部系统。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Agent 会调用工具和执行动作，错误可能造成真实副作用。"
+          },
+          {
+            "id": "c",
+            "text": "因为聊天系统不需要任何质量。"
+          },
+          {
+            "id": "d",
+            "text": "因为验证层可以删除所有权限。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 能行动，所以必须验证计划、参数、结果和权限。",
+        "focus": "验证层"
+      },
+      {
+        "id": "agent-028-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 验证层应关注哪些对象？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具参数"
+          },
+          {
+            "id": "b",
+            "text": "权限和资源范围"
+          },
+          {
+            "id": "c",
+            "text": "执行结果是否符合目标"
+          },
+          {
+            "id": "d",
+            "text": "是否存在危险动作"
+          },
+          {
+            "id": "e",
+            "text": "字体大小"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "验证层要覆盖行动前、中、后的关键风险。",
+        "focus": "验证对象"
+      },
+      {
+        "id": "agent-028-check-03",
+        "kind": "multiple",
+        "prompt": "哪些属于合理的验证方式？",
+        "options": [
+          {
+            "id": "a",
+            "text": "schema 校验"
+          },
+          {
+            "id": "b",
+            "text": "规则校验"
+          },
+          {
+            "id": "c",
+            "text": "evaluator 复核"
+          },
+          {
+            "id": "d",
+            "text": "人工审批"
+          },
+          {
+            "id": "e",
+            "text": "完全相信模型自述"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "验证越靠近确定性系统，安全性越可控。",
+        "focus": "验证方式"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-029",
+    "checks": [
+      {
+        "id": "agent-029-check-01",
+        "kind": "single",
+        "prompt": "Agent 在第 5 步工具调用失败，恢复策略首先应考虑什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "无条件从第 1 步重来。"
+          },
+          {
+            "id": "b",
+            "text": "判断失败类型、当前状态、副作用是否发生以及是否可重试。"
+          },
+          {
+            "id": "c",
+            "text": "忽略失败继续说成功。"
+          },
+          {
+            "id": "d",
+            "text": "删除所有 checkpoint。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "恢复要先确认状态和副作用，避免重复或错误补偿。",
+        "focus": "工具失败恢复"
+      },
+      {
+        "id": "agent-029-check-02",
+        "kind": "multiple",
+        "prompt": "哪些可能是合理恢复策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "幂等重试"
+          },
+          {
+            "id": "b",
+            "text": "从 checkpoint 继续"
+          },
+          {
+            "id": "c",
+            "text": "改用备用工具"
+          },
+          {
+            "id": "d",
+            "text": "请求人工确认或用户补充信息"
+          },
+          {
+            "id": "e",
+            "text": "伪造工具结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "恢复策略要根据错误类型和风险等级选择。",
+        "focus": "恢复策略"
+      },
+      {
+        "id": "agent-029-check-03",
+        "kind": "multiple",
+        "prompt": "工具失败后要检查哪些状态？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具是否实际执行成功但返回失败"
+          },
+          {
+            "id": "b",
+            "text": "是否产生部分副作用"
+          },
+          {
+            "id": "c",
+            "text": "当前任务进度是否可恢复"
+          },
+          {
+            "id": "d",
+            "text": "是否可以直接假设成功"
+          },
+          {
+            "id": "e",
+            "text": "是否不需要日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分布式系统里失败状态可能不明确，必须谨慎恢复。",
+        "focus": "状态检查"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-030",
+    "checks": [
+      {
+        "id": "agent-030-check-01",
+        "kind": "single",
+        "prompt": "Agent 系统可观测性应该重点覆盖什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只记录最终回答。"
+          },
+          {
+            "id": "b",
+            "text": "目标、计划、状态、工具调用、观察、错误、成本和版本信息。"
+          },
+          {
+            "id": "c",
+            "text": "只记录页面路径。"
+          },
+          {
+            "id": "d",
+            "text": "不需要记录中间步骤。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 问题常发生在中间步骤，不能只看最终文本。",
+        "focus": "可观测性"
+      },
+      {
+        "id": "agent-030-check-02",
+        "kind": "multiple",
+        "prompt": "Agent trace 应包含哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每一步输入输出"
+          },
+          {
+            "id": "b",
+            "text": "工具调用参数和结果摘要"
+          },
+          {
+            "id": "c",
+            "text": "模型、Prompt 和配置版本"
+          },
+          {
+            "id": "d",
+            "text": "错误和重试记录"
+          },
+          {
+            "id": "e",
+            "text": "无关动画帧"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "trace 要服务于回放、调试、审计和评测。",
+        "focus": "Trace 内容"
+      },
+      {
+        "id": "agent-030-check-03",
+        "kind": "multiple",
+        "prompt": "可观测性带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "快速定位失败环节"
+          },
+          {
+            "id": "b",
+            "text": "成本和延迟分析"
+          },
+          {
+            "id": "c",
+            "text": "安全审计"
+          },
+          {
+            "id": "d",
+            "text": "回归样本沉淀"
+          },
+          {
+            "id": "e",
+            "text": "自动修复所有问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可观测性是持续优化和线上排障的基础。",
+        "focus": "可观测性价值"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-031",
+    "checks": [
+      {
+        "id": "agent-031-check-01",
+        "kind": "single",
+        "prompt": "Agent 系统为什么经常比普通 LLM 应用更慢？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Agent 不使用模型。"
+          },
+          {
+            "id": "b",
+            "text": "因为它通常有多轮模型调用、检索、工具执行、验证和状态持久化。"
+          },
+          {
+            "id": "c",
+            "text": "因为它不能并行。"
+          },
+          {
+            "id": "d",
+            "text": "因为它只返回静态文本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 延迟是整条链路叠加，不只是单次模型推理。",
+        "focus": "性能瓶颈"
+      },
+      {
+        "id": "agent-031-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 常见性能瓶颈有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多次 LLM 调用"
+          },
+          {
+            "id": "b",
+            "text": "慢工具或外部 API"
+          },
+          {
+            "id": "c",
+            "text": "RAG 检索和 rerank"
+          },
+          {
+            "id": "d",
+            "text": "串行执行过多"
+          },
+          {
+            "id": "e",
+            "text": "没有任何网络 IO"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能优化要分段看模型、工具、检索和编排。",
+        "focus": "常见瓶颈"
+      },
+      {
+        "id": "agent-031-check-03",
+        "kind": "multiple",
+        "prompt": "哪些方向能改善 Agent 性能？",
+        "options": [
+          {
+            "id": "a",
+            "text": "减少不必要步骤"
+          },
+          {
+            "id": "b",
+            "text": "并行独立任务"
+          },
+          {
+            "id": "c",
+            "text": "缓存稳定结果"
+          },
+          {
+            "id": "d",
+            "text": "设置工具超时和降级"
+          },
+          {
+            "id": "e",
+            "text": "无限增加 reflection 次数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能优化要控制调用次数、串行链路和慢依赖。",
+        "focus": "优化方向"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-032",
+    "checks": [
+      {
+        "id": "agent-032-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 系统成本通常更高？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Agent 不消耗 token。"
+          },
+          {
+            "id": "b",
+            "text": "因为多轮模型调用、长上下文、工具输出和验证步骤会叠加成本。"
+          },
+          {
+            "id": "c",
+            "text": "因为成本只和 UI 有关。"
+          },
+          {
+            "id": "d",
+            "text": "因为所有工具免费。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 是链路成本，不是单次问答成本。",
+        "focus": "成本控制"
+      },
+      {
+        "id": "agent-032-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 成本通常来自哪些环节？",
+        "options": [
+          {
+            "id": "a",
+            "text": "planner 调用"
+          },
+          {
+            "id": "b",
+            "text": "executor 调用"
+          },
+          {
+            "id": "c",
+            "text": "evaluator 或 reflection"
+          },
+          {
+            "id": "d",
+            "text": "RAG 和工具服务"
+          },
+          {
+            "id": "e",
+            "text": "静态图标"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "每增加一步都可能增加 token、API、存储或计算成本。",
+        "focus": "成本来源"
+      },
+      {
+        "id": "agent-032-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于控制 Agent 成本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "设置步数和预算上限"
+          },
+          {
+            "id": "b",
+            "text": "小模型处理简单步骤"
+          },
+          {
+            "id": "c",
+            "text": "压缩上下文和工具输出"
+          },
+          {
+            "id": "d",
+            "text": "缓存高频稳定结果"
+          },
+          {
+            "id": "e",
+            "text": "对所有任务使用最强模型"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成本控制要从模型、上下文、流程和工具一起做。",
+        "focus": "控制成本"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-033",
+    "checks": [
+      {
+        "id": "agent-033-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 架构里的权限控制更关键？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Agent 永远不调用外部系统。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Agent 可以读取数据、调用工具和执行动作，错误权限会造成真实损害。"
+          },
+          {
+            "id": "c",
+            "text": "因为权限只影响展示。"
+          },
+          {
+            "id": "d",
+            "text": "因为 Prompt 可以替代所有鉴权。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 能行动，权限边界必须由系统强制执行。",
+        "focus": "权限控制"
+      },
+      {
+        "id": "agent-033-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 权限控制应覆盖哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户身份"
+          },
+          {
+            "id": "b",
+            "text": "可访问资源"
+          },
+          {
+            "id": "c",
+            "text": "可调用工具"
+          },
+          {
+            "id": "d",
+            "text": "可执行动作和审批条件"
+          },
+          {
+            "id": "e",
+            "text": "模型自称的角色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不能只相信模型说自己“有权限”。",
+        "focus": "权限维度"
+      },
+      {
+        "id": "agent-033-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法更安全？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具网关做鉴权"
+          },
+          {
+            "id": "b",
+            "text": "参数级权限校验"
+          },
+          {
+            "id": "c",
+            "text": "敏感动作人工确认"
+          },
+          {
+            "id": "d",
+            "text": "审计日志"
+          },
+          {
+            "id": "e",
+            "text": "让 Prompt 决定是否越权"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 可以提示规则，但强制边界必须在后端。",
+        "focus": "安全做法"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-034",
+    "checks": [
+      {
+        "id": "agent-034-check-01",
+        "kind": "single",
+        "prompt": "如何划分 Agent 的短期记忆和长期记忆？",
+        "options": [
+          {
+            "id": "a",
+            "text": "都永久保存所有聊天原文。"
+          },
+          {
+            "id": "b",
+            "text": "短期记忆服务当前任务，长期记忆保存跨会话有价值且合规的信息。"
+          },
+          {
+            "id": "c",
+            "text": "长期记忆不需要用户授权。"
+          },
+          {
+            "id": "d",
+            "text": "短期记忆不能包含工具结果。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "记忆要按生命周期、用途和权限分层。",
+        "focus": "短期/长期记忆"
+      },
+      {
+        "id": "agent-034-check-02",
+        "kind": "multiple",
+        "prompt": "哪些更适合短期记忆？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前任务进度"
+          },
+          {
+            "id": "b",
+            "text": "本轮工具结果"
+          },
+          {
+            "id": "c",
+            "text": "临时约束"
+          },
+          {
+            "id": "d",
+            "text": "用户永久偏好"
+          },
+          {
+            "id": "e",
+            "text": "长期敏感资料无授权保存"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "短期记忆围绕当前任务上下文。",
+        "focus": "短期记忆"
+      },
+      {
+        "id": "agent-034-check-03",
+        "kind": "multiple",
+        "prompt": "长期记忆设计要注意哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户授权"
+          },
+          {
+            "id": "b",
+            "text": "权限隔离"
+          },
+          {
+            "id": "c",
+            "text": "可更新和删除"
+          },
+          {
+            "id": "d",
+            "text": "时效性和置信度"
+          },
+          {
+            "id": "e",
+            "text": "永久不可删除"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "长期记忆不是越多越好，必须可治理。",
+        "focus": "长期记忆"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-035",
+    "checks": [
+      {
+        "id": "agent-035-check-01",
+        "kind": "single",
+        "prompt": "为什么一些 Agent 任务需要异步调度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有任务都能瞬间完成。"
+          },
+          {
+            "id": "b",
+            "text": "因为长任务、慢工具、等待人工审批或外部回调不适合同步阻塞。"
+          },
+          {
+            "id": "c",
+            "text": "因为异步可以取消状态管理。"
+          },
+          {
+            "id": "d",
+            "text": "因为异步不需要持久化。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "异步调度让长任务可恢复、可通知、可继续。",
+        "focus": "异步调度"
+      },
+      {
+        "id": "agent-035-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合异步调度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "长时间数据分析"
+          },
+          {
+            "id": "b",
+            "text": "等待第三方系统回调"
+          },
+          {
+            "id": "c",
+            "text": "需要人工审批"
+          },
+          {
+            "id": "d",
+            "text": "批量处理任务"
+          },
+          {
+            "id": "e",
+            "text": "一句简单概念解释"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "耗时、等待和批处理场景不适合同步占用请求。",
+        "focus": "适合异步"
+      },
+      {
+        "id": "agent-035-check-03",
+        "kind": "multiple",
+        "prompt": "异步 Agent 需要哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务队列"
+          },
+          {
+            "id": "b",
+            "text": "状态持久化"
+          },
+          {
+            "id": "c",
+            "text": "进度查询和通知"
+          },
+          {
+            "id": "d",
+            "text": "失败恢复"
+          },
+          {
+            "id": "e",
+            "text": "不记录任何状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "异步任务要能被追踪、恢复和通知。",
+        "focus": "异步要求"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-036",
+    "checks": [
+      {
+        "id": "agent-036-check-01",
+        "kind": "single",
+        "prompt": "为什么生产级 Agent 架构常引入状态机？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了让流程完全不可控。"
+          },
+          {
+            "id": "b",
+            "text": "为了把任务状态、允许转移和异常处理显式化。"
+          },
+          {
+            "id": "c",
+            "text": "为了删除所有终止条件。"
+          },
+          {
+            "id": "d",
+            "text": "因为状态机可以替代模型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "状态机把自由执行收敛到可控流程。",
+        "focus": "状态机"
+      },
+      {
+        "id": "agent-036-check-02",
+        "kind": "multiple",
+        "prompt": "状态机能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确允许的状态转移"
+          },
+          {
+            "id": "b",
+            "text": "防止非法步骤"
+          },
+          {
+            "id": "c",
+            "text": "更容易恢复和审计"
+          },
+          {
+            "id": "d",
+            "text": "更容易接入人工节点"
+          },
+          {
+            "id": "e",
+            "text": "自动提升所有模型能力"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "状态机提升流程可靠性，不是替代智能决策。",
+        "focus": "状态机收益"
+      },
+      {
+        "id": "agent-036-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合状态机设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "审批流程"
+          },
+          {
+            "id": "b",
+            "text": "订单处理"
+          },
+          {
+            "id": "c",
+            "text": "多步骤有副作用任务"
+          },
+          {
+            "id": "d",
+            "text": "一次性闲聊"
+          },
+          {
+            "id": "e",
+            "text": "简单开放式创意写作"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "状态明确、风险较高的流程更需要状态机。",
+        "focus": "适合状态机"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-037",
+    "checks": [
+      {
+        "id": "agent-037-check-01",
+        "kind": "single",
+        "prompt": "为什么真实业务常用 workflow + agent 混合架构？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为纯自由 Agent 总是最安全。"
+          },
+          {
+            "id": "b",
+            "text": "workflow 提供确定性边界，Agent 处理模糊理解、决策或生成环节。"
+          },
+          {
+            "id": "c",
+            "text": "因为 workflow 不能调用模型。"
+          },
+          {
+            "id": "d",
+            "text": "因为混合架构不需要评测。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "混合架构在可控性和灵活性之间取平衡。",
+        "focus": "Workflow + Agent"
+      },
+      {
+        "id": "agent-037-check-02",
+        "kind": "multiple",
+        "prompt": "workflow + agent 能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "流程边界更清晰"
+          },
+          {
+            "id": "b",
+            "text": "高风险步骤可控"
+          },
+          {
+            "id": "c",
+            "text": "模糊输入仍可由 Agent 处理"
+          },
+          {
+            "id": "d",
+            "text": "更容易审计和回滚"
+          },
+          {
+            "id": "e",
+            "text": "让所有动作自由执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "workflow 管住确定流程，Agent 补充智能判断。",
+        "focus": "混合收益"
+      },
+      {
+        "id": "agent-037-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合混合架构？",
+        "options": [
+          {
+            "id": "a",
+            "text": "客服工单流转"
+          },
+          {
+            "id": "b",
+            "text": "企业审批助手"
+          },
+          {
+            "id": "c",
+            "text": "数据分析报告生成"
+          },
+          {
+            "id": "d",
+            "text": "自动化运维建议加审批"
+          },
+          {
+            "id": "e",
+            "text": "只问一个概念定义"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "有固定流程又有自然语言不确定性的场景尤其适合混合。",
+        "focus": "适合混合"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-038",
+    "checks": [
+      {
+        "id": "agent-038-check-01",
+        "kind": "single",
+        "prompt": "Agent 架构最常见的失败模式是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远不会失败。"
+          },
+          {
+            "id": "b",
+            "text": "计划错误、工具误用、状态污染、循环失控、权限越界和验证不足。"
+          },
+          {
+            "id": "c",
+            "text": "只有 UI 颜色错误。"
+          },
+          {
+            "id": "d",
+            "text": "只有模型回复太短。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 失败往往是链路和状态问题，不只是单次回答质量。",
+        "focus": "失败模式"
+      },
+      {
+        "id": "agent-038-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于 Agent 常见失败模式？",
+        "options": [
+          {
+            "id": "a",
+            "text": "无限循环"
+          },
+          {
+            "id": "b",
+            "text": "工具参数错误"
+          },
+          {
+            "id": "c",
+            "text": "记忆污染"
+          },
+          {
+            "id": "d",
+            "text": "错误恢复导致重复副作用"
+          },
+          {
+            "id": "e",
+            "text": "只读概念解释准确"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 会行动，所以失败面比聊天系统更宽。",
+        "focus": "常见失败"
+      },
+      {
+        "id": "agent-038-check-03",
+        "kind": "multiple",
+        "prompt": "哪些措施能缓解 Agent 失败？",
+        "options": [
+          {
+            "id": "a",
+            "text": "终止条件"
+          },
+          {
+            "id": "b",
+            "text": "验证层"
+          },
+          {
+            "id": "c",
+            "text": "状态机和 checkpoint"
+          },
+          {
+            "id": "d",
+            "text": "可观测性和评测"
+          },
+          {
+            "id": "e",
+            "text": "完全不记录过程"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可靠 Agent 需要工程护栏，而不是只靠模型自觉。",
+        "focus": "缓解策略"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-039",
+    "checks": [
+      {
+        "id": "agent-039-check-01",
+        "kind": "single",
+        "prompt": "Agent 架构设计里最核心的 trade-off 之一是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让系统越自由越好。"
+          },
+          {
+            "id": "b",
+            "text": "在自主性、可控性、成本、延迟和安全之间平衡。"
+          },
+          {
+            "id": "c",
+            "text": "只追求更多 Agent。"
+          },
+          {
+            "id": "d",
+            "text": "完全不用 workflow。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 越自主，越需要治理成本和安全护栏。",
+        "focus": "核心 trade-off"
+      },
+      {
+        "id": "agent-039-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 设计常见权衡有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "自由探索 vs 固定流程"
+          },
+          {
+            "id": "b",
+            "text": "成功率 vs 成本和延迟"
+          },
+          {
+            "id": "c",
+            "text": "自动化 vs 人工审批"
+          },
+          {
+            "id": "d",
+            "text": "能力范围 vs 权限风险"
+          },
+          {
+            "id": "e",
+            "text": "图标大小 vs 字体颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 是系统设计问题，不是只堆智能能力。",
+        "focus": "真实权衡"
+      },
+      {
+        "id": "agent-039-check-03",
+        "kind": "multiple",
+        "prompt": "做 Agent 架构 trade-off 时应优先看什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务风险"
+          },
+          {
+            "id": "b",
+            "text": "失败代价"
+          },
+          {
+            "id": "c",
+            "text": "业务成功标准"
+          },
+          {
+            "id": "d",
+            "text": "可观测和恢复能力"
+          },
+          {
+            "id": "e",
+            "text": "架构听起来是否高级"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "架构取舍要围绕业务目标和风险，而不是概念复杂度。",
+        "focus": "决策依据"
+      }
+    ]
+  },
+  {
+    "questionId": "agent-040",
+    "checks": [
+      {
+        "id": "agent-040-check-01",
+        "kind": "single",
+        "prompt": "从零设计企业级 Agent 平台，最重要的架构能力是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只提供一个聊天框。"
+          },
+          {
+            "id": "b",
+            "text": "模型编排、工具治理、状态管理、权限安全、可观测性、评测和发布治理。"
+          },
+          {
+            "id": "c",
+            "text": "只接入最多工具。"
+          },
+          {
+            "id": "d",
+            "text": "取消所有人工审批。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业级平台关注可靠、安全、可运营，而不仅是模型调用。",
+        "focus": "企业级平台能力"
+      },
+      {
+        "id": "agent-040-check-02",
+        "kind": "multiple",
+        "prompt": "企业级 Agent 平台应具备哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具注册和权限治理"
+          },
+          {
+            "id": "b",
+            "text": "状态、checkpoint 和任务调度"
+          },
+          {
+            "id": "c",
+            "text": "Trace、审计和成本监控"
+          },
+          {
+            "id": "d",
+            "text": "评测、灰度和回滚"
+          },
+          {
+            "id": "e",
+            "text": "让模型绕过所有系统边界"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "平台能力要支撑从开发到上线运营的完整生命周期。",
+        "focus": "平台能力"
+      },
+      {
+        "id": "agent-040-check-03",
+        "kind": "multiple",
+        "prompt": "哪些指标能体现 Agent 平台成熟度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率"
+          },
+          {
+            "id": "b",
+            "text": "失败恢复能力"
+          },
+          {
+            "id": "c",
+            "text": "权限和审计覆盖"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟可控"
+          },
+          {
+            "id": "e",
+            "text": "Agent 名字数量"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成熟平台关注真实任务结果、治理和可持续运营。",
+        "focus": "平台质量"
+      }
+    ]
+  }
+]

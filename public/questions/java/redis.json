@@ -1,0 +1,542 @@
+[
+  {
+    "id": "java-redis-001",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "Redis 为什么快，单线程事件循环和 I/O 多路复用如何配合？",
+    "answer": "### 快在几个地方\n\nRedis 快首先因为大多数操作在内存里完成，不需要像磁盘数据库那样频繁随机 IO。其次是核心数据结构紧凑，常用命令路径短，例如 GET、SET、INCR、HGET 都能很快完成。\n\n单线程命令执行减少了锁竞争和上下文切换。多个客户端连接不是每个连接一个工作线程抢同一份数据，而是由事件循环依次处理就绪事件。\n\n### I/O 多路复用怎么配合\n\nRedis 主线程通过 epoll/kqueue/select 这类机制同时监听大量 socket。哪个连接可读可写，就处理哪个连接的事件；读取请求、解析协议、执行命令、写回响应形成一个事件循环。\n\n这种模型适合大量短命令。命令本身足够快时，瓶颈通常在网络、内存带宽或客户端使用方式，而不是线程调度。\n\n### 不是所有操作都快\n\n单线程也意味着一个慢命令会挡住后面的命令。大 key 的 HGETALL、LRANGE 全量读取、复杂 Lua、KEYS、大范围删除都会阻塞主线程。生产里要关注 SLOWLOG、LATENCY、大 key、热 key 和网络输出缓冲区。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-002",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "Redis 6+ 多线程主要优化什么，为什么命令执行仍强调单线程模型？",
+    "answer": "### Redis 6+ 多线程优化的是 I/O\n\nRedis 6 引入多线程主要是为了分担网络读写、协议解析和响应回写的压力。核心命令执行仍强调单线程串行，是为了保持数据结构访问简单、命令原子语义清晰，并避免大量锁竞争。\n\n如果瓶颈是网络包处理，多线程 I/O 能提高吞吐；如果瓶颈是慢命令、大 key、Lua 脚本或内存淘汰，多线程 I/O 帮助有限。\n\n### 为什么命令执行仍不轻易多线程\n\nRedis 的很多优势来自“单条命令执行期间不会被其他命令插入”。INCR、LPUSH、ZADD 这类操作天然具备单命令原子性，Lua 脚本也依赖这个模型。如果命令执行并行化，就需要细粒度锁、冲突检测和复杂调度，简单性和延迟稳定性都会受影响。\n\n### 实际判断\n\n开启多线程前先看 CPU 是否花在网络 I/O 上，还是花在命令执行上。若 SLOWLOG 里是大范围操作，应该改数据结构和访问方式；若是连接多、包量大、命令短，才更可能从 I/O 多线程受益。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-003",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "String、Hash、List、Set、Sorted Set 如何根据业务场景选择？",
+    "answer": "### 按业务语义选类型\n\nString 适合简单 KV、计数器、分布式开关、短 token。它支持 INCR、APPEND、BITOP 等操作，但把复杂对象塞成大 JSON 会让局部更新和内存控制变差。\n\nHash 适合对象字段，例如用户资料、商品摘要。它可以只更新某个字段，小对象在 listpack 编码下也更省内存。字段过多时仍会变成大 key。\n\nList 适合按插入顺序保存的列表或简单队列，例如最近访问记录。它不适合可靠消息，因为缺少完善的消费确认和重投递机制。\n\nSet 适合去重、共同关注、黑名单、标签集合。它的集合运算方便，但大集合交并差会阻塞，要控制规模。\n\nSorted Set 适合排行榜、延迟队列、按时间排序的索引。score 负责排序，member 保证唯一；代价是内存和 O(logN) 维护成本更高。\n\n### 选型时再看规模\n\n同一个业务，小数据量和大数据量选法可能不同。几十个字段用 Hash 很舒服，百万成员的 Set/ZSet 就要考虑分片、分页、异步计算和过期策略。Redis 结构选型要同时看语义、复杂度、内存和最坏访问方式。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-004",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "Bitmap、HyperLogLog、Geo、Stream 分别适合什么问题？",
+    "answer": "### Bitmap\n\nBitmap 本质是在 String 上按位操作，适合签到、是否活跃、权限位、AB 实验命中等布尔状态。它的优势是空间极省，缺点是 offset 过大时会直接撑大字符串，而且只适合状态位，不适合保存复杂信息。\n\n### HyperLogLog\n\nHyperLogLog 用来做近似去重计数，例如 UV、独立设备数。它内存固定且很小，但有误差，不能列出具体成员，也不能做精确去重。\n\n### Geo\n\nGeo 适合经纬度附近搜索，例如附近门店、附近司机。它底层依赖 Sorted Set 的 geohash 排序能力。结果需要注意距离精度、排序半径、城市边界和数据更新频率。\n\n### Stream\n\nStream 是 Redis 的持久化消息日志，支持消费者组、pending list 和 ACK。它适合轻量消息、事件流、异步任务，但不等同于 Kafka 这类专业 MQ；超大规模堆积、复杂重平衡和跨机房消息系统仍要谨慎。\n\n### 选择口径\n\nBitmap 管布尔状态，HyperLogLog 管近似基数，Geo 管位置检索，Stream 管可确认的消息流。不要因为都在 Redis 里，就把它们当作同一种缓存用法。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-005",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Redis 底层编码与数据类型如何对应？",
+    "answer": "### 类型和编码是两层概念\n\nRedis 对外暴露 String、Hash、List、Set、Sorted Set、Stream 等类型；内部会根据元素大小和数量选择更省内存或更适合查询的编码。编码会随着数据增长自动转换。\n\n| 类型 | 常见内部编码 |\n| --- | --- |\n| String | int、embstr、raw |\n| Hash | listpack、hashtable |\n| List | quicklist |\n| Set | intset、hashtable |\n| Sorted Set | listpack、skiplist + dict |\n| Stream | radix tree + listpack |\n\n### 为什么要关心\n\n小 Hash、小 ZSet 用 listpack 很省内存，但元素数量或字段长度超过阈值后会转成 hashtable 或 skiplist，内存占用和访问特征都会变化。Set 如果全是小整数可用 intset，混入字符串后会转成 hashtable。\n\n### 工程影响\n\n对象设计不能只看命令复杂度，还要看编码转换点。一个看似很小的 Hash，如果字段越来越多，可能变成大 key；一个 ZSet 用来做全站榜单，skiplist 和 dict 的双结构会带来更高内存成本。排查时可以用 OBJECT ENCODING、MEMORY USAGE 和大 key 扫描确认真实状态。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-006",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Hash 为什么推荐 HSET 多字段写入替代旧 HMSET？",
+    "answer": "### 命令语义变化\n\n新版本 Redis 中 HSET 已支持一次设置多个 field-value，HMSET 属于旧命令口径。继续使用 HSET 可以保持命令语义统一，也更符合客户端库的新接口。\n\n~~~text\nHSET user:1 name tom age 18 city shanghai\n~~~\n\nHSET 返回新增字段数量；如果字段已存在只是覆盖，不计入新增。HMSET 通常只返回 OK，信息量更少。\n\n### 为什么不是性能差异为主\n\n推荐 HSET 多字段写入，重点不是“它一定更快”，而是 API 演进和语义更清楚。多字段一次写入仍是单条命令，能减少网络 RTT，也能避免客户端多次 HSET 之间被其他命令插入。\n\n### 使用注意\n\nHash 适合保存小对象，但不要无限扩字段。用户画像、商品属性这类字段如果上千上万，HGETALL、迁移、删除都会变重。字段经常整体读取时可以保留 Hash；字段结构复杂且需要搜索时，应考虑数据库或搜索引擎。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-007",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "List、Stream、Pub/Sub 作为消息模型有什么差异？",
+    "answer": "### List\n\nList 可以用 LPUSH/BRPOP 做简单队列。优点是简单，阻塞弹出也方便；缺点是没有消费者组、ACK、重试和可观察的 pending 状态。消费者拿到消息后宕机，消息可靠性要靠应用额外设计。\n\n### Pub/Sub\n\nPub/Sub 是即时广播。发布时在线订阅者能收到，离线订阅者收不到，消息不持久化，也没有消费确认。它适合配置通知、轻量广播、缓存失效通知，不适合订单、支付这类必须可靠处理的任务。\n\n### Stream\n\nStream 是持久化消息日志。XADD 写入消息，消费者组用 XREADGROUP 消费，处理成功后 XACK。未确认消息会进入 pending list，可以被查询、转移和重试。\n\n### 怎么选\n\n只要简单异步削峰且允许少量丢失，List 或 Pub/Sub 可以很轻。需要可靠消费、重复处理可控、消费者组扩展，就选 Stream。需要更强吞吐、跨机房、高级路由和成熟运维，应该用 Kafka、RocketMQ、RabbitMQ 等专业 MQ。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-008",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Sorted Set 为什么适合排行榜和延迟队列，复杂度如何评估？",
+    "answer": "### 为什么适合排行榜\n\nSorted Set 由 member 和 score 组成，member 唯一，score 用来排序。用户得分变化时用 ZADD/ZINCRBY 更新，查询排名用 ZREVRANK，分页榜单用 ZREVRANGE。它天然适合“按分数排序并能快速查排名”的场景。\n\n同分排序要提前设计。Redis 默认 score 相同按 member 字典序排，如果业务要按更新时间、先到先得排序，可以把时间信息编码进 score，或在 member/额外数据里补充二级排序。\n\n### 为什么适合延迟队列\n\n延迟队列可以用执行时间戳作为 score。消费者用 ZRANGEBYSCORE 找到到期任务，再用 ZREM 抢占成功后执行。抢占和删除最好用 Lua 保证原子性。\n\n### 复杂度和风险\n\nZADD、ZREM、ZRANK 通常是 O(logN)，范围读取是 O(logN + M)，M 是返回数量。集合很大时，内存成本和范围扫描成本都要控制。\n\n延迟队列还要处理消费者宕机、任务重复执行、执行失败重试和任务堆积。对可靠性要求高时，应把任务状态落库或使用专业消息队列。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-009",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "SCAN 系列命令与 KEYS/HGETALL 如何取舍？",
+    "answer": "### KEYS 和 HGETALL 的问题\n\nKEYS 会遍历整个 keyspace，大库上可能长时间阻塞主线程。HGETALL、SMEMBERS、LRANGE 0 -1、ZRANGE 大范围读取同样危险，本质都是一次性把大量数据从 Redis 取出并写到网络。\n\n### SCAN 系列的特点\n\nSCAN、HSCAN、SSCAN、ZSCAN 使用游标渐进遍历，每次返回一小批数据，能把阻塞拆散。它适合线上巡检、迁移、清理和后台任务。\n\n但 SCAN 不是快照。遍历过程中 key 发生变化时，可能重复返回，也可能看不到刚变化的数据。应用要能去重、可重入，并且不要把一次 SCAN 当成强一致结果。\n\n### 使用建议\n\n生产巡检优先 SCAN + MATCH + COUNT，并配合限速。Hash、Set、ZSet 内部元素多时用 HSCAN/SSCAN/ZSCAN，不要直接全量拉取。真正业务查询应有明确索引 key，而不是靠线上遍历 Redis 找数据。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-010",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Lua 脚本和 Redis Function 的原子性来自哪里，风险在哪里？",
+    "answer": "### 原子性来自单线程执行\n\nLua 脚本和 Redis Function 在 Redis 事件循环中整体执行。脚本运行期间，其他命令不能插入执行，所以脚本里的一组读写对外表现为原子操作。\n\n这适合库存扣减、锁释放、限流计数、延迟队列抢占这类“读后判断再写”的流程。\n\n### Lua 和 Function 的区别\n\nLua 脚本通常通过 EVAL/EVALSHA 调用，脚本内容或 SHA 由客户端管理。Redis Function 是 Redis 7 引入的函数库能力，函数可以加载到服务端并持久化管理，更适合把稳定逻辑部署在 Redis 侧。\n\n### 风险\n\n脚本原子不等于事务可回滚。脚本执行到一半出现运行时错误时，之前已经执行的写命令不会自动撤销。长脚本会阻塞主线程，访问大 key 会拖慢整个实例。Cluster 下脚本访问的 key 必须在同一个 slot，通常通过 hash tag 约束。\n\n### 实践\n\n脚本要短、确定、可测试，只传 key 到 KEYS，参数到 ARGV。生产要设置脚本耗时监控，避免把复杂业务流程塞进 Redis。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-011",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Pipeline、事务 MULTI/EXEC、WATCH 分别解决什么问题？",
+    "answer": "### Pipeline\n\nPipeline 解决网络 RTT 问题。客户端连续发送多条命令，再批量读取响应。它不保证原子性，也不保证中间没有其他客户端命令执行，只是减少来回等待。\n\n适合批量 GET、批量写缓存、预热数据。一次 pipeline 不要太大，否则会撑大客户端和服务端输出缓冲区。\n\n### MULTI/EXEC\n\nMULTI/EXEC 把命令排队，EXEC 时连续执行。它能保证这些命令在执行阶段不被其他命令插入，但不是关系型数据库事务：某条命令运行失败，不会自动回滚前面已执行的命令。\n\n### WATCH\n\nWATCH 提供乐观锁。客户端 WATCH 某些 key，读取并计算后执行 MULTI/EXEC；如果被监视的 key 在 EXEC 前被别人改过，EXEC 返回失败，客户端重试。\n\n### 怎么选\n\n只为提吞吐用 Pipeline；需要一组命令连续执行用 MULTI/EXEC；需要 CAS 条件更新用 WATCH；复杂条件判断和多步读写更常用 Lua，把判断和写入放在服务端一次完成。",
+    "tags": ["Redis", "Redis基础", "事务"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-012",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis key 命名、过期时间和大 key 设计有哪些规范？",
+    "answer": "### key 命名\n\nkey 要能表达业务、环境和对象层级，例如 app:user:profile:1001。命名要稳定、可搜索、避免跨业务冲突。不要把过长 JSON 或用户输入直接拼进 key，长度过大也会浪费内存和网络。\n\n需要强制同槽的 Cluster 多 key 操作，可以使用 hash tag，例如 order:{1001}:detail 和 order:{1001}:items。\n\n### 过期时间\n\n缓存 key 要设置 TTL，并加随机抖动，避免大量 key 同时过期。不同业务使用不同过期策略：验证码短 TTL，商品详情中等 TTL，配置类可以长 TTL 加主动失效。\n\n逻辑过期适合热点数据：key 不立即删除，而是在值里保存过期时间，读到过期后返回旧值并触发后台刷新。\n\n### 大 key\n\n大 key 会造成网络传输慢、删除阻塞、迁移困难、主从同步压力和内存倾斜。要限制单 key 大小和集合元素数，使用分片 key、分页读取、UNLINK 删除和离线扫描发现。\n\n### 规范落地\n\n把命名、TTL、最大元素数、禁止命令、序列化格式写进代码规范和 SDK，而不是靠每个业务临时记忆。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-013",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 模块生态（Bloom、JSON、Search、TimeSeries）适合哪些场景？",
+    "answer": "### Bloom\n\nBloom Filter 适合近似存在性判断，例如防缓存穿透、判断用户是否可能看过某内容。它内存省，但有误判，不能删除普通布隆里的单个元素，也不能作为强一致存在性依据。\n\n### JSON\n\nRedisJSON 适合保存和局部更新文档结构，避免每次把整个 JSON 字符串读出改完再写回。它适合结构灵活、字段局部更新频繁的缓存文档，但不应替代主数据库的数据建模。\n\n### Search\n\nRediSearch 适合全文检索、二级索引、过滤排序和简单聚合。它比自己用 Set/ZSet 拼复杂查询可靠，但要承担索引内存、同步、查询语法和运维成本。\n\n### TimeSeries\n\nRedisTimeSeries 适合指标、采样数据、窗口聚合和降采样，例如设备上报和实时监控。大量长期历史数据仍要评估成本，必要时进入专门时序库。\n\n### 选择前先问\n\n模块能增强 Redis，但也会增加版本、部署、持久化、备份和故障排查复杂度。核心交易数据不要因为模块方便就只放 Redis；Redis 更适合加速、临时状态和实时视图。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-014",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "如何从内存占用和访问复杂度角度选择数据结构？",
+    "answer": "### 先看访问方式\n\n选择数据结构要从业务操作出发：是按 key 直接读，按字段局部更新，按顺序弹出，按集合去重，还是按分数排序。访问方式决定类型，规模决定是否要拆分。\n\n### 再看复杂度\n\nString 的 GET/SET 通常很轻；Hash 字段读写适合对象；Set 去重和成员判断方便；Sorted Set 排名和范围查询强，但写入和内存成本更高；List 两端操作快，但中间范围和大列表读取要谨慎。\n\n### 内存成本\n\n小对象用 Hash 可能比多个 String 更省内存，因为可以共享 key 前缀并使用紧凑编码。大集合则要担心编码转换、大 key、内存碎片和复制迁移压力。\n\n### 实践判断\n\n高频单点读写要避免复杂结构；排行榜、延迟队列接受 ZSet 成本；大列表、大 Hash、大 Set 要拆分并限制单次读取数量。上线后用 MEMORY USAGE、OBJECT ENCODING、SLOWLOG 和 key 大小分布验证设计是否符合预期。",
+    "tags": ["Redis", "Redis基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-015",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "缓存旁路、读写穿透、写回、写直达分别如何工作？",
+    "answer": "### Cache Aside\n\n缓存旁路最常见。读时先查缓存，未命中再查数据库并写入缓存；写时先写数据库，再删除或更新缓存。它简单、可控，适合大多数业务缓存。\n\n缺点是应用要自己处理一致性、击穿和重建并发。写后通常更推荐删除缓存而不是直接更新缓存，因为很多缓存值来自多表聚合，应用很难保证更新逻辑和查询逻辑完全一致。\n\n### Read Through / Write Through\n\n读穿透和写直达把缓存读写封装在缓存层：应用只访问缓存服务，由缓存服务负责回源数据库或同步写数据库。好处是应用简单，坏处是缓存层复杂，而且需要统一的数据访问抽象。\n\n### Write Back\n\n写回是先写缓存，之后异步刷回数据库。它写入延迟低，但一致性和丢数据风险最高。缓存宕机、异步刷库失败、顺序错乱都会造成问题。\n\n### 选择口径\n\n业务数据缓存优先 Cache Aside；配置或统一数据服务可以考虑 Read/Write Through；写回只适合可丢、可重算或有可靠日志兜底的场景，不适合订单、支付、余额这类核心数据。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-016",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "缓存穿透、击穿、雪崩分别是什么，如何防御？",
+    "answer": "### 缓存穿透\n\n穿透是查询一个数据库也不存在的数据，缓存也没有，于是每次都打到数据库。常见于恶意请求不存在 id，或业务没有缓存空结果。\n\n防御方式是缓存空值、布隆过滤器、参数校验和限流。空值 TTL 要短，避免以后真实数据创建后长期查不到。\n\n### 缓存击穿\n\n击穿是某个热点 key 过期，瞬间大量请求同时回源数据库重建。防御方式是互斥锁重建、逻辑过期、热点 key 永不过期加后台刷新，或提前续期。\n\n重点是只让一个请求重建，其余请求等待、返回旧值或降级。\n\n### 缓存雪崩\n\n雪崩是大量 key 同时失效，或 Redis 整体不可用，导致流量集中打到数据库。防御方式是 TTL 随机化、分批预热、多级缓存、限流熔断、降级兜底和 Redis 高可用。\n\n### 区分方法\n\n不存在数据大量请求是穿透，单个热点过期是击穿，大面积失效或缓存集群故障是雪崩。三者症状都可能是数据库压力暴涨，但治理手段不同。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-017",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "布隆过滤器、空值缓存和互斥重建分别适合什么场景？",
+    "answer": "### 布隆过滤器\n\n布隆过滤器适合在访问缓存和数据库前做“可能存在”判断。它能挡住大量明显不存在的 key，例如非法商品 id、历史不存在用户 id。代价是有误判：判断存在不一定真存在，判断不存在通常可信。\n\n它适合大规模 key 集合，尤其是恶意穿透风险高的场景。数据新增时要同步加入布隆；数据删除较多时要评估重建或使用可删除变体。\n\n### 空值缓存\n\n空值缓存适合正常业务里确实会查到不存在数据的场景，例如用户刚注册前查询资料。把空结果缓存短时间，可以减少数据库压力。\n\n空值 TTL 不能太长，否则数据后来创建了，用户仍可能读到空。也要防止攻击者制造大量随机空 key 占满内存。\n\n### 互斥重建\n\n互斥重建解决热点 key 过期时的并发回源。第一个请求拿锁去查库并写缓存，其他请求等待、短暂重试或返回旧值。\n\n它适合击穿，不适合海量随机不存在 key。实际系统通常组合使用：参数校验 + 布隆过滤器挡非法请求，空值缓存挡正常空结果，互斥重建保护热点。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-018",
+    "module": "Redis",
+    "difficulty": 1,
+    "question": "缓存与数据库双写不一致的根源是什么，常见解决方案如何取舍？",
+    "answer": "### 根源是两个系统没有一个原子事务\n\n数据库和 Redis 是两个独立系统。写数据库成功、删缓存失败，或者删缓存成功、写数据库失败，都会造成短暂不一致。并发读写还会放大问题：一个线程查到旧数据并写回缓存，另一个线程刚完成更新。\n\n### 常见方案\n\n缓存旁路下，写操作通常先写数据库，再删除缓存。这样即使删除失败，也可以通过重试、TTL 或 binlog 订阅最终清掉旧缓存。直接更新缓存容易因为缓存值是聚合结果、更新路径不完整而出错。\n\n延迟双删可以降低并发读写导致旧值回填的概率，但不能提供强一致。订阅 binlog 或消息队列能把数据库变更异步同步到缓存，适合多服务写同一份数据的场景。\n\n### 取舍\n\n强一致业务不要只依赖缓存，读写必须以数据库为准。缓存要允许短暂旧值，并用 TTL、重试、补偿和监控缩短不一致窗口。\n\n真正要回答清楚的是：业务能容忍多久不一致，失败后谁重试，重复删除是否幂等，缓存旧值如何被发现。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-019",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "延迟双删、订阅 binlog、消息队列和本地事务消息如何保证最终一致？",
+    "answer": "### 延迟双删\n\n延迟双删通常是先删除缓存，写数据库，再延迟删除一次缓存。第二次删除是为了清掉并发读在写库期间回填的旧值。它实现简单，但延迟时间难选，只能降低概率，不能保证最终一定一致。\n\n### 订阅 binlog\n\n订阅 binlog 是让缓存更新跟随数据库变更日志。应用写库后，CDC 组件读取 binlog，再删除或更新缓存。它适合多个服务都会写数据库的场景，因为不要求每个服务都记得删缓存。\n\n风险是 binlog 消费延迟、乱序、重复消息和消费者故障。处理逻辑要幂等，监控延迟和积压。\n\n### 消息队列\n\n写库成功后发 MQ，消费者异步删除缓存或重建缓存。它能削峰和重试，但如果“写库”和“发消息”不是原子动作，仍可能丢消息。\n\n### 本地事务消息\n\n更稳的做法是在同一个数据库事务里写业务数据和消息表。后台可靠投递消息，消费者幂等处理缓存失效。这样能把“业务写入”和“需要刷新缓存”绑定在一个本地事务里。\n\n### 选择\n\n简单业务用先写库后删缓存 + TTL + 重试；多写入口用 binlog；关键链路用本地消息表保证最终一定发出失效事件。",
+    "tags": ["Redis", "Redis缓存设计", "事务"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-020",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "热点 key 如何发现、拆分、复制和本地缓存降级？",
+    "answer": "### 如何发现热点 key\n\n热点 key 的表现是单个 key QPS 远高于其他 key，导致某个 Redis 分片、某个 CPU 核或某个网络连接成为瓶颈。可以通过客户端埋点、代理统计、Redis hotkeys、MONITOR 抽样、慢日志、网关日志和业务访问日志发现。\n\n不要只看 Redis 总 QPS。总 QPS 正常时，单个 key 也可能把一个节点打满。\n\n### 如何治理\n\n读热点可以复制多份 key，例如 item:1:0 到 item:1:9，客户端随机读，更新时批量失效。也可以加本地缓存，把短时间内大量请求挡在应用内存。\n\n写热点要更谨慎。计数类可以分桶写入再异步聚合；库存类要看一致性要求，可能需要队列化、限流或数据库条件更新兜底。\n\n### 降级方式\n\n热点 key 失效时，可以返回逻辑过期旧值、兜底默认值、限流排队或短时间只允许一个线程重建。核心是保护数据库和 Redis，不让热点失效演变成击穿。\n\n### 注意\n\n拆分热点 key 会增加一致性成本。读多写少适合复制，本地缓存适合可容忍短暂旧值；强一致数据不能随意多副本缓存。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-021",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "大 key 会造成哪些阻塞和网络问题，如何拆分和迁移？",
+    "answer": "### 大 key 的危害\n\n大 key 会让单次命令执行时间变长，阻塞主线程。例如 HGETALL 一个巨大 Hash、SMEMBERS 一个大 Set、ZRANGE 大范围榜单。它还会造成网络响应巨大、客户端超时、输出缓冲区膨胀。\n\n删除大 key 也危险。DEL 需要同步释放内存，可能卡住 Redis；主从复制、AOF 重写、Cluster 迁移时，大 key 会放大网络和内存压力。\n\n### 如何拆分\n\n大 Hash 可以按业务维度或 id hash 拆成多个小 Hash；大 List/ZSet 可以按时间、分页、分桶拆；大 String JSON 可以拆字段或把主体放数据库/对象存储，Redis 只存摘要。\n\n### 如何迁移\n\n先用 MEMORY USAGE、SCAN、redis-cli bigkeys 或离线 RDB 分析找出大 key。迁移时新旧 key 双写或读旧写新，后台分批搬迁，控制每批元素数量。删除旧 key 用 UNLINK 或 lazyfree，避免同步阻塞。\n\n### 规范\n\n提前规定单 key 最大字节数、集合最大元素数和禁止全量读取命令，比上线后抢救更可靠。",
+    "tags": ["Redis", "Redis缓存设计"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-022",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "缓存预热、缓存降级和熔断在上线和故障时如何设计？",
+    "answer": "### 缓存预热\n\n预热是在上线、重启或大促前，把热点数据提前加载到缓存。预热数据要来自真实热点列表，例如最近销量、访问日志、推荐位和活动商品，而不是全量灌入。\n\n预热要限速、分批，并避免把过期时间设置成同一时刻。上线切流前要验证命中率、Redis 内存和数据库回源压力。\n\n### 缓存降级\n\nRedis 不可用或命中率异常下降时，不能让所有流量直接打数据库。可以返回旧缓存、本地缓存、默认值、静态页、限流提示，或关闭非核心功能。\n\n降级要按业务分级。商品详情可以短暂旧值，余额和支付结果不能乱返回。\n\n### 熔断\n\n当回源数据库失败率、延迟或连接池等待超过阈值时，熔断可以短时间停止继续打数据库，保护下游。熔断期间返回兜底数据或快速失败，稍后半开探测恢复。\n\n### 设计重点\n\n预热解决冷启动，降级解决缓存故障，熔断解决下游被压垮。三者要和监控、开关、演练一起设计，否则事故时很难临时启用。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-023",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "TTL 随机化、逻辑过期和后台刷新如何降低峰值风险？",
+    "answer": "### TTL 随机化\n\n大量 key 如果使用相同 TTL，会在同一时间过期，引发回源尖峰。给 TTL 加随机抖动，例如基础时间 30 分钟，加减 5 分钟，可以把过期流量摊平。\n\n随机化适合普通缓存，但不能解决单个超级热点 key 过期击穿。\n\n### 逻辑过期\n\n逻辑过期是不依赖 Redis 自动删除，而是在 value 里存 expireAt。读请求发现过期后，先返回旧值，再触发后台刷新。这样热点 key 不会突然消失。\n\n它牺牲的是一致性：用户可能读到短暂旧数据。适合商品详情、活动配置、榜单等能接受旧值的场景。\n\n### 后台刷新\n\n后台刷新可以定时续期热点 key，或在访问时异步刷新。刷新任务要加锁，避免多个实例同时重建；失败时保留旧值并告警。\n\n### 组合方式\n\n普通 key 用随机 TTL，热点 key 用逻辑过期加后台刷新，核心强一致数据减少缓存依赖或走读主库。目标不是永不过期，而是避免所有请求在同一秒回源。",
+    "tags": ["Redis", "Redis缓存设计"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-024",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "多级缓存中本地缓存、Redis、CDN 的一致性如何处理？",
+    "answer": "### 多级缓存的角色\n\nCDN 适合静态资源、图片、公开页面和边缘加速。本地缓存适合应用内高频短期数据，延迟最低但每个实例都有副本。Redis 适合跨实例共享缓存和集中失效。\n\n层级越多，读越快，一致性越难。\n\n### 一致性处理\n\n常见做法是数据库写成功后，发布失效事件。应用收到事件删除本地缓存，Redis 删除或更新，CDN 通过刷新接口或短 TTL 失效。每一层都要有 TTL 兜底，因为失效消息可能丢失或延迟。\n\n本地缓存要设置较短 TTL，并支持按 key 主动失效。Redis 作为二级缓存可以稍长 TTL。CDN 对强一致内容要谨慎，必要时使用版本化 URL 或缓存标签刷新。\n\n### 读写策略\n\n读路径通常是本地缓存 -> Redis -> 数据库。写路径以数据库为准，再逐层失效。不要在多个缓存层分别更新复杂值，容易出现层间不一致。\n\n### 业务分级\n\n商品名称、图片、推荐理由可以容忍秒级旧值；价格、库存、权限、余额要缩短 TTL 或绕过部分缓存。多级缓存不能一套策略覆盖所有数据。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-025",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "缓存命中率、穿透率、重建耗时应该如何监控？",
+    "answer": "### 命中率\n\n命中率要分业务、接口、key 模式统计。全局命中率很高，不代表核心接口没问题。要看缓存命中、回源次数、回源耗时、缓存写入失败和热点 key 命中情况。\n\n低命中率可能来自 TTL 太短、key 设计不稳定、预热不足、穿透请求多或缓存容量不足频繁淘汰。\n\n### 穿透率\n\n穿透率可以用“查询不存在数据的比例”“布隆过滤器拦截数”“空值缓存命中数”“数据库查空次数”来衡量。穿透率突然升高，可能是攻击、爬虫、参数校验缺失或业务 id 生成异常。\n\n### 重建耗时\n\n重建耗时包括拿锁、查数据库、组装数据、写 Redis 的完整时间。热点 key 重建如果超过请求超时，会引发等待堆积和击穿。要监控重建成功率、失败率、等待锁数量和返回旧值次数。\n\n### 告警口径\n\n缓存监控至少覆盖命中率、回源 QPS、Redis 延迟、慢命令、内存淘汰、热 key、大 key、连接数和数据库被缓存回源打高的指标。缓存问题最终常表现为数据库压力，所以两边要联动看。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-026",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "商品详情缓存如何兼顾高可用、一致性和热点保护？",
+    "answer": "### 基本读路径\n\n商品详情通常是本地缓存 -> Redis -> 数据库。Redis 中保存商品摘要、价格展示、图片、营销信息等可缓存字段。不同一致性要求的字段不要强行塞进同一个缓存对象。\n\n价格、库存、上下架状态比标题和图片更敏感，可以拆 key 或缩短 TTL。库存扣减通常不能只靠缓存，要以数据库条件更新、库存服务或消息链路为准。\n\n### 高可用\n\n热点商品要预热，TTL 加随机抖动。Redis 异常时，本地缓存可以短暂兜底，非核心字段可降级为空，核心状态读数据库或返回明确失败。数据库回源要限流，避免缓存故障拖垮主库。\n\n### 一致性\n\n商品变更后先写数据库，再发失效消息删除 Redis 和本地缓存。失效失败要重试，TTL 兜底。多服务写商品时，优先用 binlog 或统一变更事件，而不是每个服务手写删缓存。\n\n### 热点保护\n\n对大促商品使用逻辑过期和后台刷新，只允许一个线程重建。可复制多个只读热点 key 分散读压力。详情页大对象要拆分，避免一个大 key 被全量读取和传输。",
+    "tags": ["Redis", "Redis缓存设计", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-027",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "RDB、AOF 和混合持久化各自的恢复速度和数据安全性如何取舍？",
+    "answer": "### RDB\n\nRDB 是某个时刻的数据快照。优点是文件紧凑，恢复速度通常快，适合备份和全量复制。缺点是两次快照之间的数据可能丢失，fork 生成快照时也会带来资源压力。\n\n### AOF\n\nAOF 记录写命令，按 appendfsync 策略刷盘。它的数据安全性通常比 RDB 好，最多丢失最近一段写入；缺点是文件更大，重放恢复可能更慢，需要定期 rewrite 压缩。\n\n### 混合持久化\n\n混合持久化在 AOF rewrite 后，用 RDB 格式写基础数据，再追加增量 AOF。它兼顾 RDB 恢复快和 AOF 丢数据少，是很多生产场景的折中。\n\n### 取舍\n\n缓存场景可以接受少量丢失时，RDB 或混合持久化足够。把 Redis 当重要状态存储时，优先 AOF everysec 或更强配置，并确保业务有数据库、消息或重建路径兜底。持久化不是备份，误删命令也会被持久化。",
+    "tags": ["Redis", "Redis持久化与高可用", "安全"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-028",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "BGSAVE、BGREWRITEAOF 与 fork/COW 会带来哪些资源风险？",
+    "answer": "### fork 的成本\n\nBGSAVE 和 BGREWRITEAOF 都会 fork 子进程。fork 本身要复制页表，实例越大，fork 延迟可能越明显。fork 期间主线程可能短暂停顿。\n\n### COW 内存风险\n\nfork 后父子进程共享物理页。父进程继续处理写请求时，被修改的内存页会触发 COW 复制。写入越多、实例越大，额外内存越高。如果机器内存余量不足，可能触发 OOM 或严重 swap。\n\n### IO 风险\n\nBGSAVE 写 RDB，AOF rewrite 写新 AOF 文件，都会产生大量磁盘 IO。磁盘慢时会影响 Redis 延迟，也可能拖慢 AOF fsync。rewrite 期间还要缓存增量写命令，写入很猛时内存和磁盘都会吃紧。\n\n### 运维建议\n\n生产要给 fork 和 COW 留内存余量，避免在流量高峰做大规模 rewrite。监控 latest_fork_usec、used_memory_rss、aof_rewrite_in_progress、rdb_bgsave_in_progress、磁盘延迟和系统 swap。大实例要评估拆分，不能无限放大单节点内存。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-029",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "appendfsync always/everysec/no 如何影响性能和丢数据窗口？",
+    "answer": "### always\n\nappendfsync always 表示每次写命令都尽量 fsync 到磁盘，数据安全性最好，理论上丢失窗口最小。但每次写都等磁盘，吞吐和延迟都会明显变差，生产缓存场景很少这么配。\n\n### everysec\n\neverysec 是常见折中。Redis 每秒左右 fsync 一次，性能较好，宕机时通常最多丢约 1 秒数据。对大多数缓存、会话和可恢复状态，这是更实际的选择。\n\n### no\n\nno 表示由操作系统决定何时刷盘，性能最好，但宕机丢数据窗口不可控。适合纯缓存、可完全重建的数据，不适合重要状态。\n\n### 还要看什么\n\nAOF 安全性不只取决于 appendfsync。磁盘延迟、rewrite、no-appendfsync-on-rewrite、操作系统缓存、虚拟化存储都会影响真实表现。\n\n如果 Redis 中的数据非常关键，不应只靠 always。还要有数据库主存储、幂等重放、备份和故障演练。",
+    "tags": ["Redis", "Redis持久化与高可用", "性能"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-030",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Redis 重启时如何选择 RDB/AOF 文件恢复数据？",
+    "answer": "### 恢复优先级\n\nRedis 重启时，如果开启了 AOF，通常优先使用 AOF 恢复，因为 AOF 记录更完整，数据更新。没有 AOF 时才加载 RDB。\n\n如果启用混合持久化，AOF 文件前半段可能是 RDB 格式快照，后半段是增量 AOF。恢复时 Redis 仍按 AOF 流程加载，只是基础部分加载速度更接近 RDB。\n\n### 文件损坏怎么办\n\nAOF 尾部如果因宕机出现不完整命令，Redis 可能拒绝启动或自动截断，取决于配置和损坏情况。可以用 redis-check-aof 修复，用 redis-check-rdb 检查 RDB。\n\n修复前要复制原文件留存，避免二次破坏。\n\n### 运维判断\n\n恢复时要先确认实例角色和数据用途。缓存实例可以从数据库重建，重要状态实例要优先保护持久化文件和 binlog/业务日志。恢复后要核对 key 数、业务抽样、复制状态和应用读写是否正常。\n\n### 关键点\n\nRedis 持久化文件恢复的是 Redis 自己看到的状态，不一定能恢复外部系统的一致性。涉及订单、任务、消息时，还要和数据库或 MQ 对账。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-031",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "主从复制全量同步、增量同步和 repl_backlog 如何工作？",
+    "answer": "### 全量同步\n\n从库第一次连接主库，或无法增量追上时，会触发全量同步。主库生成 RDB 快照并发送给从库，从库清空旧数据、加载 RDB，然后继续接收后续写命令。\n\n全量同步成本高，会消耗主库 fork、内存、磁盘和网络资源，从库加载 RDB 时也可能短暂不可用。\n\n### 增量同步\n\n主库维护复制偏移量和 repl_backlog 环形缓冲区。从库短暂断开后，带着自己的复制偏移量回来。如果缺失的数据仍在 backlog 中，主库只发送缺失部分，实现增量同步。\n\n### repl_backlog 的作用\n\nrepl_backlog 越大，从库断线后可增量追上的时间窗口越长。太小则网络抖动稍久就要全量同步。大小要结合写入速率和可接受断线时间估算。\n\n### 实践\n\n频繁全量同步通常说明网络、backlog、主从稳定性或从库性能有问题。要监控 master_repl_offset、slave_repl_offset、repl_backlog_histlen、复制延迟和 full sync 次数。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-032",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "复制积压、网络抖动和从库加载 RDB 会造成什么风险？",
+    "answer": "### 复制积压\n\n从库消费跟不上主库写入，会产生复制延迟。延迟期间从库读到旧数据，故障切换时也可能丢失尚未复制或尚未应用的写入。\n\n如果断线期间主库写入超过 repl_backlog 可保存范围，从库重连后只能全量同步，进一步放大主库压力。\n\n### 网络抖动\n\n短暂抖动如果 backlog 足够，可以增量追上；抖动太久或写入太快，会触发全量同步。多个从库同时全量同步，主库 fork、RDB 传输和网络都会被压住。\n\n### 从库加载 RDB\n\n从库全量同步时要清空旧数据并加载 RDB。加载期间从库可能不能提供稳定读服务，也会造成内存峰值和 CPU/IO 压力。读写分离架构下，这会影响读流量。\n\n### 风险控制\n\n设置合理 repl_backlog，控制主库写入大事务，避免多个从库同时重连。读请求要感知从库延迟，延迟过高时摘除从库或读主库。主从复制提升可用性，但不是强一致保证。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-033",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Sentinel 的监控、主观下线、客观下线和故障转移流程是什么？",
+    "answer": "### Sentinel 负责什么\n\nSentinel 监控主从实例是否存活，发现主库故障后完成故障转移，并通知客户端新的主库地址。它本身也要多节点部署，避免单点。\n\n### 主观下线\n\n某个 Sentinel 在 down-after-milliseconds 时间内没有收到主库有效响应，会认为主库主观下线，也就是 SDOWN。主观下线只是单个 Sentinel 的判断。\n\n### 客观下线\n\n当足够数量的 Sentinel 都认为主库下线，达到 quorum，主库会被标记为客观下线 ODOWN。只有 ODOWN 后才会发起故障转移。\n\n### 故障转移流程\n\nSentinel 之间选出 leader，由 leader 选择一个合适从库提升为新主库。其他从库改为复制新主，旧主恢复后也会被降级为从库。客户端通过 Sentinel 获取新主地址并重连。\n\n### 注意\n\nSentinel 解决自动切主，不解决数据零丢失。异步复制延迟、网络分区和客户端重试仍可能造成旧数据或双写风险。业务要能处理短暂不可用和重连。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-034",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Sentinel 如何选主，如何避免脑裂和错误切换？",
+    "answer": "### Sentinel 如何选主\n\nSentinel 选从库时会排除不可用、断线久、延迟大或优先级不合适的节点。常见因素包括 replica-priority、复制偏移量、run id 等。复制偏移越接近主库，说明数据越新，越适合作为新主。\n\n### 脑裂风险\n\n脑裂通常来自网络分区：旧主还活着但 Sentinel 认为它不可达，于是提升新主。如果客户端仍能写旧主，就会出现两个主都接收写入。分区恢复后，旧主被降级，它在分区期间接收的数据可能丢失。\n\n### 防护方式\n\n主库配置 min-replicas-to-write 和 min-replicas-max-lag，可以在从库不足或延迟过高时拒绝写入，降低孤主继续写的风险。客户端必须通过 Sentinel 或统一代理获取主库，不要写死旧主地址。\n\n### 切换后的处理\n\n故障转移不是结束。要确认新主复制拓扑、客户端连接、旧主回归方式和数据差异。对关键业务，切主后要做对账和幂等补偿。\n\n### 结论\n\nSentinel 能提高可用性，但不能保证强一致。降低脑裂风险需要 Sentinel 多数派、合理部署、主库写入保护和客户端正确接入一起配合。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-035",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis Cluster 的 16384 槽、MOVED、ASK 和客户端缓存如何工作？",
+    "answer": "### 16384 个槽\n\nRedis Cluster 把 key 通过 CRC16 计算到 0 到 16383 的槽。每个主节点负责一部分槽。Cluster 的数据分布单位是槽，不是单个 key。\n\n使用 hash tag 可以让多个 key 落到同一槽，例如 order:{1001}:base 和 order:{1001}:items。多 key 命令只有在同槽时才能执行。\n\n### MOVED\n\n客户端访问错节点时，节点返回 MOVED，告诉客户端这个槽当前属于哪个节点。客户端应更新本地槽位缓存，后续请求直接发到正确节点。\n\n### ASK\n\nASK 通常出现在 slot 迁移过程中。源节点告诉客户端临时去目标节点问一次，客户端发送 ASKING 后再执行命令。ASK 不代表槽位归属永久变化，不能像 MOVED 那样直接更新完整缓存。\n\n### 客户端缓存\n\nCluster 客户端通常缓存 slot -> node 映射，提高路由效率。遇到 MOVED、连接失败或拓扑变化时刷新。客户端质量很关键，老客户端不理解 Cluster 路由会导致大量重定向和失败。",
+    "tags": ["Redis", "Redis持久化与高可用", "缓存"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-036",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Cluster 扩缩容、resharding 和 slot 迁移如何保证可用性？",
+    "answer": "### resharding 做了什么\n\nCluster 扩缩容的核心是迁移 slot。新增节点后，把一部分 slot 从老节点迁到新节点；缩容时，把待下线节点的 slot 迁走，再移除节点。\n\nslot 迁移时，源节点把槽内 key 逐步迁到目标节点。迁移期间，客户端可能收到 ASK 重定向。迁移完成后，槽归属更新，后续通过 MOVED 引导客户端刷新缓存。\n\n### 可用性风险\n\n迁移会消耗网络、CPU 和内存。大 key 会让单次迁移耗时变长，甚至导致阻塞。迁移期间如果客户端不正确处理 ASK/MOVED，会出现请求失败。\n\n### 操作建议\n\n扩缩容前先扫描大 key、热点 key 和槽位倾斜。迁移要限速，避开业务高峰，分批执行。迁移中监控延迟、失败重试、集群状态、复制延迟和客户端错误。\n\n### 数据正确性\n\nCluster 迁移保证 slot 逐步转移，但不保证业务层多 key 操作自动正确。涉及多 key 的业务要用 hash tag 固定同槽，或避免跨槽事务。迁移前后都要做抽样校验和流量观察。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-037",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 高可用架构中哨兵、Cluster、代理模式如何选择？",
+    "answer": "### Sentinel 架构\n\nSentinel 适合一主多从、数据量不需要自动分片的场景。它提供主从监控和自动故障转移，应用仍把一个主库当作写入口。优点是简单，缺点是单主容量有限。\n\n### Cluster 架构\n\nCluster 适合数据量或吞吐超过单主，需要分片扩展的场景。它内建 slot 分片、节点发现和故障转移。代价是客户端要支持 Cluster，跨 slot 操作受限，运维复杂度更高。\n\n### 代理模式\n\n代理模式由 Codis、Twemproxy 或云厂商代理承接路由。应用连接代理，代理隐藏后端分片。优点是客户端简单，缺点是代理本身成为关键组件，某些 Redis 命令和事务语义可能受限。\n\n### 怎么选\n\n小中规模、希望简单高可用，用 Sentinel。需要水平扩展，用 Cluster。客户端改造困难、希望统一入口或云服务托管，可以考虑代理。\n\n### 关键问题\n\n无论哪种，都要明确数据一致性、故障切换、扩容、备份恢复、客户端重连和热点治理。高可用架构不是只看节点数量，还要看业务能否承受切换窗口。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-038",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 备份、恢复演练和跨机房灾备应如何设计？",
+    "answer": "### 备份设计\n\nRedis 备份不能只依赖线上 RDB/AOF 文件。应定期把 RDB 或持久化文件复制到独立存储，并记录实例版本、配置、slot 分布、主从拓扑和备份时间。\n\n备份频率取决于数据价值。纯缓存可以低频备份甚至不备份；会话、任务、限流状态等需要评估可丢窗口；核心数据不应只存在 Redis。\n\n### 恢复演练\n\n演练要在隔离环境恢复，验证文件可用、启动耗时、key 数、内存占用、业务抽样和客户端连接。只显示“备份成功”没有意义，能恢复才算数。\n\n### 跨机房灾备\n\n跨机房要明确 RPO 和 RTO。Redis 异步复制跨机房会有延迟，网络分区时可能出现旧数据和切换争议。关键业务要有数据库或消息系统作为主恢复来源。\n\n### 故障预案\n\n预案里要写清楚：从哪里拿备份，如何选择恢复点，如何避免覆盖现场，如何验证数据，如何让应用切回，如何处理恢复后的差异。事故时最怕临时拼命令。",
+    "tags": ["Redis", "Redis持久化与高可用"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-039",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "SET NX PX 实现分布式锁有哪些必要条件和缺陷？",
+    "answer": "### 必要条件\n\n用 Redis 实现分布式锁，至少要满足互斥、过期、防误删和业务可重试。常见写法是 SET key token NX PX ttl：NX 保证不存在时才加锁，PX 设置过期时间，token 是每个持锁者的唯一值。\n\n~~~text\nSET lock:order:1 random-token NX PX 30000\n~~~\n\n释放锁时必须校验 token，确认锁仍属于自己，再删除。这个校验和删除要放到 Lua 脚本里原子执行。\n\n### 缺陷\n\nRedis 锁不等于强一致锁。客户端 GC 暂停、网络抖动、业务执行超过 TTL、Redis 主从切换导致锁丢失，都可能让两个客户端认为自己持锁成功。\n\n锁自动过期能避免死锁，但也引入“业务没执行完锁已过期”的风险。续期能缓解，但续期线程本身也可能暂停或失败。\n\n### 使用边界\n\nRedis 锁适合防重复提交、低风险互斥、定时任务单实例执行等场景。资金、库存这类强一致写，最终仍要用数据库唯一约束、状态机、条件更新或幂等流水兜底。锁只能降低并发概率，不能替代业务正确性。",
+    "tags": ["Redis", "Redis分布式能力", "分布式锁"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-040",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Redlock 的假设、争议和适用边界是什么？",
+    "answer": "### Redlock 的思路\n\nRedlock 用多个相互独立的 Redis 节点加锁。客户端在多数节点上用 SET NX PX 成功，并且总耗时小于锁 TTL，才认为拿到锁。释放时向所有节点删除对应 token。\n\n它试图避免单 Redis 主从切换造成锁丢失的问题，因为多数节点同时出错的概率更低。\n\n### 关键假设\n\nRedlock 假设节点故障相互独立，客户端和 Redis 的时钟漂移在可控范围内，网络延迟不会长期异常，锁 TTL 能覆盖业务执行时间。这些假设在复杂分布式环境里并不总成立。\n\n### 争议\n\n争议点在于：在网络分区、进程暂停、时钟漂移和存储不具备强一致复制时，多数 Redis 节点成功并不能等价于严格线性一致锁。对真正要求强一致的资源，ZooKeeper、etcd、数据库事务或带 fencing token 的方案更稳。\n\n### 适用边界\n\nRedlock 可用于“偶发并发冲突成本可接受”的互斥场景。若锁失败会导致资金错账、库存超卖、权限越权，就需要额外的 fencing token、数据库约束或强一致协调系统。面试里不要只说 Redlock 更安全，要说清楚它依赖哪些假设。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-041",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "如何用 Lua 实现安全释放锁和锁续期？",
+    "answer": "### 安全释放锁\n\n释放锁不能直接 DEL。因为锁可能已经过期并被别人重新获得，直接 DEL 会删掉别人的锁。正确做法是比较 token，匹配才删除。\n\n~~~lua\nif redis.call('GET', KEYS[1]) == ARGV[1] then\n  return redis.call('DEL', KEYS[1])\nend\nreturn 0\n~~~\n\ntoken 要由加锁方生成并保存，例如 UUID。释放失败时说明锁已过期或不属于当前请求，业务不要再假设自己仍持锁。\n\n### 锁续期\n\n续期也要校验 token，确认锁仍属于自己，再延长 TTL。\n\n~~~lua\nif redis.call('GET', KEYS[1]) == ARGV[1] then\n  return redis.call('PEXPIRE', KEYS[1], ARGV[2])\nend\nreturn 0\n~~~\n\n续期通常由后台 watchdog 周期执行，周期要明显小于 TTL。业务完成后主动释放锁。\n\n### 风险\n\n续期不能让锁变成强一致锁。进程暂停、网络隔离、Redis 切主都会让续期失败或产生旧锁幻觉。业务仍要设计幂等和最终校验，尤其是写数据库时用唯一约束、版本号或状态条件保护结果。",
+    "tags": ["Redis", "Redis分布式能力", "安全"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-042",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "令牌桶、漏桶、固定窗口、滑动窗口限流如何用 Redis 实现？",
+    "answer": "### 固定窗口\n\n固定窗口用 INCR + EXPIRE 统计某个时间窗口内次数，例如 user:1:202605301200。实现简单，性能好，但窗口边界会有突刺：前一分钟末和下一分钟初可以连续打满两倍额度。\n\n### 滑动窗口\n\n滑动窗口常用 ZSet，score 存请求时间戳。每次请求删除窗口外记录，统计窗口内数量，小于阈值则加入当前请求。它更平滑，但每次都有 ZREM/ZCOUNT/ZADD，成本更高，需要清理旧数据。\n\n### 令牌桶\n\n令牌桶按固定速率生成令牌，请求拿到令牌才通过，桶有容量上限。它允许一定突发流量，适合 API 限流。Redis 中可以用 Lua 原子计算当前令牌数、更新时间和扣减。\n\n### 漏桶\n\n漏桶按固定速率流出，请求进入桶排队或被丢弃。它能平滑下游流量，但突发请求可能排队增加延迟。更适合保护后端处理能力。\n\n### 选择\n\n简单限频用固定窗口，要求平滑用滑动窗口，允许突发且控制平均速率用令牌桶，要稳定输出用漏桶。无论哪种，都要用 Lua 保证原子性，并设计超限返回、降级和监控。",
+    "tags": ["Redis", "Redis分布式能力", "限流"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-043",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "ZSet 延迟队列有哪些可靠性问题，如何避免任务丢失和重复执行？",
+    "answer": "### ZSet 延迟队列怎么做\n\n用任务执行时间作为 score，任务 id 作为 member。消费者查询 score 小于当前时间的任务，抢到后删除并执行。\n\n~~~text\nZRANGEBYSCORE delay -inf now LIMIT 0 1\nZREM delay taskId\n~~~\n\n查询和删除要用 Lua 合在一起，避免多个消费者同时拿到同一任务。\n\n### 可靠性问题\n\n任务从 ZSet 删除后，如果消费者宕机，任务就丢了。消费者执行成功但确认失败，可能重复执行。Redis 宕机、AOF 配置、主从切换也会影响任务是否还在。\n\n大批量到期任务会造成瞬时扫描和执行压力。单个大 ZSet 还可能成为大 key 或热点 key。\n\n### 改进方式\n\n抢占任务后先放到 processing 集合并记录超时时间，执行成功再删除；后台扫描超时 processing，把任务放回延迟队列。任务执行必须幂等，用业务 id 防重复。\n\n如果任务非常关键，要把任务状态落数据库，Redis 只做调度加速。对吞吐、可靠性、可观测性要求高时，使用专业 MQ 的延迟消息更合适。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-044",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Stream 消费者组、pending list 和 ack 机制如何实现可靠消费？",
+    "answer": "### Stream 的核心结构\n\nStream 是按消息 ID 追加的日志。XADD 写入，XREAD 或 XREADGROUP 读取。消费者组让多个消费者分摊同一个 Stream 里的消息。\n\n每个消费者组都有自己的消费进度。消息被某个消费者取走但未 ACK，会进入 pending list，也就是 PEL。\n\n### 可靠消费流程\n\n消费者通过 XREADGROUP 读取新消息，处理成功后 XACK。若消费者宕机，消息会留在 PEL 中。其他消费者可以用 XPENDING 查看积压，用 XCLAIM 或 XAUTOCLAIM 把超时消息转移给自己处理。\n\n这让 Stream 比 List 队列更适合可靠消费，因为它知道哪些消息已投递但没确认。\n\n### 仍要处理的问题\n\nStream 是至少一次投递模型，重复消费可能发生，业务必须幂等。Stream 太长要用 XTRIM 控制长度，但不能误删还未处理的消息。消费者长期不 ACK 会导致 PEL 膨胀。\n\n### 适用边界\n\nStream 适合轻量消息、异步任务、缓存失效事件和单 Redis 生态内的事件流。若需要跨集群高吞吐、复杂订阅、长期保留和成熟重平衡，专业消息队列更合适。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-045",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 如何实现排行榜分页、同分排序和历史榜单归档？",
+    "answer": "### 排行榜分页\n\nRedis 排行榜通常用 Sorted Set。score 是分数，member 是用户 id 或业务 id。分页用 ZREVRANGE/ZRANGE 加 start、stop，查个人排名用 ZREVRANK，查分数用 ZSCORE。\n\n深分页会越来越慢，因为 Redis 仍要按排名跳过前面的元素。大榜单可以限制只展示前 N 名，历史明细落库。\n\n### 同分排序\n\nscore 相同时，Redis 会按 member 字典序排序。如果业务要求“同分先到先排前”，可以把时间编码到 score 中，例如 score = 分数 * 放大倍数 + 时间反向值。也可以在展示层查出同分段后按数据库字段二次排序。\n\nscore 是 double，要注意精度边界。复杂排序不要无限塞进 score。\n\n### 历史榜单\n\n日榜、周榜、月榜可以用不同 key，例如 rank:daily:2026-05-30。到期后设置 TTL 或归档到数据库/离线存储。跨周期榜单可以用 ZUNIONSTORE 聚合，但大榜单聚合成本高，最好异步离线计算。\n\n### 风险\n\n全站大榜是典型大 key。要控制成员数量、分页大小和刷新频率，热点榜单可加本地缓存或只缓存前几页。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-046",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Geo 附近搜索为什么推荐 GEOSEARCH 替代旧 GEORADIUS？",
+    "answer": "### GEOSEARCH 解决了什么\n\nGEORADIUS/GEORADIUSBYMEMBER 是旧命令口径，新版本推荐 GEOSEARCH/GEOSEARCHSTORE。GEOSEARCH 把“按坐标查”和“按成员查”统一起来，语义更清晰，也支持矩形范围 BYBOX。\n\n~~~text\nGEOSEARCH store FROMMEMBER shop:1 BYRADIUS 3 km WITHDIST ASC COUNT 20\n~~~\n\n### Geo 的底层特点\n\nRedis Geo 基于经纬度编码和 Sorted Set 实现，适合附近搜索和距离排序。它不是 GIS 数据库，不适合复杂多边形、路网距离、行政区边界和空间分析。\n\n### 使用注意\n\n附近搜索要限制半径和 COUNT，避免一次返回太多结果。经纬度更新频繁的对象，例如司机位置，要考虑写入频率和过期清理。结果距离是直线距离，和真实行驶距离不同。\n\n### 选择口径\n\n简单“附近门店/附近设备”用 GEOSEARCH 足够；需要复杂地理查询、路线规划或空间索引能力，应使用专业 GIS 或搜索引擎。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-047",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "发布订阅、Stream 和消息队列系统的可靠性差异是什么？",
+    "answer": "### Pub/Sub\n\nPub/Sub 是实时广播。订阅者在线就能收到，离线就丢，消息不落盘，也没有 ACK。它适合缓存失效通知、配置变更广播、在线状态推送等轻量场景。\n\n### Stream\n\nStream 持久化消息，支持消费者组、ACK、pending list 和重试。它比 Pub/Sub 可靠，适合异步任务、事件流和轻量消息队列。但它仍需要处理重复消费、消息堆积、Stream 裁剪和 Redis 高可用。\n\n### 专业 MQ\n\nKafka、RocketMQ、RabbitMQ 等消息队列系统提供更成熟的分区、持久化、消费组、重平衡、堆积治理、跨机房和监控能力。代价是系统更重，运维复杂度更高。\n\n### 怎么选\n\n只要在线通知用 Pub/Sub；需要 Redis 内轻量可靠消费用 Stream；订单、支付、物流、审计等关键链路，优先专业 MQ。Redis 消息能力可以做工程加速，但不要把它当成所有消息系统的替代品。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-048",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 在秒杀、库存、会话、验证码等场景下如何设计原子操作？",
+    "answer": "### 秒杀库存\n\n秒杀要把“检查库存、扣减库存、记录用户是否已买”放在一个原子流程里。Redis 里常用 Lua 操作库存 key 和用户 Set，避免并发下超卖和重复购买。但最终订单和支付仍要落库，并通过唯一约束和状态机兜底。\n\n### 会话\n\n会话适合用 String 或 Hash 保存，TTL 随登录状态刷新。关键是续期、踢出、单点登录和 Redis 不可用时的降级。会话不是永久数据，用户核心信息仍应在数据库。\n\n### 验证码\n\n验证码用 SET key code EX ttl 保存，校验时最好用 Lua 做读取、比较、删除或增加失败次数，避免验证码被重复使用。还要限制发送频率和校验频率。\n\n### 计数和限流\n\nINCR + EXPIRE 可以做简单计数和固定窗口限流；复杂限流用 Lua 保证设置过期和计数原子性。\n\n### 设计原则\n\nRedis 原子操作解决的是单实例内的并发插入点。只要结果影响核心数据，就要在数据库层再做幂等、唯一约束或条件更新，防止 Redis 故障、重试或切主带来的边界问题。",
+    "tags": ["Redis", "Redis分布式能力"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-049",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Redis 慢查询、LATENCY、MONITOR、INFO 分别用于排查什么问题？",
+    "answer": "### SLOWLOG\n\nSLOWLOG 记录执行时间超过阈值的命令，适合找慢命令和阻塞风险。它记录的是命令执行时间，不包含网络传输和客户端排队时间，所以“客户端很慢但 SLOWLOG 没记录”也很常见。\n\n### LATENCY\n\nLATENCY 系列用于分析 Redis 内部延迟事件，例如 fork、AOF fsync、过期删除、命令阻塞等。它更适合看延迟尖刺来自哪个 Redis 内部环节。\n\n### MONITOR\n\nMONITOR 会实时打印所有命令，排查某个异常访问来源时很有用，但开销非常大，生产只能短时间、低峰、谨慎使用。很多场景更应该依赖客户端日志或代理采样。\n\n### INFO\n\nINFO 是实例体检入口。memory 看内存和碎片，stats 看命中、淘汰、过期，clients 看连接和缓冲区，persistence 看 RDB/AOF，replication 看主从，commandstats 看命令分布。\n\n### 排查口径\n\n慢命令看 SLOWLOG，延迟尖刺看 LATENCY，访问来源短时抽样看 MONITOR，实例整体状态看 INFO。不要只盯 QPS，Redis 的问题常出在大 key、缓冲区、fork、fsync 和客户端使用方式。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-050",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "Redis 内存碎片和主动整理如何处理？",
+    "answer": "### 内存碎片是什么\n\nRedis 释放对象后，内存分配器不一定立刻把内存还给操作系统。used_memory 下降了，但 used_memory_rss 仍很高，就会表现为碎片。碎片率通常看 mem_fragmentation_ratio。\n\n碎片来自频繁创建删除、大小不一的对象、大 key 拆改、过期淘汰和内存分配器行为。它不是 Redis “泄漏” 的唯一证据，需要结合 key 数和业务写入变化判断。\n\n### 主动整理\n\nRedis 支持 active defrag，后台逐步整理内存碎片。它能降低 RSS，但会消耗 CPU。适合碎片率长期偏高且 CPU 有余量的实例。\n\n### 处理方式\n\n先确认是不是正常 fork/COW、RDB/AOF rewrite、复制缓冲或客户端缓冲导致 RSS 升高。再看碎片率和 active defrag 配置。严重时可以主从切换、重启从库重建内存布局，再切流。\n\n### 预防\n\n控制大 key，避免频繁写入巨大对象，合理设置 TTL 和淘汰策略。内存规划要看 RSS，不只看 used_memory，否则系统层面仍可能 OOM。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-051",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "maxmemory 与 LRU、LFU、TTL 淘汰策略如何选择？",
+    "answer": "### maxmemory 的作用\n\nmaxmemory 限制 Redis 可使用内存。达到上限后，Redis 会根据 maxmemory-policy 决定是淘汰 key，还是拒绝写入。没有设置上限时，实例可能把机器内存吃满，引发 swap 或 OOM。\n\n### 常见淘汰策略\n\nallkeys-lru 在所有 key 中淘汰最近最少使用的 key，适合纯缓存。volatile-lru 只淘汰设置 TTL 的 key，适合不希望无 TTL 数据被删的场景。\n\nallkeys-lfu 按访问频率淘汰，适合热点稳定的缓存。volatile-ttl 优先淘汰 TTL 更短的 key。noeviction 达到内存上限后写命令报错，适合不能接受自动丢 key 的重要状态。\n\n### 怎么选\n\n纯缓存优先 allkeys-lru 或 allkeys-lfu。混合实例要谨慎，最好不要把缓存和重要状态放同一个 Redis。验证码、会话这类必须过期的数据可以使用 volatile 系列，但要确认所有可淘汰 key 都设置 TTL。\n\n### 风险\n\n淘汰不是删除冷数据那么简单。热 key 如果估算错误也可能被淘汰，导致击穿。要监控 evicted_keys、used_memory、命中率和数据库回源压力。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-052",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "为什么禁止在生产使用 KEYS、FLUSHALL、大范围删除等危险操作？",
+    "answer": "### KEYS\n\nKEYS 会遍历整个 keyspace，大实例上会阻塞主线程。生产如果为了查几个 key 执行 KEYS *，可能让所有业务请求排队。\n\n### FLUSHALL / FLUSHDB\n\nFLUSHALL 和 FLUSHDB 会清空实例或库。即使用异步模式，也会造成业务数据瞬间消失、缓存雪崩、数据库回源暴涨。误操作还会被 AOF 和主从复制传播。\n\n### 大范围删除\n\nDEL 一个大 key 或批量删除大量 key，会同步释放内存并阻塞。大集合全量读取后再删除，也会造成网络和客户端内存压力。\n\n### 生产替代\n\n遍历用 SCAN，删除大 key 用 UNLINK 或分批删除集合元素，清理按业务前缀限速执行。危险命令应通过 rename-command、ACL、堡垒机和审批流程限制。\n\n### 原则\n\nRedis 是单线程执行命令，危险命令的破坏不是“慢一点”而是“所有人都等它”。生产操作要有范围、限速、回滚和监控。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-053",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "DEL、UNLINK、lazyfree 在删除大 key 时有什么区别？",
+    "answer": "### DEL\n\nDEL 会删除 key 并同步释放内存。小 key 用 DEL 没问题；大 Hash、大 Set、大 ZSet 或大 String 用 DEL，释放内存可能耗时很久，阻塞主线程。\n\n### UNLINK\n\nUNLINK 会先把 key 从 keyspace 解除关联，真正释放内存交给后台线程异步处理。对客户端来说 key 很快不可见，对 Redis 主线程影响更小。删除大 key 时优先用 UNLINK。\n\n### lazyfree\n\nlazyfree 是一组异步释放配置，例如 lazyfree-lazy-eviction、lazyfree-lazy-expire、lazyfree-lazy-server-del。它让淘汰、过期或服务端删除也能尽量异步释放。\n\n### 注意事项\n\n异步释放不是没有成本，只是把成本转移到后台线程。大量 UNLINK 仍会消耗 CPU 和内存回收资源。迁移或清理大 key 时要分批、限速，并监控 lazyfree_pending_objects、延迟和内存变化。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-054",
+    "module": "Redis",
+    "difficulty": 2,
+    "question": "连接数、客户端缓冲区、输出缓冲区膨胀如何影响稳定性？",
+    "answer": "### 连接数\n\n连接数过多会消耗文件描述符、内存和事件循环处理能力。连接池配置不当、短连接风暴、客户端泄漏连接都会让 Redis 不稳定。\n\nmaxclients 只是上限，调大不能解决慢命令和请求堆积。应用侧连接池要限制最大连接数和超时。\n\n### 客户端缓冲区\n\nRedis 为每个客户端维护输入/输出缓冲区。客户端发送太快、Redis 处理不过来，或客户端读取响应太慢，缓冲区会膨胀，占用大量内存。\n\n大 key 查询、Pub/Sub 慢订阅者、网络抖动都容易撑大输出缓冲区。达到 client-output-buffer-limit 后，Redis 会断开连接。\n\n### 稳定性影响\n\n缓冲区膨胀会让 used_memory 快速上涨，甚至触发淘汰或 OOM。慢客户端还可能拖累网络事件处理，造成整体延迟上升。\n\n### 排查\n\n看 INFO clients、CLIENT LIST、blocked_clients、client_recent_max_output_buffer、连接来源和命令分布。治理上限制大响应命令，设置合理缓冲区上限，客户端及时消费响应，连接池不要无限扩张。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-055",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis CPU 飙高可能由哪些命令、数据结构或网络因素导致？",
+    "answer": "### 命令导致 CPU 高\n\n大范围命令最常见：KEYS、SORT、SUNION 大集合、ZRANGE 大范围、HGETALL 大 Hash、复杂 Lua、批量过大的 pipeline。它们会让主线程长时间执行，其他请求排队。\n\n### 数据结构导致 CPU 高\n\n大 key、热 key、编码转换、过期 key 集中清理、淘汰策略频繁触发，都会推高 CPU。大 ZSet 排名和范围操作、巨大 Hash 全量读取尤其常见。\n\n### 网络和客户端因素\n\n请求包很多、响应很大、连接数过多、TLS 开销、慢客户端输出缓冲区膨胀，也会让 CPU 花在协议处理和网络读写上。Redis 6+ I/O 多线程只对这类问题有帮助，对慢命令帮助有限。\n\n### 排查路径\n\n先看 INFO commandstats、SLOWLOG、LATENCY、top、网络流量和客户端来源。再抽样 key 大小和热点。结论要落到具体命令、具体 key 模式和具体客户端，不要只说 Redis CPU 高。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-056",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 集群热点槽、倾斜数据和跨 slot 操作如何治理？",
+    "answer": "### 热点槽\n\nRedis Cluster 按 slot 分片，但如果某些热门 key 都在同一个 slot，这个节点仍会成为瓶颈。hash tag 使用不当也会把大量 key 强制放到同槽。\n\n治理方式是拆热点 key、复制读 key、本地缓存、调整 hash tag 设计，或把业务分片键设计得更均匀。\n\n### 倾斜数据\n\n槽数量均匀不代表内存均匀。某些 slot 里可能有大 key 或大量 key，导致节点内存倾斜。扩容 resharding 前要看每个节点 used_memory、key 数、大 key 和流量，而不是只看 slot 数。\n\n### 跨 slot 操作\n\nCluster 下多 key 命令要求同槽。MGET、Lua、多 key 事务如果跨 slot 会失败。可以用 hash tag 保证同一业务实体落同槽，例如 cart:{userId}:items 和 cart:{userId}:meta。\n\n### 治理原则\n\n先从 key 设计避免倾斜，再用监控发现热点槽，最后通过 resharding 和业务拆分调整。不要把所有相关 key 都放同一个 hash tag，否则解决了多 key 命令，却制造了热点槽。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-057",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 监控告警应覆盖哪些核心指标和阈值？",
+    "answer": "### 实例指标\n\nRedis 监控要覆盖 CPU、内存、RSS、碎片率、连接数、阻塞客户端、网络输入输出、QPS、命令耗时和错误数。内存要同时看 used_memory、used_memory_rss、maxmemory、evicted_keys。\n\n### 数据指标\n\n关注 keyspace 命中率、过期 key、淘汰 key、大 key、热 key、key 数增长和各业务前缀占比。缓存命中率下降往往比 Redis 自身报错更早暴露问题。\n\n### 持久化和复制\n\n持久化看 RDB/AOF 状态、fork 耗时、rewrite 状态、fsync 延迟和失败次数。复制看主从延迟、复制偏移、全量同步次数、backlog 使用和从库状态。\n\n### 告警阈值\n\n阈值要按业务基线设置。常见告警包括：内存超过 80% 或持续淘汰、P99 延迟升高、慢命令突增、连接数接近上限、复制延迟超过读一致性要求、fork 耗时异常、AOF/RDB 失败。\n\n### 最重要的原则\n\n监控要能定位到业务 key 和客户端。只知道 Redis 延迟高，不知道是谁打的、打了什么命令，处理效率会很低。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-058",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 版本升级、参数变更和数据迁移如何安全实施？",
+    "answer": "### 版本升级\n\n升级前先读 release notes，确认命令兼容性、配置变更、持久化格式、客户端协议和已知问题。测试环境要用线上 RDB/AOF 样本启动验证，再跑核心业务回归。\n\n生产升级优先从从库或非核心节点开始，观察复制、延迟、内存和慢命令，再逐步切主或滚动升级。不要所有节点同时升级。\n\n### 参数变更\n\n参数要区分可动态 CONFIG SET 和必须重启生效。maxmemory、淘汰策略、AOF、lazyfree、client buffer 这类变更会影响稳定性，必须有基线和回滚值。\n\n### 数据迁移\n\n迁移要先评估数据量、大 key、TTL、slot 分布和写入流量。常见方式有主从同步、DUMP/RESTORE、redis-shake、应用双写、Cluster resharding。迁移期间要限速并校验 key 数、抽样值和业务指标。\n\n### 安全实施\n\n所有变更都要有灰度、监控、回滚和暂停条件。Redis 变更看似只是参数或节点操作，实际可能放大到数据库回源、缓存雪崩和应用超时。",
+    "tags": ["Redis", "Redis性能与运维", "安全"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-059",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 安全配置应覆盖哪些方面？",
+    "answer": "### 访问控制\n\nRedis 不应该直接暴露公网。要绑定内网地址，使用防火墙或安全组限制来源。开启 ACL，按应用分配最小权限账号，禁用或限制高危命令。\n\n### 认证和加密\n\n设置强密码或 ACL 用户密码。跨不可信网络访问时启用 TLS 或通过安全隧道。密码要进入密钥管理系统，不要写进仓库。\n\n### 危险命令\n\nFLUSHALL、FLUSHDB、CONFIG、SHUTDOWN、KEYS、EVAL 等命令要按环境限制。可以用 ACL 禁止，或 rename-command 降低误操作风险。\n\n### 运维审计\n\n生产操作应通过堡垒机、审计日志和审批流程。客户端连接、失败认证、异常命令、配置变更都应可追踪。\n\n### 数据安全\n\n持久化文件、备份文件也要控制权限和加密存储。Redis 里不要放明文敏感信息，至少要设置 TTL、脱敏或加密。安全配置的核心是：网络不暴露、账号最小权、命令有限制、操作可审计。",
+    "tags": ["Redis", "Redis性能与运维", "安全"],
+    "source": "精选"
+  },
+  {
+    "id": "java-redis-060",
+    "module": "Redis",
+    "difficulty": 3,
+    "question": "Redis 容量规划如何估算内存、QPS、带宽和副本成本？",
+    "answer": "### 内存估算\n\n容量规划先估算 key 数、value 平均大小、数据结构开销、对象元数据、过期字典、复制缓冲、客户端缓冲和内存碎片。不能只按 value 原始字节数算。\n\n例如一个小 String 的实际占用可能远大于业务值长度；ZSet 还要考虑 dict 和 skiplist 双结构。规划时要用压测数据或 MEMORY USAGE 抽样校准。\n\n### QPS 和延迟\n\n估算读写 QPS、峰值倍数、命令复杂度、pipeline 使用方式和热点分布。10 万 QPS 的 GET 和 10 万 QPS 的大 ZRANGE 完全不是一回事。容量要按 P95/P99 延迟和单节点 CPU 上限规划。\n\n### 带宽\n\nRedis 经常被响应大小打满带宽。要估算请求和响应字节数、复制流量、AOF/RDB 传输、Cluster 迁移和备份流量。大 key 和批量读取会让带宽成为瓶颈。\n\n### 副本成本\n\n一主两从不是多两份可用性这么简单，而是内存乘三、网络复制乘多份、故障同步和备份成本都增加。跨机房副本还要考虑延迟和带宽费用。\n\n### 规划结论\n\n给 Redis 留足余量：内存不要长期逼近 maxmemory，CPU 不要按平均值打满，网络要能承受复制和故障恢复。容量规划要包含扩容阈值和大 key/热 key 治理策略。",
+    "tags": ["Redis", "Redis性能与运维"],
+    "source": "精选"
+  }
+]

@@ -1,0 +1,3642 @@
+[
+  {
+    "questionId": "eval-001",
+    "checks": [
+      {
+        "id": "eval-001-check-01",
+        "kind": "single",
+        "prompt": "AI Agent 或 LLM 应用中的 evaluation 是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看回答是否流畅。"
+          },
+          {
+            "id": "b",
+            "text": "用可重复、可比较的方法衡量系统在真实任务中的表现。"
+          },
+          {
+            "id": "c",
+            "text": "只让开发者随便试几个问题。"
+          },
+          {
+            "id": "d",
+            "text": "只统计模型参数量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "评测的目标是支撑工程决策，而不是凭感觉判断效果。",
+        "focus": "评测定义"
+      },
+      {
+        "id": "eval-001-check-02",
+        "kind": "multiple",
+        "prompt": "为什么评测是系统落地的基础能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "能比较不同 Prompt 或模型版本"
+          },
+          {
+            "id": "b",
+            "text": "能发现回归"
+          },
+          {
+            "id": "c",
+            "text": "能统一团队判断标准"
+          },
+          {
+            "id": "d",
+            "text": "能支撑上线门禁"
+          },
+          {
+            "id": "e",
+            "text": "能自动替代线上监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测让 AI 系统从“感觉不错”变成“可比较、可回归”。",
+        "focus": "评测价值"
+      },
+      {
+        "id": "eval-001-check-03",
+        "kind": "multiple",
+        "prompt": "Agent 系统评测通常要看哪些对象？",
+        "options": [
+          {
+            "id": "a",
+            "text": "最终答案"
+          },
+          {
+            "id": "b",
+            "text": "工具调用链路"
+          },
+          {
+            "id": "c",
+            "text": "状态和任务完成情况"
+          },
+          {
+            "id": "d",
+            "text": "成本、延迟和失败恢复"
+          },
+          {
+            "id": "e",
+            "text": "只看文采"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 评测对象往往是整条链路，而不是单次模型输出。",
+        "focus": "Agent 评测对象"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-002",
+    "checks": [
+      {
+        "id": "eval-002-check-01",
+        "kind": "single",
+        "prompt": "离线评测和在线评测的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "离线评测完全没有价值。"
+          },
+          {
+            "id": "b",
+            "text": "离线评测在固定数据集上可重复比较，在线评测在真实流量中观察效果。"
+          },
+          {
+            "id": "c",
+            "text": "在线评测不需要真实用户。"
+          },
+          {
+            "id": "d",
+            "text": "二者完全一样。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "离线适合快速回归，在线适合验证真实业务价值。",
+        "focus": "离线 vs 在线"
+      },
+      {
+        "id": "eval-002-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合离线评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt 回归"
+          },
+          {
+            "id": "b",
+            "text": "模型版本比较"
+          },
+          {
+            "id": "c",
+            "text": "RAG 检索链路调优"
+          },
+          {
+            "id": "d",
+            "text": "真实用户转化率验证"
+          },
+          {
+            "id": "e",
+            "text": "长期用户留存判断"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "离线评测可控、便宜、适合快速筛选方案。",
+        "focus": "离线评测适合"
+      },
+      {
+        "id": "eval-002-check-03",
+        "kind": "multiple",
+        "prompt": "哪些问题更需要在线评测回答？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户是否真的更满意"
+          },
+          {
+            "id": "b",
+            "text": "任务完成率是否提升"
+          },
+          {
+            "id": "c",
+            "text": "转人工率是否变化"
+          },
+          {
+            "id": "d",
+            "text": "某个固定样本是否答对"
+          },
+          {
+            "id": "e",
+            "text": "单次 prompt 是否可解析"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "线上真实行为常常和离线样本表现不同。",
+        "focus": "在线评测适合"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-003",
+    "checks": [
+      {
+        "id": "eval-003-check-01",
+        "kind": "single",
+        "prompt": "为什么评测需要稳定数据集？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为随机试问更科学。"
+          },
+          {
+            "id": "b",
+            "text": "因为稳定数据集才能让不同版本之间公平可比。"
+          },
+          {
+            "id": "c",
+            "text": "因为稳定数据集只包含简单问题。"
+          },
+          {
+            "id": "d",
+            "text": "因为数据集越小越好。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "没有固定样本，就难以判断改动是变好还是碰巧。",
+        "focus": "稳定数据集"
+      },
+      {
+        "id": "eval-003-check-02",
+        "kind": "multiple",
+        "prompt": "评测集应该覆盖哪些样本？",
+        "options": [
+          {
+            "id": "a",
+            "text": "高频场景"
+          },
+          {
+            "id": "b",
+            "text": "边界场景"
+          },
+          {
+            "id": "c",
+            "text": "失败样本"
+          },
+          {
+            "id": "d",
+            "text": "长尾和高风险样本"
+          },
+          {
+            "id": "e",
+            "text": "只覆盖最容易样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测集太单一会高估线上效果。",
+        "focus": "数据集覆盖"
+      },
+      {
+        "id": "eval-003-check-03",
+        "kind": "multiple",
+        "prompt": "每次随便问几个问题有什么风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "样本偏差"
+          },
+          {
+            "id": "b",
+            "text": "主观选择"
+          },
+          {
+            "id": "c",
+            "text": "不可复现"
+          },
+          {
+            "id": "d",
+            "text": "更容易做回归"
+          },
+          {
+            "id": "e",
+            "text": "更能代表所有用户"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "随手试问适合探索，不适合作为上线依据。",
+        "focus": "随便问的问题"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-004",
+    "checks": [
+      {
+        "id": "eval-004-check-01",
+        "kind": "single",
+        "prompt": "什么是 task success rate？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回答是否显得优雅。"
+          },
+          {
+            "id": "b",
+            "text": "系统是否真正完成用户任务的比例。"
+          },
+          {
+            "id": "c",
+            "text": "模型输出 token 数。"
+          },
+          {
+            "id": "d",
+            "text": "用户问题长度。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "任务成功率更接近业务价值。",
+        "focus": "Task success rate"
+      },
+      {
+        "id": "eval-004-check-02",
+        "kind": "multiple",
+        "prompt": "为什么 task success rate 常比“回答是否优雅”更重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户关注事情是否办成"
+          },
+          {
+            "id": "b",
+            "text": "Agent 系统强调任务完成"
+          },
+          {
+            "id": "c",
+            "text": "自然语言漂亮不代表流程成功"
+          },
+          {
+            "id": "d",
+            "text": "语言质量完全不重要"
+          },
+          {
+            "id": "e",
+            "text": "成功率只适合聊天"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "语言体验重要，但不能替代任务达成。",
+        "focus": "为什么重要"
+      },
+      {
+        "id": "eval-004-check-03",
+        "kind": "multiple",
+        "prompt": "定义 task success rate 时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确成功条件"
+          },
+          {
+            "id": "b",
+            "text": "区分部分成功和失败"
+          },
+          {
+            "id": "c",
+            "text": "结合业务目标"
+          },
+          {
+            "id": "d",
+            "text": "只看模型自评"
+          },
+          {
+            "id": "e",
+            "text": "不需要人工或规则校验"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "成功标准模糊会让评测结果不可用。",
+        "focus": "成功标准"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-005",
+    "checks": [
+      {
+        "id": "eval-005-check-01",
+        "kind": "single",
+        "prompt": "为什么 latency 是大模型系统核心指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为质量完全不重要。"
+          },
+          {
+            "id": "b",
+            "text": "因为延迟直接影响体验、转化和资源成本。"
+          },
+          {
+            "id": "c",
+            "text": "因为延迟只影响开发环境。"
+          },
+          {
+            "id": "d",
+            "text": "因为延迟越高越可靠。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "高质量但太慢的系统，在线上仍可能不可用。",
+        "focus": "Latency"
+      },
+      {
+        "id": "eval-005-check-02",
+        "kind": "multiple",
+        "prompt": "LLM/Agent 延迟可能包含哪些部分？",
+        "options": [
+          {
+            "id": "a",
+            "text": "首 token 延迟"
+          },
+          {
+            "id": "b",
+            "text": "总完成时长"
+          },
+          {
+            "id": "c",
+            "text": "检索、工具调用和后处理"
+          },
+          {
+            "id": "d",
+            "text": "排队和网络耗时"
+          },
+          {
+            "id": "e",
+            "text": "用户昵称长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 延迟是多段链路叠加。",
+        "focus": "延迟组成"
+      },
+      {
+        "id": "eval-005-check-03",
+        "kind": "multiple",
+        "prompt": "评估延迟时应注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "拆分链路耗时"
+          },
+          {
+            "id": "b",
+            "text": "看 P95/P99 而不只看平均值"
+          },
+          {
+            "id": "c",
+            "text": "区分首 token 和总时长"
+          },
+          {
+            "id": "d",
+            "text": "只测一次"
+          },
+          {
+            "id": "e",
+            "text": "忽略慢工具"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "真实体验常由长尾延迟决定。",
+        "focus": "延迟评估"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-006",
+    "checks": [
+      {
+        "id": "eval-006-check-01",
+        "kind": "single",
+        "prompt": "为什么 token cost 是 Agent 系统的重要评测维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 token cost 不会变化。"
+          },
+          {
+            "id": "b",
+            "text": "因为多轮调用、RAG 和工具链路会让成本随规模放大。"
+          },
+          {
+            "id": "c",
+            "text": "因为成本只和 UI 有关。"
+          },
+          {
+            "id": "d",
+            "text": "因为最贵模型一定最优。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "成本决定系统能否长期可持续运行。",
+        "focus": "Token Cost"
+      },
+      {
+        "id": "eval-006-check-02",
+        "kind": "multiple",
+        "prompt": "哪些环节容易拉高 token cost？",
+        "options": [
+          {
+            "id": "a",
+            "text": "长 system prompt"
+          },
+          {
+            "id": "b",
+            "text": "大量历史消息"
+          },
+          {
+            "id": "c",
+            "text": "RAG 片段过多"
+          },
+          {
+            "id": "d",
+            "text": "多次 reflection 或 evaluator 调用"
+          },
+          {
+            "id": "e",
+            "text": "静态 favicon"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "token 成本来自输入、输出和调用次数共同作用。",
+        "focus": "成本来源"
+      },
+      {
+        "id": "eval-006-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于控制 token cost？",
+        "options": [
+          {
+            "id": "a",
+            "text": "压缩上下文"
+          },
+          {
+            "id": "b",
+            "text": "裁剪低价值历史"
+          },
+          {
+            "id": "c",
+            "text": "分层使用模型"
+          },
+          {
+            "id": "d",
+            "text": "缓存稳定结果"
+          },
+          {
+            "id": "e",
+            "text": "无限增加 few-shot 示例"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成本优化要和质量评测一起看。",
+        "focus": "成本优化"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-007",
+    "checks": [
+      {
+        "id": "eval-007-check-01",
+        "kind": "single",
+        "prompt": "hallucination rate 在评测里指什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "输出不够优雅的比例。"
+          },
+          {
+            "id": "b",
+            "text": "输出不真实、无依据或错误补全内容的比例。"
+          },
+          {
+            "id": "c",
+            "text": "响应速度慢的比例。"
+          },
+          {
+            "id": "d",
+            "text": "用户点击按钮的比例。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "幻觉率衡量可靠性，尤其适用于知识问答和高风险场景。",
+        "focus": "Hallucination Rate"
+      },
+      {
+        "id": "eval-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于幻觉表现？",
+        "options": [
+          {
+            "id": "a",
+            "text": "编造事实"
+          },
+          {
+            "id": "b",
+            "text": "编造引用"
+          },
+          {
+            "id": "c",
+            "text": "虚构工具执行结果"
+          },
+          {
+            "id": "d",
+            "text": "无依据补全"
+          },
+          {
+            "id": "e",
+            "text": "明确说不知道"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "幻觉核心是“看似合理但无依据或错误”。",
+        "focus": "幻觉表现"
+      },
+      {
+        "id": "eval-007-check-03",
+        "kind": "multiple",
+        "prompt": "评测幻觉率时还要和哪些指标一起看？",
+        "options": [
+          {
+            "id": "a",
+            "text": "拒答率"
+          },
+          {
+            "id": "b",
+            "text": "任务成功率"
+          },
+          {
+            "id": "c",
+            "text": "引用准确率"
+          },
+          {
+            "id": "d",
+            "text": "字体大小"
+          },
+          {
+            "id": "e",
+            "text": "页面布局"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过度降低幻觉可能导致过度拒答，需要综合权衡。",
+        "focus": "平衡"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-008",
+    "checks": [
+      {
+        "id": "eval-008-check-01",
+        "kind": "single",
+        "prompt": "RAG 中 citation accuracy 衡量什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "引用格式是否好看。"
+          },
+          {
+            "id": "b",
+            "text": "模型给出的引用是否真的支持对应答案。"
+          },
+          {
+            "id": "c",
+            "text": "文档数量是否最多。"
+          },
+          {
+            "id": "d",
+            "text": "模型输出是否更长。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "看起来有引用不代表引用真的正确。",
+        "focus": "Citation Accuracy"
+      },
+      {
+        "id": "eval-008-check-02",
+        "kind": "multiple",
+        "prompt": "为什么 citation accuracy 很重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户会据此判断可信度"
+          },
+          {
+            "id": "b",
+            "text": "有助于人工复核"
+          },
+          {
+            "id": "c",
+            "text": "能定位检索或生成问题"
+          },
+          {
+            "id": "d",
+            "text": "能降低错误引用的迷惑性"
+          },
+          {
+            "id": "e",
+            "text": "能替代权限控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "引用准确性是 RAG 可追溯性的核心指标。",
+        "focus": "重要原因"
+      },
+      {
+        "id": "eval-008-check-03",
+        "kind": "multiple",
+        "prompt": "哪些属于 citation accuracy 问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "引用不存在的文档"
+          },
+          {
+            "id": "b",
+            "text": "引用片段不支持结论"
+          },
+          {
+            "id": "c",
+            "text": "答案和引用不一致"
+          },
+          {
+            "id": "d",
+            "text": "引用真实且支持结论"
+          },
+          {
+            "id": "e",
+            "text": "明确无依据拒答"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "错误引用会让错误答案更像真话。",
+        "focus": "引用错误"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-009",
+    "checks": [
+      {
+        "id": "eval-009-check-01",
+        "kind": "single",
+        "prompt": "为什么结构化输出任务要单独评测格式稳定性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为格式不影响工程系统。"
+          },
+          {
+            "id": "b",
+            "text": "因为结构化结果需要被程序解析和自动处理。"
+          },
+          {
+            "id": "c",
+            "text": "因为自然语言越多越好。"
+          },
+          {
+            "id": "d",
+            "text": "因为格式稳定能保证事实正确。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "格式错误会直接导致自动化链路失败。",
+        "focus": "格式稳定性"
+      },
+      {
+        "id": "eval-009-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于格式稳定性问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "JSON 非法"
+          },
+          {
+            "id": "b",
+            "text": "漏字段"
+          },
+          {
+            "id": "c",
+            "text": "字段类型错误"
+          },
+          {
+            "id": "d",
+            "text": "输出额外解释文本"
+          },
+          {
+            "id": "e",
+            "text": "字段完全符合 schema"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构化输出要同时看语法、字段和业务约束。",
+        "focus": "格式问题"
+      },
+      {
+        "id": "eval-009-check-03",
+        "kind": "multiple",
+        "prompt": "格式稳定性可以如何评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "schema 校验"
+          },
+          {
+            "id": "b",
+            "text": "parse 成功率"
+          },
+          {
+            "id": "c",
+            "text": "字段完整率"
+          },
+          {
+            "id": "d",
+            "text": "业务规则校验"
+          },
+          {
+            "id": "e",
+            "text": "只看文风"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "格式稳定性适合用自动化校验直接度量。",
+        "focus": "评测方式"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-010",
+    "checks": [
+      {
+        "id": "eval-010-check-01",
+        "kind": "single",
+        "prompt": "为什么评测时最好做错误分类，而不是只统计总分？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为总分完全没用。"
+          },
+          {
+            "id": "b",
+            "text": "因为错误分类能定位失败来源，并指导具体优化。"
+          },
+          {
+            "id": "c",
+            "text": "因为分类能自动修复问题。"
+          },
+          {
+            "id": "d",
+            "text": "因为分类只服务报表美观。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "总分告诉你“有问题”，分类告诉你“问题在哪”。",
+        "focus": "错误分类"
+      },
+      {
+        "id": "eval-010-check-02",
+        "kind": "multiple",
+        "prompt": "AI 系统错误分类可以包括哪些类型？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索失败"
+          },
+          {
+            "id": "b",
+            "text": "格式错误"
+          },
+          {
+            "id": "c",
+            "text": "工具调用错误"
+          },
+          {
+            "id": "d",
+            "text": "幻觉或证据不足"
+          },
+          {
+            "id": "e",
+            "text": "用户头像错误"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "分类应与系统链路和优化动作对应。",
+        "focus": "常见分类"
+      },
+      {
+        "id": "eval-010-check-03",
+        "kind": "multiple",
+        "prompt": "failure taxonomy 有哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "指导优先级"
+          },
+          {
+            "id": "b",
+            "text": "支持回归分析"
+          },
+          {
+            "id": "c",
+            "text": "发现主要瓶颈"
+          },
+          {
+            "id": "d",
+            "text": "替代修复"
+          },
+          {
+            "id": "e",
+            "text": "取消评测集"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "错误分类能让优化从泛泛而谈变成具体行动。",
+        "focus": "价值"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-011",
+    "checks": [
+      {
+        "id": "eval-011-check-01",
+        "kind": "single",
+        "prompt": "构建业务专用评测集应该怎么开始？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只从网上找通用 benchmark。"
+          },
+          {
+            "id": "b",
+            "text": "从真实业务日志、常见任务、历史失败和高风险场景抽样。"
+          },
+          {
+            "id": "c",
+            "text": "只让模型自己编题。"
+          },
+          {
+            "id": "d",
+            "text": "只放最简单样本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "业务评测集要贴近真实任务和失败代价。",
+        "focus": "业务评测集"
+      },
+      {
+        "id": "eval-011-check-02",
+        "kind": "multiple",
+        "prompt": "业务评测集可以从哪些来源构建？",
+        "options": [
+          {
+            "id": "a",
+            "text": "线上用户问题"
+          },
+          {
+            "id": "b",
+            "text": "客服或工单记录"
+          },
+          {
+            "id": "c",
+            "text": "历史失败样本"
+          },
+          {
+            "id": "d",
+            "text": "专家构造的边界样本"
+          },
+          {
+            "id": "e",
+            "text": "随机无关文本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "样本来源越贴近业务，评测越有指导意义。",
+        "focus": "样本来源"
+      },
+      {
+        "id": "eval-011-check-03",
+        "kind": "multiple",
+        "prompt": "初期构建评测集时，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先覆盖核心任务"
+          },
+          {
+            "id": "b",
+            "text": "定义标签和 ground truth"
+          },
+          {
+            "id": "c",
+            "text": "逐步扩展长尾和风险样本"
+          },
+          {
+            "id": "d",
+            "text": "一开始追求无限大规模"
+          },
+          {
+            "id": "e",
+            "text": "不做质量审核"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "评测集应从核心场景起步，持续迭代。",
+        "focus": "初期策略"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-012",
+    "checks": [
+      {
+        "id": "eval-012-check-01",
+        "kind": "single",
+        "prompt": "什么是 ground truth？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型最自信的答案。"
+          },
+          {
+            "id": "b",
+            "text": "用作评测标准的真实或权威参考答案、标签或判定依据。"
+          },
+          {
+            "id": "c",
+            "text": "用户输入的长度。"
+          },
+          {
+            "id": "d",
+            "text": "Prompt 模板名称。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "ground truth 是判断系统输出对错的基准。",
+        "focus": "Ground Truth"
+      },
+      {
+        "id": "eval-012-check-02",
+        "kind": "multiple",
+        "prompt": "ground truth 为什么重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提供可比评测标准"
+          },
+          {
+            "id": "b",
+            "text": "减少主观判断"
+          },
+          {
+            "id": "c",
+            "text": "支持自动化打分"
+          },
+          {
+            "id": "d",
+            "text": "便于回归测试"
+          },
+          {
+            "id": "e",
+            "text": "保证模型永远正确"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有可靠标准，评测结果就容易漂移。",
+        "focus": "重要性"
+      },
+      {
+        "id": "eval-012-check-03",
+        "kind": "multiple",
+        "prompt": "构建 ground truth 时要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "来源权威"
+          },
+          {
+            "id": "b",
+            "text": "标注一致性"
+          },
+          {
+            "id": "c",
+            "text": "可更新和可审查"
+          },
+          {
+            "id": "d",
+            "text": "随便写一个答案即可"
+          },
+          {
+            "id": "e",
+            "text": "永远不需要复核"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "ground truth 本身也需要质量控制。",
+        "focus": "注意事项"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-013",
+    "checks": [
+      {
+        "id": "eval-013-check-01",
+        "kind": "single",
+        "prompt": "人工评测和自动评测分别适合什么场景？",
+        "options": [
+          {
+            "id": "a",
+            "text": "人工评测永远没用。"
+          },
+          {
+            "id": "b",
+            "text": "自动评测适合规模化和格式明确任务，人工评测适合复杂质量和主观判断。"
+          },
+          {
+            "id": "c",
+            "text": "自动评测能处理所有主观体验。"
+          },
+          {
+            "id": "d",
+            "text": "人工评测不需要标准。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "两者互补，关键看任务是否可自动判定。",
+        "focus": "人工 vs 自动"
+      },
+      {
+        "id": "eval-013-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更适合自动评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "JSON 格式校验"
+          },
+          {
+            "id": "b",
+            "text": "分类准确率"
+          },
+          {
+            "id": "c",
+            "text": "引用是否存在"
+          },
+          {
+            "id": "d",
+            "text": "规则匹配"
+          },
+          {
+            "id": "e",
+            "text": "开放式创意质量"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "自动评测适合标准明确、可程序化判断的任务。",
+        "focus": "自动评测适合"
+      },
+      {
+        "id": "eval-013-check-03",
+        "kind": "multiple",
+        "prompt": "哪些任务更需要人工评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "复杂回答质量"
+          },
+          {
+            "id": "b",
+            "text": "用户体验和语气"
+          },
+          {
+            "id": "c",
+            "text": "多维度业务判断"
+          },
+          {
+            "id": "d",
+            "text": "JSON 是否能 parse"
+          },
+          {
+            "id": "e",
+            "text": "枚举字段是否在范围内"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "人工评测适合需要专业判断和语境理解的任务。",
+        "focus": "人工评测适合"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-014",
+    "checks": [
+      {
+        "id": "eval-014-check-01",
+        "kind": "single",
+        "prompt": "什么是 LLM as Judge？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让用户直接打分。"
+          },
+          {
+            "id": "b",
+            "text": "使用另一个 LLM 按规则评判输出质量。"
+          },
+          {
+            "id": "c",
+            "text": "让模型自己训练自己。"
+          },
+          {
+            "id": "d",
+            "text": "只统计 token 数。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "LLM as Judge 用模型辅助评审，但它本身也有偏差。",
+        "focus": "LLM as Judge"
+      },
+      {
+        "id": "eval-014-check-02",
+        "kind": "multiple",
+        "prompt": "LLM as Judge 有哪些优点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "成本低于大规模人工"
+          },
+          {
+            "id": "b",
+            "text": "可批量评估开放式答案"
+          },
+          {
+            "id": "c",
+            "text": "适合初筛和辅助标注"
+          },
+          {
+            "id": "d",
+            "text": "永远客观无偏"
+          },
+          {
+            "id": "e",
+            "text": "不需要 rubric"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "它能提高评测效率，但必须有清晰评分标准。",
+        "focus": "优点"
+      },
+      {
+        "id": "eval-014-check-03",
+        "kind": "multiple",
+        "prompt": "LLM as Judge 有哪些局限？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可能偏向流畅答案"
+          },
+          {
+            "id": "b",
+            "text": "可能受提示影响"
+          },
+          {
+            "id": "c",
+            "text": "可能和人类专家标准不一致"
+          },
+          {
+            "id": "d",
+            "text": "一定比人工专家更准"
+          },
+          {
+            "id": "e",
+            "text": "不需要抽样复核"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "LLM Judge 需要校准、抽检和多评委策略。",
+        "focus": "局限"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-015",
+    "checks": [
+      {
+        "id": "eval-015-check-01",
+        "kind": "single",
+        "prompt": "什么是 A/B 测试？",
+        "options": [
+          {
+            "id": "a",
+            "text": "同时上线所有版本不做分流。"
+          },
+          {
+            "id": "b",
+            "text": "将用户流量分配到不同方案，比较真实线上指标。"
+          },
+          {
+            "id": "c",
+            "text": "只在本地运行一个样本。"
+          },
+          {
+            "id": "d",
+            "text": "只比较 Prompt 字数。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "A/B 测试用于验证真实用户环境下的效果差异。",
+        "focus": "A/B 测试"
+      },
+      {
+        "id": "eval-015-check-02",
+        "kind": "multiple",
+        "prompt": "AI Agent A/B 测试可关注哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务完成率"
+          },
+          {
+            "id": "b",
+            "text": "用户满意度"
+          },
+          {
+            "id": "c",
+            "text": "转人工率"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟"
+          },
+          {
+            "id": "e",
+            "text": "模型名称长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent A/B 应看业务效果和体验，而不是只看文本。",
+        "focus": "Agent A/B 指标"
+      },
+      {
+        "id": "eval-015-check-03",
+        "kind": "multiple",
+        "prompt": "A/B 测试要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "随机分流"
+          },
+          {
+            "id": "b",
+            "text": "样本量"
+          },
+          {
+            "id": "c",
+            "text": "统计显著性"
+          },
+          {
+            "id": "d",
+            "text": "风险控制和回滚"
+          },
+          {
+            "id": "e",
+            "text": "不记录版本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "线上实验必须可解释、可停止、可回滚。",
+        "focus": "实验注意"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-016",
+    "checks": [
+      {
+        "id": "eval-016-check-01",
+        "kind": "single",
+        "prompt": "为什么评测之外还需要线上监控？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为离线评测完全无用。"
+          },
+          {
+            "id": "b",
+            "text": "因为线上数据、用户行为、模型服务和外部依赖会持续变化。"
+          },
+          {
+            "id": "c",
+            "text": "因为监控可以替代所有评测。"
+          },
+          {
+            "id": "d",
+            "text": "因为监控只看 UI。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "评测看改动前后的样本表现，监控看真实运行状态。",
+        "focus": "Monitoring"
+      },
+      {
+        "id": "eval-016-check-02",
+        "kind": "multiple",
+        "prompt": "线上监控应覆盖哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "质量指标"
+          },
+          {
+            "id": "b",
+            "text": "延迟和错误率"
+          },
+          {
+            "id": "c",
+            "text": "成本"
+          },
+          {
+            "id": "d",
+            "text": "安全和异常行为"
+          },
+          {
+            "id": "e",
+            "text": "开发者工位温度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "AI 系统监控要覆盖质量、性能、成本和风险。",
+        "focus": "监控内容"
+      },
+      {
+        "id": "eval-016-check-03",
+        "kind": "multiple",
+        "prompt": "线上监控能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "发现数据漂移"
+          },
+          {
+            "id": "b",
+            "text": "发现外部依赖故障"
+          },
+          {
+            "id": "c",
+            "text": "发现成本异常"
+          },
+          {
+            "id": "d",
+            "text": "触发告警和回滚"
+          },
+          {
+            "id": "e",
+            "text": "自动修好所有回答"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "监控是线上优化闭环的入口。",
+        "focus": "监控价值"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-017",
+    "checks": [
+      {
+        "id": "eval-017-check-01",
+        "kind": "single",
+        "prompt": "什么是数据漂移？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型回答更长。"
+          },
+          {
+            "id": "b",
+            "text": "线上输入分布、用户需求或数据源相对评测集发生变化。"
+          },
+          {
+            "id": "c",
+            "text": "Prompt 字体变化。"
+          },
+          {
+            "id": "d",
+            "text": "模型参数一定被修改。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "数据漂移会让离线评测不再代表线上真实情况。",
+        "focus": "Data Drift"
+      },
+      {
+        "id": "eval-017-check-02",
+        "kind": "multiple",
+        "prompt": "数据漂移可能来自哪些变化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户群体变化"
+          },
+          {
+            "id": "b",
+            "text": "业务政策变化"
+          },
+          {
+            "id": "c",
+            "text": "新产品或新术语出现"
+          },
+          {
+            "id": "d",
+            "text": "外部文档更新"
+          },
+          {
+            "id": "e",
+            "text": "按钮圆角变化"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "线上环境变化会改变输入和答案标准。",
+        "focus": "漂移来源"
+      },
+      {
+        "id": "eval-017-check-03",
+        "kind": "multiple",
+        "prompt": "应对数据漂移可以做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "监控输入分布"
+          },
+          {
+            "id": "b",
+            "text": "回流线上失败样本"
+          },
+          {
+            "id": "c",
+            "text": "更新评测集"
+          },
+          {
+            "id": "d",
+            "text": "重跑回归评测"
+          },
+          {
+            "id": "e",
+            "text": "永远不更新数据集"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "持续样本回流是处理漂移的重要机制。",
+        "focus": "应对方式"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-018",
+    "checks": [
+      {
+        "id": "eval-018-check-01",
+        "kind": "single",
+        "prompt": "为什么 Prompt 变更也必须走回归评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Prompt 不影响行为。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Prompt 是线上行为配置，改动可能影响质量、格式、安全和成本。"
+          },
+          {
+            "id": "c",
+            "text": "因为只有代码需要测试。"
+          },
+          {
+            "id": "d",
+            "text": "因为回归评测只看 UI。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Prompt 改动可能造成隐性行为变化，必须像代码一样治理。",
+        "focus": "Prompt 回归"
+      },
+      {
+        "id": "eval-018-check-02",
+        "kind": "multiple",
+        "prompt": "Prompt 变更可能导致哪些回归？",
+        "options": [
+          {
+            "id": "a",
+            "text": "格式破坏"
+          },
+          {
+            "id": "b",
+            "text": "拒答策略变化"
+          },
+          {
+            "id": "c",
+            "text": "成本和延迟上升"
+          },
+          {
+            "id": "d",
+            "text": "安全边界变弱"
+          },
+          {
+            "id": "e",
+            "text": "自动提升所有样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 改动常常是局部提升、其他场景退化。",
+        "focus": "回归风险"
+      },
+      {
+        "id": "eval-018-check-03",
+        "kind": "multiple",
+        "prompt": "Prompt 变更上线前应做什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "固定评测集回归"
+          },
+          {
+            "id": "b",
+            "text": "高风险样本测试"
+          },
+          {
+            "id": "c",
+            "text": "版本记录和回滚准备"
+          },
+          {
+            "id": "d",
+            "text": "直接全量上线"
+          },
+          {
+            "id": "e",
+            "text": "不记录变更原因"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Prompt 是生产资产，需要发布治理。",
+        "focus": "上线要求"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-019",
+    "checks": [
+      {
+        "id": "eval-019-check-01",
+        "kind": "single",
+        "prompt": "为什么 RAG 系统评测不能只看最终答案？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为最终答案完全不重要。"
+          },
+          {
+            "id": "b",
+            "text": "因为问题可能出在检索、重排、引用、压缩或生成任一环节。"
+          },
+          {
+            "id": "c",
+            "text": "因为 RAG 不生成答案。"
+          },
+          {
+            "id": "d",
+            "text": "因为只看最终答案更容易定位问题。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "只看最终答案无法判断失败来源。",
+        "focus": "RAG 分层评测"
+      },
+      {
+        "id": "eval-019-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 评测应拆看哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "召回率"
+          },
+          {
+            "id": "b",
+            "text": "rerank 准确性"
+          },
+          {
+            "id": "c",
+            "text": "引用准确率"
+          },
+          {
+            "id": "d",
+            "text": "答案事实性"
+          },
+          {
+            "id": "e",
+            "text": "页面主题色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "分层评测能指导具体优化。",
+        "focus": "RAG 层级指标"
+      },
+      {
+        "id": "eval-019-check-03",
+        "kind": "multiple",
+        "prompt": "RAG 分层评测能帮助区分哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "没检到正确证据"
+          },
+          {
+            "id": "b",
+            "text": "检到了但没排到前面"
+          },
+          {
+            "id": "c",
+            "text": "证据进入上下文但模型误读"
+          },
+          {
+            "id": "d",
+            "text": "用户头像加载失败"
+          },
+          {
+            "id": "e",
+            "text": "CSS 编译错误"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "RAG 失败需要沿链路定位。",
+        "focus": "失败定位"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-020",
+    "checks": [
+      {
+        "id": "eval-020-check-01",
+        "kind": "single",
+        "prompt": "为什么 Agent 系统评测要升级到“链路是否成功”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为回答质量完全不重要。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Agent 需要计划、工具、状态和外部动作共同完成任务。"
+          },
+          {
+            "id": "c",
+            "text": "因为 Agent 不会生成文本。"
+          },
+          {
+            "id": "d",
+            "text": "因为链路评测只看日志数量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent 的价值是完成任务，而不只是说得好。",
+        "focus": "Agent 链路评测"
+      },
+      {
+        "id": "eval-020-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 链路成功通常要看哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "是否选对工具"
+          },
+          {
+            "id": "b",
+            "text": "参数是否正确"
+          },
+          {
+            "id": "c",
+            "text": "状态是否推进"
+          },
+          {
+            "id": "d",
+            "text": "最终任务是否达成"
+          },
+          {
+            "id": "e",
+            "text": "回答是否押韵"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "链路评测要覆盖从决策到执行的全过程。",
+        "focus": "链路成功"
+      },
+      {
+        "id": "eval-020-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况属于 Agent 链路失败？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具调用错"
+          },
+          {
+            "id": "b",
+            "text": "状态更新错"
+          },
+          {
+            "id": "c",
+            "text": "任务未完成但回答说完成了"
+          },
+          {
+            "id": "d",
+            "text": "高风险动作绕过审批"
+          },
+          {
+            "id": "e",
+            "text": "正确完成任务并给出结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Agent 评测必须关注真实执行状态。",
+        "focus": "链路失败"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-021",
+    "checks": [
+      {
+        "id": "eval-021-check-01",
+        "kind": "single",
+        "prompt": "为什么线上失败样本回流到评测集是持续优化的关键？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为评测集越老越好。"
+          },
+          {
+            "id": "b",
+            "text": "因为线上真实失败能帮助评测覆盖新问题和长尾问题。"
+          },
+          {
+            "id": "c",
+            "text": "因为评测集不需要更新。"
+          },
+          {
+            "id": "d",
+            "text": "因为回流会自动修好模型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "线上失败样本是最有价值的回归数据之一。",
+        "focus": "失败样本回流"
+      },
+      {
+        "id": "eval-021-check-02",
+        "kind": "multiple",
+        "prompt": "失败样本回流能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "发现新失败模式"
+          },
+          {
+            "id": "b",
+            "text": "扩充回归集"
+          },
+          {
+            "id": "c",
+            "text": "修补评测盲点"
+          },
+          {
+            "id": "d",
+            "text": "跟踪真实用户分布变化"
+          },
+          {
+            "id": "e",
+            "text": "取消线上监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测集应随着线上问题持续演化。",
+        "focus": "回流价值"
+      },
+      {
+        "id": "eval-021-check-03",
+        "kind": "multiple",
+        "prompt": "回流失败样本时应注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "脱敏"
+          },
+          {
+            "id": "b",
+            "text": "标注失败原因"
+          },
+          {
+            "id": "c",
+            "text": "保留版本和上下文"
+          },
+          {
+            "id": "d",
+            "text": "区分普通失败和高风险失败"
+          },
+          {
+            "id": "e",
+            "text": "直接照抄不做整理"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "样本回流要服务于复盘和回归。",
+        "focus": "回流注意"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-022",
+    "checks": [
+      {
+        "id": "eval-022-check-01",
+        "kind": "single",
+        "prompt": "用户反馈和显式评分在 AI 系统评测中有什么价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "完全没价值。"
+          },
+          {
+            "id": "b",
+            "text": "它们能反映真实体验和满意度，是离线评测的重要补充。"
+          },
+          {
+            "id": "c",
+            "text": "它们可以替代所有自动评测。"
+          },
+          {
+            "id": "d",
+            "text": "它们只适合营销。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "用户反馈是线上真实信号，但也需要噪声处理。",
+        "focus": "用户反馈"
+      },
+      {
+        "id": "eval-022-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于有价值的用户反馈信号？",
+        "options": [
+          {
+            "id": "a",
+            "text": "显式评分"
+          },
+          {
+            "id": "b",
+            "text": "追问"
+          },
+          {
+            "id": "c",
+            "text": "放弃"
+          },
+          {
+            "id": "d",
+            "text": "转人工"
+          },
+          {
+            "id": "e",
+            "text": "页面颜色偏好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "用户行为和评分都能反映系统体验。",
+        "focus": "反馈信号"
+      },
+      {
+        "id": "eval-022-check-03",
+        "kind": "multiple",
+        "prompt": "用户反馈有哪些局限？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可能有偏差"
+          },
+          {
+            "id": "b",
+            "text": "可能样本稀疏"
+          },
+          {
+            "id": "c",
+            "text": "可能受场景影响"
+          },
+          {
+            "id": "d",
+            "text": "一定完全客观"
+          },
+          {
+            "id": "e",
+            "text": "不需要清洗和分桶"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "用户反馈要和评测集一起看，不能单独依赖。",
+        "focus": "反馈局限"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-023",
+    "checks": [
+      {
+        "id": "eval-023-check-01",
+        "kind": "single",
+        "prompt": "为什么追问率、放弃率这类行为指标值得纳入线上评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为行为指标一定比任务指标更准。"
+          },
+          {
+            "id": "b",
+            "text": "因为它们能反映用户是否真的被解决问题或卡住了。"
+          },
+          {
+            "id": "c",
+            "text": "因为它们和用户体验无关。"
+          },
+          {
+            "id": "d",
+            "text": "因为行为指标只适合广告。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "行为指标常能暴露文本质量看不出的真实体验问题。",
+        "focus": "行为指标"
+      },
+      {
+        "id": "eval-023-check-02",
+        "kind": "multiple",
+        "prompt": "哪些行为指标可能有意义？",
+        "options": [
+          {
+            "id": "a",
+            "text": "追问率"
+          },
+          {
+            "id": "b",
+            "text": "放弃率"
+          },
+          {
+            "id": "c",
+            "text": "转人工率"
+          },
+          {
+            "id": "d",
+            "text": "重试率"
+          },
+          {
+            "id": "e",
+            "text": "页面背景颜色变化率"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "行为指标要和业务目标匹配。",
+        "focus": "常见行为"
+      },
+      {
+        "id": "eval-023-check-03",
+        "kind": "multiple",
+        "prompt": "行为指标异常时可能说明什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回答不够清楚"
+          },
+          {
+            "id": "b",
+            "text": "任务没完成"
+          },
+          {
+            "id": "c",
+            "text": "用户需要更多上下文"
+          },
+          {
+            "id": "d",
+            "text": "一定是前端按钮问题"
+          },
+          {
+            "id": "e",
+            "text": "指标本身没价值"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "行为指标常提示用户体验和任务完成问题。",
+        "focus": "解释方式"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-024",
+    "checks": [
+      {
+        "id": "eval-024-check-01",
+        "kind": "single",
+        "prompt": "为什么 AI 系统上线后还需要告警机制？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为离线评测完全没用。"
+          },
+          {
+            "id": "b",
+            "text": "因为线上质量、成本和安全会随时间波动，需要及时发现异常。"
+          },
+          {
+            "id": "c",
+            "text": "因为告警只用于前端。"
+          },
+          {
+            "id": "d",
+            "text": "因为告警能替代回滚。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "告警是线上风险控制的一部分。",
+        "focus": "告警"
+      },
+      {
+        "id": "eval-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些指标适合作为告警对象？",
+        "options": [
+          {
+            "id": "a",
+            "text": "错误率"
+          },
+          {
+            "id": "b",
+            "text": "延迟"
+          },
+          {
+            "id": "c",
+            "text": "成本"
+          },
+          {
+            "id": "d",
+            "text": "幻觉或引用错误异常"
+          },
+          {
+            "id": "e",
+            "text": "用户昵称长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "告警要盯住会影响业务和安全的关键指标。",
+        "focus": "告警指标"
+      },
+      {
+        "id": "eval-024-check-03",
+        "kind": "multiple",
+        "prompt": "告警设计要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "阈值要合理"
+          },
+          {
+            "id": "b",
+            "text": "结合历史基线"
+          },
+          {
+            "id": "c",
+            "text": "避免过多噪声告警"
+          },
+          {
+            "id": "d",
+            "text": "要能触发处理动作"
+          },
+          {
+            "id": "e",
+            "text": "只看单点峰值"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "告警要服务于响应和止损，而不是制造噪声。",
+        "focus": "告警设计"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-025",
+    "checks": [
+      {
+        "id": "eval-025-check-01",
+        "kind": "single",
+        "prompt": "什么是回放测试（replay）？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只把结果截图给人看。"
+          },
+          {
+            "id": "b",
+            "text": "用历史真实请求重新跑一遍系统，比较新旧表现。"
+          },
+          {
+            "id": "c",
+            "text": "只测一个固定样本。"
+          },
+          {
+            "id": "d",
+            "text": "让模型自己描述历史。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "replay 用于复现真实线上行为并验证新版本。",
+        "focus": "Replay"
+      },
+      {
+        "id": "eval-025-check-02",
+        "kind": "multiple",
+        "prompt": "回放测试为什么有价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "能复现问题"
+          },
+          {
+            "id": "b",
+            "text": "能做版本对比"
+          },
+          {
+            "id": "c",
+            "text": "能发现回归"
+          },
+          {
+            "id": "d",
+            "text": "能支持灰度前验证"
+          },
+          {
+            "id": "e",
+            "text": "能替代所有人工评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "replay 把线上真实流量变成可测试资产。",
+        "focus": "Replay 价值"
+      },
+      {
+        "id": "eval-025-check-03",
+        "kind": "multiple",
+        "prompt": "replay 需要记录哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "完整上下文"
+          },
+          {
+            "id": "b",
+            "text": "模型和 Prompt 版本"
+          },
+          {
+            "id": "c",
+            "text": "工具输入输出"
+          },
+          {
+            "id": "d",
+            "text": "状态和路由决策"
+          },
+          {
+            "id": "e",
+            "text": "只有最终答案"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有完整链路记录，就不能可靠回放。",
+        "focus": "Replay 要求"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-026",
+    "checks": [
+      {
+        "id": "eval-026-check-01",
+        "kind": "single",
+        "prompt": "为什么 AI Agent 的优化通常是多目标优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有目标都能同时最优。"
+          },
+          {
+            "id": "b",
+            "text": "因为质量、成本、延迟、安全、可解释性和用户体验常常彼此牵制。"
+          },
+          {
+            "id": "c",
+            "text": "因为只有一个指标就够了。"
+          },
+          {
+            "id": "d",
+            "text": "因为评测集太少。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "AI 系统不可能只看一个分数。",
+        "focus": "多目标优化"
+      },
+      {
+        "id": "eval-026-check-02",
+        "kind": "multiple",
+        "prompt": "AI Agent 常见优化目标有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率"
+          },
+          {
+            "id": "b",
+            "text": "成本"
+          },
+          {
+            "id": "c",
+            "text": "延迟"
+          },
+          {
+            "id": "d",
+            "text": "安全和合规"
+          },
+          {
+            "id": "e",
+            "text": "页面主题颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多目标之间需要权衡，而不是单点极致。",
+        "focus": "优化目标"
+      },
+      {
+        "id": "eval-026-check-03",
+        "kind": "multiple",
+        "prompt": "多目标优化时应注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确主目标和次目标"
+          },
+          {
+            "id": "b",
+            "text": "用业务优先级排序"
+          },
+          {
+            "id": "c",
+            "text": "看不同场景的 trade-off"
+          },
+          {
+            "id": "d",
+            "text": "只盯一个总分"
+          },
+          {
+            "id": "e",
+            "text": "不记录实验条件"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不同业务场景可能需要不同权衡。",
+        "focus": "权衡方式"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-027",
+    "checks": [
+      {
+        "id": "eval-027-check-01",
+        "kind": "single",
+        "prompt": "为什么只在标准样本上表现好，还不能说明系统足够稳健？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为标准样本没有任何意义。"
+          },
+          {
+            "id": "b",
+            "text": "因为真实用户会有噪声、长尾、异常和对抗输入。"
+          },
+          {
+            "id": "c",
+            "text": "因为标准样本比线上更难。"
+          },
+          {
+            "id": "d",
+            "text": "因为稳健性不需要评测。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "标准样本只能说明常规能力，不能代表长尾稳定性。",
+        "focus": "稳健性"
+      },
+      {
+        "id": "eval-027-check-02",
+        "kind": "multiple",
+        "prompt": "哪些输入会考验稳健性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "错别字"
+          },
+          {
+            "id": "b",
+            "text": "模糊表达"
+          },
+          {
+            "id": "c",
+            "text": "多意图混杂"
+          },
+          {
+            "id": "d",
+            "text": "提示注入"
+          },
+          {
+            "id": "e",
+            "text": "标准模板化输入"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "稳健性要面对真实世界的噪声和攻击。",
+        "focus": "长尾输入"
+      },
+      {
+        "id": "eval-027-check-03",
+        "kind": "multiple",
+        "prompt": "如何评测稳健性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "长尾集"
+          },
+          {
+            "id": "b",
+            "text": "对抗样本"
+          },
+          {
+            "id": "c",
+            "text": "历史失败回放"
+          },
+          {
+            "id": "d",
+            "text": "分场景统计"
+          },
+          {
+            "id": "e",
+            "text": "只看平均分"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "稳健性需要专门的边界和异常评测。",
+        "focus": "评测方法"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-028",
+    "checks": [
+      {
+        "id": "eval-028-check-01",
+        "kind": "single",
+        "prompt": "为什么 AI 系统更新通常要走灰度发布？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为全量切换总是更稳。"
+          },
+          {
+            "id": "b",
+            "text": "因为可以在小流量下观察效果和风险，再逐步扩大范围。"
+          },
+          {
+            "id": "c",
+            "text": "因为灰度可以替代评测。"
+          },
+          {
+            "id": "d",
+            "text": "因为灰度不需要回滚。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "灰度发布是控制风险的标准做法。",
+        "focus": "灰度发布"
+      },
+      {
+        "id": "eval-028-check-02",
+        "kind": "multiple",
+        "prompt": "灰度发布能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提前发现回归"
+          },
+          {
+            "id": "b",
+            "text": "限制影响范围"
+          },
+          {
+            "id": "c",
+            "text": "观察真实用户反馈"
+          },
+          {
+            "id": "d",
+            "text": "为回滚争取时间"
+          },
+          {
+            "id": "e",
+            "text": "保证没有任何问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "灰度不是消除风险，而是控制风险暴露。",
+        "focus": "灰度价值"
+      },
+      {
+        "id": "eval-028-check-03",
+        "kind": "multiple",
+        "prompt": "灰度发布通常需要哪些配套？",
+        "options": [
+          {
+            "id": "a",
+            "text": "指标监控"
+          },
+          {
+            "id": "b",
+            "text": "回滚路径"
+          },
+          {
+            "id": "c",
+            "text": "版本记录"
+          },
+          {
+            "id": "d",
+            "text": "失败告警"
+          },
+          {
+            "id": "e",
+            "text": "无需任何日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "灰度要和监控、回滚一起使用。",
+        "focus": "灰度配套"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-029",
+    "checks": [
+      {
+        "id": "eval-029-check-01",
+        "kind": "single",
+        "prompt": "为什么 AI 系统必须具备快速回滚能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为更新永远不会出问题。"
+          },
+          {
+            "id": "b",
+            "text": "因为线上问题可能迅速放大，需要快速切回稳定版本止损。"
+          },
+          {
+            "id": "c",
+            "text": "因为回滚只影响测试环境。"
+          },
+          {
+            "id": "d",
+            "text": "因为回滚不需要版本记录。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "回滚是生产安全的最后一道防线。",
+        "focus": "快速回滚"
+      },
+      {
+        "id": "eval-029-check-02",
+        "kind": "multiple",
+        "prompt": "快速回滚需要哪些前提？",
+        "options": [
+          {
+            "id": "a",
+            "text": "版本可追踪"
+          },
+          {
+            "id": "b",
+            "text": "配置可切换"
+          },
+          {
+            "id": "c",
+            "text": "灰度和监控"
+          },
+          {
+            "id": "d",
+            "text": "明确回滚条件"
+          },
+          {
+            "id": "e",
+            "text": "永远不留旧版本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有版本和配置治理，就难以快速回滚。",
+        "focus": "回滚前提"
+      },
+      {
+        "id": "eval-029-check-03",
+        "kind": "multiple",
+        "prompt": "回滚设计要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数据迁移兼容性"
+          },
+          {
+            "id": "b",
+            "text": "状态一致性"
+          },
+          {
+            "id": "c",
+            "text": "回滚后评测或监控"
+          },
+          {
+            "id": "d",
+            "text": "不需要验证旧版本"
+          },
+          {
+            "id": "e",
+            "text": "回滚后忽略用户影响"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "回滚不是结束，回滚后还要验证系统状态。",
+        "focus": "回滚风险"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-030",
+    "checks": [
+      {
+        "id": "eval-030-check-01",
+        "kind": "single",
+        "prompt": "评测系统本身会不会有偏差？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不会，评测一定客观。"
+          },
+          {
+            "id": "b",
+            "text": "会，常见偏差包括样本选择、标注一致性和评审器偏差。"
+          },
+          {
+            "id": "c",
+            "text": "只有人工评测才有偏差。"
+          },
+          {
+            "id": "d",
+            "text": "偏差只发生在上线后。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "评测体系本身也需要治理。",
+        "focus": "评测偏差"
+      },
+      {
+        "id": "eval-030-check-02",
+        "kind": "multiple",
+        "prompt": "评测偏差可能来自哪些地方？",
+        "options": [
+          {
+            "id": "a",
+            "text": "样本分布"
+          },
+          {
+            "id": "b",
+            "text": "ground truth 标注"
+          },
+          {
+            "id": "c",
+            "text": "Judge 偏好"
+          },
+          {
+            "id": "d",
+            "text": "指标设计"
+          },
+          {
+            "id": "e",
+            "text": "代码缩进"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测结果的可信度取决于评测体系质量。",
+        "focus": "常见偏差"
+      },
+      {
+        "id": "eval-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于降低评测偏差？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多人标注或复核"
+          },
+          {
+            "id": "b",
+            "text": "盲测"
+          },
+          {
+            "id": "c",
+            "text": "抽样回看"
+          },
+          {
+            "id": "d",
+            "text": "多指标交叉验证"
+          },
+          {
+            "id": "e",
+            "text": "只看一个总分"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测偏差要靠设计、抽检和交叉验证控制。",
+        "focus": "降偏办法"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-031",
+    "checks": [
+      {
+        "id": "eval-031-check-01",
+        "kind": "single",
+        "prompt": "为什么复杂 Agent 系统最好做链路分层评测？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为端到端评测没价值。"
+          },
+          {
+            "id": "b",
+            "text": "因为不同环节的失败类型和优化手段不同。"
+          },
+          {
+            "id": "c",
+            "text": "因为链路分层会消除所有问题。"
+          },
+          {
+            "id": "d",
+            "text": "因为只看最终答案足够。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "分层评测能告诉你问题在检索、生成还是执行。",
+        "focus": "链路分层评测"
+      },
+      {
+        "id": "eval-031-check-02",
+        "kind": "multiple",
+        "prompt": "Agent 链路分层评测可以包括哪些层？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务理解"
+          },
+          {
+            "id": "b",
+            "text": "计划生成"
+          },
+          {
+            "id": "c",
+            "text": "工具选择与执行"
+          },
+          {
+            "id": "d",
+            "text": "最终结果"
+          },
+          {
+            "id": "e",
+            "text": "前端样式"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "分层评测更容易定位和优化。",
+        "focus": "分层对象"
+      },
+      {
+        "id": "eval-031-check-03",
+        "kind": "multiple",
+        "prompt": "分层评测比只看端到端结果有什么价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更容易定位瓶颈"
+          },
+          {
+            "id": "b",
+            "text": "更容易做局部优化"
+          },
+          {
+            "id": "c",
+            "text": "更容易区分模型和系统问题"
+          },
+          {
+            "id": "d",
+            "text": "可以完全取消端到端评测"
+          },
+          {
+            "id": "e",
+            "text": "不需要 replay"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "层级化看问题比只看总分更可行动。",
+        "focus": "分层价值"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-032",
+    "checks": [
+      {
+        "id": "eval-032-check-01",
+        "kind": "single",
+        "prompt": "为什么企业级 AI 系统也需要 SLA 思维？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 AI 系统不需要稳定性。"
+          },
+          {
+            "id": "b",
+            "text": "因为企业业务关心可用性、响应时间、成功率和风险控制。"
+          },
+          {
+            "id": "c",
+            "text": "因为 SLA 只适用于网络服务。"
+          },
+          {
+            "id": "d",
+            "text": "因为 SLA 可以替代评测。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "AI 系统上线后也是生产服务。",
+        "focus": "SLA 思维"
+      },
+      {
+        "id": "eval-032-check-02",
+        "kind": "multiple",
+        "prompt": "AI 系统 SLA 和传统服务 SLA 的相同点有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "关注可用性"
+          },
+          {
+            "id": "b",
+            "text": "关注延迟"
+          },
+          {
+            "id": "c",
+            "text": "关注错误率"
+          },
+          {
+            "id": "d",
+            "text": "关注恢复能力"
+          },
+          {
+            "id": "e",
+            "text": "只关注模型大小"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "核心都是服务质量和可用性。",
+        "focus": "相同点"
+      },
+      {
+        "id": "eval-032-check-03",
+        "kind": "multiple",
+        "prompt": "AI 系统 SLA 和传统服务相比有什么不同？",
+        "options": [
+          {
+            "id": "a",
+            "text": "质量评测更难"
+          },
+          {
+            "id": "b",
+            "text": "输出更具概率性"
+          },
+          {
+            "id": "c",
+            "text": "安全和幻觉问题更突出"
+          },
+          {
+            "id": "d",
+            "text": "完全没有不确定性"
+          },
+          {
+            "id": "e",
+            "text": "不需要监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "AI 服务不只是“能不能响应”，还要看回答质量和风险。",
+        "focus": "不同点"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-033",
+    "checks": [
+      {
+        "id": "eval-033-check-01",
+        "kind": "single",
+        "prompt": "团队要降本但担心质量下降，应该怎么设计实验？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接把最强模型换掉。"
+          },
+          {
+            "id": "b",
+            "text": "用分层实验比较成本和关键质量指标。"
+          },
+          {
+            "id": "c",
+            "text": "只看 token 成本。"
+          },
+          {
+            "id": "d",
+            "text": "不做评测直接上线。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "降本实验必须同时看成本和质量。",
+        "focus": "降本实验"
+      },
+      {
+        "id": "eval-033-check-02",
+        "kind": "multiple",
+        "prompt": "降本实验应关注哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "成本"
+          },
+          {
+            "id": "b",
+            "text": "任务成功率"
+          },
+          {
+            "id": "c",
+            "text": "幻觉率"
+          },
+          {
+            "id": "d",
+            "text": "延迟"
+          },
+          {
+            "id": "e",
+            "text": "仅看模型名字"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "降本不能以明显牺牲质量和体验为代价。",
+        "focus": "实验维度"
+      },
+      {
+        "id": "eval-033-check-03",
+        "kind": "multiple",
+        "prompt": "降本时常用哪些策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "小模型处理简单任务"
+          },
+          {
+            "id": "b",
+            "text": "缩短上下文"
+          },
+          {
+            "id": "c",
+            "text": "缓存稳定结果"
+          },
+          {
+            "id": "d",
+            "text": "仅对高价值请求调用强模型"
+          },
+          {
+            "id": "e",
+            "text": "无限制增加输出长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "降本本质是分层和裁剪。",
+        "focus": "常见策略"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-034",
+    "checks": [
+      {
+        "id": "eval-034-check-01",
+        "kind": "single",
+        "prompt": "为什么 Prompt 或链路优化容易对评测集过拟合？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为评测集越大越容易过拟合。"
+          },
+          {
+            "id": "b",
+            "text": "因为反复针对固定样本调优，容易让系统学会“考试技巧”。"
+          },
+          {
+            "id": "c",
+            "text": "因为评测集没有任何作用。"
+          },
+          {
+            "id": "d",
+            "text": "因为过拟合只发生在模型训练。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "人工调优同样会对有限样本集产生过拟合。",
+        "focus": "过拟合评测集"
+      },
+      {
+        "id": "eval-034-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法能减少评测集过拟合？",
+        "options": [
+          {
+            "id": "a",
+            "text": "保留 holdout 集"
+          },
+          {
+            "id": "b",
+            "text": "使用线上 replay 集"
+          },
+          {
+            "id": "c",
+            "text": "交叉验证不同样本桶"
+          },
+          {
+            "id": "d",
+            "text": "避免把测试题写进 Prompt 示例"
+          },
+          {
+            "id": "e",
+            "text": "只看调参样本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测集治理是长期工作的关键。",
+        "focus": "避免方式"
+      },
+      {
+        "id": "eval-034-check-03",
+        "kind": "multiple",
+        "prompt": "哪些现象可能说明已经过拟合评测集？",
+        "options": [
+          {
+            "id": "a",
+            "text": "离线分高但线上无提升"
+          },
+          {
+            "id": "b",
+            "text": "规则越来越长"
+          },
+          {
+            "id": "c",
+            "text": "一修一个样本就坏一批样本"
+          },
+          {
+            "id": "d",
+            "text": "更长尾场景也一起改善"
+          },
+          {
+            "id": "e",
+            "text": "holdout 集稳定提升"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过拟合常表现为局部优化、整体泛化差。",
+        "focus": "过拟合信号"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-035",
+    "checks": [
+      {
+        "id": "eval-035-check-01",
+        "kind": "single",
+        "prompt": "为什么安全和风险控制必须纳入评测体系？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为规则兜底就够了。"
+          },
+          {
+            "id": "b",
+            "text": "因为安全问题会直接影响用户、数据和业务风险。"
+          },
+          {
+            "id": "c",
+            "text": "因为安全只和法务有关。"
+          },
+          {
+            "id": "d",
+            "text": "因为安全评测不需要样本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "安全不是上线后的附加项，而是评测的一部分。",
+        "focus": "安全评测"
+      },
+      {
+        "id": "eval-035-check-02",
+        "kind": "multiple",
+        "prompt": "安全评测应覆盖哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Prompt injection"
+          },
+          {
+            "id": "b",
+            "text": "越权请求"
+          },
+          {
+            "id": "c",
+            "text": "敏感信息泄露"
+          },
+          {
+            "id": "d",
+            "text": "高风险动作误触发"
+          },
+          {
+            "id": "e",
+            "text": "只测正常对话"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "安全评测要主动找坏输入和高风险路径。",
+        "focus": "安全样本"
+      },
+      {
+        "id": "eval-035-check-03",
+        "kind": "multiple",
+        "prompt": "把安全纳入评测体系有什么好处？",
+        "options": [
+          {
+            "id": "a",
+            "text": "能提前发现风险"
+          },
+          {
+            "id": "b",
+            "text": "能作为上线门禁"
+          },
+          {
+            "id": "c",
+            "text": "能跟踪回归"
+          },
+          {
+            "id": "d",
+            "text": "可以替代权限控制"
+          },
+          {
+            "id": "e",
+            "text": "可以取消红队测试"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "安全评测和系统边界要一起做。",
+        "focus": "评测作用"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-036",
+    "checks": [
+      {
+        "id": "eval-036-check-01",
+        "kind": "single",
+        "prompt": "什么样的团队才算建立了 AI 系统持续优化闭环？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只上线一次就不再迭代。"
+          },
+          {
+            "id": "b",
+            "text": "能持续收集日志、发现问题、更新评测、做实验并回滚。"
+          },
+          {
+            "id": "c",
+            "text": "只看开发者主观感觉。"
+          },
+          {
+            "id": "d",
+            "text": "不记录版本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "闭环意味着线上问题能不断回流到改进过程。",
+        "focus": "持续闭环"
+      },
+      {
+        "id": "eval-036-check-02",
+        "kind": "multiple",
+        "prompt": "持续优化闭环通常包含哪些要素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "监控"
+          },
+          {
+            "id": "b",
+            "text": "失败样本回流"
+          },
+          {
+            "id": "c",
+            "text": "回归评测"
+          },
+          {
+            "id": "d",
+            "text": "灰度和回滚"
+          },
+          {
+            "id": "e",
+            "text": "永久不更新数据"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "闭环让优化变成长期系统能力。",
+        "focus": "闭环要素"
+      },
+      {
+        "id": "eval-036-check-03",
+        "kind": "multiple",
+        "prompt": "持续闭环能带来什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更快发现回归"
+          },
+          {
+            "id": "b",
+            "text": "更稳定的发布节奏"
+          },
+          {
+            "id": "c",
+            "text": "更好的样本资产沉淀"
+          },
+          {
+            "id": "d",
+            "text": "自动消灭所有问题"
+          },
+          {
+            "id": "e",
+            "text": "不需要线上监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "闭环是持续进步的前提。",
+        "focus": "闭环价值"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-037",
+    "checks": [
+      {
+        "id": "eval-037-check-01",
+        "kind": "single",
+        "prompt": "如果设计内部自动化评测平台，优先应建设哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只做一个总分榜单。"
+          },
+          {
+            "id": "b",
+            "text": "数据集管理、版本管理、自动评分、回归对比和报表。"
+          },
+          {
+            "id": "c",
+            "text": "只允许手工导出 CSV。"
+          },
+          {
+            "id": "d",
+            "text": "只看平均分。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "评测平台要支撑数据、评分和对比的完整流程。",
+        "focus": "自动化评测平台"
+      },
+      {
+        "id": "eval-037-check-02",
+        "kind": "multiple",
+        "prompt": "自动化评测平台应有哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数据集版本化"
+          },
+          {
+            "id": "b",
+            "text": "多指标评分"
+          },
+          {
+            "id": "c",
+            "text": "回归对比"
+          },
+          {
+            "id": "d",
+            "text": "报表和告警"
+          },
+          {
+            "id": "e",
+            "text": "不可追踪的随机分数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测平台是长期治理基础设施。",
+        "focus": "平台能力"
+      },
+      {
+        "id": "eval-037-check-03",
+        "kind": "multiple",
+        "prompt": "评测平台能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提高评测效率"
+          },
+          {
+            "id": "b",
+            "text": "统一标准"
+          },
+          {
+            "id": "c",
+            "text": "支持持续迭代"
+          },
+          {
+            "id": "d",
+            "text": "发现回归"
+          },
+          {
+            "id": "e",
+            "text": "代替业务判断"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "平台提升效率，但不能替代业务目标定义。",
+        "focus": "平台价值"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-038",
+    "checks": [
+      {
+        "id": "eval-038-check-01",
+        "kind": "single",
+        "prompt": "如果线上出现“引用准确率下降，但总体答案看起来还行”，你会怎么排查？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看答案文本，不看引用。"
+          },
+          {
+            "id": "b",
+            "text": "检查检索、重排、上下文排序和引用生成链路。"
+          },
+          {
+            "id": "c",
+            "text": "只改 UI 。"
+          },
+          {
+            "id": "d",
+            "text": "直接关闭引用功能。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "引用准确性下降常说明链路某一段出问题。",
+        "focus": "引用准确率下降排查"
+      },
+      {
+        "id": "eval-038-check-02",
+        "kind": "multiple",
+        "prompt": "排查引用准确率下降时，应该关注哪些维度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索命中情况"
+          },
+          {
+            "id": "b",
+            "text": "上下文位置和压缩"
+          },
+          {
+            "id": "c",
+            "text": "模型引用生成规则"
+          },
+          {
+            "id": "d",
+            "text": "文档更新和版本变化"
+          },
+          {
+            "id": "e",
+            "text": "页面颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "引用问题可能来自检索、排布和生成任意一段。",
+        "focus": "排查维度"
+      },
+      {
+        "id": "eval-038-check-03",
+        "kind": "multiple",
+        "prompt": "出现这种情况时，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回放失败样本"
+          },
+          {
+            "id": "b",
+            "text": "做分层评测"
+          },
+          {
+            "id": "c",
+            "text": "更新回归集"
+          },
+          {
+            "id": "d",
+            "text": "定位版本变更"
+          },
+          {
+            "id": "e",
+            "text": "只看总体答案分数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "总分正常不代表引用链路没问题。",
+        "focus": "处理方式"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-039",
+    "checks": [
+      {
+        "id": "eval-039-check-01",
+        "kind": "single",
+        "prompt": "评测与线上优化里最核心的 trade-off 是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只追求最高分。"
+          },
+          {
+            "id": "b",
+            "text": "在准确性、成本、延迟、风险和可持续运营之间平衡。"
+          },
+          {
+            "id": "c",
+            "text": "只追求最便宜。"
+          },
+          {
+            "id": "d",
+            "text": "只追求最流畅。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "评测优化本质上是多目标权衡。",
+        "focus": "核心 trade-off"
+      },
+      {
+        "id": "eval-039-check-02",
+        "kind": "multiple",
+        "prompt": "评测和线上优化中常见权衡有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "质量 vs 成本"
+          },
+          {
+            "id": "b",
+            "text": "质量 vs 延迟"
+          },
+          {
+            "id": "c",
+            "text": "召回面 vs 噪声"
+          },
+          {
+            "id": "d",
+            "text": "自动化 vs 人工复核"
+          },
+          {
+            "id": "e",
+            "text": "按钮颜色 vs 字体颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同业务目标会推导出不同最优点。",
+        "focus": "真实权衡"
+      },
+      {
+        "id": "eval-039-check-03",
+        "kind": "multiple",
+        "prompt": "做评测优化决策时，应优先看什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "业务目标"
+          },
+          {
+            "id": "b",
+            "text": "失败代价"
+          },
+          {
+            "id": "c",
+            "text": "真实线上数据"
+          },
+          {
+            "id": "d",
+            "text": "回归结果"
+          },
+          {
+            "id": "e",
+            "text": "个人偏好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "评测决策必须由业务和证据驱动。",
+        "focus": "决策依据"
+      }
+    ]
+  },
+  {
+    "questionId": "eval-040",
+    "checks": [
+      {
+        "id": "eval-040-check-01",
+        "kind": "single",
+        "prompt": "从零搭建企业级 AI Agent 评测与线上优化体系，最关键的能力是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只做一个总分看板。"
+          },
+          {
+            "id": "b",
+            "text": "数据、版本、指标、监控、灰度、回滚和持续回流的完整闭环。"
+          },
+          {
+            "id": "c",
+            "text": "只靠人工点评。"
+          },
+          {
+            "id": "d",
+            "text": "只用一个 benchmark。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业级体系关注长期运营，不是单次测评。",
+        "focus": "企业级体系"
+      },
+      {
+        "id": "eval-040-check-02",
+        "kind": "multiple",
+        "prompt": "企业级评测与优化体系应具备哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "评测集治理"
+          },
+          {
+            "id": "b",
+            "text": "自动和人工评测结合"
+          },
+          {
+            "id": "c",
+            "text": "线上监控和告警"
+          },
+          {
+            "id": "d",
+            "text": "灰度、回滚和复盘"
+          },
+          {
+            "id": "e",
+            "text": "不记录版本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "体系要能覆盖上线前、上线中和上线后。",
+        "focus": "关键能力"
+      },
+      {
+        "id": "eval-040-check-03",
+        "kind": "multiple",
+        "prompt": "哪些表现说明体系相对成熟？",
+        "options": [
+          {
+            "id": "a",
+            "text": "新版本能回归对比"
+          },
+          {
+            "id": "b",
+            "text": "线上问题能快速定位"
+          },
+          {
+            "id": "c",
+            "text": "失败样本能持续回流"
+          },
+          {
+            "id": "d",
+            "text": "优化有明确业务指标支撑"
+          },
+          {
+            "id": "e",
+            "text": "只靠感觉调参"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成熟体系能把评测和线上优化变成可持续闭环。",
+        "focus": "成熟标志"
+      }
+    ]
+  }
+]

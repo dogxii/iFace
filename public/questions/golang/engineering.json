@@ -1,0 +1,272 @@
+[
+  {
+    "id": "go-engineering-001",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "`go.mod` 文件的结构是什么？其中 `require`、`replace`、`exclude` 指令分别有什么作用？",
+    "answer": "`go.mod` 是模块根目录下的模块定义文件，描述模块路径、Go 语言版本、依赖和本模块生效的替换规则。\n\n```go\nmodule github.com/example/myapp\n\ngo 1.24\n\ntoolchain go1.24.3\n\nrequire (\n    github.com/gin-gonic/gin v1.10.0\n    golang.org/x/sync v0.10.0\n)\n\nrequire github.com/some/transitive/pkg v1.2.3 // indirect\n\nreplace github.com/old/pkg => github.com/new/pkg v1.2.0\nreplace github.com/local/pkg => ../local/pkg\n\nexclude github.com/bad/pkg v1.0.0\n```\n\n### 关键指令\n| 指令 | 作用 |\n|------|------|\n| `module` | 当前模块路径，也是其他模块 import 它时使用的路径前缀 |\n| `go` | 当前模块的 Go 语言版本；Go 1.21+ 中也作为最低工具链版本参与校验 |\n| `toolchain` | 建议使用的 Go 工具链版本，Go 1.21+ 支持自动工具链选择 |\n| `require` | 声明依赖模块和最小版本，`// indirect` 表示非当前包直接 import 的依赖 |\n| `replace` | 只在主模块生效，把某模块替换到另一个版本、fork 或本地路径 |\n| `exclude` | 只在主模块生效，排除某个特定版本参与版本选择 |\n\n### go.sum\n`go.sum` 记录模块内容和 `go.mod` 文件的校验和，用于校验下载内容没有被篡改。它不是锁文件，版本选择仍由 Minimal Version Selection、`go.mod` 和构建导入图决定；通常由 Go 命令自动维护。",
+    "tags": ["modules", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-002",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "`go mod tidy`、`go mod vendor`、`go mod download` 三个命令分别做什么？",
+    "answer": "### go mod tidy\n根据当前模块的包、测试和依赖图整理 `go.mod`、`go.sum`：添加缺失依赖，移除不再需要的依赖，补齐校验和。\n\n```bash\ngo mod tidy\ngo mod tidy -go=1.24\n```\n\n提交代码前通常应运行它，避免依赖文件漂移。\n\n### go mod vendor\n把构建所需依赖复制到 `vendor/`，并生成 `vendor/modules.txt`：\n\n```bash\ngo mod vendor\ngo build -mod=vendor ./...\n```\n\n从 Go 1.14 开始，如果主模块 `go` 版本为 1.14+ 且存在一致的 `vendor/`，Go 命令会默认使用 vendor 模式。适合离线构建、审计依赖源码或某些企业构建环境。\n\n### go mod download\n把模块下载到本地模块缓存，常用于 CI 预热缓存或提前验证依赖可下载：\n\n```bash\ngo mod download\ngo mod download -json\ngo mod download golang.org/x/sync@v0.10.0\n```\n\n它通常不改 `go.mod`，但可能补齐缺失的 `go.sum` 校验信息。\n\n### 对比\n| 命令 | 主要作用 | 常见用途 |\n|------|----------|----------|\n| `tidy` | 同步 `go.mod`/`go.sum` 与源码导入图 | 开发后清理依赖 |\n| `vendor` | 生成 vendor 依赖副本 | 离线/可审计构建 |\n| `download` | 预下载到模块缓存 | CI 缓存、依赖预热 |",
+    "tags": ["modules", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-003",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "什么是 Table-Driven Test？请用示例说明其优势和写法。",
+    "answer": "Table-Driven Test 是把输入、期望输出和用例名放进一张表，循环执行同一套断言，适合覆盖大量边界条件。\n\n```go\nfunc TestAdd(t *testing.T) {\n    tests := []struct {\n        name string\n        a, b int\n        want int\n    }{\n        {\"positive\", 1, 2, 3},\n        {\"negative\", -1, -2, -3},\n        {\"mixed\", 5, -3, 2},\n    }\n\n    for _, tt := range tests {\n        tt := tt // 兼容 Go 1.21 及以前；Go 1.22+ 循环变量已是逐迭代变量\n        t.Run(tt.name, func(t *testing.T) {\n            got := Add(tt.a, tt.b)\n            if got != tt.want {\n                t.Fatalf(\"Add(%d, %d) = %d, want %d\", tt.a, tt.b, got, tt.want)\n            }\n        })\n    }\n}\n```\n\n如果子测试互不共享可变状态，可以在 `t.Run` 内调用 `t.Parallel()`；并行子测试会在父测试循环结束后再并发运行，所以旧版本里更需要 `tt := tt`。\n\n运行示例：\n\n```bash\ngo test ./...\ngo test -v -run '^TestAdd$'\ngo test -v -run '^TestAdd/positive$'\n```\n\n优势：用例集中、边界清晰、失败定位准确、添加用例成本低。复杂断言可配合 `cmp.Diff`，避免只打印难读的大对象。",
+    "tags": ["testing", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-004",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "`go test` 常用标志有哪些？`-race` 标志的作用是什么？",
+    "answer": "### 常用标志\n```bash\ngo test ./...                         # 运行所有包测试\ngo test -v ./...                      # 详细输出\ngo test -run '^TestFoo$' ./...        # 只运行匹配的测试/子测试\ngo test -count=1 ./...                # 绕过测试缓存\ngo test -timeout=30s ./...            # 设置单个测试二进制超时\ngo test -failfast ./...               # 首个包失败后尽快停止\ngo test -shuffle=on ./...             # 打乱测试顺序，暴露顺序依赖\ngo test -json ./...                   # JSON 输出，适合 CI 解析\n```\n\n覆盖率：\n\n```bash\ngo test -cover ./...\ngo test -coverprofile=cov.out ./...\ngo tool cover -html=cov.out\n```\n\n基准测试：\n\n```bash\ngo test -bench=. -benchmem ./...\ngo test -bench='BenchmarkFoo' -count=5 ./...\n```\n\n### -race 的作用\n`-race` 启用数据竞争检测器，可以发现运行过程中实际发生的并发读写冲突：\n\n```bash\ngo test -race ./...\ngo run -race ./cmd/app\n```\n\n示例：\n\n```go\ncounter := 0\nvar wg sync.WaitGroup\nfor i := 0; i < 1000; i++ {\n    wg.Add(1)\n    go func() {\n        defer wg.Done()\n        counter++\n    }()\n}\nwg.Wait()\n```\n\n`-race` 只能检查被执行到的路径；没有报警不代表没有竞争。它会显著增加 CPU、内存和运行时间开销，通常用于开发、CI 和压测环境，不直接用于生产性能基准。",
+    "tags": ["testing", "benchmark"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-005",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "Go 中 `errors.Is` 和 `errors.As` 的区别是什么？分别适用于什么场景？",
+    "answer": "`errors.Is` 和 `errors.As` 都会沿错误链查找，包括 `fmt.Errorf(\"%w\", err)`、`errors.Join` 和自定义 `Unwrap` 形成的链。\n\n### errors.Is：判断是否包含某个错误值\n```go\nvar ErrNotFound = errors.New(\"not found\")\n\nfunc findUser(id int) error {\n    return fmt.Errorf(\"find user %d: %w\", id, ErrNotFound)\n}\n\nif errors.Is(findUser(1), ErrNotFound) {\n    // 按“未找到”类别处理\n}\n```\n\n`errors.Is` 适合 sentinel error 或错误类别判断。它会使用 `==`，也支持错误类型自定义 `Is(error) bool`。\n\n### errors.As：提取某种错误类型\n```go\ntype ValidationError struct {\n    Field string\n    Msg   string\n}\nfunc (e *ValidationError) Error() string { return e.Field + \": \" + e.Msg }\n\nvar ve *ValidationError\nif errors.As(err, &ve) {\n    fmt.Println(ve.Field, ve.Msg)\n}\n```\n\n`errors.As` 的第二个参数必须是非 nil 指针，用于接收匹配到的错误值。它适合需要读取结构化字段的场景。\n\n### 对比\n| 维度 | errors.Is | errors.As |\n|------|-----------|-----------|\n| 关注点 | 是否是某个错误值/类别 | 是否包含某种错误类型 |\n| 常见对象 | sentinel error | 自定义 error 类型 |\n| 结果 | bool | bool，并填充目标变量 |\n\n不要用字符串匹配错误文案做业务分支；文案是给人看的，`Is/As` 和结构化字段才适合程序判断。",
+    "tags": ["错误处理", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-006",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "Go 项目的标准目录结构是什么？`cmd`、`internal`、`pkg` 目录各有什么含义？",
+    "answer": "Go 没有官方强制的“标准项目布局”。目录结构应随项目规模演进，先保持简单，复杂后再拆分。\n\n常见服务端布局：\n\n```text\nmyapp/\n├── cmd/\n│   ├── server/main.go      # 一个子目录通常对应一个二进制\n│   └── worker/main.go\n├── internal/               # 编译器强制的私有包边界\n│   ├── handler/\n│   ├── service/\n│   └── repository/\n├── api/                    # OpenAPI、proto 等接口定义\n├── configs/                # 配置样例或模板\n├── scripts/                # 构建/发布脚本\n├── go.mod\n└── go.sum\n```\n\n### cmd\n`cmd/<name>/main.go` 放可执行程序入口。`main` 应尽量薄，负责解析配置、组装依赖、启动服务；业务逻辑放到内部包。\n\n### internal\n`internal` 是 Go 工具链支持的可见性机制。导入限制由 `internal` 所在父目录决定：例如 `example.com/myapp/internal/db` 只能被 `example.com/myapp` 及其子树中的包导入。\n\n这不是单纯“同一个模块可导入”，而是基于 import path 的父目录规则。\n\n### pkg\n`pkg/` 没有编译器特殊语义，只是社区约定，通常表示希望外部模块导入的公共库。不要为了“看起来标准”把所有代码塞进 `pkg`；只有明确要提供稳定 API 时再放。\n\n### 简单项目\n小工具可以只有：\n\n```text\nmytool/\n├── main.go\n├── go.mod\n└── go.sum\n```\n\n过早套复杂目录会增加跳转和维护成本。",
+    "tags": ["项目结构", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-007",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "`go vet` 能检查哪些问题？它与 `golangci-lint` 有什么区别？",
+    "answer": "### go vet\n`go vet` 是 Go 官方静态分析工具，目标是发现高置信度 bug，而不是统一代码风格。\n\n```bash\ngo vet ./...\n```\n\n常见检查包括：\n\n| 检查 | 例子 |\n|------|------|\n| `printf` | `fmt.Printf(\"%d\", \"x\")` |\n| `copylocks` | 复制包含 `sync.Mutex` 的值 |\n| `structtag` | struct tag 格式不合法 |\n| `lostcancel` | `context.WithCancel` 返回的 cancel 未调用 |\n| `unreachable` | 不可达代码 |\n| `loopclosure` | Go 1.21 及以前循环变量被闭包捕获的风险 |\n| `testinggoroutine`/测试相关 | 在 goroutine 中错误调用 `t.Fatal` 等 |\n\n`go test` 默认也会运行一部分 vet 检查；显式 `go vet ./...` 更适合作为 CI 基础门禁。\n\n### golangci-lint\n`golangci-lint` 是第三方 linter 聚合器，可以并行运行 govet、staticcheck、errcheck、gosec、revive、misspell 等工具：\n\n```bash\ngolangci-lint run ./...\ngolangci-lint linters\n```\n\n示例配置：\n\n```yaml\nlinters:\n  enable:\n    - govet\n    - staticcheck\n    - errcheck\n    - gosec\n    - revive\n```\n\n### 区别\n| 维度 | go vet | golangci-lint |\n|------|--------|---------------|\n| 来源 | Go 官方内置 | 第三方聚合器 |\n| 目标 | 高置信度 bug | bug、风格、安全、复杂度等 |\n| 配置 | 较少 | 很强，适合团队规则 |\n| 稳定性 | 随 Go 工具链发布 | 随 linter 生态变化，需固定版本 |\n\n实践上：`go vet` 做底线检查，`golangci-lint` 做团队级质量门禁，并在 CI 中固定版本。",
+    "tags": ["lint", "编译"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-008",
+    "module": "工程化",
+    "difficulty": 1,
+    "question": "Go 中 `panic` 和 `recover` 的使用边界是什么？什么场景下应该使用 `panic`？",
+    "answer": "### panic 的边界\n`panic` 表示当前控制流无法继续，常见来源包括运行时错误和主动触发：\n\n```go\n_ = s[0]       // 越界\n_ = *p         // nil 指针\n_ = v.(int)    // 类型断言失败\npanic(\"bad internal state\")\n```\n\n正常业务失败应返回 `error`：用户输入错误、文件不存在、网络超时、数据库无记录等，都属于调用方可处理的失败。\n\n### 适合 panic 的场景\n- 内部不变量被破坏，继续运行会隐藏更严重的 bug\n- `MustXxx` 风格函数，例如 `regexp.MustCompile`，通常用于初始化和测试\n- 不可能到达的分支，表示程序员错误\n\n应用程序入口可以在初始化失败时选择 `log.Fatal` 或 panic；库的公开 API 通常应返回 error，而不是把可预期失败变成 panic。\n\n### recover 的边界\n`recover` 只有在同一 goroutine 的 deferred function 中直接调用，才能截获正在传播的 panic：\n\n```go\nfunc safe(fn func()) (err error) {\n    defer func() {\n        if v := recover(); v != nil {\n            err = fmt.Errorf(\"panic: %v\", v)\n        }\n    }()\n    fn()\n    return nil\n}\n```\n\nrecover 常放在边界层：HTTP middleware、RPC handler、任务调度器、worker goroutine 顶层。不要用 panic/recover 做普通控制流。",
+    "tags": ["错误处理", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-009",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "`go work`（工作区模式）解决了什么问题？如何配置多模块工作区？",
+    "answer": "`go work` 是 Go 1.18 引入的工作区模式，用来同时开发多个本地模块，避免在各模块 `go.mod` 中反复写临时 `replace`。\n\n```text\nworkspace/\n├── myapp/   # module github.com/example/myapp\n├── mylib/   # module github.com/example/mylib\n└── go.work\n```\n\n### 初始化\n```bash\ncd workspace\ngo work init ./myapp ./mylib\n\n# 或逐步添加\ngo work init\ngo work use ./myapp\ngo work use ./mylib\n```\n\n`go.work` 示例：\n\n```go\ngo 1.24\n\nuse (\n    ./myapp\n    ./mylib\n)\n\nreplace github.com/some/dep => ../some/dep\n```\n\n工作区启用后，Go 命令会优先使用 `use` 中列出的本地模块版本。`myapp` import `github.com/example/mylib` 时，会解析到本地 `./mylib`。\n\n### 常用命令\n```bash\ngo work use [-r] ./dir   # 添加模块，-r 递归查找\ngo work sync             # 将工作区 build list 同步回各模块\ngo work edit             # 脚本化编辑 go.work\nGOWORK=off go test ./...  # 临时禁用工作区\n```\n\n### 是否提交 go.work\n不能一概而论。个人本地联调的 `go.work` 通常不提交；如果仓库本身就是多模块 monorepo，团队希望 CI 和开发者共享同一工作区，可以提交。关键是团队约定清楚，并在 CI 中显式验证 `GOWORK` 行为。",
+    "tags": ["modules", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-010",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "如何编写 Go Benchmark 基准测试？`b.N`、`b.ResetTimer`、`b.ReportAllocs` 各有什么作用？",
+    "answer": "**基准测试基本写法：**\n\n```go\npackage stringutil_test\n\nimport (\n    \"strings\"\n    \"testing\"\n)\n\n// Benchmark 函数必须以 Benchmark 开头，接收 *testing.B\nfunc BenchmarkStringConcat(b *testing.B) {\n    // b.N 由框架自动调整，保证基准测试运行足够长时间以获得稳定结果\n    for i := 0; i < b.N; i++ {\n        var s string\n        for j := 0; j < 100; j++ {\n            s += \"x\" // 低效的字符串拼接\n        }\n        _ = s\n    }\n}\n\nfunc BenchmarkStringBuilder(b *testing.B) {\n    for i := 0; i < b.N; i++ {\n        var sb strings.Builder\n        for j := 0; j < 100; j++ {\n            sb.WriteByte('x')\n        }\n        _ = sb.String()\n    }\n}\n```\n\n**运行基准测试：**\n\n```bash\ngo test -bench=. -benchmem ./...\n# 输出示例：\n# BenchmarkStringConcat-8     500000   3012 ns/op   5424 B/op   99 allocs/op\n# BenchmarkStringBuilder-8   3000000    421 ns/op    232 B/op    5 allocs/op\n#                ^^^CPU核数  ^^^迭代次  ^^^每次耗时  ^^^每次分配  ^^^分配次数\n```\n\n**`b.ResetTimer`：排除初始化耗时**\n\n```go\nfunc BenchmarkWithSetup(b *testing.B) {\n    // 耗时的初始化（不应计入基准）\n    data := prepareTestData(10000)\n    \n    b.ResetTimer() // 重置计时器，之前的耗时不计入统计\n    \n    for i := 0; i < b.N; i++ {\n        process(data)\n    }\n}\n```\n\n**`b.StopTimer` / `b.StartTimer`：精细控制计时**\n\n```go\nfunc BenchmarkWithCleanup(b *testing.B) {\n    for i := 0; i < b.N; i++ {\n        b.StopTimer()  // 暂停计时\n        obj := createExpensiveObject() // 每次迭代的初始化，不计时\n        b.StartTimer() // 恢复计时\n        \n        process(obj)   // 只测量这部分\n    }\n}\n```\n\n**`b.ReportAllocs`：强制报告内存分配（无需 -benchmem）**\n\n```go\nfunc BenchmarkAllocs(b *testing.B) {\n    b.ReportAllocs() // 等效于 -benchmem，在代码中强制启用内存统计\n    for i := 0; i < b.N; i++ {\n        _ = fmt.Sprintf(\"hello %d\", i)\n    }\n}\n```\n\n**`b.RunParallel`：并发基准测试**\n\n```go\nfunc BenchmarkParallel(b *testing.B) {\n    b.RunParallel(func(pb *testing.PB) {\n        for pb.Next() { // pb.Next() 替代 i < b.N\n            doWork()\n        }\n    })\n}\n// 运行：go test -bench=BenchmarkParallel -cpu=1,2,4,8\n```",
+    "tags": ["testing", "benchmark"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-011",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "`TestMain` 的作用是什么？何时需要使用它？",
+    "answer": "`TestMain` 是某个测试包的自定义测试入口，可在该包所有测试、基准测试和示例运行前后做统一初始化与清理。\n\n```go\nfunc TestMain(m *testing.M)\n```\n\n典型写法：\n\n```go\nvar testDB *sql.DB\n\nfunc TestMain(m *testing.M) {\n    var err error\n    testDB, err = setupTestDatabase()\n    if err != nil {\n        fmt.Fprintf(os.Stderr, \"setup db: %v\\n\", err)\n        os.Exit(1)\n    }\n\n    code := m.Run()\n\n    if err := testDB.Close(); err != nil {\n        fmt.Fprintf(os.Stderr, \"close db: %v\\n\", err)\n        if code == 0 { code = 1 }\n    }\n    teardownTestDatabase()\n\n    os.Exit(code)\n}\n```\n\n注意：`os.Exit` 不会运行 defer，所以不要写成 `defer cleanup(); os.Exit(m.Run())`。应先保存 `code := m.Run()`，手动清理，再 `os.Exit(code)`。\n\n### 适用场景\n- 启动/停止测试数据库、mock server、测试容器\n- 解析自定义测试 flag\n- 设置全局日志输出、时区、环境变量\n- 做包级一次性昂贵初始化\n\n如果资源只属于单个测试，优先用 `t.Cleanup()`、`t.TempDir()`、`httptest.Server` 等局部工具，避免测试之间共享状态。",
+    "tags": ["testing", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-012",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "`reflect.TypeOf` 和 `reflect.ValueOf` 有什么区别？`Kind` 和 `Type` 分别表示什么？",
+    "answer": "### TypeOf vs ValueOf\n`reflect.TypeOf(x)` 返回动态具体类型的描述；`reflect.ValueOf(x)` 返回可操作的反射值，里面也带有类型信息。\n\n```go\ntype MyInt int\nvar x MyInt = 42\n\nfmt.Println(reflect.TypeOf(x))  // main.MyInt\nfmt.Println(reflect.ValueOf(x)) // 42\n```\n\n如果传入的是 nil interface，`reflect.TypeOf(nil)` 返回 nil，`reflect.ValueOf(nil)` 返回 zero Value，Kind 是 `Invalid`。\n\n### Type vs Kind\n`Type` 是完整类型；`Kind` 是底层类别枚举：\n\n```go\nt := reflect.TypeOf(x)\nfmt.Println(t.Name())    // MyInt\nfmt.Println(t.String())  // main.MyInt\nfmt.Println(t.Kind())    // int\n\nfmt.Println(reflect.TypeOf([]int{}).Kind())          // slice\nfmt.Println(reflect.TypeOf(map[string]int{}).Kind()) // map\nfmt.Println(reflect.TypeOf((*User)(nil)).Kind())     // ptr\n```\n\n`MyInt` 的 Type 是 `main.MyInt`，Kind 是 `reflect.Int`。常见 Kind 包括 `Struct`、`Slice`、`Map`、`Ptr`、`Interface`、`Func`、`String` 等。\n\n### 反射应用示例\n```go\nfunc StructToMap(obj any) map[string]any {\n    out := map[string]any{}\n    v := reflect.ValueOf(obj)\n    if !v.IsValid() { return out }\n\n    if v.Kind() == reflect.Ptr {\n        if v.IsNil() { return out }\n        v = v.Elem()\n    }\n    if v.Kind() != reflect.Struct { return out }\n\n    t := v.Type()\n    for i := 0; i < t.NumField(); i++ {\n        f := t.Field(i)\n        if !f.IsExported() { continue }\n        name := strings.Split(f.Tag.Get(\"json\"), \",\")[0]\n        if name == \"-\" { continue }\n        if name == \"\" { name = f.Name }\n        out[name] = v.Field(i).Interface()\n    }\n    return out\n}\n```\n\n反射牺牲类型安全和性能，应避免在热路径反复做字段解析；常见做法是缓存元数据或用代码生成。",
+    "tags": ["反射", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-013",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "如何用反射动态调用方法？如何修改结构体字段的值？",
+    "answer": "### 动态调用方法\n```go\ntype Calculator struct{}\nfunc (c *Calculator) Add(a, b int) int { return a + b }\n\nfunc callMethod(obj any, name string, args ...any) ([]any, error) {\n    m := reflect.ValueOf(obj).MethodByName(name)\n    if !m.IsValid() {\n        return nil, fmt.Errorf(\"method %s not found\", name)\n    }\n    mt := m.Type()\n    if len(args) != mt.NumIn() {\n        return nil, fmt.Errorf(\"want %d args, got %d\", mt.NumIn(), len(args))\n    }\n\n    in := make([]reflect.Value, len(args))\n    for i, arg := range args {\n        v := reflect.ValueOf(arg)\n        want := mt.In(i)\n        if !v.IsValid() || !v.Type().AssignableTo(want) {\n            if v.IsValid() && v.Type().ConvertibleTo(want) {\n                v = v.Convert(want)\n            } else {\n                return nil, fmt.Errorf(\"arg %d: want %v, got %v\", i, want, v.Type())\n            }\n        }\n        in[i] = v\n    }\n\n    values := m.Call(in)\n    out := make([]any, len(values))\n    for i, v := range values { out[i] = v.Interface() }\n    return out, nil\n}\n```\n\n`MethodByName` 只能找到导出方法；错误的参数个数或类型会 panic，所以生产代码要先检查。\n\n### 修改结构体字段\n```go\nfunc setField(obj any, fieldName string, value any) error {\n    v := reflect.ValueOf(obj)\n    if v.Kind() != reflect.Ptr || v.IsNil() {\n        return fmt.Errorf(\"obj must be non-nil pointer\")\n    }\n    v = v.Elem()\n    if v.Kind() != reflect.Struct {\n        return fmt.Errorf(\"obj must point to struct\")\n    }\n\n    f := v.FieldByName(fieldName)\n    if !f.IsValid() { return fmt.Errorf(\"field not found\") }\n    if !f.CanSet() { return fmt.Errorf(\"field cannot be set\") }\n\n    nv := reflect.ValueOf(value)\n    if !nv.IsValid() {\n        f.Set(reflect.Zero(f.Type()))\n        return nil\n    }\n    if nv.Type().AssignableTo(f.Type()) {\n        f.Set(nv)\n        return nil\n    }\n    if nv.Type().ConvertibleTo(f.Type()) {\n        f.Set(nv.Convert(f.Type()))\n        return nil\n    }\n    return fmt.Errorf(\"type mismatch: field=%v value=%v\", f.Type(), nv.Type())\n}\n```\n\n关键点：必须传可寻址的结构体指针；未导出字段不能安全 Set；反射绕过类型系统，错误应尽量在边界处返回而不是 panic。",
+    "tags": ["反射", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-014",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "Go 泛型的类型参数语法是什么？如何定义类型约束？请写一个泛型工具函数示例。",
+    "answer": "### 基本语法\n类型参数写在函数名或类型名后面的方括号里：\n\n```go\nfunc Map[T, U any](s []T, f func(T) U) []U {\n    out := make([]U, len(s))\n    for i, v := range s {\n        out[i] = f(v)\n    }\n    return out\n}\n\ntype Stack[T any] struct { items []T }\nfunc (s *Stack[T]) Push(v T) { s.items = append(s.items, v) }\nfunc (s *Stack[T]) Pop() (T, bool) {\n    var zero T\n    if len(s.items) == 0 { return zero, false }\n    v := s.items[len(s.items)-1]\n    s.items = s.items[:len(s.items)-1]\n    return v, true\n}\n```\n\n`any` 是 `interface{}` 的别名，表示不限制类型。\n\n### 类型约束\n约束本质上是接口。`comparable` 表示可以用 `==`/`!=`：\n\n```go\nfunc Contains[T comparable](s []T, x T) bool {\n    for _, v := range s {\n        if v == x { return true }\n    }\n    return false\n}\n```\n\n需要排序比较时，标准库可用 `cmp.Ordered`：\n\n```go\nfunc Min[T cmp.Ordered](a, b T) T {\n    if a < b { return a }\n    return b\n}\n```\n\n自定义类型集合：\n\n```go\ntype Number interface {\n    ~int | ~int64 | ~float32 | ~float64\n}\n\nfunc Sum[T Number](xs []T) T {\n    var total T\n    for _, x := range xs { total += x }\n    return total\n}\n```\n\n`~int` 表示底层类型是 int 的定义类型也满足约束，例如 `type UserID int`。\n\n### 使用建议\n泛型适合容器、算法、类型安全工具函数；约束越小越好。不要为了“高级”而把简单业务接口泛型化。",
+    "tags": ["泛型", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-015",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "泛型和接口在 Go 中各有什么适用场景？如何选型？",
+    "answer": "### 核心区别\n泛型抽象的是“同一段算法适用于多种类型”；接口抽象的是“不同类型具有同一组行为”。\n\n| 维度 | 泛型 | 接口 |\n|------|------|------|\n| 关注点 | 类型参数和类型约束 | 方法集和行为 |\n| 检查时机 | 编译期类型检查 | 接口赋值/调用的动态分发 |\n| 典型用途 | 容器、算法、工具函数 | 多态、依赖注入、插件扩展 |\n| 扩展方式 | 调用处选择类型实参 | 新类型实现方法即可 |\n\n不要简单承诺泛型一定更快；具体实现、是否内联、是否逃逸都要看编译器和代码形态。\n\n### 适合泛型\n```go\ntype Set[T comparable] struct { m map[T]struct{} }\n\nfunc Keys[K comparable, V any](m map[K]V) []K {\n    keys := make([]K, 0, len(m))\n    for k := range m { keys = append(keys, k) }\n    return keys\n}\n```\n\n当逻辑和元素行为无关，只是类型不同，泛型能保留类型安全。\n\n### 适合接口\n```go\ntype UserRepo interface {\n    GetUser(ctx context.Context, id int64) (*User, error)\n}\n\ntype Service struct { repo UserRepo }\n```\n\n当你关心的是对象能做什么，而不是它是什么类型，用接口更自然。`io.Reader`、`http.Handler` 是典型例子。\n\n### 决策\n- 容器/集合/算法：优先泛型\n- 行为多态/依赖注入：优先接口\n- 需要 `+`、`<`、`==` 这类运算约束：泛型\n- 只为 `fmt.Println` 这种任意值透传：用 `any` 即可\n- 约束写得很复杂时，先重新审视抽象是否过度",
+    "tags": ["泛型", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-016",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "如何使用 `//go:build` build tags 控制条件编译？如何用 `ldflags` 在编译时注入版本信息？",
+    "answer": "### build tags\n构建约束必须位于文件顶部附近，在 package 声明之前，并和 package 之间留空行：\n\n```go\n//go:build linux && amd64\n\npackage main\n\nfunc platformInfo() string { return \"linux/amd64\" }\n```\n\nGo 1.17+ 使用 `//go:build`。如果还要兼容 Go 1.16 及更早版本，需要同时写旧的 `// +build` 形式。\n\n常见表达式：\n\n```go\n//go:build linux || darwin\n//go:build !windows\n//go:build (linux || darwin) && cgo\n//go:build integration\n```\n\n编译或测试时指定自定义 tag：\n\n```bash\ngo test -tags=integration ./...\ngo build -tags='prod feature_x' ./cmd/server\n```\n\n### ldflags 注入版本信息\n`-X importpath.name=value` 只能设置包级 string 变量，不能设置 const，也不能设置非字符串变量。\n\n```go\npackage main\n\nvar (\n    Version   = \"dev\"\n    BuildTime = \"unknown\"\n    GitCommit = \"unknown\"\n)\n```\n\n```bash\ngo build \\\n  -ldflags \"-X 'main.Version=v1.2.3' -X 'main.GitCommit=$(git rev-parse --short HEAD)'\" \\\n  -o bin/server ./cmd/server\n```\n\n如果变量不在 `main` 包，`importpath` 要写完整包路径，例如 `github.com/acme/app/internal/version.Version`。\n\n### 常见构建参数\n```bash\ngo build -trimpath -ldflags \"-s -w\" ./cmd/server\n```\n\n`-trimpath` 去掉本机路径，利于可复现构建；`-s -w` 减小体积，但会削弱调试信息，生产是否使用要结合排障需求决定。",
+    "tags": ["编译", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-017",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "如何进行 Go 的交叉编译？在 Docker 和 CI 中如何优化构建？",
+    "answer": "### 交叉编译\n设置 `GOOS` 和 `GOARCH`：\n\n```bash\nGOOS=linux GOARCH=amd64 go build -o dist/server-linux-amd64 ./cmd/server\nGOOS=linux GOARCH=arm64 go build -o dist/server-linux-arm64 ./cmd/server\nGOOS=darwin GOARCH=arm64 go build -o dist/server-darwin-arm64 ./cmd/server\nGOOS=windows GOARCH=amd64 go build -o dist/server-windows-amd64.exe ./cmd/server\n\ngo tool dist list\n```\n\n纯 Go 项目交叉编译很直接。涉及 cgo 时，需要目标平台 C 交叉工具链：\n\n```bash\nCGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/server\n\nCC=aarch64-linux-gnu-gcc CGO_ENABLED=1 GOOS=linux GOARCH=arm64 go build ./cmd/server\n```\n\n### Docker 多阶段构建\n```dockerfile\nFROM golang:1.24-alpine AS build\nWORKDIR /src\nCOPY go.mod go.sum ./\nRUN --mount=type=cache,target=/go/pkg/mod go mod download\nCOPY . .\nRUN --mount=type=cache,target=/root/.cache/go-build \\\n    CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags \"-s -w\" -o /out/server ./cmd/server\n\nFROM gcr.io/distroless/static-debian12\nCOPY --from=build /out/server /server\nUSER nonroot:nonroot\nENTRYPOINT [\"/server\"]\n```\n\n`scratch` 镜像最小，但要自己处理 CA 证书、时区、用户等；distroless 往往是更稳的默认选择。\n\n### CI 优化\n- 缓存 Go module cache：`GOMODCACHE`\n- 缓存 build cache：`GOCACHE`\n- 先 `go mod download` 提前暴露依赖问题\n- 使用 `-trimpath` 和固定版本信息提高可复现性\n- 发布多平台产物时固定 Go 版本、`GOOS/GOARCH`、`CGO_ENABLED` 和 ldflags\n\n```makefile\nVERSION := $(shell git describe --tags --always --dirty)\nLDFLAGS := -ldflags \"-X main.Version=$(VERSION)\"\n\nbuild:\n\tCGO_ENABLED=0 go build -trimpath $(LDFLAGS) -o bin/server ./cmd/server\n\ntest:\n\tgo test -race ./...\n```",
+    "tags": ["编译", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-018",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "什么是哨兵错误（Sentinel Error）？与自定义错误类型相比有什么优缺点？",
+    "answer": "**哨兵错误（Sentinel Error）：**\n\n预先定义的不可变错误值，用于标识特定的错误状态，调用方通过 `errors.Is` 比较来判断错误类型。\n\n```go\n// 定义哨兵错误（通常在包级别，以 Err 开头命名）\nvar (\n    ErrNotFound      = errors.New(\"not found\")\n    ErrUnauthorized  = errors.New(\"unauthorized\")\n    ErrInvalidInput  = errors.New(\"invalid input\")\n)\n\n// 使用哨兵错误\nfunc GetUser(id int) (*User, error) {\n    if id <= 0 {\n        return nil, fmt.Errorf(\"GetUser: %w\", ErrInvalidInput)\n    }\n    user, ok := db[id]\n    if !ok {\n        return nil, fmt.Errorf(\"GetUser(%d): %w\", id, ErrNotFound)\n    }\n    return user, nil\n}\n\n// 调用方\nuser, err := GetUser(42)\nif errors.Is(err, ErrNotFound) {\n    // HTTP 返回 404\n}\n```\n\n**自定义错误类型：**\n\n```go\n// 携带上下文信息的错误类型\ntype NotFoundError struct {\n    Resource string\n    ID       int\n}\n\nfunc (e *NotFoundError) Error() string {\n    return fmt.Sprintf(\"%s with id=%d not found\", e.Resource, e.ID)\n}\n\nfunc GetUser(id int) (*User, error) {\n    if _, ok := db[id]; !ok {\n        return nil, &NotFoundError{Resource: \"user\", ID: id}\n    }\n    return db[id], nil\n}\n\n// 调用方可提取详细信息\nuser, err := GetUser(42)\nvar nfe *NotFoundError\nif errors.As(err, &nfe) {\n    fmt.Printf(\"找不到 %s #%d\\n\", nfe.Resource, nfe.ID)\n}\n```\n\n**对比：**\n\n| 维度 | 哨兵错误 | 自定义错误类型 |\n|------|---------|-------------|\n| 简洁性 | ✅ 简单，一行定义 | ❌ 需要定义结构体和 Error() 方法 |\n| 上下文信息 | ❌ 无（只有静态字符串）| ✅ 可携带任意字段 |\n| 包耦合 | ⚠️ 调用方 import 你的包才能比较 | ✅ `errors.As` 仍可通过接口解耦 |\n| 适用场景 | 简单状态标识 | 需要错误详情的场景 |\n\n**最佳实践：**\n\n```go\n// 推荐：结合使用\n// 1. 简单状态用哨兵错误\nvar ErrNotFound = errors.New(\"not found\")\n\n// 2. 需要详情时用自定义类型，但实现 Is 方法与哨兵对应\ntype DetailedNotFoundError struct {\n    Resource string\n    ID       int\n}\n\nfunc (e *DetailedNotFoundError) Error() string {\n    return fmt.Sprintf(\"%s %d: not found\", e.Resource, e.ID)\n}\n\n// Is 使 errors.Is(err, ErrNotFound) 也能匹配\nfunc (e *DetailedNotFoundError) Is(target error) bool {\n    return target == ErrNotFound\n}\n```",
+    "tags": ["错误处理", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-019",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "Go 项目中依赖注入（DI）有哪些常见方式？请对比构造函数注入和 Wire 框架。",
+    "answer": "### 常见 DI 方式\nGo 最常见的是显式构造函数注入：依赖作为参数传入，main 或 app 包负责组装对象图。\n\n```go\ntype UserRepo interface {\n    GetUser(ctx context.Context, id int64) (*User, error)\n    SaveUser(ctx context.Context, u *User) error\n}\n\ntype UserService struct { repo UserRepo }\n\nfunc NewUserService(repo UserRepo) *UserService {\n    return &UserService{repo: repo}\n}\n```\n\n入口处手动组装：\n\n```go\ndb := database.NewPostgres(config.DSN)\nrepo := repository.NewUserRepo(db)\nsvc := service.NewUserService(repo)\nh := handler.NewUserHandler(svc)\n```\n\n优点是简单、可读、调试直接；缺点是依赖图大时样板代码多。\n\n### Wire\nWire 是编译期 DI 代码生成工具，通过 provider set 生成手写风格的初始化代码，不使用运行时反射：\n\n```go\n//go:build wireinject\n\nfunc InitializeApp(cfg Config) (*App, error) {\n    wire.Build(\n        database.NewPostgres,\n        repository.NewUserRepo,\n        service.NewUserService,\n        handler.NewUserHandler,\n        NewApp,\n    )\n    return nil, nil\n}\n```\n\n生成结果本质上是普通 Go 初始化代码，编译期可检查依赖缺失和类型不匹配。\n\n### 当前维护状态\n需要注意：`google/wire` 仓库已归档、只读，项目不再正常维护。新项目应谨慎引入，评估 fork、替代工具或继续手写组装；已有项目可以继续使用生成代码，但要把工具链兼容性风险纳入维护计划。\n\n### 对比\n| 维度 | 构造函数注入 | Wire |\n|------|--------------|------|\n| 复杂度 | 低 | 中等，需要生成步骤 |\n| 调试 | 直接 | 需要理解生成代码 |\n| 依赖图大时 | 样板多 | 自动生成减少样板 |\n| 运行时开销 | 无 | 无 |\n| 维护风险 | 最低 | 受生成工具维护状态影响 |\n\n不推荐用全局变量做 DI，它隐藏依赖、破坏测试隔离，也容易引入初始化顺序问题。",
+    "tags": ["项目结构", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-020",
+    "module": "工程化",
+    "difficulty": 2,
+    "question": "`go generate` 的作用是什么？在哪些场景下会用到它？",
+    "answer": "`go generate` 会扫描源文件里的 `//go:generate` 指令，并在对应包目录下执行命令。它用于生成代码或资源，不会被 `go build`、`go test` 自动触发。\n\n```go\n//go:generate <command> <args>\n```\n\n### 常见场景\nMock：\n\n```go\n//go:generate mockgen -source=repository.go -destination=mock_repository_test.go -package=repository\n```\n\nProtobuf/gRPC：\n\n```go\n//go:generate protoc --go_out=. --go-grpc_out=. api/user.proto\n```\n\n枚举 String 方法：\n\n```go\n//go:generate stringer -type=Weekday\n```\n\n依赖注入生成：\n\n```go\n//go:generate wire\n```\n\nGo 1.16+ 静态资源优先使用标准库 `embed`；旧的 bindata 类工具只有在需要特殊打包行为时再考虑。\n\n### 运行\n```bash\ngo generate ./...\ngo generate -run mockgen ./...\ngo generate -v ./internal/...\n```\n\n### 实践建议\n- 固定生成工具版本，例如用 `tools.go` 加 `//go:build tools` 管理工具依赖\n- 在 CI 中检查生成结果是否已提交\n- 生成文件头部应包含 `// Code generated ... DO NOT EDIT.`\n- 是否提交生成文件取决于团队：库和需要开箱即构建的项目通常提交；内部项目也可选择 CI 生成，但要保证工具链可复现",
+    "tags": ["go generate", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-021",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "`unsafe.Pointer` 的合法使用规则是什么？`uintptr` 与 `unsafe.Pointer` 有什么陷阱？",
+    "answer": "`unsafe.Pointer` 只能在少数明确模式下使用，核心原则是：不要让 GC 丢失真实指针，不要假设不兼容类型的布局，不要把 `uintptr` 当指针保存。\n\n### 指针类型转换\n```go\nfunc Float64bits(f float64) uint64 {\n    return *(*uint64)(unsafe.Pointer(&f))\n}\n```\n\n只有在目标类型布局、大小、对齐都符合预期时才合法；更常见时应优先用标准库函数，例如 `math.Float64bits`。\n\n### 指针算术\n现代 Go 优先使用 `unsafe.Add`：\n\n```go\ntype T struct { X, Y int32 }\np := &T{X: 1, Y: 2}\nyp := (*int32)(unsafe.Add(unsafe.Pointer(p), unsafe.Offsetof(p.Y)))\n```\n\n旧写法会经过 `uintptr`，必须在同一表达式中完成转换、运算、转回指针：\n\n```go\nyp := (*int32)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + unsafe.Offsetof(p.Y)))\n```\n\n不要这样做：\n\n```go\nu := uintptr(unsafe.Pointer(p))\nruntime.GC()\nptr := (*T)(unsafe.Pointer(u)) // u 不是 GC root，p 可能已经不再存活\n```\n\n需要确保对象活到最后一次使用，可配合 `runtime.KeepAlive(p)`。\n\n### string / []byte 零拷贝\n```go\nfunc BytesToString(b []byte) string {\n    return unsafe.String(unsafe.SliceData(b), len(b))\n}\n```\n\n`string` 到 `[]byte` 的零拷贝切片必须视为只读，修改会违反字符串不可变语义，可能崩溃或造成数据破坏。除非 profile 证明必要，否则用普通转换：`[]byte(s)`、`string(b)`。\n\n### 使用原则\n- 能不用就不用；先找标准库、`encoding/binary`、`math`、`slices` 等安全方案\n- 每处 unsafe 都写清楚布局假设、生命周期假设和为什么安全\n- 不把 `uintptr` 存字段、全局变量或跨函数传递来伪装指针\n- unsafe 代码要有针对架构、Go 版本和 race/asan 的测试",
+    "tags": ["unsafe", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-022",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何利用反射实现一个通用的深拷贝（Deep Copy）函数？请分析其性能瓶颈和替代方案。",
+    "answer": "反射可以实现通用 deep copy，但完整正确很难：循环引用、共享引用保持、未导出字段、接口动态类型、map key、func/channel、unsafe 指针都要定义语义。\n\n简化版示例：\n\n```go\nfunc DeepCopy[T any](src T) T {\n    v := reflect.ValueOf(src)\n    if !v.IsValid() { return src }\n    copied := deepCopy(v, map[uintptr]reflect.Value{})\n    return copied.Interface().(T)\n}\n\nfunc deepCopy(v reflect.Value, seen map[uintptr]reflect.Value) reflect.Value {\n    switch v.Kind() {\n    case reflect.Ptr:\n        if v.IsNil() { return reflect.Zero(v.Type()) }\n        ptr := v.Pointer()\n        if old, ok := seen[ptr]; ok { return old }\n        out := reflect.New(v.Type().Elem())\n        seen[ptr] = out\n        out.Elem().Set(deepCopy(v.Elem(), seen))\n        return out\n    case reflect.Struct:\n        out := reflect.New(v.Type()).Elem()\n        for i := 0; i < v.NumField(); i++ {\n            if v.Type().Field(i).IsExported() && out.Field(i).CanSet() {\n                out.Field(i).Set(deepCopy(v.Field(i), seen))\n            }\n        }\n        return out\n    case reflect.Slice:\n        if v.IsNil() { return reflect.Zero(v.Type()) }\n        out := reflect.MakeSlice(v.Type(), v.Len(), v.Len())\n        for i := 0; i < v.Len(); i++ { out.Index(i).Set(deepCopy(v.Index(i), seen)) }\n        return out\n    case reflect.Map:\n        if v.IsNil() { return reflect.Zero(v.Type()) }\n        out := reflect.MakeMapWithSize(v.Type(), v.Len())\n        for _, k := range v.MapKeys() { out.SetMapIndex(k, deepCopy(v.MapIndex(k), seen)) }\n        return out\n    case reflect.Interface:\n        if v.IsNil() { return reflect.Zero(v.Type()) }\n        cv := deepCopy(v.Elem(), seen)\n        return cv\n    default:\n        return v\n    }\n}\n```\n\n局限：未导出字段被跳过；map key 没有深拷贝，避免破坏可比较性；func/channel 只能浅拷贝；复杂对象图仍需更完整的 seen 逻辑。\n\n### 性能瓶颈\n反射会带来运行时类型分发、不可内联、额外分配、接口装箱和大量小对象遍历。热路径上通常不适合。\n\n### 替代方案\n- 手写 `Clone`：最快、语义最明确\n- 代码生成：适合大量结构体，性能接近手写\n- 序列化再反序列化：简单但慢，且会丢失未导出字段、函数、channel、共享引用等语义\n- 重新设计所有权：尽量用不可变值或复制小片段，避免全量 deep copy",
+    "tags": ["反射", "泛型"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-023",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "请用 Go 泛型实现一个类型安全的 `Result[T]` 类型（类似 Rust 的 Result），并说明其适用场景。",
+    "answer": "```go\ntype Result[T any] struct {\n    value T\n    err   error\n}\n\nfunc Ok[T any](v T) Result[T] { return Result[T]{value: v} }\n\nfunc Err[T any](err error) Result[T] {\n    if err == nil { panic(\"nil error\") }\n    return Result[T]{err: err}\n}\n\nfunc (r Result[T]) IsOk() bool  { return r.err == nil }\nfunc (r Result[T]) IsErr() bool { return r.err != nil }\n\nfunc (r Result[T]) Unwrap() T {\n    if r.err != nil { panic(r.err) }\n    return r.value\n}\n\nfunc (r Result[T]) UnwrapOr(def T) T {\n    if r.err != nil { return def }\n    return r.value\n}\n\nfunc (r Result[T]) Unpack() (T, error) { return r.value, r.err }\n\nfunc Map[T, U any](r Result[T], f func(T) U) Result[U] {\n    if r.err != nil { return Err[U](r.err) }\n    return Ok(f(r.value))\n}\n\nfunc AndThen[T, U any](r Result[T], f func(T) Result[U]) Result[U] {\n    if r.err != nil { return Err[U](r.err) }\n    return f(r.value)\n}\n```\n\n适用场景：函数式 pipeline、DSL、批处理结果集合、需要把成功值和错误值放进同一种容器时。\n\n不适用场景：普通 Go API。Go 生态惯例仍是 `(T, error)`，它和 `defer`、早返回、`errors.Is/As`、标准库风格配合最好。`Result[T]` 不能像 Rust 的 `?` 一样由语言强制传播，也不能阻止调用方直接忽略返回值；引入前要评估团队可读性和生态摩擦。",
+    "tags": ["泛型", "错误处理"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-024",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何在 Go 中实现集成测试和 E2E 测试的隔离？如何使用 `httptest` 包测试 HTTP Handler？",
+    "answer": "**使用 `net/http/httptest` 测试 HTTP Handler（无需启动真实服务器）：**\n\n```go\npackage handler_test\n\nimport (\n    \"bytes\"\n    \"encoding/json\"\n    \"net/http\"\n    \"net/http/httptest\"\n    \"testing\"\n\n    \"github.com/stretchr/testify/assert\"\n    \"github.com/stretchr/testify/require\"\n)\n\n// 被测 Handler\nfunc CreateUserHandler(svc UserService) http.HandlerFunc {\n    return func(w http.ResponseWriter, r *http.Request) {\n        var req CreateUserRequest\n        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {\n            http.Error(w, \"invalid request\", http.StatusBadRequest)\n            return\n        }\n        user, err := svc.CreateUser(r.Context(), req)\n        if err != nil {\n            http.Error(w, err.Error(), http.StatusInternalServerError)\n            return\n        }\n        w.Header().Set(\"Content-Type\", \"application/json\")\n        w.WriteHeader(http.StatusCreated)\n        json.NewEncoder(w).Encode(user)\n    }\n}\n\n// 测试\nfunc TestCreateUserHandler(t *testing.T) {\n    tests := []struct {\n        name       string\n        body       interface{}\n        mockSetup  func(*MockUserService)\n        wantStatus int\n        wantBody   string\n    }{\n        {\n            name: \"成功创建用户\",\n            body: CreateUserRequest{Name: \"Alice\", Email: \"alice@example.com\"},\n            mockSetup: func(m *MockUserService) {\n                m.On(\"CreateUser\", mock.Anything, mock.Anything).\n                    Return(&User{ID: 1, Name: \"Alice\"}, nil)\n            },\n            wantStatus: http.StatusCreated,\n        },\n        {\n            name:       \"请求体无效\",\n            body:       \"invalid json\",\n            mockSetup:  func(m *MockUserService) {},\n            wantStatus: http.StatusBadRequest,\n        },\n    }\n\n    for _, tt := range tests {\n        t.Run(tt.name, func(t *testing.T) {\n            // 构建 mock service\n            mockSvc := &MockUserService{}\n            tt.mockSetup(mockSvc)\n\n            // 序列化请求体\n            body, _ := json.Marshal(tt.body)\n            req := httptest.NewRequest(http.MethodPost, \"/users\", bytes.NewReader(body))\n            req.Header.Set(\"Content-Type\", \"application/json\")\n\n            // 创建 ResponseRecorder（模拟 http.ResponseWriter）\n            rec := httptest.NewRecorder()\n\n            // 执行 Handler\n            CreateUserHandler(mockSvc).ServeHTTP(rec, req)\n\n            // 断言\n            assert.Equal(t, tt.wantStatus, rec.Code)\n            mockSvc.AssertExpectations(t)\n        })\n    }\n}\n```\n\n**使用 `httptest.NewServer` 测试真实 HTTP 客户端：**\n\n```go\nfunc TestHTTPClient(t *testing.T) {\n    // 启动本地测试服务器（端口随机分配）\n    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n        if r.URL.Path == \"/users/1\" {\n            w.Header().Set(\"Content-Type\", \"application/json\")\n            json.NewEncoder(w).Encode(User{ID: 1, Name: \"Alice\"})\n            return\n        }\n        w.WriteHeader(http.StatusNotFound)\n    }))\n    defer server.Close() // 测试结束后关闭\n\n    // 使用测试服务器 URL\n    client := NewUserClient(server.URL)\n    user, err := client.GetUser(context.Background(), 1)\n\n    require.NoError(t, err)\n    assert.Equal(t, \"Alice\", user.Name)\n}\n```\n\n**集成测试隔离（使用 Build Tags）：**\n\n```go\n//go:build integration\n\npackage integration_test\n\nimport (\n    \"testing\"\n    \"os\"\n)\n\n// 只在明确指定 integration tag 时运行\n// go test -tags integration ./test/integration/...\n\nfunc TestUserServiceIntegration(t *testing.T) {\n    dsn := os.Getenv(\"TEST_DB_DSN\")\n    if dsn == \"\" {\n        t.Skip(\"TEST_DB_DSN not set, skipping integration test\")\n    }\n    // ... 连接真实数据库测试\n}\n```\n\n**TestContainers（真实依赖的集成测试）：**\n\n```go\n//go:build integration\n\nfunc TestWithRealPostgres(t *testing.T) {\n    ctx := context.Background()\n\n    // 启动临时 PostgreSQL 容器\n    container, err := postgres.RunContainer(ctx,\n        testcontainers.WithImage(\"postgres:16\"),\n        postgres.WithDatabase(\"testdb\"),\n        postgres.WithUsername(\"test\"),\n        postgres.WithPassword(\"test\"),\n    )\n    require.NoError(t, err)\n    defer container.Terminate(ctx)\n\n    dsn, _ := container.ConnectionString(ctx)\n    db, _ := sql.Open(\"postgres\", dsn)\n    defer db.Close()\n\n    // 运行真实数据库测试\n    repo := repository.NewUserRepo(db)\n    // ...\n}\n```",
+    "tags": ["testing", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-025",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何分析和优化 Go 二进制文件的体积？有哪些常用手段？",
+    "answer": "### 分析体积\n```bash\nls -lh bin/myapp\n\ngo tool nm -size bin/myapp | sort -k2 -nr | head -30\n\ngo version -m bin/myapp\n\ngo tool objdump -s 'main\\.' bin/myapp\n```\n\n第三方工具如 `goweight`、`bloaty` 可按包或段分析体积。先定位体积来源，再决定优化，不要盲目压缩。\n\n### 常用优化\n去掉路径和调试信息：\n\n```bash\ngo build -trimpath -ldflags='-s -w' -o bin/myapp ./cmd/server\n```\n\n`-s -w` 能明显减小体积，但会影响调试和符号化。对需要线上剖析、core dump 或精细排障的服务，要权衡是否保留符号。\n\n减少依赖：\n\n```bash\ngo mod why github.com/heavy/pkg\ngo mod graph\n```\n\n优先移除大而间接的依赖，或用标准库替代，例如简单日志用 `log/slog`，简单 CLI 用 `flag`。\n\nCGO 和静态链接：\n\n```bash\nCGO_ENABLED=0 go build -trimpath ./cmd/server\n```\n\n禁用 cgo 常让部署更简单，但体积不一定更小；DNS、用户查询、系统库行为也可能变化，需要测试。\n\nUPX：可以进一步压缩磁盘体积，但会增加启动解压成本，影响安全扫描、调试和某些运行环境兼容性。适合分发小工具，不一定适合服务端容器。\n\n### 代码层面\n- 避免为了少量功能引入大型框架\n- 不要滥用反射注册和全量导入\n- 泛型可能增加实例化代码，也可能共享实现，不能简单断言“一种类型一份完整代码”；以实际二进制分析为准\n- 用构建 tag 拆分可选功能，例如 `sqlite`、`debug`、`enterprise`\n\n优化目标要明确：磁盘体积、镜像体积、冷启动、内存占用和可调试性经常相互冲突。",
+    "tags": ["编译", "modules"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-026",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何设计一个生产级别的错误处理体系？请涵盖错误分类、上下文包装、日志记录和 HTTP 映射。",
+    "answer": "生产级错误体系要分清三件事：底层错误链用于排障，业务错误码用于稳定判断，公开消息用于返回给用户。数据库 SQL、上游响应体、token、内部路径和调用栈不要直接写进 HTTP 响应。\n\n```go\npackage apperrors\n\nimport (\n    \"context\"\n    \"errors\"\n    \"fmt\"\n    \"net/http\"\n)\n\ntype Code string\n\nconst (\n    CodeUnknown      Code = \"UNKNOWN\"\n    CodeInvalidInput Code = \"INVALID_INPUT\"\n    CodeNotFound     Code = \"NOT_FOUND\"\n    CodeConflict     Code = \"CONFLICT\"\n    CodeUnauthorized Code = \"UNAUTHORIZED\"\n    CodeForbidden    Code = \"FORBIDDEN\"\n    CodeCanceled     Code = \"CANCELED\"\n    CodeTimeout      Code = \"TIMEOUT\"\n    CodeInternal     Code = \"INTERNAL\"\n)\n\ntype AppError struct {\n    Code   Code\n    Op     string\n    Public string\n    Err    error\n}\n\nfunc (e *AppError) Error() string {\n    if e == nil {\n        return \"<nil>\"\n    }\n    if e.Err != nil {\n        return fmt.Sprintf(\"%s: %s: %v\", e.Op, e.Code, e.Err)\n    }\n    return fmt.Sprintf(\"%s: %s\", e.Op, e.Code)\n}\n\nfunc (e *AppError) Unwrap() error { return e.Err }\n\nfunc New(code Code, op, public string) error {\n    return &AppError{Code: code, Op: op, Public: public}\n}\n\nfunc Wrap(err error, code Code, op, public string) error {\n    if err == nil {\n        return nil\n    }\n    return &AppError{Code: code, Op: op, Public: public, Err: err}\n}\n\nfunc CodeOf(err error) Code {\n    switch {\n    case err == nil:\n        return CodeUnknown\n    case errors.Is(err, context.Canceled):\n        return CodeCanceled\n    case errors.Is(err, context.DeadlineExceeded):\n        return CodeTimeout\n    }\n    var ae *AppError\n    if errors.As(err, &ae) && ae.Code != \"\" {\n        return ae.Code\n    }\n    return CodeInternal\n}\n\nfunc PublicMessage(err error) string {\n    var ae *AppError\n    if errors.As(err, &ae) && ae.Public != \"\" {\n        return ae.Public\n    }\n    if errors.Is(err, context.Canceled) {\n        return \"请求已取消\"\n    }\n    if errors.Is(err, context.DeadlineExceeded) {\n        return \"请求超时\"\n    }\n    return \"服务器内部错误\"\n}\n\nfunc HTTPStatus(code Code) int {\n    switch code {\n    case CodeInvalidInput:\n        return http.StatusBadRequest\n    case CodeUnauthorized:\n        return http.StatusUnauthorized\n    case CodeForbidden:\n        return http.StatusForbidden\n    case CodeNotFound:\n        return http.StatusNotFound\n    case CodeConflict:\n        return http.StatusConflict\n    case CodeCanceled:\n        return 499\n    case CodeTimeout:\n        return http.StatusGatewayTimeout\n    default:\n        return http.StatusInternalServerError\n    }\n}\n```\n\n业务层只补上下文和错误码，保留 `%w` 错误链，交给边界统一处理：\n\n```go\nfunc (s *UserService) GetUser(ctx context.Context, id int64) (*User, error) {\n    const op = \"UserService.GetUser\"\n\n    if id <= 0 {\n        return nil, apperrors.New(apperrors.CodeInvalidInput, op, \"id 必须为正数\")\n    }\n\n    user, err := s.repo.GetUser(ctx, id)\n    if err != nil {\n        if errors.Is(err, sql.ErrNoRows) {\n            return nil, apperrors.New(apperrors.CodeNotFound, op, \"用户不存在\")\n        }\n        return nil, apperrors.Wrap(err, apperrors.CodeInternal, op, \"读取用户失败\")\n    }\n    return user, nil\n}\n```\n\nHTTP 层只在边界记录一次完整错误链，并把状态码和公开消息返回给客户端：\n\n```go\ntype ErrorResponse struct {\n    Code    string `json:\"code\"`\n    Message string `json:\"message\"`\n}\n\nfunc respondError(w http.ResponseWriter, r *http.Request, err error, logger *slog.Logger) {\n    code := apperrors.CodeOf(err)\n    status := apperrors.HTTPStatus(code)\n\n    attrs := []any{\"method\", r.Method, \"path\", r.URL.Path, \"code\", code, \"err\", err}\n    if status >= 500 {\n        logger.ErrorContext(r.Context(), \"request failed\", attrs...)\n    } else {\n        logger.InfoContext(r.Context(), \"request rejected\", attrs...)\n    }\n\n    w.Header().Set(\"Content-Type\", \"application/json\")\n    w.WriteHeader(status)\n    _ = json.NewEncoder(w).Encode(ErrorResponse{\n        Code:    string(code),\n        Message: apperrors.PublicMessage(err),\n    })\n}\n```\n\n实践要点：错误码要稳定，不把日志职责分散到每一层；可重试、幂等、告警等级等策略最好绑定到错误码或错误分类，而不是靠字符串匹配。",
+    "tags": ["错误处理", "工程化"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-027",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何管理 Go 项目的多环境配置？请对比 `init()` 函数加载、`embed` 嵌入和环境变量三种方式。",
+    "answer": "多环境配置建议做成显式的 `Load` 流程：默认值 -> 配置文件或 embed 默认配置 -> 环境变量或命令行覆盖 -> 校验。不要在 `init()` 里读配置，也不要在返回 `error` 的加载函数里偷偷 `panic`。\n\n**环境变量：适合容器和 12-Factor 部署。**\n\n```go\npackage config\n\nimport (\n    \"fmt\"\n    \"os\"\n    \"strconv\"\n    \"time\"\n)\n\ntype Config struct {\n    Host        string\n    Port        int\n    ReadTimeout time.Duration\n    DBDSN       string\n    DBMaxConns  int\n    Debug       bool\n}\n\nfunc Load() (*Config, error) {\n    cfg := &Config{\n        Host:        getenv(\"APP_HOST\", \"0.0.0.0\"),\n        Port:        8080,\n        ReadTimeout: 5 * time.Second,\n        DBMaxConns:  10,\n    }\n\n    if v, ok := os.LookupEnv(\"APP_PORT\"); ok {\n        port, err := strconv.Atoi(v)\n        if err != nil {\n            return nil, fmt.Errorf(\"APP_PORT: %w\", err)\n        }\n        cfg.Port = port\n    }\n\n    dsn, ok := os.LookupEnv(\"DATABASE_DSN\")\n    if !ok || dsn == \"\" {\n        return nil, fmt.Errorf(\"DATABASE_DSN is required\")\n    }\n    cfg.DBDSN = dsn\n\n    return cfg, cfg.Validate()\n}\n\nfunc getenv(key, fallback string) string {\n    if v, ok := os.LookupEnv(key); ok {\n        return v\n    }\n    return fallback\n}\n\nfunc (c *Config) Validate() error {\n    if c.Port < 1 || c.Port > 65535 {\n        return fmt.Errorf(\"invalid port %d\", c.Port)\n    }\n    if c.DBMaxConns < 1 {\n        return fmt.Errorf(\"DB_MAX_CONNS must be positive\")\n    }\n    return nil\n}\n```\n\n测试时用 `t.Setenv` 设置环境变量，避免全局状态污染。解析失败要返回错误，不能静默回落到默认值，否则线上会把错配伪装成正常配置。\n\n**`embed`：适合把非敏感默认配置打进二进制。**\n\n```go\nimport (\n    \"embed\"\n    \"encoding/json\"\n)\n\n//go:embed defaults.json\nvar defaultsJSON []byte\n\n//go:embed configs\nvar configFS embed.FS\n\nfunc LoadWithDefaults(env string) (*Config, error) {\n    var cfg Config\n    if err := json.Unmarshal(defaultsJSON, &cfg); err != nil {\n        return nil, fmt.Errorf(\"parse defaults: %w\", err)\n    }\n\n    if env != \"\" {\n        data, err := configFS.ReadFile(\"configs/\" + env + \".json\")\n        if err != nil {\n            return nil, fmt.Errorf(\"read %s config: %w\", env, err)\n        }\n        if err := json.Unmarshal(data, &cfg); err != nil {\n            return nil, fmt.Errorf(\"parse %s config: %w\", env, err)\n        }\n    }\n    return &cfg, cfg.Validate()\n}\n```\n\n`embed` 的配置修改需要重新构建，不适合放密码、token、证书私钥等秘密。常见做法是 embed 默认值，再用环境变量或部署平台 secret 覆盖。\n\n**`init()`：不推荐加载业务配置。**\n\n```go\nvar globalConfig *Config\n\nfunc init() {\n    cfg, err := loadFromFile(\"config.yaml\")\n    if err != nil {\n        panic(err)\n    }\n    globalConfig = cfg\n}\n```\n\n`init()` 会制造隐藏依赖和不可控的全局状态，测试替换困难，也让导入包产生 I/O 副作用。它更适合注册 codec、driver 这类无外部环境依赖的初始化。\n\n如果使用 Viper，要显式说明键名映射。`SetEnvPrefix(\"APP\")` 加 `SetEnvKeyReplacer(\".\", \"_\")` 会把 `server.port` 映射成 `APP_SERVER_PORT`；如果想用 `APP_PORT`，需要 `BindEnv(\"server.port\", \"APP_PORT\")`。Viper 功能强，但依赖重、反射多，简单服务用标准库通常更清晰。",
+    "tags": ["modules", "编译"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-028",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何用 `go/ast` 和 `analysis` 框架编写自定义静态分析 Pass？请给出一个检查\"error 返回值未被处理\"的简化示例。",
+    "answer": "`analysis` 框架的核心是定义一个 `*analysis.Analyzer`，在 `Run` 里读取 AST、类型信息和依赖 Pass 的结果。下面示例只检查“函数调用作为独立语句出现，且返回值中包含 error”的情况，真实的 `errcheck` 还要处理赋值给 `_`、`defer`、`go`、类型断言等更多场景。\n\n```go\npackage errcheck\n\nimport (\n    \"go/ast\"\n    \"go/types\"\n\n    \"golang.org/x/tools/go/analysis\"\n    \"golang.org/x/tools/go/analysis/passes/inspect\"\n    \"golang.org/x/tools/go/ast/inspector\"\n)\n\nvar Analyzer = &analysis.Analyzer{\n    Name:     \"customerrcheck\",\n    Doc:      \"reports calls whose error result is ignored\",\n    Requires: []*analysis.Analyzer{inspect.Analyzer},\n    Run:      run,\n}\n\nfunc run(pass *analysis.Pass) (any, error) {\n    insp := pass.ResultOf[inspect.Analyzer].(*inspector.Inspector)\n    insp.Preorder([]ast.Node{(*ast.ExprStmt)(nil)}, func(n ast.Node) {\n        stmt := n.(*ast.ExprStmt)\n        call, ok := stmt.X.(*ast.CallExpr)\n        if !ok {\n            return\n        }\n        if returnsError(pass, call) {\n            pass.Reportf(call.Pos(), \"error return value is ignored\")\n        }\n    })\n    return nil, nil\n}\n\nfunc returnsError(pass *analysis.Pass, call *ast.CallExpr) bool {\n    tv, ok := pass.TypesInfo.Types[call]\n    if !ok || tv.Type == nil {\n        return false\n    }\n\n    if tuple, ok := tv.Type.(*types.Tuple); ok {\n        for i := 0; i < tuple.Len(); i++ {\n            if isErrorType(tuple.At(i).Type()) {\n                return true\n            }\n        }\n        return false\n    }\n    return isErrorType(tv.Type)\n}\n\nfunc isErrorType(t types.Type) bool {\n    if t == nil {\n        return false\n    }\n    errType := types.Universe.Lookup(\"error\").Type()\n    errIface := errType.Underlying().(*types.Interface)\n    return types.Identical(t, errType) || types.Implements(t, errIface)\n}\n```\n\n独立运行工具通常用 `singlechecker`：\n\n```go\npackage main\n\nimport (\n    \"example.com/project/analyzer/errcheck\"\n    \"golang.org/x/tools/go/analysis/singlechecker\"\n)\n\nfunc main() {\n    singlechecker.Main(errcheck.Analyzer)\n}\n```\n\n```bash\ngo run ./cmd/customerrcheck ./...\n```\n\n测试用 `analysistest`，在 `testdata/src/a/a.go` 里用 `// want` 标注预期诊断：\n\n```go\nfunc bad() {\n    os.Remove(\"/tmp/x\") // want \"error return value is ignored\"\n}\n\nfunc good() {\n    if err := os.Remove(\"/tmp/x\"); err != nil {\n        _ = err\n    }\n}\n```\n\n集成到 CI 时，最稳定的是把它作为独立命令或 `multichecker` 运行。golangci-lint 的自定义 analyzer/plugin 机制随版本变化较大，应按当前版本官方文档接入，不要假设所有版本都支持同一种 `path: bin/tool` 配置。",
+    "tags": ["lint", "go generate"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-029",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何使用 `go:linkname` 访问标准库的私有符号？有哪些风险和合法使用场景？",
+    "answer": "`//go:linkname` 可以把当前包里的声明链接到另一个包的符号，包括未导出的符号。它绕过 Go 的包封装和类型边界，属于最后手段；访问标准库私有符号尤其脆弱。\n\n基本形式如下，文件必须导入 `unsafe`，本地声明通常没有函数体，签名必须和目标符号完全一致：\n\n```go\npackage internalhack\n\nimport _ \"unsafe\"\n\n// 仅展示语法；真实标准库符号名、签名和可访问性随 Go 版本变化。\n//go:linkname localName runtime.someUnexportedSymbol\nfunc localName(arg uintptr) uintptr\n```\n\n风险很高：\n\n- 私有符号没有兼容性承诺，名称、签名、语义和内存布局都可能在 Go 升级时变化。\n- 签名写错时编译器无法像普通调用那样完整保护你，结果可能是崩溃、数据破坏或隐蔽竞态。\n- 它会破坏模块封装，让依赖关系变成隐式 ABI 依赖，代码审查和升级都更困难。\n- Go 1.23 起链接器加强了对标准库 linkname 的检查；很多旧式“链接到任意标准库私有符号”的写法会失败。`//go:build ignore` 不能绕过这个检查，`-ldflags=-checklinkname=0` 也只应作为临时迁移手段，不应进入常规生产构建。\n\n更合适的替代方案通常是：\n\n- 使用公开 API，例如 `runtime/metrics`、`debug.ReadBuildInfo`、`time`、`net/netip`、`slices`、`maps` 等标准库能力。\n- 使用 `golang.org/x/sys`、`x/exp` 或项目内明确暴露的 internal 适配层，而不是直接碰 runtime 私有符号。\n- 如果只是测试内部行为，把测试放在同一包或通过受控测试 hook 暴露。\n\n相对合理的使用场景很少：Go 标准库自身、runtime/编译器相关工具、被 Go 团队显式保留兼容的历史 linkname 符号，或者强约束的内部工具。即便如此，也要把代码隔离到单独文件，写明依赖的 Go 版本、替代方案和升级验证清单，并在 CI 中覆盖目标 Go 版本。",
+    "tags": ["unsafe", "反射"],
+    "source": "高频"
+  },
+  {
+    "id": "go-engineering-030",
+    "module": "工程化",
+    "difficulty": 3,
+    "question": "如何设计一个支持插件化扩展的 Go 微服务框架骨架？请涵盖中间件链、依赖注入和优雅关闭。",
+    "answer": "插件化微服务骨架要把生命周期拆开：`Register` 只注册路由、依赖和中间件；`Start` 启动后台任务；`Stop` 释放资源。框架负责启动顺序、失败回滚、HTTP 入口关闭和插件逆序停止。\n\n```go\npackage framework\n\nimport (\n    \"context\"\n    \"errors\"\n    \"fmt\"\n    \"net/http\"\n    \"os\"\n    \"os/signal\"\n    \"sync\"\n    \"syscall\"\n    \"time\"\n)\n\ntype Middleware func(http.Handler) http.Handler\n\nfunc Chain(middlewares ...Middleware) Middleware {\n    return func(next http.Handler) http.Handler {\n        for i := len(middlewares) - 1; i >= 0; i-- {\n            next = middlewares[i](next)\n        }\n        return next\n    }\n}\n\ntype Container struct {\n    mu     sync.RWMutex\n    values map[string]any\n}\n\nfunc NewContainer() *Container {\n    return &Container{values: map[string]any{}}\n}\n\nfunc (c *Container) Set(name string, value any) {\n    c.mu.Lock()\n    defer c.mu.Unlock()\n    c.values[name] = value\n}\n\nfunc (c *Container) Get(name string) (any, bool) {\n    c.mu.RLock()\n    defer c.mu.RUnlock()\n    value, ok := c.values[name]\n    return value, ok\n}\n\ntype Plugin interface {\n    Name() string\n    Register(app *App) error\n    Start(ctx context.Context) error\n    Stop(ctx context.Context) error\n}\n\ntype App struct {\n    mux         *http.ServeMux\n    container   *Container\n    middlewares []Middleware\n    plugins     []Plugin\n    server      *http.Server\n}\n\nfunc New(addr string) *App {\n    return &App{\n        mux:       http.NewServeMux(),\n        container: NewContainer(),\n        server:    &http.Server{Addr: addr},\n    }\n}\n\nfunc (a *App) Use(m Middleware) { a.middlewares = append(a.middlewares, m) }\nfunc (a *App) Handle(pattern string, h http.Handler) { a.mux.Handle(pattern, h) }\nfunc (a *App) Provide(name string, value any) { a.container.Set(name, value) }\n\nfunc (a *App) UsePlugin(plugin Plugin) error {\n    if err := plugin.Register(a); err != nil {\n        return fmt.Errorf(\"register plugin %s: %w\", plugin.Name(), err)\n    }\n    a.plugins = append(a.plugins, plugin)\n    return nil\n}\n\nfunc (a *App) handler() http.Handler {\n    return Chain(a.middlewares...)(a.mux)\n}\n\nfunc (a *App) Run(ctx context.Context) error {\n    ctx, stopSignals := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)\n    defer stopSignals()\n\n    started := make([]Plugin, 0, len(a.plugins))\n    for _, plugin := range a.plugins {\n        if err := plugin.Start(ctx); err != nil {\n            stopErr := stopPlugins(context.Background(), started)\n            return errors.Join(fmt.Errorf(\"start plugin %s: %w\", plugin.Name(), err), stopErr)\n        }\n        started = append(started, plugin)\n    }\n\n    a.server.Handler = a.handler()\n    errCh := make(chan error, 1)\n    go func() { errCh <- a.server.ListenAndServe() }()\n\n    var runErr error\n    select {\n    case <-ctx.Done():\n    case err := <-errCh:\n        if !errors.Is(err, http.ErrServerClosed) {\n            runErr = err\n        }\n    }\n\n    shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)\n    defer cancel()\n\n    if err := a.server.Shutdown(shutdownCtx); err != nil {\n        runErr = errors.Join(runErr, err)\n    }\n    runErr = errors.Join(runErr, stopPlugins(shutdownCtx, started))\n    return runErr\n}\n\nfunc stopPlugins(ctx context.Context, plugins []Plugin) error {\n    var err error\n    for i := len(plugins) - 1; i >= 0; i-- {\n        if stopErr := plugins[i].Stop(ctx); stopErr != nil {\n            err = errors.Join(err, fmt.Errorf(\"stop plugin %s: %w\", plugins[i].Name(), stopErr))\n        }\n    }\n    return err\n}\n```\n\n关键点：中间件链在启动时组装一次，避免每个请求重复构建；DI 容器至少要并发安全，生产中可进一步做成类型安全 provider；启动失败要回滚已启动插件；HTTP 服务报错和关闭错误都不能跳过插件清理；插件停止顺序通常与启动顺序相反。",
+    "tags": ["项目结构", "测试", "编译"],
+    "source": "高频"
+  }
+]

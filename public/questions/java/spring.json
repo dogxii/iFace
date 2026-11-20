@@ -1,0 +1,110 @@
+[
+  {
+    "id": "java-spring-001",
+    "module": "Spring框架",
+    "difficulty": 1,
+    "question": "Spring IoC 创建 Bean 的流程和生命周期扩展点是什么？",
+    "answer": "### Bean 创建主流程\n\nSpring IoC 容器负责把类变成可管理的 Bean。大致流程是：读取 BeanDefinition，实例化对象，填充依赖，执行 Aware 回调，执行 BeanPostProcessor 前置处理，初始化，执行 BeanPostProcessor 后置处理，最后放入单例池供业务使用。\n\n### 生命周期关键点\n\n| 阶段 | 常见扩展 |\n| --- | --- |\n| BeanDefinition 阶段 | BeanFactoryPostProcessor |\n| 实例化前后 | InstantiationAwareBeanPostProcessor |\n| 属性填充 | 依赖注入、@Autowired |\n| Aware 回调 | BeanNameAware、ApplicationContextAware |\n| 初始化 | @PostConstruct、InitializingBean、init-method |\n| 初始化后 | BeanPostProcessor，AOP 代理常在这里生成 |\n| 销毁 | @PreDestroy、DisposableBean、destroy-method |\n\n### FactoryBean 和普通 Bean\n\nFactoryBean 本身是一个工厂，getObject 返回的对象才是业务 Bean。MyBatis 的 Mapper、某些代理对象常用这种方式创建。\n\n### 回答重点\n\nIoC 不只是 new 对象，而是统一管理对象创建、依赖、生命周期和扩展点。AOP、事务、配置绑定、自动装配都依赖这些生命周期钩子接入。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-002",
+    "module": "Spring框架",
+    "difficulty": 1,
+    "question": "构造器注入、字段注入、Setter 注入分别有什么利弊？",
+    "answer": "### 构造器注入\n\n构造器注入适合必需依赖。对象创建完成后依赖就是完整的，也方便写单元测试和声明 final 字段。如果依赖很多，构造器会变长，这通常反而是在提醒类职责可能太多。\n\n### 字段注入\n\n字段注入写起来最短，但隐藏依赖，测试时不方便手动构造对象，也不利于不可变设计。它还容易让循环依赖在设计阶段不明显。生产代码中一般不推荐字段注入。\n\n### Setter 注入\n\nSetter 注入适合可选依赖、运行期可替换依赖或框架配置类。但对象可能出现“半初始化”状态，所以必需依赖不建议用 Setter。\n\n| 注入方式 | 优点 | 缺点 |\n| --- | --- | --- |\n| 构造器 | 依赖明确，可 final，易测试 | 依赖多时构造器长 |\n| 字段 | 代码少 | 隐藏依赖，不利测试 |\n| Setter | 可选、可变 | 可能半初始化 |\n\n### 实践建议\n\n业务服务优先构造器注入；配置属性可用构造器绑定；可选扩展点可以用 ObjectProvider 或 List<Interface> 注入。不要为了绕循环依赖改成字段注入，循环依赖通常是职责边界需要调整。\n\n从测试角度看，构造器注入最容易直接 new 出对象并传入 fake 依赖；字段注入往往需要反射或启动 Spring 容器。能不用容器就测清楚业务类，通常说明依赖边界更健康。",
+    "tags": ["Java 核心", "Spring框架"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-003",
+    "module": "Spring框架",
+    "difficulty": 1,
+    "question": "Spring AOP 的代理模型、切点表达式和调用限制是什么？",
+    "answer": "### Spring AOP 的核心\n\nSpring AOP 通常通过代理实现。调用方拿到的是代理对象，代理在方法调用前后织入事务、日志、鉴权、监控等横切逻辑，再转发给目标对象。\n\nJDK 动态代理基于接口；CGLIB 基于子类。目标类有接口时常见是 JDK 代理，没有接口或强制类代理时使用 CGLIB。\n\n### 切点表达式\n\n切点用来匹配哪些连接点需要增强。常见表达式包括 execution 匹配方法签名，within 匹配类型范围，annotation 匹配注解。\n\n~~~java\n@Around(\"@annotation(Audited)\")\npublic Object audit(ProceedingJoinPoint pjp) throws Throwable {\n  return pjp.proceed();\n}\n~~~\n\n### 调用限制\n\n代理只在“通过代理对象调用”时生效。this 内部自调用会绕过代理；private 方法无法被外部代理调用；final 类或 final 方法不能被 CGLIB 正常覆盖；非 Spring 管理对象也不会自动有 AOP。\n\n### 回答重点\n\nSpring AOP 适合方法级横切逻辑，不是完整 AspectJ 那种任意字节码织入。排查事务、缓存、权限注解不生效时，第一反应要看是不是代理边界问题。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-004",
+    "module": "Spring框架",
+    "difficulty": 1,
+    "question": "Spring 如何解决单例 Bean 的循环依赖，哪些场景无法解决？",
+    "answer": "### 三级缓存解决的是什么\n\nSpring 能解决一部分单例 Bean 的循环依赖，主要是 setter/字段注入场景。核心思路是：Bean 实例化后、属性填充前，先把一个“早期引用”暴露出来，让另一个 Bean 能引用它。\n\n常说的三级缓存大致是：\n\n| 缓存 | 作用 |\n| --- | --- |\n| singletonObjects | 完整初始化后的单例 |\n| earlySingletonObjects | 提前暴露的早期单例 |\n| singletonFactories | 能创建早期引用的工厂，AOP 代理也靠它提前暴露 |\n\n### 为什么构造器循环不行\n\n构造器注入要求对象创建时依赖就存在。A 构造器要 B，B 构造器又要 A，两边都还没实例化完成，就没有可提前暴露的对象。\n\n### 哪些也不适合自动解决\n\n- prototype Bean 循环依赖。\n- 构造器循环依赖。\n- 复杂 AOP 场景下早期引用和最终代理不一致。\n- 设计上互相调用很深的服务循环。\n\n### 更好的处理\n\n循环依赖通常说明职责边界不清。可以提取第三个服务、拆分读写职责、引入事件发布、把某个依赖下沉为 Repository，或者用领域服务承载双方共同逻辑。Lazy 只能缓解初始化时机，不应成为设计上的常态。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-005",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "@Transactional 的传播行为、隔离级别和回滚规则如何工作？",
+    "answer": "### @Transactional 怎么生效\n\n@Transactional 通常通过 Spring AOP 代理生效。方法进入代理时开启或加入事务，方法正常返回则提交，抛出符合规则的异常则回滚。\n\n### 传播行为\n\n| 传播行为 | 含义 |\n| --- | --- |\n| REQUIRED | 有事务就加入，没有就新建，最常用 |\n| REQUIRES_NEW | 挂起当前事务，新开事务 |\n| NESTED | 嵌套事务，依赖保存点 |\n| SUPPORTS | 有事务就加入，没有就非事务执行 |\n| MANDATORY | 必须已有事务 |\n| NOT_SUPPORTED | 挂起事务，非事务执行 |\n| NEVER | 必须没有事务 |\n\n### 隔离级别\n\n隔离级别决定脏读、不可重复读、幻读等现象如何处理。Spring 的隔离级别最终要落到数据库支持上，例如 MySQL InnoDB 默认 REPEATABLE READ，并通过 MVCC 和锁处理很多场景。\n\n### 回滚规则\n\n默认情况下，运行时异常和 Error 会触发回滚，受检异常不会自动回滚。可以通过 rollbackFor 指定。注意异常被 catch 吞掉后，代理看不到异常，就不会按异常回滚。\n\n### 实践建议\n\n事务边界放在业务用例层，不要包住长时间远程调用。事务里做 HTTP、发 MQ、等用户输入都会拉长锁持有时间，增加死锁和超时风险。",
+    "tags": ["Java 核心", "Spring框架"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-006",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring 事务为什么会失效，如何避免自调用和异常吞掉问题？",
+    "answer": "### 事务失效的常见原因\n\n最常见的是代理没有被调用到。Spring 事务依赖代理，this 内部自调用会绕过代理。\n\n~~~java\nclass OrderService {\n  public void create() {\n    this.saveOrder(); // 自调用，事务可能不生效\n  }\n\n  @Transactional\n  public void saveOrder() {}\n}\n~~~\n\n### 其他原因\n\n- 方法不是 public，代理无法按预期增强。\n- final 方法或 final 类导致 CGLIB 无法覆盖。\n- 对象不是 Spring 容器管理的 Bean。\n- 异常被 catch 后没有继续抛出。\n- 默认只回滚运行时异常，受检异常未配置 rollbackFor。\n- 数据库引擎或操作本身不支持事务。\n- 传播行为设置不符合预期，例如 REQUIRES_NEW 导致提交边界不同。\n\n### 怎么避免\n\n把事务方法放在通过 Spring Bean 调用的 public 方法上；自调用逻辑拆到另一个 Bean，或者调整边界让入口方法直接加事务。异常处理要和回滚策略一致，不能一边吞异常一边期待回滚。\n\n### 排查思路\n\n先确认当前对象是不是代理对象，再开事务日志看是否创建事务。然后检查异常类型、传播行为、数据库连接是否同一个、方法可见性和调用路径。",
+    "tags": ["Java 核心", "Spring框架", "Spring", "事务"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-007",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring MVC 的请求分发流程是怎样的？",
+    "answer": "### 请求分发主链路\n\nSpring MVC 的入口是 DispatcherServlet。请求进来后，它会找 HandlerMapping 确定由哪个 Controller 方法处理，再通过 HandlerAdapter 调用方法，最后由 HttpMessageConverter 写出 JSON、文本或其他响应。\n\n~~~text\nRequest -> DispatcherServlet\n        -> HandlerMapping\n        -> HandlerAdapter\n        -> Controller\n        -> ReturnValueHandler / MessageConverter\n        -> Response\n~~~\n\n### 中间发生什么\n\n参数绑定会把路径参数、query、header、body 转成方法参数；数据校验会处理 @Valid；类型转换由 ConversionService 参与；异常会交给 HandlerExceptionResolver，比如 @ControllerAdvice。\n\n### 拦截器和过滤器\n\nFilter 属于 Servlet 规范，在 DispatcherServlet 前后工作，适合编码、认证、日志这类更底层处理。HandlerInterceptor 属于 Spring MVC，能拿到 handler 信息，适合权限、埋点、灰度等 MVC 语义更强的逻辑。\n\n### 常见排查\n\n404 看 HandlerMapping 是否匹配；400 看参数绑定和 JSON 解析；415 看 Content-Type；406 看 Accept 和响应转换；500 看 Controller、Service 和异常处理。回答时把这些组件串起来，比单背 DispatcherServlet 更有价值。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-008",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring Boot 自动配置如何通过条件注解和 starter 生效？",
+    "answer": "### starter 做什么\n\nstarter 本质是一组依赖和约定，把某个功能需要的库一次性引入。例如 web starter 引入 Spring MVC、内嵌容器、JSON 等相关依赖。starter 本身不等于自动配置，它只是让依赖到位。\n\n### 自动配置怎么生效\n\nSpring Boot 启动时会加载自动配置类。这些类通过条件注解决定是否创建 Bean。\n\n| 条件注解 | 含义 |\n| --- | --- |\n| @ConditionalOnClass | classpath 有某个类才生效 |\n| @ConditionalOnMissingBean | 用户没自己定义 Bean 才创建默认 Bean |\n| @ConditionalOnProperty | 配置项满足条件才生效 |\n| @ConditionalOnWebApplication | Web 环境才生效 |\n\n### 为什么用户配置能覆盖\n\n自动配置通常会用 ConditionalOnMissingBean。只要用户自己声明了同类型 Bean，默认配置就不再创建。这也是 Spring Boot “约定优于配置，但允许覆盖”的核心。\n\n### 怎么排查\n\n看 conditions report，确认某个自动配置是 matched 还是 did not match。再检查 classpath、配置属性、用户自定义 Bean、Bean 名称和 @Primary。\n\n回答这题时可以说：starter 负责带依赖，auto-configuration 负责按条件装配，properties 负责把外部配置绑定到 Bean。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-009",
+    "module": "Spring框架",
+    "difficulty": 2,
+    "question": "Spring Boot 配置加载、Profile 和外部化配置优先级如何理解？",
+    "answer": "### 配置来源很多\n\nSpring Boot 配置可以来自 application.yml、profile 文件、环境变量、系统属性、命令行参数、配置中心、默认属性等。最终值由优先级决定，高优先级覆盖低优先级。\n\n### Profile\n\nProfile 用来区分环境或场景，例如 dev、test、prod。application-prod.yml 只在 prod profile 激活时生效。Profile 适合环境差异，不适合把所有业务开关都塞进去。\n\n### 外部化配置\n\n外部化配置的目标是让同一份构建产物在不同环境使用不同配置。数据库地址、线程池大小、开关、限流阈值都可以外置。密钥不要明文放进仓库，应走密钥管理或部署环境注入。\n\n### 常见优先级理解\n\n命令行参数和环境变量通常比 jar 包内 application.yml 优先级高，所以线上可以覆盖默认值。配置中心如果接入，还要看它在启动流程中的加载时机。\n\n### 排查方法\n\n不知道配置值从哪里来时，可以看 Actuator env/configprops，或者打开配置绑定日志。还要注意 relaxed binding：server.port、SERVER_PORT、server_port 可能映射到同一个属性。\n\n如果接入配置中心，还要区分启动期配置和运行期刷新配置。不是所有 Bean 都适合动态刷新，线程池大小、连接池、限流阈值这类配置刷新后是否真正生效，需要有明确验证和回滚策略。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-010",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring Security 的认证、授权和过滤器链如何工作？",
+    "answer": "### 认证和授权\n\n认证解决“你是谁”，授权解决“你能做什么”。登录、Token 校验、OAuth2 回调属于认证；角色、权限、资源访问控制属于授权。\n\n### 过滤器链\n\nSpring Security 基于一组 Filter 工作，请求进入 Web 层前会经过 SecurityFilterChain。不同 Filter 负责提取凭证、认证、保存 SecurityContext、异常处理、CSRF、防护等。\n\n~~~text\nRequest -> Security Filters -> Controller\n              |\n              -> AuthenticationManager\n              -> UserDetailsService / Provider\n~~~\n\n### 认证结果放哪里\n\n认证成功后，Authentication 会放入 SecurityContext，业务代码可以通过上下文拿到当前用户。无状态 JWT 场景中，每次请求都要从 Token 解析并构建上下文；有状态 session 场景中，上下文可保存在会话里。\n\n### 授权怎么做\n\n可以在 URL 层配置访问规则，也可以用方法级注解做细粒度控制。复杂系统里，权限不应只靠角色字符串，通常还要结合租户、资源归属、数据范围和操作类型。\n\n### 常见坑\n\n过滤器顺序不对会导致 Token 没解析就进入授权；异常处理没配好会返回默认 HTML；CSRF 对浏览器表单很重要，但纯 Token API 场景策略不同。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-011",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring 应用如何做指标、日志和链路观测？",
+    "answer": "### 三类观测信号\n\n指标看趋势，日志看上下文，链路追踪看跨服务调用路径。三者要互相能关联，通常通过 traceId/spanId/requestId 串起来。\n\n| 类型 | 关注点 | 例子 |\n| --- | --- | --- |\n| Metrics | 可聚合、可告警 | QPS、错误率、P95、线程池队列 |\n| Logs | 具体事件上下文 | 用户、订单号、错误码、异常栈 |\n| Traces | 一次请求经过哪里 | 网关、服务、DB、Redis、MQ |\n\n### Spring 里怎么做\n\nActuator 暴露健康检查、metrics、env 等端点；Micrometer 负责指标门面，可接 Prometheus、Datadog 等；日志用 Logback/Log4j2；链路追踪可接 OpenTelemetry。\n\n### 应该埋哪些字段\n\n接口名、状态码、业务错误码、耗时、用户/租户、traceId、下游依赖、重试次数、限流/降级标记。日志里不要输出密码、Token、身份证等敏感信息。\n\n### 告警不要只看平均值\n\n平均耗时可能很好看，但 P99 已经很差。核心接口应看 QPS、错误率、P95/P99、饱和度、线程池队列、连接池使用率、下游超时和 GC 停顿。\n\n### 实践口径\n\n观测不是上线后补日志，而是设计时就决定哪些行为可见。没有指标和 trace 的限流、重试、缓存，出了问题很难判断到底是谁在放大故障。",
+    "tags": ["Java 核心", "Spring框架", "Spring"],
+    "source": "精选"
+  },
+  {
+    "id": "java-spring-012",
+    "module": "Spring框架",
+    "difficulty": 3,
+    "question": "Spring 应用如何做优雅停机、限流、超时和健康检查？",
+    "answer": "### 优雅停机\n\n优雅停机的目标是停止接收新流量，等待在途请求完成，再释放资源。Spring Boot 可以配合 server.shutdown=graceful 和容器生命周期做到这一点，但还要看网关、注册中心、K8s 探针是否给足摘流时间。\n\n### 限流\n\n限流保护系统不被流量打穿。可以按接口、用户、租户、IP、资源维度限流。算法常见有固定窗口、滑动窗口、令牌桶、漏桶。核心是超限后返回明确结果，不能让请求继续堆在线程池和连接池里。\n\n### 超时\n\n每个外部调用都要有超时：HTTP、数据库、Redis、MQ、线程池 Future。超时要小于上游等待时间，否则上游已经放弃，下游还在继续消耗资源。重试必须配合退避、幂等和总超时预算。\n\n### 健康检查\n\nliveness 表示进程是否需要重启，readiness 表示是否可以接流。依赖短暂抖动时，不要轻易让 liveness 失败导致反复重启；readiness 更适合表达暂时不可接流。\n\n### 组合起来看\n\n优雅停机、限流、超时、健康检查不是四个孤立功能。发布时先摘流，再等待请求结束；过载时限流和快速失败；下游慢时超时和降级；实例异常时通过健康检查从流量池移除。\n\n生产发布时要把这些机制串成流程：readiness 先失败让实例摘流，等待网关和注册中心收敛，再关闭线程池和连接池。限流和超时的效果也要通过压测验证，否则配置存在但故障时不一定真的保护系统。",
+    "tags": ["Java 核心", "Spring框架", "Spring", "限流"],
+    "source": "精选"
+  }
+]

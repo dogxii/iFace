@@ -1,0 +1,3642 @@
+[
+  {
+    "questionId": "tools-001",
+    "checks": [
+      {
+        "id": "tools-001-check-01",
+        "kind": "single",
+        "prompt": "为什么 AI Agent 往往需要工具调用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型不能理解自然语言。"
+          },
+          {
+            "id": "b",
+            "text": "因为工具能提供实时查询、精确执行和外部系统操作能力。"
+          },
+          {
+            "id": "c",
+            "text": "因为工具可以替代所有模型推理。"
+          },
+          {
+            "id": "d",
+            "text": "因为工具越多越安全。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型擅长理解和决策，工具负责确定性能力和外部动作。",
+        "focus": "工具调用价值"
+      },
+      {
+        "id": "tools-001-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务通常更适合交给工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数据库查询"
+          },
+          {
+            "id": "b",
+            "text": "精确计算"
+          },
+          {
+            "id": "c",
+            "text": "创建工单或发消息"
+          },
+          {
+            "id": "d",
+            "text": "查询实时状态"
+          },
+          {
+            "id": "e",
+            "text": "解释一个通用概念"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "实时性、精确性和外部副作用通常应由工具处理。",
+        "focus": "工具适合"
+      },
+      {
+        "id": "tools-001-check-03",
+        "kind": "multiple",
+        "prompt": "工具调用系统里，哪些边界不能只靠模型？",
+        "options": [
+          {
+            "id": "a",
+            "text": "权限控制"
+          },
+          {
+            "id": "b",
+            "text": "参数校验"
+          },
+          {
+            "id": "c",
+            "text": "审计日志"
+          },
+          {
+            "id": "d",
+            "text": "高风险动作确认"
+          },
+          {
+            "id": "e",
+            "text": "用户意图初步理解"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "模型可参与决策，但安全和执行边界必须由系统强制。",
+        "focus": "工程边界"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-002",
+    "checks": [
+      {
+        "id": "tools-002-check-01",
+        "kind": "single",
+        "prompt": "function calling 或 tool calling 和自然语言指令的核心区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "tool calling 只是让模型多写一句话。"
+          },
+          {
+            "id": "b",
+            "text": "tool calling 要求模型输出结构化调用意图和参数。"
+          },
+          {
+            "id": "c",
+            "text": "自然语言指令一定更可解析。"
+          },
+          {
+            "id": "d",
+            "text": "tool calling 不需要 schema。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "结构化工具调用比自由文本更适合程序解析和校验。",
+        "focus": "Function Calling"
+      },
+      {
+        "id": "tools-002-check-02",
+        "kind": "multiple",
+        "prompt": "工具调用通常包含哪些结构化信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具名"
+          },
+          {
+            "id": "b",
+            "text": "参数对象"
+          },
+          {
+            "id": "c",
+            "text": "调用意图"
+          },
+          {
+            "id": "d",
+            "text": "必要上下文或引用"
+          },
+          {
+            "id": "e",
+            "text": "随机自然语言命令"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "结构化协议把模型决策和程序执行连接起来。",
+        "focus": "结构化调用"
+      },
+      {
+        "id": "tools-002-check-03",
+        "kind": "multiple",
+        "prompt": "把模型自然语言指令直接当命令执行，可能有什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "歧义"
+          },
+          {
+            "id": "b",
+            "text": "解析不稳定"
+          },
+          {
+            "id": "c",
+            "text": "参数缺失或错填"
+          },
+          {
+            "id": "d",
+            "text": "越权风险"
+          },
+          {
+            "id": "e",
+            "text": "自动更安全"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "生产系统不应把自由文本直接当可执行命令。",
+        "focus": "自由文本风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-003",
+    "checks": [
+      {
+        "id": "tools-003-check-01",
+        "kind": "single",
+        "prompt": "工具 schema 在 Agent 系统中起什么作用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "替代所有权限系统。"
+          },
+          {
+            "id": "b",
+            "text": "定义工具参数、类型、必填项和约束，是模型与程序之间的契约。"
+          },
+          {
+            "id": "c",
+            "text": "只用于 UI 展示。"
+          },
+          {
+            "id": "d",
+            "text": "让工具不用测试。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "schema 帮模型理解工具，也帮程序校验模型输出。",
+        "focus": "Tool Schema"
+      },
+      {
+        "id": "tools-003-check-02",
+        "kind": "multiple",
+        "prompt": "一个好的工具 schema 通常应包含哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具用途"
+          },
+          {
+            "id": "b",
+            "text": "参数字段说明"
+          },
+          {
+            "id": "c",
+            "text": "类型和必填规则"
+          },
+          {
+            "id": "d",
+            "text": "错误返回格式"
+          },
+          {
+            "id": "e",
+            "text": "开发者个人偏好"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "schema 越清晰，工具调用越容易稳定。",
+        "focus": "Schema 内容"
+      },
+      {
+        "id": "tools-003-check-03",
+        "kind": "multiple",
+        "prompt": "工具 schema 设计不当可能带来什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型误选工具"
+          },
+          {
+            "id": "b",
+            "text": "参数乱填"
+          },
+          {
+            "id": "c",
+            "text": "字段语义混淆"
+          },
+          {
+            "id": "d",
+            "text": "自动提升权限安全"
+          },
+          {
+            "id": "e",
+            "text": "不再需要校验"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "schema 是契约，但仍需权限和业务校验。",
+        "focus": "Schema 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-004",
+    "checks": [
+      {
+        "id": "tools-004-check-01",
+        "kind": "single",
+        "prompt": "Agent 如何决定是否要调用工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只要有工具就必须调用。"
+          },
+          {
+            "id": "b",
+            "text": "根据任务目标、上下文、工具能力、成本、权限和风险判断。"
+          },
+          {
+            "id": "c",
+            "text": "永远不调用工具。"
+          },
+          {
+            "id": "d",
+            "text": "随机选择。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "能调用不等于应该调用，工具决策本身需要约束。",
+        "focus": "是否调用工具"
+      },
+      {
+        "id": "tools-004-check-02",
+        "kind": "multiple",
+        "prompt": "哪些情况通常更应该调用工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "需要实时信息"
+          },
+          {
+            "id": "b",
+            "text": "需要精确数据"
+          },
+          {
+            "id": "c",
+            "text": "需要外部动作"
+          },
+          {
+            "id": "d",
+            "text": "只是解释基础概念"
+          },
+          {
+            "id": "e",
+            "text": "用户问候"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "工具应服务于模型自身不可靠或无法完成的能力。",
+        "focus": "应调用工具"
+      },
+      {
+        "id": "tools-004-check-03",
+        "kind": "multiple",
+        "prompt": "哪些因素可能让系统选择不调用工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具成本过高"
+          },
+          {
+            "id": "b",
+            "text": "用户无权限"
+          },
+          {
+            "id": "c",
+            "text": "风险过高且未确认"
+          },
+          {
+            "id": "d",
+            "text": "直接回答更可靠"
+          },
+          {
+            "id": "e",
+            "text": "工具名字更长"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具调用要综合价值、风险和成本。",
+        "focus": "不该调用"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-005",
+    "checks": [
+      {
+        "id": "tools-005-check-01",
+        "kind": "single",
+        "prompt": "为什么工具数量不是越多越好？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具越少模型越不能回答。"
+          },
+          {
+            "id": "b",
+            "text": "工具越多，选择复杂度、混淆和维护成本越高。"
+          },
+          {
+            "id": "c",
+            "text": "工具数量不影响系统。"
+          },
+          {
+            "id": "d",
+            "text": "工具越多权限越简单。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具生态要清晰，而不是无限扩张。",
+        "focus": "工具数量"
+      },
+      {
+        "id": "tools-005-check-02",
+        "kind": "multiple",
+        "prompt": "工具过多可能带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型误选工具"
+          },
+          {
+            "id": "b",
+            "text": "工具描述重叠"
+          },
+          {
+            "id": "c",
+            "text": "prompt 和 schema 变长"
+          },
+          {
+            "id": "d",
+            "text": "测试和权限成本增加"
+          },
+          {
+            "id": "e",
+            "text": "自动提升稳定性"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具越多，治理成本越高。",
+        "focus": "工具过多风险"
+      },
+      {
+        "id": "tools-005-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于工具治理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "职责单一"
+          },
+          {
+            "id": "b",
+            "text": "边界清晰"
+          },
+          {
+            "id": "c",
+            "text": "统一命名和描述规范"
+          },
+          {
+            "id": "d",
+            "text": "下线低价值工具"
+          },
+          {
+            "id": "e",
+            "text": "所有工具功能重叠"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具应该少而清楚，逐步扩展。",
+        "focus": "工具治理"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-006",
+    "checks": [
+      {
+        "id": "tools-006-check-01",
+        "kind": "single",
+        "prompt": "为什么工具描述很重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具描述只给人看。"
+          },
+          {
+            "id": "b",
+            "text": "模型主要通过名称和描述判断工具用途、边界和参数含义。"
+          },
+          {
+            "id": "c",
+            "text": "描述越长越好。"
+          },
+          {
+            "id": "d",
+            "text": "描述可以替代工具实现。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具描述质量直接影响工具选择和参数构造。",
+        "focus": "工具描述"
+      },
+      {
+        "id": "tools-006-check-02",
+        "kind": "multiple",
+        "prompt": "好的工具描述通常应说明什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "什么时候使用"
+          },
+          {
+            "id": "b",
+            "text": "什么时候不要使用"
+          },
+          {
+            "id": "c",
+            "text": "参数字段含义"
+          },
+          {
+            "id": "d",
+            "text": "返回结果含义"
+          },
+          {
+            "id": "e",
+            "text": "无关营销话术"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "描述要帮助模型做正确决策。",
+        "focus": "好描述包含"
+      },
+      {
+        "id": "tools-006-check-03",
+        "kind": "multiple",
+        "prompt": "差的工具描述可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "误选工具"
+          },
+          {
+            "id": "b",
+            "text": "参数缺失"
+          },
+          {
+            "id": "c",
+            "text": "结果误解"
+          },
+          {
+            "id": "d",
+            "text": "工具混用"
+          },
+          {
+            "id": "e",
+            "text": "自动提高可观测性"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "描述不清会直接影响调用准确率。",
+        "focus": "差描述后果"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-007",
+    "checks": [
+      {
+        "id": "tools-007-check-01",
+        "kind": "single",
+        "prompt": "为什么要区分只读工具和写操作工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为只读工具风险一定比写工具高。"
+          },
+          {
+            "id": "b",
+            "text": "因为写操作会改变外部状态，误触发风险更高。"
+          },
+          {
+            "id": "c",
+            "text": "因为二者完全没有区别。"
+          },
+          {
+            "id": "d",
+            "text": "因为写工具不需要权限。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "写操作有副作用，需要更强的确认、权限和幂等设计。",
+        "focus": "只读与写操作"
+      },
+      {
+        "id": "tools-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些更像只读工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "搜索知识库"
+          },
+          {
+            "id": "b",
+            "text": "查询工单状态"
+          },
+          {
+            "id": "c",
+            "text": "查询数据库记录"
+          },
+          {
+            "id": "d",
+            "text": "删除用户数据"
+          },
+          {
+            "id": "e",
+            "text": "修改配置"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "只读工具不应改变外部状态。",
+        "focus": "只读工具"
+      },
+      {
+        "id": "tools-007-check-03",
+        "kind": "multiple",
+        "prompt": "写操作工具通常需要哪些保护？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数校验"
+          },
+          {
+            "id": "b",
+            "text": "权限控制"
+          },
+          {
+            "id": "c",
+            "text": "二次确认或审批"
+          },
+          {
+            "id": "d",
+            "text": "幂等和审计"
+          },
+          {
+            "id": "e",
+            "text": "允许模型无条件执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "写操作要按更高风险等级处理。",
+        "focus": "写操作保护"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-008",
+    "checks": [
+      {
+        "id": "tools-008-check-01",
+        "kind": "single",
+        "prompt": "什么是工作流？它和单次工具调用有什么区别？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工作流只是一个工具名。"
+          },
+          {
+            "id": "b",
+            "text": "工作流是多个步骤、状态和条件组合的流程，不只是一次调用。"
+          },
+          {
+            "id": "c",
+            "text": "工作流不需要状态。"
+          },
+          {
+            "id": "d",
+            "text": "单次工具调用一定比工作流复杂。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工作流关注过程编排和状态推进。",
+        "focus": "Workflow"
+      },
+      {
+        "id": "tools-008-check-02",
+        "kind": "multiple",
+        "prompt": "工作流通常包含哪些元素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "步骤"
+          },
+          {
+            "id": "b",
+            "text": "状态"
+          },
+          {
+            "id": "c",
+            "text": "条件分支"
+          },
+          {
+            "id": "d",
+            "text": "错误处理"
+          },
+          {
+            "id": "e",
+            "text": "随机输出"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工作流是可管理的流程，不是工具调用列表。",
+        "focus": "工作流组成"
+      },
+      {
+        "id": "tools-008-check-03",
+        "kind": "multiple",
+        "prompt": "多步工作流相比单次工具调用，新增了哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "状态管理"
+          },
+          {
+            "id": "b",
+            "text": "步骤依赖"
+          },
+          {
+            "id": "c",
+            "text": "回滚和恢复"
+          },
+          {
+            "id": "d",
+            "text": "端到端测试"
+          },
+          {
+            "id": "e",
+            "text": "不需要日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多步流程的复杂度主要来自步骤间关系。",
+        "focus": "与工具调用区别"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-009",
+    "checks": [
+      {
+        "id": "tools-009-check-01",
+        "kind": "single",
+        "prompt": "同步工作流和异步工作流怎么选择？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有任务都应该同步。"
+          },
+          {
+            "id": "b",
+            "text": "短、快、即时反馈适合同步；长、慢、等待外部事件适合异步。"
+          },
+          {
+            "id": "c",
+            "text": "异步工作流不需要状态。"
+          },
+          {
+            "id": "d",
+            "text": "同步工作流不能调用工具。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "选择取决于耗时、用户体验和是否需要等待外部事件。",
+        "focus": "同步/异步"
+      },
+      {
+        "id": "tools-009-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务更适合同步工作流？",
+        "options": [
+          {
+            "id": "a",
+            "text": "快速只读查询"
+          },
+          {
+            "id": "b",
+            "text": "简短校验"
+          },
+          {
+            "id": "c",
+            "text": "低延迟即时反馈"
+          },
+          {
+            "id": "d",
+            "text": "长时间批处理"
+          },
+          {
+            "id": "e",
+            "text": "等待人工审批"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "同步适合短链路和即时结果。",
+        "focus": "适合同步"
+      },
+      {
+        "id": "tools-009-check-03",
+        "kind": "multiple",
+        "prompt": "哪些任务更适合异步工作流？",
+        "options": [
+          {
+            "id": "a",
+            "text": "批量处理"
+          },
+          {
+            "id": "b",
+            "text": "等待第三方回调"
+          },
+          {
+            "id": "c",
+            "text": "人工审批"
+          },
+          {
+            "id": "d",
+            "text": "长时间分析"
+          },
+          {
+            "id": "e",
+            "text": "一句简单解释"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "异步需要任务持久化、进度通知和恢复能力。",
+        "focus": "适合异步"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-010",
+    "checks": [
+      {
+        "id": "tools-010-check-01",
+        "kind": "single",
+        "prompt": "为什么工具调用必须考虑超时控制？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为工具永远瞬时返回。"
+          },
+          {
+            "id": "b",
+            "text": "因为慢工具会阻塞链路、增加成本并拖垮用户体验。"
+          },
+          {
+            "id": "c",
+            "text": "因为超时只影响日志。"
+          },
+          {
+            "id": "d",
+            "text": "因为超时后一定成功。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "超时是可靠性和体验控制的基础。",
+        "focus": "超时控制"
+      },
+      {
+        "id": "tools-010-check-02",
+        "kind": "multiple",
+        "prompt": "工具超时时可以有哪些处理策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "限时等待"
+          },
+          {
+            "id": "b",
+            "text": "重试或退避"
+          },
+          {
+            "id": "c",
+            "text": "降级到备用工具"
+          },
+          {
+            "id": "d",
+            "text": "返回可解释错误"
+          },
+          {
+            "id": "e",
+            "text": "无限等待"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "超时策略要按工具重要性和风险设计。",
+        "focus": "超时策略"
+      },
+      {
+        "id": "tools-010-check-03",
+        "kind": "multiple",
+        "prompt": "没有超时控制可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "请求堆积"
+          },
+          {
+            "id": "b",
+            "text": "用户长时间无反馈"
+          },
+          {
+            "id": "c",
+            "text": "成本和资源占用上升"
+          },
+          {
+            "id": "d",
+            "text": "自动提高成功率"
+          },
+          {
+            "id": "e",
+            "text": "更容易审计"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "超时缺失会让单个慢依赖影响整条链路。",
+        "focus": "无超时风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-011",
+    "checks": [
+      {
+        "id": "tools-011-check-01",
+        "kind": "single",
+        "prompt": "为什么模型给出的工具参数不能直接执行？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型永远不会给参数。"
+          },
+          {
+            "id": "b",
+            "text": "因为模型可能填错、漏填、越权或被注入诱导。"
+          },
+          {
+            "id": "c",
+            "text": "因为工具参数不重要。"
+          },
+          {
+            "id": "d",
+            "text": "因为 schema 可以替代所有校验。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模型输出是不可信输入，必须校验后才能执行。",
+        "focus": "参数校验"
+      },
+      {
+        "id": "tools-011-check-02",
+        "kind": "multiple",
+        "prompt": "工具参数校验应覆盖哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "类型和必填"
+          },
+          {
+            "id": "b",
+            "text": "枚举和范围"
+          },
+          {
+            "id": "c",
+            "text": "资源权限"
+          },
+          {
+            "id": "d",
+            "text": "业务规则"
+          },
+          {
+            "id": "e",
+            "text": "模型回答语气"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "校验要覆盖语法、权限和业务语义。",
+        "focus": "校验内容"
+      },
+      {
+        "id": "tools-011-check-03",
+        "kind": "multiple",
+        "prompt": "跳过参数校验可能造成什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "查询错资源"
+          },
+          {
+            "id": "b",
+            "text": "写错数据"
+          },
+          {
+            "id": "c",
+            "text": "越权访问"
+          },
+          {
+            "id": "d",
+            "text": "安全事故"
+          },
+          {
+            "id": "e",
+            "text": "自动提升效率且无风险"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具参数错误会直接变成系统行为错误。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-012",
+    "checks": [
+      {
+        "id": "tools-012-check-01",
+        "kind": "single",
+        "prompt": "为什么工具 schema 本身不能替代权限系统？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 schema 完全没用。"
+          },
+          {
+            "id": "b",
+            "text": "schema 定义参数形状，权限系统决定谁能对哪些资源做什么。"
+          },
+          {
+            "id": "c",
+            "text": "权限只影响前端。"
+          },
+          {
+            "id": "d",
+            "text": "schema 能自动鉴权。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "结构合法不代表用户有权执行。",
+        "focus": "Schema vs 权限"
+      },
+      {
+        "id": "tools-012-check-02",
+        "kind": "multiple",
+        "prompt": "工具权限系统通常要校验哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户身份"
+          },
+          {
+            "id": "b",
+            "text": "资源归属"
+          },
+          {
+            "id": "c",
+            "text": "操作类型"
+          },
+          {
+            "id": "d",
+            "text": "审批条件"
+          },
+          {
+            "id": "e",
+            "text": "字段描述长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "权限校验是执行前的强制边界。",
+        "focus": "权限要校验"
+      },
+      {
+        "id": "tools-012-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法是错误的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数合法就一定有权限"
+          },
+          {
+            "id": "b",
+            "text": "模型说可以执行就可以执行"
+          },
+          {
+            "id": "c",
+            "text": "schema 可以替代鉴权"
+          },
+          {
+            "id": "d",
+            "text": "权限应在工具网关强制执行"
+          },
+          {
+            "id": "e",
+            "text": "高风险操作应有审批"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "权限是确定性系统职责，不是模型自述。",
+        "focus": "常见误区"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-013",
+    "checks": [
+      {
+        "id": "tools-013-check-01",
+        "kind": "single",
+        "prompt": "工具调用失败时，Agent 怎么处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "假装成功。"
+          },
+          {
+            "id": "b",
+            "text": "判断失败类型，决定重试、降级、澄清、恢复或转人工。"
+          },
+          {
+            "id": "c",
+            "text": "永远从头开始。"
+          },
+          {
+            "id": "d",
+            "text": "直接忽略错误。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "失败处理要根据错误类型和副作用风险选择策略。",
+        "focus": "工具失败处理"
+      },
+      {
+        "id": "tools-013-check-02",
+        "kind": "multiple",
+        "prompt": "工具失败可能包括哪些类型？",
+        "options": [
+          {
+            "id": "a",
+            "text": "超时"
+          },
+          {
+            "id": "b",
+            "text": "参数错误"
+          },
+          {
+            "id": "c",
+            "text": "权限拒绝"
+          },
+          {
+            "id": "d",
+            "text": "外部服务不可用"
+          },
+          {
+            "id": "e",
+            "text": "用户头像太小"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同失败类型对应不同恢复策略。",
+        "focus": "失败类型"
+      },
+      {
+        "id": "tools-013-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是合理的失败恢复方式？",
+        "options": [
+          {
+            "id": "a",
+            "text": "幂等重试"
+          },
+          {
+            "id": "b",
+            "text": "使用备用工具"
+          },
+          {
+            "id": "c",
+            "text": "请求用户补充参数"
+          },
+          {
+            "id": "d",
+            "text": "人工接管"
+          },
+          {
+            "id": "e",
+            "text": "编造工具结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "恢复策略不能破坏真实状态和审计链路。",
+        "focus": "合理恢复"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-014",
+    "checks": [
+      {
+        "id": "tools-014-check-01",
+        "kind": "single",
+        "prompt": "工具调用重试为什么一定要结合幂等性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有工具都是只读。"
+          },
+          {
+            "id": "b",
+            "text": "因为重复执行有副作用的操作可能造成重复下单、重复发消息等问题。"
+          },
+          {
+            "id": "c",
+            "text": "因为幂等性只影响日志格式。"
+          },
+          {
+            "id": "d",
+            "text": "因为重试不可能失败。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "重试必须知道重复执行是否安全。",
+        "focus": "重试与幂等"
+      },
+      {
+        "id": "tools-014-check-02",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于幂等设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "幂等 key"
+          },
+          {
+            "id": "b",
+            "text": "操作前查询状态"
+          },
+          {
+            "id": "c",
+            "text": "去重记录"
+          },
+          {
+            "id": "d",
+            "text": "明确重试语义"
+          },
+          {
+            "id": "e",
+            "text": "无限制重试写操作"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "幂等机制能降低重试带来的副作用风险。",
+        "focus": "幂等设计"
+      },
+      {
+        "id": "tools-014-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况通常不宜直接重试？",
+        "options": [
+          {
+            "id": "a",
+            "text": "非幂等写操作状态不明"
+          },
+          {
+            "id": "b",
+            "text": "权限拒绝"
+          },
+          {
+            "id": "c",
+            "text": "参数非法"
+          },
+          {
+            "id": "d",
+            "text": "幂等只读查询超时"
+          },
+          {
+            "id": "e",
+            "text": "临时网络抖动且有退避策略"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "重试要区分可恢复错误和不可恢复错误。",
+        "focus": "不宜直接重试"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-015",
+    "checks": [
+      {
+        "id": "tools-015-check-01",
+        "kind": "single",
+        "prompt": "多工具系统中，工具路由层通常负责什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "随机选择工具。"
+          },
+          {
+            "id": "b",
+            "text": "根据任务、上下文、权限和风险选择合适工具或流程。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有工具描述。"
+          },
+          {
+            "id": "d",
+            "text": "替代工具实现。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具路由决定请求走哪条能力路径。",
+        "focus": "工具路由"
+      },
+      {
+        "id": "tools-015-check-02",
+        "kind": "multiple",
+        "prompt": "工具路由可以基于哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户意图"
+          },
+          {
+            "id": "b",
+            "text": "工具能力边界"
+          },
+          {
+            "id": "c",
+            "text": "权限和风险等级"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟"
+          },
+          {
+            "id": "e",
+            "text": "工具图标颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "路由需要综合能力、风险和资源约束。",
+        "focus": "路由依据"
+      },
+      {
+        "id": "tools-015-check-03",
+        "kind": "multiple",
+        "prompt": "工具路由错误可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "误调用工具"
+          },
+          {
+            "id": "b",
+            "text": "漏调用必要工具"
+          },
+          {
+            "id": "c",
+            "text": "高风险动作走低安全路径"
+          },
+          {
+            "id": "d",
+            "text": "成本失控"
+          },
+          {
+            "id": "e",
+            "text": "自动提升稳定性"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具路由是多工具系统的关键控制点。",
+        "focus": "路由错误"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-016",
+    "checks": [
+      {
+        "id": "tools-016-check-01",
+        "kind": "single",
+        "prompt": "什么是工具编排？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把多个工具名写在一起。"
+          },
+          {
+            "id": "b",
+            "text": "规划、执行、依赖管理、状态更新和错误处理多个工具步骤。"
+          },
+          {
+            "id": "c",
+            "text": "只顺序调用几个工具且不看结果。"
+          },
+          {
+            "id": "d",
+            "text": "只用于 UI 排版。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "编排关注工具间依赖、条件和状态。",
+        "focus": "工具编排"
+      },
+      {
+        "id": "tools-016-check-02",
+        "kind": "multiple",
+        "prompt": "工具编排通常需要哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "步骤依赖"
+          },
+          {
+            "id": "b",
+            "text": "条件分支"
+          },
+          {
+            "id": "c",
+            "text": "错误处理"
+          },
+          {
+            "id": "d",
+            "text": "结果合并"
+          },
+          {
+            "id": "e",
+            "text": "随机执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "编排是流程管理，而不是简单调用列表。",
+        "focus": "编排能力"
+      },
+      {
+        "id": "tools-016-check-03",
+        "kind": "multiple",
+        "prompt": "简单顺序调用几个工具可能缺少什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "状态管理"
+          },
+          {
+            "id": "b",
+            "text": "失败恢复"
+          },
+          {
+            "id": "c",
+            "text": "条件跳转"
+          },
+          {
+            "id": "d",
+            "text": "回滚策略"
+          },
+          {
+            "id": "e",
+            "text": "工具参数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂任务需要明确的流程语义。",
+        "focus": "简单顺序调用的局限"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-017",
+    "checks": [
+      {
+        "id": "tools-017-check-01",
+        "kind": "single",
+        "prompt": "为什么工作流系统必须显式管理状态？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为模型上下文永远可靠。"
+          },
+          {
+            "id": "b",
+            "text": "因为状态决定任务进度、已执行动作、下一步和恢复点。"
+          },
+          {
+            "id": "c",
+            "text": "因为状态只影响页面展示。"
+          },
+          {
+            "id": "d",
+            "text": "因为状态越隐式越安全。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工作流状态不能只靠模型聊天历史维持。",
+        "focus": "工作流状态"
+      },
+      {
+        "id": "tools-017-check-02",
+        "kind": "multiple",
+        "prompt": "工具工作流状态通常包括哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前步骤"
+          },
+          {
+            "id": "b",
+            "text": "已完成动作"
+          },
+          {
+            "id": "c",
+            "text": "工具输入输出摘要"
+          },
+          {
+            "id": "d",
+            "text": "错误和重试记录"
+          },
+          {
+            "id": "e",
+            "text": "随机对话废话"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "状态要服务于恢复、审计和继续执行。",
+        "focus": "状态内容"
+      },
+      {
+        "id": "tools-017-check-03",
+        "kind": "multiple",
+        "prompt": "只依赖模型上下文管理状态可能带来什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "忘记已执行动作"
+          },
+          {
+            "id": "b",
+            "text": "重复执行"
+          },
+          {
+            "id": "c",
+            "text": "恢复困难"
+          },
+          {
+            "id": "d",
+            "text": "自动提高可靠性"
+          },
+          {
+            "id": "e",
+            "text": "取消审计需求"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "显式状态是可靠工作流的基础。",
+        "focus": "隐式状态风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-018",
+    "checks": [
+      {
+        "id": "tools-018-check-01",
+        "kind": "single",
+        "prompt": "为什么高风险工具常需要 Human-in-the-Loop？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有工具都必须人工执行。"
+          },
+          {
+            "id": "b",
+            "text": "因为不可逆、敏感或高影响操作需要人工确认或审批。"
+          },
+          {
+            "id": "c",
+            "text": "因为人工确认可以替代日志。"
+          },
+          {
+            "id": "d",
+            "text": "因为模型不能做任何判断。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "人在环路是风险控制和责任边界的一部分。",
+        "focus": "人工确认"
+      },
+      {
+        "id": "tools-018-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合加人工确认？",
+        "options": [
+          {
+            "id": "a",
+            "text": "支付或退款"
+          },
+          {
+            "id": "b",
+            "text": "删除数据"
+          },
+          {
+            "id": "c",
+            "text": "修改权限"
+          },
+          {
+            "id": "d",
+            "text": "对外发送正式通知"
+          },
+          {
+            "id": "e",
+            "text": "查询公开 FAQ"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "高影响或不可逆动作应有确认机制。",
+        "focus": "高风险场景"
+      },
+      {
+        "id": "tools-018-check-03",
+        "kind": "multiple",
+        "prompt": "人工确认节点应提供哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "待执行动作"
+          },
+          {
+            "id": "b",
+            "text": "参数和影响范围"
+          },
+          {
+            "id": "c",
+            "text": "证据和上下文"
+          },
+          {
+            "id": "d",
+            "text": "审批结果写回状态"
+          },
+          {
+            "id": "e",
+            "text": "只给一个空白按钮"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "人工确认必须可审查、可追踪、可回放。",
+        "focus": "人工节点"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-019",
+    "checks": [
+      {
+        "id": "tools-019-check-01",
+        "kind": "single",
+        "prompt": "工具调用链路为什么必须具备可观测性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为只看最终回答就足够。"
+          },
+          {
+            "id": "b",
+            "text": "因为需要定位工具选择、参数、执行结果、错误和成本问题。"
+          },
+          {
+            "id": "c",
+            "text": "因为可观测性只影响 UI。"
+          },
+          {
+            "id": "d",
+            "text": "因为日志可以替代权限。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具链路问题常发生在中间步骤，必须可追踪。",
+        "focus": "可观测性"
+      },
+      {
+        "id": "tools-019-check-02",
+        "kind": "multiple",
+        "prompt": "工具调用至少应记录哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具名和版本"
+          },
+          {
+            "id": "b",
+            "text": "输入参数摘要"
+          },
+          {
+            "id": "c",
+            "text": "执行结果和错误码"
+          },
+          {
+            "id": "d",
+            "text": "耗时、重试和调用方"
+          },
+          {
+            "id": "e",
+            "text": "无关动画状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "日志要支持回放、审计和性能分析。",
+        "focus": "记录内容"
+      },
+      {
+        "id": "tools-019-check-03",
+        "kind": "multiple",
+        "prompt": "可观测性能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "故障定位"
+          },
+          {
+            "id": "b",
+            "text": "成本分析"
+          },
+          {
+            "id": "c",
+            "text": "安全审计"
+          },
+          {
+            "id": "d",
+            "text": "评测样本沉淀"
+          },
+          {
+            "id": "e",
+            "text": "自动修复所有问题"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可观测性是治理工具链路的基础。",
+        "focus": "可观测价值"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-020",
+    "checks": [
+      {
+        "id": "tools-020-check-01",
+        "kind": "single",
+        "prompt": "什么时候适合并行调用多个工具？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有工具都必须严格依赖前一个结果。"
+          },
+          {
+            "id": "b",
+            "text": "多个工具互不依赖，且结果可以后续合并。"
+          },
+          {
+            "id": "c",
+            "text": "写操作都应该无脑并行。"
+          },
+          {
+            "id": "d",
+            "text": "并行后不需要状态管理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "并行适合独立任务，不适合强依赖或高风险写操作。",
+        "focus": "并行工具"
+      },
+      {
+        "id": "tools-020-check-02",
+        "kind": "multiple",
+        "prompt": "并行工具调用可能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低总等待时间"
+          },
+          {
+            "id": "b",
+            "text": "同时获取多源信息"
+          },
+          {
+            "id": "c",
+            "text": "提高覆盖率"
+          },
+          {
+            "id": "d",
+            "text": "自动解决冲突"
+          },
+          {
+            "id": "e",
+            "text": "自动降低所有成本"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "并行能提速和扩展覆盖，但需要合并策略。",
+        "focus": "并行收益"
+      },
+      {
+        "id": "tools-020-check-03",
+        "kind": "multiple",
+        "prompt": "并行工具调用会带来哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "结果冲突"
+          },
+          {
+            "id": "b",
+            "text": "资源竞争"
+          },
+          {
+            "id": "c",
+            "text": "合并逻辑复杂"
+          },
+          {
+            "id": "d",
+            "text": "状态一致性问题"
+          },
+          {
+            "id": "e",
+            "text": "不需要日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "并行化需要依赖分析、隔离和结果融合。",
+        "focus": "并行风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-021",
+    "checks": [
+      {
+        "id": "tools-021-check-01",
+        "kind": "single",
+        "prompt": "工具调用链路中可以缓存哪些环节？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只能缓存最终聊天文本。"
+          },
+          {
+            "id": "b",
+            "text": "只读查询、检索结果、工具元数据和稳定中间结果。"
+          },
+          {
+            "id": "c",
+            "text": "所有写操作许可都永久缓存。"
+          },
+          {
+            "id": "d",
+            "text": "高风险审批结果可以无条件复用。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "缓存适合稳定、只读、可过期和权限可控的结果。",
+        "focus": "工具缓存"
+      },
+      {
+        "id": "tools-021-check-02",
+        "kind": "multiple",
+        "prompt": "工具链路缓存可能带来哪些收益？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低延迟"
+          },
+          {
+            "id": "b",
+            "text": "降低重复调用成本"
+          },
+          {
+            "id": "c",
+            "text": "减少外部 API 压力"
+          },
+          {
+            "id": "d",
+            "text": "替代权限校验"
+          },
+          {
+            "id": "e",
+            "text": "保证数据永远最新"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "缓存提升性能和成本效率，但不能替代权限和时效控制。",
+        "focus": "缓存收益"
+      },
+      {
+        "id": "tools-021-check-03",
+        "kind": "multiple",
+        "prompt": "工具缓存时要注意哪些问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数据过期"
+          },
+          {
+            "id": "b",
+            "text": "权限隔离"
+          },
+          {
+            "id": "c",
+            "text": "缓存键包含关键上下文"
+          },
+          {
+            "id": "d",
+            "text": "写操作副作用不可乱缓存"
+          },
+          {
+            "id": "e",
+            "text": "所有缓存永不过期"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "缓存错误可能造成串数据、过期答案或越权泄露。",
+        "focus": "缓存注意"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-022",
+    "checks": [
+      {
+        "id": "tools-022-check-01",
+        "kind": "single",
+        "prompt": "为什么工具接口版本管理在 Agent 系统里很重要？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为工具接口永远不变。"
+          },
+          {
+            "id": "b",
+            "text": "因为模型和工作流依赖工具 schema，接口变更会影响参数构造和执行结果。"
+          },
+          {
+            "id": "c",
+            "text": "因为版本号能自动修复 bug。"
+          },
+          {
+            "id": "d",
+            "text": "因为版本管理只影响文档。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具 schema 变化会直接影响 Agent 的调用协议。",
+        "focus": "接口版本"
+      },
+      {
+        "id": "tools-022-check-02",
+        "kind": "multiple",
+        "prompt": "哪些变更需要版本管理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数字段新增或删除"
+          },
+          {
+            "id": "b",
+            "text": "参数语义变化"
+          },
+          {
+            "id": "c",
+            "text": "返回结构变化"
+          },
+          {
+            "id": "d",
+            "text": "权限规则变化"
+          },
+          {
+            "id": "e",
+            "text": "注释排版变化"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "任何影响模型调用或程序解析的变化都要治理。",
+        "focus": "版本变更"
+      },
+      {
+        "id": "tools-022-check-03",
+        "kind": "multiple",
+        "prompt": "工具接口版本治理应包含哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "兼容期"
+          },
+          {
+            "id": "b",
+            "text": "变更审查"
+          },
+          {
+            "id": "c",
+            "text": "回归测试"
+          },
+          {
+            "id": "d",
+            "text": "回滚路径"
+          },
+          {
+            "id": "e",
+            "text": "静默删除旧字段"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具接口是线上契约，不能随意破坏。",
+        "focus": "治理方式"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-023",
+    "checks": [
+      {
+        "id": "tools-023-check-01",
+        "kind": "single",
+        "prompt": "什么是工具调用链路中的 fallback 策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "失败后假装成功。"
+          },
+          {
+            "id": "b",
+            "text": "主路径失败时，使用备用工具、降级答案、人工接管或安全终止。"
+          },
+          {
+            "id": "c",
+            "text": "删除所有错误日志。"
+          },
+          {
+            "id": "d",
+            "text": "永远无限重试。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "fallback 是失败后的有序降级，而不是掩盖失败。",
+        "focus": "Fallback"
+      },
+      {
+        "id": "tools-023-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于合理 fallback？",
+        "options": [
+          {
+            "id": "a",
+            "text": "备用工具"
+          },
+          {
+            "id": "b",
+            "text": "只读降级查询"
+          },
+          {
+            "id": "c",
+            "text": "人工接管"
+          },
+          {
+            "id": "d",
+            "text": "返回可解释的失败信息"
+          },
+          {
+            "id": "e",
+            "text": "编造结果继续流程"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "fallback 要保持真实状态和用户信任。",
+        "focus": "Fallback 方式"
+      },
+      {
+        "id": "tools-023-check-03",
+        "kind": "multiple",
+        "prompt": "fallback 设计需要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确触发条件"
+          },
+          {
+            "id": "b",
+            "text": "明确降级能力边界"
+          },
+          {
+            "id": "c",
+            "text": "记录日志和原因"
+          },
+          {
+            "id": "d",
+            "text": "避免静默改变业务语义"
+          },
+          {
+            "id": "e",
+            "text": "所有失败都走同一种降级"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "降级策略要可解释、可审计、可恢复。",
+        "focus": "设计要点"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-024",
+    "checks": [
+      {
+        "id": "tools-024-check-01",
+        "kind": "single",
+        "prompt": "为什么多步工具工作流常需要 rollback 设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为所有步骤都是只读。"
+          },
+          {
+            "id": "b",
+            "text": "因为后续步骤失败时，前面已经产生的副作用可能需要补偿或回滚。"
+          },
+          {
+            "id": "c",
+            "text": "因为 rollback 可以替代权限校验。"
+          },
+          {
+            "id": "d",
+            "text": "因为 rollback 不需要状态。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多步写操作要考虑部分成功后的补偿策略。",
+        "focus": "Rollback"
+      },
+      {
+        "id": "tools-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景可能需要 rollback 或补偿？",
+        "options": [
+          {
+            "id": "a",
+            "text": "创建资源后后续配置失败"
+          },
+          {
+            "id": "b",
+            "text": "扣款后发货失败"
+          },
+          {
+            "id": "c",
+            "text": "修改权限后审批撤销"
+          },
+          {
+            "id": "d",
+            "text": "查询公开文档"
+          },
+          {
+            "id": "e",
+            "text": "只读搜索"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "有副作用和跨步骤依赖的流程更需要回滚设计。",
+        "focus": "回滚对象"
+      },
+      {
+        "id": "tools-024-check-03",
+        "kind": "multiple",
+        "prompt": "rollback 设计应包含哪些要素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "记录每步副作用"
+          },
+          {
+            "id": "b",
+            "text": "设计补偿动作"
+          },
+          {
+            "id": "c",
+            "text": "明确不可回滚时的人工处理"
+          },
+          {
+            "id": "d",
+            "text": "保留审计日志"
+          },
+          {
+            "id": "e",
+            "text": "假设所有步骤都能完美撤销"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不是所有动作都能真正回滚，补偿和人工处理也很重要。",
+        "focus": "回滚设计"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-025",
+    "checks": [
+      {
+        "id": "tools-025-check-01",
+        "kind": "single",
+        "prompt": "多个工具返回结果后，Agent 应该如何融合？",
+        "options": [
+          {
+            "id": "a",
+            "text": "随机选一个结果。"
+          },
+          {
+            "id": "b",
+            "text": "按来源可信度、时间、权限和任务目标综合判断，并处理冲突。"
+          },
+          {
+            "id": "c",
+            "text": "把所有结果无序拼接。"
+          },
+          {
+            "id": "d",
+            "text": "忽略工具结果自由回答。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "结果融合要考虑证据质量和冲突处理。",
+        "focus": "结果融合"
+      },
+      {
+        "id": "tools-025-check-02",
+        "kind": "multiple",
+        "prompt": "结果融合时应考虑哪些因素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "来源可信度"
+          },
+          {
+            "id": "b",
+            "text": "时间新旧"
+          },
+          {
+            "id": "c",
+            "text": "权限范围"
+          },
+          {
+            "id": "d",
+            "text": "结果是否冲突"
+          },
+          {
+            "id": "e",
+            "text": "工具名称长度"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "融合不是简单拼接，而是证据整合。",
+        "focus": "融合考虑"
+      },
+      {
+        "id": "tools-025-check-03",
+        "kind": "multiple",
+        "prompt": "工具结果冲突时，哪些处理更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "标明冲突"
+          },
+          {
+            "id": "b",
+            "text": "优先权威来源"
+          },
+          {
+            "id": "c",
+            "text": "必要时请求人工确认"
+          },
+          {
+            "id": "d",
+            "text": "随机选一个"
+          },
+          {
+            "id": "e",
+            "text": "同时说两个都一定正确"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "冲突结果要显式处理，不能悄悄合成。",
+        "focus": "冲突处理"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-026",
+    "checks": [
+      {
+        "id": "tools-026-check-01",
+        "kind": "single",
+        "prompt": "为什么带副作用的工具应该和只读工具走不同执行链路？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为只读工具永远不需要日志。"
+          },
+          {
+            "id": "b",
+            "text": "因为副作用工具会改变外部状态，需要更严格的权限、确认、幂等和审计。"
+          },
+          {
+            "id": "c",
+            "text": "因为副作用工具不需要参数。"
+          },
+          {
+            "id": "d",
+            "text": "因为写操作一定低风险。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "写操作风险等级更高，应走更严格链路。",
+        "focus": "副作用链路"
+      },
+      {
+        "id": "tools-026-check-02",
+        "kind": "multiple",
+        "prompt": "副作用工具链路通常需要哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "强权限校验"
+          },
+          {
+            "id": "b",
+            "text": "二次确认或审批"
+          },
+          {
+            "id": "c",
+            "text": "幂等 key"
+          },
+          {
+            "id": "d",
+            "text": "审计和回滚/补偿"
+          },
+          {
+            "id": "e",
+            "text": "无需记录参数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "副作用工具要能防错、追责和恢复。",
+        "focus": "副作用链路能力"
+      },
+      {
+        "id": "tools-026-check-03",
+        "kind": "multiple",
+        "prompt": "区分只读和写操作有什么价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "降低误执行风险"
+          },
+          {
+            "id": "b",
+            "text": "支持不同安全策略"
+          },
+          {
+            "id": "c",
+            "text": "支持不同重试策略"
+          },
+          {
+            "id": "d",
+            "text": "支持不同审计级别"
+          },
+          {
+            "id": "e",
+            "text": "让写操作绕过确认"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "风险分级是工具安全设计的基础。",
+        "focus": "只读/写分离价值"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-027",
+    "checks": [
+      {
+        "id": "tools-027-check-01",
+        "kind": "single",
+        "prompt": "为什么复杂 Agent 工作流常引入工作流引擎或状态机？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了让模型完全自由编排。"
+          },
+          {
+            "id": "b",
+            "text": "为了显式管理状态、转移、重试、补偿和人工节点。"
+          },
+          {
+            "id": "c",
+            "text": "为了删除所有流程约束。"
+          },
+          {
+            "id": "d",
+            "text": "因为状态机可以替代所有工具。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工作流引擎把自由执行收敛为可控流程。",
+        "focus": "工作流引擎/状态机"
+      },
+      {
+        "id": "tools-027-check-02",
+        "kind": "multiple",
+        "prompt": "工作流引擎或状态机能带来哪些价值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确状态转移"
+          },
+          {
+            "id": "b",
+            "text": "支持持久化和恢复"
+          },
+          {
+            "id": "c",
+            "text": "管理重试和超时"
+          },
+          {
+            "id": "d",
+            "text": "支持人工审批"
+          },
+          {
+            "id": "e",
+            "text": "自动提高模型知识"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "它解决的是可靠执行和治理问题。",
+        "focus": "引擎价值"
+      },
+      {
+        "id": "tools-027-check-03",
+        "kind": "multiple",
+        "prompt": "完全让模型自由编排工具可能带来哪些风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "状态混乱"
+          },
+          {
+            "id": "b",
+            "text": "重复副作用"
+          },
+          {
+            "id": "c",
+            "text": "终止条件不清"
+          },
+          {
+            "id": "d",
+            "text": "审计困难"
+          },
+          {
+            "id": "e",
+            "text": "自动提升合规性"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂工作流需要确定性流程骨架。",
+        "focus": "自由编排风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-028",
+    "checks": [
+      {
+        "id": "tools-028-check-01",
+        "kind": "single",
+        "prompt": "“模型会不会自动学会用工具”和“系统是否允许它安全地用工具”的区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "二者完全一样。"
+          },
+          {
+            "id": "b",
+            "text": "前者是模型能力问题，后者是权限、校验、审计和执行边界问题。"
+          },
+          {
+            "id": "c",
+            "text": "只要模型会用就可以直接执行。"
+          },
+          {
+            "id": "d",
+            "text": "系统安全只靠 Prompt。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "会调用工具不代表可以安全执行工具。",
+        "focus": "会用 vs 允许安全用"
+      },
+      {
+        "id": "tools-028-check-02",
+        "kind": "multiple",
+        "prompt": "系统允许安全使用工具通常需要哪些条件？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具 schema 明确"
+          },
+          {
+            "id": "b",
+            "text": "参数校验"
+          },
+          {
+            "id": "c",
+            "text": "权限控制"
+          },
+          {
+            "id": "d",
+            "text": "审计和回滚策略"
+          },
+          {
+            "id": "e",
+            "text": "模型自称安全"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "安全使用是系统工程，不是模型能力单点问题。",
+        "focus": "安全使用条件"
+      },
+      {
+        "id": "tools-028-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法是错误的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型会用工具就不需要网关"
+          },
+          {
+            "id": "b",
+            "text": "Prompt 写清楚就能替代权限"
+          },
+          {
+            "id": "c",
+            "text": "工具调用成功就一定业务正确"
+          },
+          {
+            "id": "d",
+            "text": "高风险工具需要审批"
+          },
+          {
+            "id": "e",
+            "text": "参数需要校验"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "工具安全必须由系统能力保证。",
+        "focus": "误区"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-029",
+    "checks": [
+      {
+        "id": "tools-029-check-01",
+        "kind": "single",
+        "prompt": "为什么某些工具调用必须放进 sandbox 执行？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为沙箱会让所有任务更快。"
+          },
+          {
+            "id": "b",
+            "text": "为了限制文件、网络、系统命令或代码执行的影响范围。"
+          },
+          {
+            "id": "c",
+            "text": "因为沙箱可以替代所有测试。"
+          },
+          {
+            "id": "d",
+            "text": "因为沙箱让权限不再需要。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "沙箱用于隔离不可信代码或高风险执行环境。",
+        "focus": "沙箱"
+      },
+      {
+        "id": "tools-029-check-02",
+        "kind": "multiple",
+        "prompt": "哪些工具更适合沙箱执行？",
+        "options": [
+          {
+            "id": "a",
+            "text": "代码执行"
+          },
+          {
+            "id": "b",
+            "text": "文件处理"
+          },
+          {
+            "id": "c",
+            "text": "网络访问受限任务"
+          },
+          {
+            "id": "d",
+            "text": "第三方脚本运行"
+          },
+          {
+            "id": "e",
+            "text": "查询公开 FAQ"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可能影响系统环境的操作需要隔离。",
+        "focus": "适合沙箱"
+      },
+      {
+        "id": "tools-029-check-03",
+        "kind": "multiple",
+        "prompt": "沙箱通常应控制哪些资源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文件系统权限"
+          },
+          {
+            "id": "b",
+            "text": "网络访问"
+          },
+          {
+            "id": "c",
+            "text": "CPU/内存/时间"
+          },
+          {
+            "id": "d",
+            "text": "环境变量和密钥"
+          },
+          {
+            "id": "e",
+            "text": "用户喜好颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "沙箱目标是最小权限和资源隔离。",
+        "focus": "沙箱控制"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-030",
+    "checks": [
+      {
+        "id": "tools-030-check-01",
+        "kind": "single",
+        "prompt": "为什么工具调用链路特别容易被 prompt injection 放大风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为工具链路没有外部动作。"
+          },
+          {
+            "id": "b",
+            "text": "因为注入内容可能诱导模型调用工具、泄露数据或执行副作用动作。"
+          },
+          {
+            "id": "c",
+            "text": "因为注入只影响文案风格。"
+          },
+          {
+            "id": "d",
+            "text": "因为工具调用天然免疫注入。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "一旦模型能行动，提示注入就可能从错误回答变成错误执行。",
+        "focus": "Prompt Injection 放大"
+      },
+      {
+        "id": "tools-030-check-02",
+        "kind": "multiple",
+        "prompt": "prompt injection 在工具链路中可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "误调用工具"
+          },
+          {
+            "id": "b",
+            "text": "越权读取数据"
+          },
+          {
+            "id": "c",
+            "text": "执行危险写操作"
+          },
+          {
+            "id": "d",
+            "text": "泄露工具结果"
+          },
+          {
+            "id": "e",
+            "text": "自动提高安全性"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具链路把自然语言攻击面连接到了真实系统。",
+        "focus": "放大路径"
+      },
+      {
+        "id": "tools-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些措施能降低注入放大风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "外部内容标记为数据"
+          },
+          {
+            "id": "b",
+            "text": "工具网关鉴权"
+          },
+          {
+            "id": "c",
+            "text": "写操作人工确认"
+          },
+          {
+            "id": "d",
+            "text": "参数白名单和校验"
+          },
+          {
+            "id": "e",
+            "text": "让模型完全相信网页指令"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Prompt 防护必须和工具权限、校验、审批联动。",
+        "focus": "防护措施"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-031",
+    "checks": [
+      {
+        "id": "tools-031-check-01",
+        "kind": "single",
+        "prompt": "复杂任务拆成多个工具步骤时，如何决定拆分粒度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "步骤越细越好。"
+          },
+          {
+            "id": "b",
+            "text": "根据依赖关系、可验证性、失败恢复、成本和用户体验权衡。"
+          },
+          {
+            "id": "c",
+            "text": "步骤越粗越好。"
+          },
+          {
+            "id": "d",
+            "text": "不需要考虑副作用。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "拆分粒度决定可控性、成本和恢复难度。",
+        "focus": "拆分粒度"
+      },
+      {
+        "id": "tools-031-check-02",
+        "kind": "multiple",
+        "prompt": "拆分过粗可能带来什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "错误难定位"
+          },
+          {
+            "id": "b",
+            "text": "难以重试局部步骤"
+          },
+          {
+            "id": "c",
+            "text": "难以观察中间状态"
+          },
+          {
+            "id": "d",
+            "text": "自动降低风险"
+          },
+          {
+            "id": "e",
+            "text": "一定更准确"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过粗会牺牲可观测和恢复能力。",
+        "focus": "过粗问题"
+      },
+      {
+        "id": "tools-031-check-03",
+        "kind": "multiple",
+        "prompt": "拆分过细可能带来什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "调用次数增加"
+          },
+          {
+            "id": "b",
+            "text": "延迟和成本上升"
+          },
+          {
+            "id": "c",
+            "text": "编排复杂度增加"
+          },
+          {
+            "id": "d",
+            "text": "自动提升成功率"
+          },
+          {
+            "id": "e",
+            "text": "不需要状态"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "粒度要匹配任务复杂度和失败代价。",
+        "focus": "过细问题"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-032",
+    "checks": [
+      {
+        "id": "tools-032-check-01",
+        "kind": "single",
+        "prompt": "为什么工具工作流系统最好支持 trace replay？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只为了生成好看的日志。"
+          },
+          {
+            "id": "b",
+            "text": "为了复现失败、定位问题、回归测试和审计。"
+          },
+          {
+            "id": "c",
+            "text": "因为 replay 可以替代权限。"
+          },
+          {
+            "id": "d",
+            "text": "因为 replay 不需要记录输入。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "没有链路回放，复杂工具失败很难复盘。",
+        "focus": "Trace Replay"
+      },
+      {
+        "id": "tools-032-check-02",
+        "kind": "multiple",
+        "prompt": "trace replay 通常需要记录哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "模型和 Prompt 版本"
+          },
+          {
+            "id": "b",
+            "text": "工具输入输出"
+          },
+          {
+            "id": "c",
+            "text": "状态变化"
+          },
+          {
+            "id": "d",
+            "text": "错误和重试"
+          },
+          {
+            "id": "e",
+            "text": "无关动画帧"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "回放需要足够完整的链路上下文。",
+        "focus": "Replay 需要"
+      },
+      {
+        "id": "tools-032-check-03",
+        "kind": "multiple",
+        "prompt": "trace replay 能支持哪些工作？",
+        "options": [
+          {
+            "id": "a",
+            "text": "线上事故复盘"
+          },
+          {
+            "id": "b",
+            "text": "版本回归测试"
+          },
+          {
+            "id": "c",
+            "text": "工具接口变更验证"
+          },
+          {
+            "id": "d",
+            "text": "成本和延迟分析"
+          },
+          {
+            "id": "e",
+            "text": "自动消除所有 bug"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "replay 是复杂 Agent/工具系统治理的基础能力。",
+        "focus": "Replay 价值"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-033",
+    "checks": [
+      {
+        "id": "tools-033-check-01",
+        "kind": "single",
+        "prompt": "为什么工具调用链路也需要 SLA 思维？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为偶尔跑通就足够上线。"
+          },
+          {
+            "id": "b",
+            "text": "因为生产系统要关注成功率、延迟、可用性、错误率和恢复能力。"
+          },
+          {
+            "id": "c",
+            "text": "因为 SLA 只适用于数据库。"
+          },
+          {
+            "id": "d",
+            "text": "因为工具链路不影响用户体验。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具链路是生产依赖，必须按服务质量管理。",
+        "focus": "SLA 思维"
+      },
+      {
+        "id": "tools-033-check-02",
+        "kind": "multiple",
+        "prompt": "工具链路 SLA 可以关注哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "成功率"
+          },
+          {
+            "id": "b",
+            "text": "P95/P99 延迟"
+          },
+          {
+            "id": "c",
+            "text": "超时率和错误率"
+          },
+          {
+            "id": "d",
+            "text": "降级和恢复成功率"
+          },
+          {
+            "id": "e",
+            "text": "模型回答字数"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具链路要像其他生产服务一样监控。",
+        "focus": "SLA 指标"
+      },
+      {
+        "id": "tools-033-check-03",
+        "kind": "multiple",
+        "prompt": "只看“偶尔能跑通”会忽略什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "长尾失败"
+          },
+          {
+            "id": "b",
+            "text": "高并发稳定性"
+          },
+          {
+            "id": "c",
+            "text": "外部依赖抖动"
+          },
+          {
+            "id": "d",
+            "text": "用户体验一致性"
+          },
+          {
+            "id": "e",
+            "text": "单次 demo 成功"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "生产可靠性看持续表现，不看单次演示。",
+        "focus": "只看偶尔跑通的问题"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-034",
+    "checks": [
+      {
+        "id": "tools-034-check-01",
+        "kind": "single",
+        "prompt": "为什么一些工具工作流会用“大模型做决策，小模型做执行辅助”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为小模型一定比大模型强。"
+          },
+          {
+            "id": "b",
+            "text": "因为复杂规划需要强模型，重复执行、分类或格式化可由低成本模型承担。"
+          },
+          {
+            "id": "c",
+            "text": "因为大模型不能调用工具。"
+          },
+          {
+            "id": "d",
+            "text": "因为小模型不需要评测。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "分层用模是质量、成本和延迟的权衡。",
+        "focus": "大小模型分工"
+      },
+      {
+        "id": "tools-034-check-02",
+        "kind": "multiple",
+        "prompt": "哪些任务可能适合小模型或规则辅助？",
+        "options": [
+          {
+            "id": "a",
+            "text": "简单分类"
+          },
+          {
+            "id": "b",
+            "text": "参数格式化"
+          },
+          {
+            "id": "c",
+            "text": "低风险固定判断"
+          },
+          {
+            "id": "d",
+            "text": "结果摘要初稿"
+          },
+          {
+            "id": "e",
+            "text": "高风险复杂规划无校验"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "低风险、重复、结构化任务可以用更便宜的能力处理。",
+        "focus": "小模型适合"
+      },
+      {
+        "id": "tools-034-check-03",
+        "kind": "multiple",
+        "prompt": "大小模型分工要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "路由错误"
+          },
+          {
+            "id": "b",
+            "text": "小模型能力边界"
+          },
+          {
+            "id": "c",
+            "text": "端到端质量评测"
+          },
+          {
+            "id": "d",
+            "text": "小模型输出永远正确"
+          },
+          {
+            "id": "e",
+            "text": "不需要 fallback"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分层用模需要路由、评测和降级策略。",
+        "focus": "分层风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-035",
+    "checks": [
+      {
+        "id": "tools-035-check-01",
+        "kind": "single",
+        "prompt": "工具越来越多时，为什么需要统一工具治理平台？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为工具越多越不需要管理。"
+          },
+          {
+            "id": "b",
+            "text": "为了统一注册、描述、权限、版本、测试、监控和下线流程。"
+          },
+          {
+            "id": "c",
+            "text": "为了让所有工具都无权限开放。"
+          },
+          {
+            "id": "d",
+            "text": "为了取消工具 schema。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具规模变大后，治理平台是稳定性和安全的基础。",
+        "focus": "工具治理平台"
+      },
+      {
+        "id": "tools-035-check-02",
+        "kind": "multiple",
+        "prompt": "工具治理平台通常应具备哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具注册和发现"
+          },
+          {
+            "id": "b",
+            "text": "schema 和描述管理"
+          },
+          {
+            "id": "c",
+            "text": "权限和审计"
+          },
+          {
+            "id": "d",
+            "text": "监控、测试和版本管理"
+          },
+          {
+            "id": "e",
+            "text": "随意执行所有工具"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "治理平台把工具从临时接口变成可运营资产。",
+        "focus": "平台能力"
+      },
+      {
+        "id": "tools-035-check-03",
+        "kind": "multiple",
+        "prompt": "缺少工具治理可能导致什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具重复和职责重叠"
+          },
+          {
+            "id": "b",
+            "text": "权限混乱"
+          },
+          {
+            "id": "c",
+            "text": "版本变更破坏 Agent"
+          },
+          {
+            "id": "d",
+            "text": "监控和排障困难"
+          },
+          {
+            "id": "e",
+            "text": "自动提升工具选择准确率"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具生态越大，治理缺失的成本越高。",
+        "focus": "不治理风险"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-036",
+    "checks": [
+      {
+        "id": "tools-036-check-01",
+        "kind": "single",
+        "prompt": "为什么工具工作流必须做端到端测试？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为单工具单元测试没有任何价值。"
+          },
+          {
+            "id": "b",
+            "text": "因为真实问题常发生在工具组合、状态流转、权限和失败恢复之间。"
+          },
+          {
+            "id": "c",
+            "text": "因为端到端测试可以替代所有单元测试。"
+          },
+          {
+            "id": "d",
+            "text": "因为只要模型答得好就行。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "单工具正确不代表整条工作流正确。",
+        "focus": "端到端测试"
+      },
+      {
+        "id": "tools-036-check-02",
+        "kind": "multiple",
+        "prompt": "端到端测试应覆盖哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "正常路径"
+          },
+          {
+            "id": "b",
+            "text": "工具失败"
+          },
+          {
+            "id": "c",
+            "text": "权限拒绝"
+          },
+          {
+            "id": "d",
+            "text": "重试、降级和回滚"
+          },
+          {
+            "id": "e",
+            "text": "只测工具名称"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工作流测试要覆盖链路行为，而不是单点函数。",
+        "focus": "E2E 覆盖"
+      },
+      {
+        "id": "tools-036-check-03",
+        "kind": "multiple",
+        "prompt": "只做单工具单元测试会遗漏什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多工具依赖"
+          },
+          {
+            "id": "b",
+            "text": "状态一致性"
+          },
+          {
+            "id": "c",
+            "text": "编排错误"
+          },
+          {
+            "id": "d",
+            "text": "端到端用户结果"
+          },
+          {
+            "id": "e",
+            "text": "单个函数逻辑"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多步系统的风险在交互边界上。",
+        "focus": "单元测试不足"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-037",
+    "checks": [
+      {
+        "id": "tools-037-check-01",
+        "kind": "single",
+        "prompt": "工具调用与工作流系统应该如何评估？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看模型回答是否流畅。"
+          },
+          {
+            "id": "b",
+            "text": "看任务是否完成、工具是否正确调用、状态是否可靠、成本延迟是否可控。"
+          },
+          {
+            "id": "c",
+            "text": "只看调用次数。"
+          },
+          {
+            "id": "d",
+            "text": "只看最终文本长度。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工作流评估关注任务结果和链路可靠性。",
+        "focus": "工作流评估"
+      },
+      {
+        "id": "tools-037-check-02",
+        "kind": "multiple",
+        "prompt": "哪些指标适合评估工具工作流？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率"
+          },
+          {
+            "id": "b",
+            "text": "工具选择准确率"
+          },
+          {
+            "id": "c",
+            "text": "参数正确率"
+          },
+          {
+            "id": "d",
+            "text": "恢复成功率、成本和延迟"
+          },
+          {
+            "id": "e",
+            "text": "回答是否押韵"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具链路要看执行正确性，而不是只看语言质量。",
+        "focus": "评估指标"
+      },
+      {
+        "id": "tools-037-check-03",
+        "kind": "multiple",
+        "prompt": "为什么需要分段评估？",
+        "options": [
+          {
+            "id": "a",
+            "text": "区分模型决策问题和工具问题"
+          },
+          {
+            "id": "b",
+            "text": "定位参数构造错误"
+          },
+          {
+            "id": "c",
+            "text": "发现编排和状态问题"
+          },
+          {
+            "id": "d",
+            "text": "自动避免所有失败"
+          },
+          {
+            "id": "e",
+            "text": "不需要端到端评估"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分段评估和端到端评估应结合使用。",
+        "focus": "分段评估"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-038",
+    "checks": [
+      {
+        "id": "tools-038-check-01",
+        "kind": "single",
+        "prompt": "用户反馈“Agent 老是做错事”，应如何排查？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只换模型。"
+          },
+          {
+            "id": "b",
+            "text": "按意图理解、工具路由、参数、权限、执行结果和状态逐段排查。"
+          },
+          {
+            "id": "c",
+            "text": "只看最终回答。"
+          },
+          {
+            "id": "d",
+            "text": "删除所有日志。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "做错事可能来自模型、工具、工作流或状态任一环节。",
+        "focus": "做错事排查"
+      },
+      {
+        "id": "tools-038-check-02",
+        "kind": "multiple",
+        "prompt": "排查时应检查哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户真实意图是否理解正确"
+          },
+          {
+            "id": "b",
+            "text": "工具是否选对"
+          },
+          {
+            "id": "c",
+            "text": "参数是否正确且有权限"
+          },
+          {
+            "id": "d",
+            "text": "工具执行结果和状态更新是否正确"
+          },
+          {
+            "id": "e",
+            "text": "页面按钮颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具工作流问题要沿链路逐段定位。",
+        "focus": "排查维度"
+      },
+      {
+        "id": "tools-038-check-03",
+        "kind": "multiple",
+        "prompt": "哪些证据有助于排查？",
+        "options": [
+          {
+            "id": "a",
+            "text": "trace replay"
+          },
+          {
+            "id": "b",
+            "text": "工具调用日志"
+          },
+          {
+            "id": "c",
+            "text": "状态变更记录"
+          },
+          {
+            "id": "d",
+            "text": "模型和 Prompt 版本"
+          },
+          {
+            "id": "e",
+            "text": "单次主观印象"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "没有链路证据，很难判断错在模型还是系统。",
+        "focus": "证据"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-039",
+    "checks": [
+      {
+        "id": "tools-039-check-01",
+        "kind": "single",
+        "prompt": "工具调用与工作流设计里最核心的 trade-off 之一是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具越多越好。"
+          },
+          {
+            "id": "b",
+            "text": "在自动化能力、可控性、安全、成本、延迟和可维护性之间平衡。"
+          },
+          {
+            "id": "c",
+            "text": "只追求最短 Prompt。"
+          },
+          {
+            "id": "d",
+            "text": "完全不用工具。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具系统的价值和风险来自同一个能力：能执行动作。",
+        "focus": "核心 trade-off"
+      },
+      {
+        "id": "tools-039-check-02",
+        "kind": "multiple",
+        "prompt": "工具工作流设计常见权衡有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "自动执行 vs 人工确认"
+          },
+          {
+            "id": "b",
+            "text": "工具数量 vs 路由复杂度"
+          },
+          {
+            "id": "c",
+            "text": "重试恢复 vs 副作用风险"
+          },
+          {
+            "id": "d",
+            "text": "并行速度 vs 一致性"
+          },
+          {
+            "id": "e",
+            "text": "图标颜色 vs 字体大小"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "每个能力增强都可能带来治理成本。",
+        "focus": "常见权衡"
+      },
+      {
+        "id": "tools-039-check-03",
+        "kind": "multiple",
+        "prompt": "做 trade-off 决策时应优先看什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "失败代价"
+          },
+          {
+            "id": "b",
+            "text": "用户权限和业务风险"
+          },
+          {
+            "id": "c",
+            "text": "任务成功标准"
+          },
+          {
+            "id": "d",
+            "text": "可观测和恢复能力"
+          },
+          {
+            "id": "e",
+            "text": "工具名字是否好听"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具工作流取舍应以业务风险和证据为准。",
+        "focus": "决策依据"
+      }
+    ]
+  },
+  {
+    "questionId": "tools-040",
+    "checks": [
+      {
+        "id": "tools-040-check-01",
+        "kind": "single",
+        "prompt": "设计企业级工具调用与工作流平台，最关键的能力是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只提供一个工具列表。"
+          },
+          {
+            "id": "b",
+            "text": "工具注册治理、权限、编排、状态、可观测性、测试、发布和回滚。"
+          },
+          {
+            "id": "c",
+            "text": "让模型自由执行所有工具。"
+          },
+          {
+            "id": "d",
+            "text": "只追求工具数量。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "企业级平台关注可靠、安全、可运营，而不是接口堆叠。",
+        "focus": "企业级平台"
+      },
+      {
+        "id": "tools-040-check-02",
+        "kind": "multiple",
+        "prompt": "企业级平台应具备哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工具注册和 schema 管理"
+          },
+          {
+            "id": "b",
+            "text": "权限、审计和审批"
+          },
+          {
+            "id": "c",
+            "text": "工作流编排和状态机"
+          },
+          {
+            "id": "d",
+            "text": "Trace、评测、灰度和回滚"
+          },
+          {
+            "id": "e",
+            "text": "无权限工具执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "平台要覆盖工具生命周期和工作流运行时。",
+        "focus": "平台能力"
+      },
+      {
+        "id": "tools-040-check-03",
+        "kind": "multiple",
+        "prompt": "哪些指标能体现平台成熟度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务成功率"
+          },
+          {
+            "id": "b",
+            "text": "工具调用正确率"
+          },
+          {
+            "id": "c",
+            "text": "失败恢复能力"
+          },
+          {
+            "id": "d",
+            "text": "成本、延迟和审计覆盖"
+          },
+          {
+            "id": "e",
+            "text": "工具名字数量"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "成熟平台看真实业务效果和治理能力，而不是工具堆叠数量。",
+        "focus": "成熟度指标"
+      }
+    ]
+  }
+]

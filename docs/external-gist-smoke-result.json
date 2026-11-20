@@ -1,0 +1,38 @@
+{
+  "generatedAt": "2026-06-17T06:32:10.848Z",
+  "packageVersion": "1.4.2",
+  "targets": {
+    "ai": false,
+    "gist": true
+  },
+  "ok": true,
+  "evidence": [
+    {
+      "check": "gist.read",
+      "details": {
+        "backupVersion": 8,
+        "noteCount": 1,
+        "answerAnnotationCount": 1,
+        "answerOverrideCount": 1,
+        "starredCount": 1,
+        "aiSessionCount": 1,
+        "customQuestionCount": 1
+      }
+    },
+    {
+      "check": "gist.update",
+      "details": {
+        "backupVersion": 8,
+        "customSourceCount": 2,
+        "temporaryGistDeleted": false
+      }
+    },
+    {
+      "check": "gist.cleanup",
+      "details": {
+        "temporaryGistDeleted": true
+      }
+    }
+  ],
+  "failures": []
+}

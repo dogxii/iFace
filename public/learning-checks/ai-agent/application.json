@@ -1,0 +1,1822 @@
+[
+  {
+    "questionId": "ai-app-001",
+    "checks": [
+      {
+        "id": "ai-app-001-check-01",
+        "kind": "single",
+        "prompt": "多轮对话中的上下文窗口、历史裁剪和摘要压缩如何设计？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远保留全部历史原文。"
+          },
+          {
+            "id": "b",
+            "text": "根据任务目标保留高价值信息，其余做裁剪或摘要压缩。"
+          },
+          {
+            "id": "c",
+            "text": "只保留用户第一轮消息。"
+          },
+          {
+            "id": "d",
+            "text": "历史越长越好，不需要预算管理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多轮上下文的核心是保留有效状态，而不是堆积原文。",
+        "focus": "多轮上下文"
+      },
+      {
+        "id": "ai-app-001-check-02",
+        "kind": "multiple",
+        "prompt": "多轮对话中通常更应该保留哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前任务目标"
+          },
+          {
+            "id": "b",
+            "text": "最近确认的事实"
+          },
+          {
+            "id": "c",
+            "text": "未完成状态"
+          },
+          {
+            "id": "d",
+            "text": "关键约束"
+          },
+          {
+            "id": "e",
+            "text": "所有无关闲聊"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "保留高价值信息能提高连续性并减少 token 浪费。",
+        "focus": "保留内容"
+      },
+      {
+        "id": "ai-app-001-check-03",
+        "kind": "multiple",
+        "prompt": "摘要压缩可能带来什么风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "事实遗漏"
+          },
+          {
+            "id": "b",
+            "text": "细节丢失"
+          },
+          {
+            "id": "c",
+            "text": "语义失真"
+          },
+          {
+            "id": "d",
+            "text": "自动提高精度"
+          },
+          {
+            "id": "e",
+            "text": "不需要回放"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "压缩要配合可回放和可验证机制。",
+        "focus": "压缩风险"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-002",
+    "checks": [
+      {
+        "id": "ai-app-002-check-01",
+        "kind": "single",
+        "prompt": "Tool Calling 的工具 schema 如何设计才稳定？",
+        "options": [
+          {
+            "id": "a",
+            "text": "字段越多越好。"
+          },
+          {
+            "id": "b",
+            "text": "字段语义清晰、类型明确、约束简单且可校验。"
+          },
+          {
+            "id": "c",
+            "text": "只写一个长自然语言描述。"
+          },
+          {
+            "id": "d",
+            "text": "不需要默认值和必填规则。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "稳定 schema 是模型和程序之间的契约。",
+        "focus": "工具 schema"
+      },
+      {
+        "id": "ai-app-002-check-02",
+        "kind": "multiple",
+        "prompt": "稳定的工具 schema 通常包含哪些要素？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数名"
+          },
+          {
+            "id": "b",
+            "text": "类型"
+          },
+          {
+            "id": "c",
+            "text": "必填规则"
+          },
+          {
+            "id": "d",
+            "text": "枚举或范围"
+          },
+          {
+            "id": "e",
+            "text": "无关营销文案"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "schema 要让模型知道怎么调用，也让程序知道怎么校验。",
+        "focus": "schema 要素"
+      },
+      {
+        "id": "ai-app-002-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 schema 设计容易失稳？",
+        "options": [
+          {
+            "id": "a",
+            "text": "字段过多且语义相近"
+          },
+          {
+            "id": "b",
+            "text": "参数说明模糊"
+          },
+          {
+            "id": "c",
+            "text": "约束互相冲突"
+          },
+          {
+            "id": "d",
+            "text": "字段边界清晰"
+          },
+          {
+            "id": "e",
+            "text": "错误格式明确"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "过复杂和模糊的 schema 都会降低调用稳定性。",
+        "focus": "设计误区"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-003",
+    "checks": [
+      {
+        "id": "ai-app-003-check-01",
+        "kind": "single",
+        "prompt": "工具调用参数校验、权限控制和错误恢复为什么必须一起做？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为参数校验足够了。"
+          },
+          {
+            "id": "b",
+            "text": "因为参数正确不等于有权限，权限正确也不等于执行一定成功。"
+          },
+          {
+            "id": "c",
+            "text": "因为错误恢复只影响日志。"
+          },
+          {
+            "id": "d",
+            "text": "因为三者完全无关。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "工具执行链路需要语法、权限和运行时恢复三层保护。",
+        "focus": "参数校验"
+      },
+      {
+        "id": "ai-app-003-check-02",
+        "kind": "multiple",
+        "prompt": "工具参数校验通常应关注哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "类型"
+          },
+          {
+            "id": "b",
+            "text": "范围"
+          },
+          {
+            "id": "c",
+            "text": "必填项"
+          },
+          {
+            "id": "d",
+            "text": "资源标识合法性"
+          },
+          {
+            "id": "e",
+            "text": "用户头像"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "模型输出是输入，不可信，必须校验。",
+        "focus": "校验内容"
+      },
+      {
+        "id": "ai-app-003-check-03",
+        "kind": "multiple",
+        "prompt": "错误恢复通常可以包括哪些策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "重试"
+          },
+          {
+            "id": "b",
+            "text": "降级"
+          },
+          {
+            "id": "c",
+            "text": "人工接管"
+          },
+          {
+            "id": "d",
+            "text": "返回可解释错误"
+          },
+          {
+            "id": "e",
+            "text": "伪造成功结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "恢复策略要基于错误类型和副作用风险。",
+        "focus": "恢复策略"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-004",
+    "checks": [
+      {
+        "id": "ai-app-004-check-01",
+        "kind": "single",
+        "prompt": "多工具、多步骤任务如何防止无限循环和错误传播？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不设置任何终止条件。"
+          },
+          {
+            "id": "b",
+            "text": "设计步数上限、终止条件、状态机和失败恢复。"
+          },
+          {
+            "id": "c",
+            "text": "只靠模型自觉停止。"
+          },
+          {
+            "id": "d",
+            "text": "永远不记录状态。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "复杂任务要用边界控制循环。",
+        "focus": "防循环"
+      },
+      {
+        "id": "ai-app-004-check-02",
+        "kind": "multiple",
+        "prompt": "哪些机制有助于防止无限循环？",
+        "options": [
+          {
+            "id": "a",
+            "text": "最大步数限制"
+          },
+          {
+            "id": "b",
+            "text": "预算限制"
+          },
+          {
+            "id": "c",
+            "text": "状态机转移约束"
+          },
+          {
+            "id": "d",
+            "text": "失败分类和恢复策略"
+          },
+          {
+            "id": "e",
+            "text": "无限重复同一步骤"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "防循环需要过程约束，不只是输出约束。",
+        "focus": "风险控制"
+      },
+      {
+        "id": "ai-app-004-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于减少错误传播？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每步观察结果"
+          },
+          {
+            "id": "b",
+            "text": "分段校验"
+          },
+          {
+            "id": "c",
+            "text": "状态 checkpoint"
+          },
+          {
+            "id": "d",
+            "text": "及时中断和修正"
+          },
+          {
+            "id": "e",
+            "text": "忽略中间错误"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "越早发现错误，传播面越小。",
+        "focus": "错误传播"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-005",
+    "checks": [
+      {
+        "id": "ai-app-005-check-01",
+        "kind": "single",
+        "prompt": "Agent 的计划、执行、观察、反思循环应如何控制边界？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远持续反思。"
+          },
+          {
+            "id": "b",
+            "text": "按任务目标、预算、终止条件和风险等级控制。"
+          },
+          {
+            "id": "c",
+            "text": "只要模型想继续就继续。"
+          },
+          {
+            "id": "d",
+            "text": "只看最终答案。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Agent loop 需要明确停止和降级边界。",
+        "focus": "Agent 循环边界"
+      },
+      {
+        "id": "ai-app-005-check-02",
+        "kind": "multiple",
+        "prompt": "这个循环通常包含哪些部分？",
+        "options": [
+          {
+            "id": "a",
+            "text": "计划"
+          },
+          {
+            "id": "b",
+            "text": "执行"
+          },
+          {
+            "id": "c",
+            "text": "观察"
+          },
+          {
+            "id": "d",
+            "text": "反思或修正"
+          },
+          {
+            "id": "e",
+            "text": "无限重复"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "每个环节都可能带来额外成本和风险。",
+        "focus": "循环组件"
+      },
+      {
+        "id": "ai-app-005-check-03",
+        "kind": "multiple",
+        "prompt": "哪些机制有助于控制循环边界？",
+        "options": [
+          {
+            "id": "a",
+            "text": "最大步数"
+          },
+          {
+            "id": "b",
+            "text": "预算上限"
+          },
+          {
+            "id": "c",
+            "text": "终止条件"
+          },
+          {
+            "id": "d",
+            "text": "失败后转人工"
+          },
+          {
+            "id": "e",
+            "text": "没有任何停止条件"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可控的循环是可靠 Agent 的基础。",
+        "focus": "边界控制"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-006",
+    "checks": [
+      {
+        "id": "ai-app-006-check-01",
+        "kind": "single",
+        "prompt": "Agent 记忆应如何区分会话记忆、长期记忆和任务状态？",
+        "options": [
+          {
+            "id": "a",
+            "text": "三者都无差别永久保存。"
+          },
+          {
+            "id": "b",
+            "text": "会话记忆管当前对话，长期记忆管跨会话偏好，任务状态管执行进度。"
+          },
+          {
+            "id": "c",
+            "text": "只有任务状态有价值。"
+          },
+          {
+            "id": "d",
+            "text": "长期记忆不需要权限。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "不同记忆有不同生命周期和访问策略。",
+        "focus": "记忆区分"
+      },
+      {
+        "id": "ai-app-006-check-02",
+        "kind": "multiple",
+        "prompt": "哪些更适合会话记忆？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当前任务目标"
+          },
+          {
+            "id": "b",
+            "text": "最近确认的信息"
+          },
+          {
+            "id": "c",
+            "text": "临时约束"
+          },
+          {
+            "id": "d",
+            "text": "用户永久偏好"
+          },
+          {
+            "id": "e",
+            "text": "所有原始历史"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "会话记忆服务当前任务。",
+        "focus": "会话记忆"
+      },
+      {
+        "id": "ai-app-006-check-03",
+        "kind": "multiple",
+        "prompt": "长期记忆设计要注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "权限隔离"
+          },
+          {
+            "id": "b",
+            "text": "用户授权"
+          },
+          {
+            "id": "c",
+            "text": "可更新和删除"
+          },
+          {
+            "id": "d",
+            "text": "时效性和置信度"
+          },
+          {
+            "id": "e",
+            "text": "永久不可改"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "长期记忆不是越多越好，必须可治理。",
+        "focus": "长期记忆"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-007",
+    "checks": [
+      {
+        "id": "ai-app-007-check-01",
+        "kind": "single",
+        "prompt": "Human-in-the-loop 在高风险 Agent 流程中如何设计审批点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有步骤都人工审批。"
+          },
+          {
+            "id": "b",
+            "text": "只在高风险、不可逆或低置信度节点设置审批点。"
+          },
+          {
+            "id": "c",
+            "text": "只在最后一步审批。"
+          },
+          {
+            "id": "d",
+            "text": "不需要上下文给审批人。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "审批点应聚焦高风险和高不确定环节。",
+        "focus": "人在环路"
+      },
+      {
+        "id": "ai-app-007-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景适合加入审批？",
+        "options": [
+          {
+            "id": "a",
+            "text": "金额较大操作"
+          },
+          {
+            "id": "b",
+            "text": "权限变更"
+          },
+          {
+            "id": "c",
+            "text": "对外正式通知"
+          },
+          {
+            "id": "d",
+            "text": "删除数据"
+          },
+          {
+            "id": "e",
+            "text": "简单只读查询"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "审批的目的是控制风险，不是增加流程负担。",
+        "focus": "适合审批"
+      },
+      {
+        "id": "ai-app-007-check-03",
+        "kind": "multiple",
+        "prompt": "审批节点应给审批人提供哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "待执行动作"
+          },
+          {
+            "id": "b",
+            "text": "影响范围"
+          },
+          {
+            "id": "c",
+            "text": "证据和上下文"
+          },
+          {
+            "id": "d",
+            "text": "审批结果写回状态"
+          },
+          {
+            "id": "e",
+            "text": "只有一个按钮"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "审批必须可审查、可追踪、可回放。",
+        "focus": "审批信息"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-008",
+    "checks": [
+      {
+        "id": "ai-app-008-check-01",
+        "kind": "single",
+        "prompt": "RAG 应用的文档解析、分块、权限隔离和引用溯源如何落地？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接整篇文档原样塞进 prompt。"
+          },
+          {
+            "id": "b",
+            "text": "按文档结构清洗切分，建立权限和引用链路。"
+          },
+          {
+            "id": "c",
+            "text": "只看向量检索结果，不看原文。"
+          },
+          {
+            "id": "d",
+            "text": "不需要文档版本。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 落地要把文档治理、权限和溯源一起做。",
+        "focus": "RAG 应用落地"
+      },
+      {
+        "id": "ai-app-008-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 落地通常需要哪些能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "解析"
+          },
+          {
+            "id": "b",
+            "text": "切分"
+          },
+          {
+            "id": "c",
+            "text": "权限隔离"
+          },
+          {
+            "id": "d",
+            "text": "引用溯源"
+          },
+          {
+            "id": "e",
+            "text": "只做自然语言摘要"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 是知识治理和检索生成的组合系统。",
+        "focus": "落地内容"
+      },
+      {
+        "id": "ai-app-008-check-03",
+        "kind": "multiple",
+        "prompt": "RAG 落地里容易出问题的点有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "文档脏数据"
+          },
+          {
+            "id": "b",
+            "text": "权限泄露"
+          },
+          {
+            "id": "c",
+            "text": "引用错位"
+          },
+          {
+            "id": "d",
+            "text": "分块过粗或过细"
+          },
+          {
+            "id": "e",
+            "text": "只看单次回答文本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 问题常常出在知识治理和链路组织上。",
+        "focus": "风险点"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-009",
+    "checks": [
+      {
+        "id": "ai-app-009-check-01",
+        "kind": "single",
+        "prompt": "如何处理多跳问答、表格、图片和结构化数据检索？",
+        "options": [
+          {
+            "id": "a",
+            "text": "都按同一种检索方式处理。"
+          },
+          {
+            "id": "b",
+            "text": "依据数据类型选择不同解析、检索和表示策略。"
+          },
+          {
+            "id": "c",
+            "text": "只靠一个通用 embedding。"
+          },
+          {
+            "id": "d",
+            "text": "只看文本，不看结构。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多种数据类型需要不同管线。",
+        "focus": "多跳与结构化"
+      },
+      {
+        "id": "ai-app-009-check-02",
+        "kind": "multiple",
+        "prompt": "哪些数据类型往往需要特殊处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "表格"
+          },
+          {
+            "id": "b",
+            "text": "图片"
+          },
+          {
+            "id": "c",
+            "text": "结构化数据"
+          },
+          {
+            "id": "d",
+            "text": "多跳证据链"
+          },
+          {
+            "id": "e",
+            "text": "纯固定短句"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂数据需要结构化解析和多阶段检索。",
+        "focus": "特殊数据"
+      },
+      {
+        "id": "ai-app-009-check-03",
+        "kind": "multiple",
+        "prompt": "这些任务通常要考虑哪些策略？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多跳检索"
+          },
+          {
+            "id": "b",
+            "text": "专项解析"
+          },
+          {
+            "id": "c",
+            "text": "多模态理解"
+          },
+          {
+            "id": "d",
+            "text": "结构化过滤"
+          },
+          {
+            "id": "e",
+            "text": "只做字符串相等"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂知识检索通常不是单一路径能解决的。",
+        "focus": "检索策略"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-010",
+    "checks": [
+      {
+        "id": "ai-app-010-check-01",
+        "kind": "single",
+        "prompt": "如何评估 RAG 应用的检索质量、答案忠实度和可用性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看回答是否长。"
+          },
+          {
+            "id": "b",
+            "text": "分别评估检索、引用、忠实度和用户可用性。"
+          },
+          {
+            "id": "c",
+            "text": "只看模型名字。"
+          },
+          {
+            "id": "d",
+            "text": "不需要分层指标。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "RAG 评估需要分层而不是只看最终答案。",
+        "focus": "RAG 评估"
+      },
+      {
+        "id": "ai-app-010-check-02",
+        "kind": "multiple",
+        "prompt": "RAG 评估可关注哪些指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "检索命中率"
+          },
+          {
+            "id": "b",
+            "text": "引用准确率"
+          },
+          {
+            "id": "c",
+            "text": "答案忠实度"
+          },
+          {
+            "id": "d",
+            "text": "用户满意度"
+          },
+          {
+            "id": "e",
+            "text": "UI 主题色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "RAG 评估应覆盖检索、生成和使用体验。",
+        "focus": "指标"
+      },
+      {
+        "id": "ai-app-010-check-03",
+        "kind": "multiple",
+        "prompt": "分层评估能帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "定位问题来源"
+          },
+          {
+            "id": "b",
+            "text": "指导检索或生成优化"
+          },
+          {
+            "id": "c",
+            "text": "区分数据和模型问题"
+          },
+          {
+            "id": "d",
+            "text": "直接替代所有人工检查"
+          },
+          {
+            "id": "e",
+            "text": "取消线上监控"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "分层评估更容易找到可行动的优化点。",
+        "focus": "评估价值"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-011",
+    "checks": [
+      {
+        "id": "ai-app-011-check-01",
+        "kind": "single",
+        "prompt": "客服 Agent 如何做意图识别、槽位收集、兜底和转人工？",
+        "options": [
+          {
+            "id": "a",
+            "text": "全部交给模型自由发挥。"
+          },
+          {
+            "id": "b",
+            "text": "用流程、状态和规则组织意图识别、信息补全和人工接管。"
+          },
+          {
+            "id": "c",
+            "text": "只做一次问答。"
+          },
+          {
+            "id": "d",
+            "text": "不需要槽位管理。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "客服 Agent 更像流程系统，不只是聊天。",
+        "focus": "客服 Agent"
+      },
+      {
+        "id": "ai-app-011-check-02",
+        "kind": "multiple",
+        "prompt": "客服 Agent 常见步骤包括哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "意图识别"
+          },
+          {
+            "id": "b",
+            "text": "槽位收集"
+          },
+          {
+            "id": "c",
+            "text": "兜底策略"
+          },
+          {
+            "id": "d",
+            "text": "转人工"
+          },
+          {
+            "id": "e",
+            "text": "随机回复"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "客服场景强调可控流程和稳定服务。",
+        "focus": "关键步骤"
+      },
+      {
+        "id": "ai-app-011-check-03",
+        "kind": "multiple",
+        "prompt": "哪些情况适合转人工？",
+        "options": [
+          {
+            "id": "a",
+            "text": "低置信度"
+          },
+          {
+            "id": "b",
+            "text": "风险高"
+          },
+          {
+            "id": "c",
+            "text": "信息不足"
+          },
+          {
+            "id": "d",
+            "text": "用户强烈要求"
+          },
+          {
+            "id": "e",
+            "text": "已明确解决"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "客服 Agent 应把无法可靠处理的任务交给人工。",
+        "focus": "失败处理"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-012",
+    "checks": [
+      {
+        "id": "ai-app-012-check-01",
+        "kind": "single",
+        "prompt": "代码生成 Agent 如何理解代码库、生成补丁并验证结果？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只凭模型记忆直接写代码。"
+          },
+          {
+            "id": "b",
+            "text": "先理解仓库上下文，再生成补丁并运行验证。"
+          },
+          {
+            "id": "c",
+            "text": "只生成一段解释。"
+          },
+          {
+            "id": "d",
+            "text": "不需要测试。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "代码 Agent 的关键是代码库理解和结果验证。",
+        "focus": "代码生成 Agent"
+      },
+      {
+        "id": "ai-app-012-check-02",
+        "kind": "multiple",
+        "prompt": "代码生成 Agent 通常要做哪些事情？",
+        "options": [
+          {
+            "id": "a",
+            "text": "读代码库"
+          },
+          {
+            "id": "b",
+            "text": "生成补丁"
+          },
+          {
+            "id": "c",
+            "text": "运行测试或验证"
+          },
+          {
+            "id": "d",
+            "text": "根据失败结果修正"
+          },
+          {
+            "id": "e",
+            "text": "忽略仓库结构"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "代码 Agent 是“生成 + 验证 + 修正”的闭环。",
+        "focus": "常见环节"
+      },
+      {
+        "id": "ai-app-012-check-03",
+        "kind": "multiple",
+        "prompt": "代码生成 Agent 需要特别注意什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "破坏现有行为"
+          },
+          {
+            "id": "b",
+            "text": "测试不充分"
+          },
+          {
+            "id": "c",
+            "text": "安全边界"
+          },
+          {
+            "id": "d",
+            "text": "补丁可回滚"
+          },
+          {
+            "id": "e",
+            "text": "只看单次编译成功"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "代码任务必须更重视验证和回滚。",
+        "focus": "风险"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-013",
+    "checks": [
+      {
+        "id": "ai-app-013-check-01",
+        "kind": "single",
+        "prompt": "AI 代码审查 Agent 应如何控制误报、漏报和安全边界？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看语法。"
+          },
+          {
+            "id": "b",
+            "text": "用规则、上下文、证据和分级策略控制判断范围。"
+          },
+          {
+            "id": "c",
+            "text": "让模型自由决定一切。"
+          },
+          {
+            "id": "d",
+            "text": "不需要审查标准。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "代码审查需要证据和边界，而不是凭感觉。",
+        "focus": "代码审查 Agent"
+      },
+      {
+        "id": "ai-app-013-check-02",
+        "kind": "multiple",
+        "prompt": "代码审查 Agent 通常要关注哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "安全问题"
+          },
+          {
+            "id": "b",
+            "text": "回归风险"
+          },
+          {
+            "id": "c",
+            "text": "风格和可维护性"
+          },
+          {
+            "id": "d",
+            "text": "变更影响面"
+          },
+          {
+            "id": "e",
+            "text": "图标颜色"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "审查要兼顾安全、正确性和工程质量。",
+        "focus": "审查重点"
+      },
+      {
+        "id": "ai-app-013-check-03",
+        "kind": "multiple",
+        "prompt": "代码审查 Agent 如何降低误报和漏报？",
+        "options": [
+          {
+            "id": "a",
+            "text": "明确规则范围"
+          },
+          {
+            "id": "b",
+            "text": "引用代码证据"
+          },
+          {
+            "id": "c",
+            "text": "分级输出"
+          },
+          {
+            "id": "d",
+            "text": "人工复核高风险项"
+          },
+          {
+            "id": "e",
+            "text": "不看上下文"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "审查输出要可追踪、可解释、可复核。",
+        "focus": "风险控制"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-014",
+    "checks": [
+      {
+        "id": "ai-app-014-check-01",
+        "kind": "single",
+        "prompt": "Copilot、Workflow、Autonomous Agent 三类产品形态如何选择？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远选择最自主的 Agent。"
+          },
+          {
+            "id": "b",
+            "text": "根据任务风险、流程确定性、用户控制需求和成本选择。"
+          },
+          {
+            "id": "c",
+            "text": "只看模型大小。"
+          },
+          {
+            "id": "d",
+            "text": "三者没有差别。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "产品形态的选择本质上是自动化程度和可控性的权衡。",
+        "focus": "产品形态"
+      },
+      {
+        "id": "ai-app-014-check-02",
+        "kind": "multiple",
+        "prompt": "Copilot 通常适合哪些场景？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用户需要可控协作"
+          },
+          {
+            "id": "b",
+            "text": "任务需要人工决策"
+          },
+          {
+            "id": "c",
+            "text": "输出可以辅助而非自动执行"
+          },
+          {
+            "id": "d",
+            "text": "完全不需要人参与"
+          },
+          {
+            "id": "e",
+            "text": "高风险不可逆动作"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Copilot 更强调辅助而不是全自动执行。",
+        "focus": "Copilot 特点"
+      },
+      {
+        "id": "ai-app-014-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景更可能用到 Autonomous Agent？",
+        "options": [
+          {
+            "id": "a",
+            "text": "低风险"
+          },
+          {
+            "id": "b",
+            "text": "可自动闭环"
+          },
+          {
+            "id": "c",
+            "text": "有明确终止条件"
+          },
+          {
+            "id": "d",
+            "text": "需要频繁人工审批"
+          },
+          {
+            "id": "e",
+            "text": "高风险不可逆动作无控制"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "自主 Agent 适合边界清晰、风险可控的任务。",
+        "focus": "Autonomous Agent 适合"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-015",
+    "checks": [
+      {
+        "id": "ai-app-015-check-01",
+        "kind": "single",
+        "prompt": "如何用业务指标、对照组和人工抽检评估 AI 功能效果？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看模型分数。"
+          },
+          {
+            "id": "b",
+            "text": "结合业务指标、对照组实验和人工抽检。"
+          },
+          {
+            "id": "c",
+            "text": "只看开发者感觉。"
+          },
+          {
+            "id": "d",
+            "text": "只看一个 demo。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "业务评估要把技术指标和真实效果结合起来。",
+        "focus": "业务评估"
+      },
+      {
+        "id": "ai-app-015-check-02",
+        "kind": "multiple",
+        "prompt": "哪些可以作为 AI 功能的业务指标？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任务完成率"
+          },
+          {
+            "id": "b",
+            "text": "转化率"
+          },
+          {
+            "id": "c",
+            "text": "转人工率"
+          },
+          {
+            "id": "d",
+            "text": "用户满意度"
+          },
+          {
+            "id": "e",
+            "text": "页面图标数量"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "业务指标要反映真实产品价值。",
+        "focus": "业务指标"
+      },
+      {
+        "id": "ai-app-015-check-03",
+        "kind": "multiple",
+        "prompt": "人工抽检通常能补充什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "复杂质量判断"
+          },
+          {
+            "id": "b",
+            "text": "细粒度错误分析"
+          },
+          {
+            "id": "c",
+            "text": "主观体验判断"
+          },
+          {
+            "id": "d",
+            "text": "自动化全量替代"
+          },
+          {
+            "id": "e",
+            "text": "取消实验设计"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "人工抽检能补足自动指标难覆盖的部分。",
+        "focus": "人工抽检"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-016",
+    "checks": [
+      {
+        "id": "ai-app-016-check-01",
+        "kind": "single",
+        "prompt": "如何设计用户可控、可解释和可撤销的 AI 交互？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让模型直接执行所有动作。"
+          },
+          {
+            "id": "b",
+            "text": "提供确认、预览、撤销和说明机制。"
+          },
+          {
+            "id": "c",
+            "text": "不展示任何过程。"
+          },
+          {
+            "id": "d",
+            "text": "不需要错误提示。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "可控交互让用户知道系统在做什么、为什么这么做。",
+        "focus": "用户可控"
+      },
+      {
+        "id": "ai-app-016-check-02",
+        "kind": "multiple",
+        "prompt": "哪些设计有助于提升可控性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "确认步骤"
+          },
+          {
+            "id": "b",
+            "text": "结果预览"
+          },
+          {
+            "id": "c",
+            "text": "撤销操作"
+          },
+          {
+            "id": "d",
+            "text": "明确的失败提示"
+          },
+          {
+            "id": "e",
+            "text": "永远自动执行"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "控制权越明确，用户越容易信任系统。",
+        "focus": "可控设计"
+      },
+      {
+        "id": "ai-app-016-check-03",
+        "kind": "multiple",
+        "prompt": "哪些做法有助于提高可解释性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "展示依据"
+          },
+          {
+            "id": "b",
+            "text": "标注数据来源"
+          },
+          {
+            "id": "c",
+            "text": "给出关键步骤"
+          },
+          {
+            "id": "d",
+            "text": "显示限制和不确定性"
+          },
+          {
+            "id": "e",
+            "text": "只输出最终结果"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可解释性服务于理解、审查和纠错。",
+        "focus": "可解释设计"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-017",
+    "checks": [
+      {
+        "id": "ai-app-017-check-01",
+        "kind": "single",
+        "prompt": "AI 应用如何做 A/B 测试、灰度发布和回滚？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接全量上线。"
+          },
+          {
+            "id": "b",
+            "text": "先小流量灰度，再做 A/B 比较，并准备回滚。"
+          },
+          {
+            "id": "c",
+            "text": "只看离线评测。"
+          },
+          {
+            "id": "d",
+            "text": "不需要版本记录。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "上线治理是生产 AI 的必要能力。",
+        "focus": "A/B 与回滚"
+      },
+      {
+        "id": "ai-app-017-check-02",
+        "kind": "multiple",
+        "prompt": "A/B 和灰度主要帮助什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "观察真实流量"
+          },
+          {
+            "id": "b",
+            "text": "控制影响范围"
+          },
+          {
+            "id": "c",
+            "text": "发现回归"
+          },
+          {
+            "id": "d",
+            "text": "支持回滚决策"
+          },
+          {
+            "id": "e",
+            "text": "替代所有评测"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上线验证要和回滚机制一起设计。",
+        "focus": "线上验证"
+      },
+      {
+        "id": "ai-app-017-check-03",
+        "kind": "multiple",
+        "prompt": "上线治理通常需要哪些配套？",
+        "options": [
+          {
+            "id": "a",
+            "text": "指标监控"
+          },
+          {
+            "id": "b",
+            "text": "版本记录"
+          },
+          {
+            "id": "c",
+            "text": "失败告警"
+          },
+          {
+            "id": "d",
+            "text": "回滚路径"
+          },
+          {
+            "id": "e",
+            "text": "完全无日志"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "上线治理是控制风险的基础。",
+        "focus": "风险控制"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-018",
+    "checks": [
+      {
+        "id": "ai-app-018-check-01",
+        "kind": "single",
+        "prompt": "AI 应用从 MVP 到生产级需要补齐哪些工程能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只补一个更大的模型。"
+          },
+          {
+            "id": "b",
+            "text": "评测、监控、灰度、回滚、权限和成本治理。"
+          },
+          {
+            "id": "c",
+            "text": "只做 UI 美化。"
+          },
+          {
+            "id": "d",
+            "text": "只增加更多提示词。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "从 Demo 到生产，需要的是系统能力。",
+        "focus": "MVP 到生产"
+      },
+      {
+        "id": "ai-app-018-check-02",
+        "kind": "multiple",
+        "prompt": "哪些通常是生产级能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "监控"
+          },
+          {
+            "id": "b",
+            "text": "评测回归"
+          },
+          {
+            "id": "c",
+            "text": "审计和权限"
+          },
+          {
+            "id": "d",
+            "text": "降级和回滚"
+          },
+          {
+            "id": "e",
+            "text": "不记录版本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "生产级 AI 关注稳定、可控和可运营。",
+        "focus": "生产能力"
+      },
+      {
+        "id": "ai-app-018-check-03",
+        "kind": "multiple",
+        "prompt": "MVP 常见缺口有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "评测不足"
+          },
+          {
+            "id": "b",
+            "text": "可观测性不足"
+          },
+          {
+            "id": "c",
+            "text": "风险治理不足"
+          },
+          {
+            "id": "d",
+            "text": "成本控制不足"
+          },
+          {
+            "id": "e",
+            "text": "只缺一个好看图标"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "MVP 证明可行，生产级证明可持续。",
+        "focus": "MVP 局限"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-019",
+    "checks": [
+      {
+        "id": "ai-app-019-check-01",
+        "kind": "single",
+        "prompt": "多 Agent 协作适合哪些场景？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有场景都应该多 Agent。"
+          },
+          {
+            "id": "b",
+            "text": "角色和子任务清晰、可并行或可分工的复杂任务。"
+          },
+          {
+            "id": "c",
+            "text": "只有简单 FAQ。"
+          },
+          {
+            "id": "d",
+            "text": "完全不需要协调的任务。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多 Agent 的收益来自分工和并行。",
+        "focus": "多 Agent 协作"
+      },
+      {
+        "id": "ai-app-019-check-02",
+        "kind": "multiple",
+        "prompt": "多 Agent 协作中角色设计应关注什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "职责边界"
+          },
+          {
+            "id": "b",
+            "text": "消息协议"
+          },
+          {
+            "id": "c",
+            "text": "状态一致性"
+          },
+          {
+            "id": "d",
+            "text": "冲突仲裁"
+          },
+          {
+            "id": "e",
+            "text": "随机命名"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "角色清晰才能减少协作混乱。",
+        "focus": "角色设计"
+      },
+      {
+        "id": "ai-app-019-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合多 Agent？",
+        "options": [
+          {
+            "id": "a",
+            "text": "研究辅助"
+          },
+          {
+            "id": "b",
+            "text": "规划、执行、审查分离"
+          },
+          {
+            "id": "c",
+            "text": "大型复杂任务"
+          },
+          {
+            "id": "d",
+            "text": "单次文本改写"
+          },
+          {
+            "id": "e",
+            "text": "无状态短问答"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "多 Agent 适合结构复杂、职责可分的任务。",
+        "focus": "适用场景"
+      }
+    ]
+  },
+  {
+    "questionId": "ai-app-020",
+    "checks": [
+      {
+        "id": "ai-app-020-check-01",
+        "kind": "single",
+        "prompt": "多模态文档问答如何处理图片、表格、版式和引用来源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只看 OCR 文本。"
+          },
+          {
+            "id": "b",
+            "text": "结合版面解析、表格解析、多模态理解和引用溯源。"
+          },
+          {
+            "id": "c",
+            "text": "只靠一个 embedding。"
+          },
+          {
+            "id": "d",
+            "text": "不需要引用。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "多模态文档问答要同时考虑内容和结构。",
+        "focus": "多模态文档问答"
+      },
+      {
+        "id": "ai-app-020-check-02",
+        "kind": "multiple",
+        "prompt": "多模态文档问答通常要处理哪些内容？",
+        "options": [
+          {
+            "id": "a",
+            "text": "图片"
+          },
+          {
+            "id": "b",
+            "text": "表格"
+          },
+          {
+            "id": "c",
+            "text": "版式"
+          },
+          {
+            "id": "d",
+            "text": "引用来源"
+          },
+          {
+            "id": "e",
+            "text": "只有纯文本"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂文档不是纯文本检索能完全覆盖的。",
+        "focus": "处理内容"
+      },
+      {
+        "id": "ai-app-020-check-03",
+        "kind": "multiple",
+        "prompt": "多模态文档问答的关键挑战有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "结构解析"
+          },
+          {
+            "id": "b",
+            "text": "跨模态对齐"
+          },
+          {
+            "id": "c",
+            "text": "引用追溯"
+          },
+          {
+            "id": "d",
+            "text": "版式保真"
+          },
+          {
+            "id": "e",
+            "text": "完全不用文档治理"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "多模态问答的难点在解析、对齐和追溯。",
+        "focus": "关键挑战"
+      }
+    ]
+  }
+]

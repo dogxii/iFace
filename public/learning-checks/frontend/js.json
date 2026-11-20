@@ -1,0 +1,5861 @@
+[
+  {
+    "questionId": "js-001",
+    "checks": [
+      {
+        "id": "js-001-check-01",
+        "kind": "single",
+        "prompt": "下面代码在普通脚本环境中运行，输出最符合哪一项？\n\n```js\nif (true) {\n  var a = 1\n  let b = 2\n}\n\nconsole.log(a)\nconsole.log(b)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "依次输出 `1` 和 `2`。"
+          },
+          {
+            "id": "b",
+            "text": "先输出 `1`，然后访问 `b` 抛出 `ReferenceError`。"
+          },
+          {
+            "id": "c",
+            "text": "访问 `a` 时抛出 `ReferenceError`，不会继续执行。"
+          },
+          {
+            "id": "d",
+            "text": "`a` 和 `b` 都会变成 `window` 属性。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`var` 是函数作用域，不受 `if` 块限制；`let` 是块级作用域，块外访问会报错。顶层 `let/const` 也不会挂到 `window`。",
+        "focus": "var 与块级作用域"
+      },
+      {
+        "id": "js-001-check-02",
+        "kind": "single",
+        "prompt": "关于下面代码，哪种说法更准确？\n\n```js\nconsole.log(x)\nvar x = 1\n\nconsole.log(y)\nlet y = 2\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "两次都输出 `undefined`，因为变量都会提升。"
+          },
+          {
+            "id": "b",
+            "text": "第一处输出 `undefined`，第二处因为 TDZ 抛出 `ReferenceError`。"
+          },
+          {
+            "id": "c",
+            "text": "第一处抛出 `ReferenceError`，第二处输出 `undefined`。"
+          },
+          {
+            "id": "d",
+            "text": "`let` 完全不会被提升，所以引擎不会创建 `y` 绑定。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`let/const` 也会创建词法绑定，但声明执行前处于暂时性死区，不能访问；`var` 会提升并初始化为 `undefined`。",
+        "focus": "TDZ 和提升"
+      },
+      {
+        "id": "js-001-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `const`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`const` 声明必须初始化。"
+          },
+          {
+            "id": "b",
+            "text": "`const` 绑定不能重新赋值。"
+          },
+          {
+            "id": "c",
+            "text": "`const obj = { count: 1 }` 后，`obj.count = 2` 是允许的。"
+          },
+          {
+            "id": "d",
+            "text": "`const` 会让对象深度不可变。"
+          },
+          {
+            "id": "e",
+            "text": "默认应该用 `var`，只有循环里才用 `const`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`const` 保证绑定不重新指向，不保证引用值不可变。现代代码默认用 `const`，需要重新赋值时用 `let`。",
+        "focus": "const 的含义"
+      }
+    ]
+  },
+  {
+    "questionId": "js-002",
+    "checks": [
+      {
+        "id": "js-002-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nfunction createCounter() {\n  let count = 0\n  return function increase() {\n    count += 1\n    return count\n  }\n}\n\nconst counter = createCounter()\nconsole.log(counter())\nconsole.log(counter())\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`1`、`1`，因为外层函数每次都重新执行。"
+          },
+          {
+            "id": "b",
+            "text": "`1`、`2`，因为返回的函数持续引用同一个 `count`。"
+          },
+          {
+            "id": "c",
+            "text": "`undefined`、`undefined`，因为 `count` 是局部变量。"
+          },
+          {
+            "id": "d",
+            "text": "抛出 `ReferenceError`，因为外层函数已经结束。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "闭包是函数和声明时词法环境的组合。只要返回函数仍可达，被引用的词法变量就不会立刻消失。",
+        "focus": "闭包计数器"
+      },
+      {
+        "id": "js-002-check-02",
+        "kind": "single",
+        "prompt": "下面代码通常输出什么？\n\n```js\nfor (var i = 0; i < 3; i += 1) {\n  setTimeout(() => console.log(i), 0)\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`0 1 2`，因为每次循环都有新的 `i`。"
+          },
+          {
+            "id": "b",
+            "text": "`3 3 3`，因为三个回调闭包共享同一个 `var i`。"
+          },
+          {
+            "id": "c",
+            "text": "`undefined undefined undefined`。"
+          },
+          {
+            "id": "d",
+            "text": "一定按随机顺序输出 `0 1 2`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`var` 没有块级作用域，循环结束时同一个 `i` 已变成 3。改成 `let i` 会为每次迭代创建新的词法绑定。",
+        "focus": "循环变量"
+      },
+      {
+        "id": "js-002-check-03",
+        "kind": "multiple",
+        "prompt": "关于闭包和内存，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "闭包本身不是内存泄漏。"
+          },
+          {
+            "id": "b",
+            "text": "长期可达的闭包如果引用大对象、DOM 节点或缓存，可能造成泄漏。"
+          },
+          {
+            "id": "c",
+            "text": "不再需要的事件监听、定时器和缓存引用应及时清理。"
+          },
+          {
+            "id": "d",
+            "text": "只要使用闭包，外层函数里的所有变量都会永久不可回收。"
+          },
+          {
+            "id": "e",
+            "text": "闭包只能用于计数器，不能用于防抖、节流或私有化数据。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "泄漏的关键是“不再需要但仍然可达”。闭包常用于私有变量、函数工厂、once、防抖、节流和缓存。",
+        "focus": "闭包与内存"
+      }
+    ]
+  },
+  {
+    "questionId": "js-003",
+    "checks": [
+      {
+        "id": "js-003-check-01",
+        "kind": "single",
+        "prompt": "下面代码中，哪个判断是正确的？\n\n```js\nfunction Person(name) {\n  this.name = name\n}\n\nPerson.prototype.sayHello = function () {\n  return `Hello, ${this.name}`\n}\n\nconst alice = new Person('Alice')\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`sayHello` 是 `alice` 的自身属性。"
+          },
+          {
+            "id": "b",
+            "text": "访问 `alice.sayHello` 时，会先查自身，再沿原型链找到 `Person.prototype.sayHello`。"
+          },
+          {
+            "id": "c",
+            "text": "`Person.prototype` 的原型一定是 `null`。"
+          },
+          {
+            "id": "d",
+            "text": "`new Person()` 不会影响对象的原型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "属性查找先查对象自身，找不到再沿 `[[Prototype]]` 查找。`new` 创建的实例原型通常指向构造函数的 `prototype`。",
+        "focus": "属性查找"
+      },
+      {
+        "id": "js-003-check-02",
+        "kind": "multiple",
+        "prompt": "关于下面对象，哪些判断正确？\n\n```js\nconst parent = { greet() { return 'hi' } }\nconst child = Object.create(parent)\nchild.name = 'child'\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Object.hasOwn(child, 'name')` 为 `true`。"
+          },
+          {
+            "id": "b",
+            "text": "`Object.hasOwn(child, 'greet')` 为 `false`。"
+          },
+          {
+            "id": "c",
+            "text": "`'greet' in child` 为 `true`，因为会查原型链。"
+          },
+          {
+            "id": "d",
+            "text": "`child.greet()` 会报错，因为 `greet` 不是自身属性。"
+          },
+          {
+            "id": "e",
+            "text": "`Object.create(parent)` 会复制 parent 的所有属性到 child 自身。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`hasOwn` 只看自身属性，`in` 会查原型链。`Object.create` 建立原型关系，不是属性复制。",
+        "focus": "hasOwn 与 in"
+      },
+      {
+        "id": "js-003-check-03",
+        "kind": "multiple",
+        "prompt": "关于原型链实践，哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "工程代码优先用 `Object.getPrototypeOf()`，不要依赖历史访问器 `__proto__`。"
+          },
+          {
+            "id": "b",
+            "text": "手动整体替换构造函数的 `prototype` 时，可能需要修复 `constructor`。"
+          },
+          {
+            "id": "c",
+            "text": "字典对象可以用 `Object.create(null)` 避免继承 `Object.prototype` 属性。"
+          },
+          {
+            "id": "d",
+            "text": "随意修改 `Array.prototype` 是低风险最佳实践。"
+          },
+          {
+            "id": "e",
+            "text": "ES6 `class` 完全脱离了原型机制。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`class` 仍基于原型机制。修改内置原型会污染全局行为，通常应避免。",
+        "focus": "原型实践"
+      }
+    ]
+  },
+  {
+    "questionId": "js-004",
+    "checks": [
+      {
+        "id": "js-004-check-01",
+        "kind": "single",
+        "prompt": "下面代码在严格模式或 ES Module 语义下，更可能发生什么？\n\n```js\nconst user = {\n  name: 'Alice',\n  say() {\n    return this.name\n  },\n}\n\nconst fn = user.say\nconsole.log(fn())\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "输出 `Alice`，因为函数定义在 `user` 里。"
+          },
+          {
+            "id": "b",
+            "text": "`this` 丢失，独立调用时 `this` 通常是 `undefined`，可能报错。"
+          },
+          {
+            "id": "c",
+            "text": "输出 `user`，因为 `this` 总是指向函数所在对象。"
+          },
+          {
+            "id": "d",
+            "text": "输出 `window.name`，严格模式下也一样。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "普通函数的 `this` 由调用方式决定，不由定义位置决定。`user.say()` 是隐式绑定，赋值后 `fn()` 是独立调用。",
+        "focus": "方法丢失 this"
+      },
+      {
+        "id": "js-004-check-02",
+        "kind": "multiple",
+        "prompt": "关于箭头函数的 `this`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "箭头函数没有自己的 `this`，会捕获外层词法作用域的 `this`。"
+          },
+          {
+            "id": "b",
+            "text": "`call/apply/bind` 不能改变箭头函数的 `this`。"
+          },
+          {
+            "id": "c",
+            "text": "对象方法和原型方法一般不适合写成箭头函数。"
+          },
+          {
+            "id": "d",
+            "text": "箭头函数最适合作为构造函数配合 `new` 使用。"
+          },
+          {
+            "id": "e",
+            "text": "箭头函数的 `this` 总是指向调用点左侧对象。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "箭头函数适合回调里保留外层 `this`，但不适合作为需要动态接收者的方法，也不能作为构造函数。",
+        "focus": "箭头函数 this"
+      },
+      {
+        "id": "js-004-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `this` 绑定优先级和显式绑定，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`call`/`apply` 会立即调用函数，`bind` 返回新函数。"
+          },
+          {
+            "id": "b",
+            "text": "一般优先级可理解为 `new` 绑定 > 显式绑定 > 隐式绑定 > 默认绑定。"
+          },
+          {
+            "id": "c",
+            "text": "`new` 调用 bound function 时，`bind` 的 `thisArg` 会被忽略，但预置参数仍有效。"
+          },
+          {
+            "id": "d",
+            "text": "隐式绑定永远不会丢失。"
+          },
+          {
+            "id": "e",
+            "text": "默认绑定是现代代码推荐依赖的稳定行为。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`this` 要看调用点。现代代码应避免依赖默认绑定；需要固定接收者时使用显式绑定或箭头闭包。",
+        "focus": "this 绑定优先级"
+      }
+    ]
+  },
+  {
+    "questionId": "js-005",
+    "checks": [
+      {
+        "id": "js-005-check-01",
+        "kind": "single",
+        "prompt": "下面哪个表达式的结果与 `===` 不同？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Object.is(1, 1)`"
+          },
+          {
+            "id": "b",
+            "text": "`Object.is('1', '1')`"
+          },
+          {
+            "id": "c",
+            "text": "`Object.is(+0, -0)`"
+          },
+          {
+            "id": "d",
+            "text": "`Object.is(true, true)`"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "`+0 === -0` 为 `true`，但 `Object.is(+0, -0)` 为 `false`。另外 `Object.is(NaN, NaN)` 为 `true`。",
+        "focus": "Object.is 边界"
+      },
+      {
+        "id": "js-005-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `==` 的隐式转换，哪些结果为 `true`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`null == undefined`"
+          },
+          {
+            "id": "b",
+            "text": "`'1' == 1`"
+          },
+          {
+            "id": "c",
+            "text": "`0 == false`"
+          },
+          {
+            "id": "d",
+            "text": "`null == 0`"
+          },
+          {
+            "id": "e",
+            "text": "`NaN == NaN`"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`null` 只与 `undefined` 抽象相等；`NaN` 不等于自身。字符串/数字/布尔比较会触发复杂转换。",
+        "focus": "抽象相等"
+      },
+      {
+        "id": "js-005-check-03",
+        "kind": "single",
+        "prompt": "为什么 `[] == ![]` 是 `true`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为数组和布尔值本来就是同一种类型。"
+          },
+          {
+            "id": "b",
+            "text": "`![]` 先变成 `false`，随后 `[] == false` 经过对象转原始值和数字转换后成立。"
+          },
+          {
+            "id": "c",
+            "text": "因为空数组是假值。"
+          },
+          {
+            "id": "d",
+            "text": "因为 `==` 会直接比较引用地址。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "对象都是真值，所以 `![]` 是 `false`；`[]` 转原始值为空字符串，再转数字为 0，`false` 也转为 0。",
+        "focus": "`[] == ![]`"
+      }
+    ]
+  },
+  {
+    "questionId": "js-006",
+    "checks": [
+      {
+        "id": "js-006-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出顺序是什么？\n\n```js\nconsole.log('1')\n\nsetTimeout(() => console.log('2'), 0)\n\nPromise.resolve().then(() => {\n  console.log('3')\n  queueMicrotask(() => console.log('4'))\n})\n\nconsole.log('5')\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`1 2 3 4 5`"
+          },
+          {
+            "id": "b",
+            "text": "`1 5 3 4 2`"
+          },
+          {
+            "id": "c",
+            "text": "`1 5 2 3 4`"
+          },
+          {
+            "id": "d",
+            "text": "`1 3 4 5 2`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "同步先执行 `1 5`；当前 task 结束后清空微任务，输出 `3`，并继续执行新加入的微任务 `4`；最后执行定时器 task `2`。",
+        "focus": "事件循环输出"
+      },
+      {
+        "id": "js-006-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于常见 microtask？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Promise.then/catch/finally`"
+          },
+          {
+            "id": "b",
+            "text": "`queueMicrotask`"
+          },
+          {
+            "id": "c",
+            "text": "`MutationObserver`"
+          },
+          {
+            "id": "d",
+            "text": "`setTimeout`"
+          },
+          {
+            "id": "e",
+            "text": "用户点击事件回调本身"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "定时器和用户事件通常是 task。microtask 会在当前 task 结束后、下一个 task 前被清空。",
+        "focus": "task 与 microtask"
+      },
+      {
+        "id": "js-006-check-03",
+        "kind": "multiple",
+        "prompt": "关于浏览器事件循环，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "微任务会在下一个 task 之前被清空。"
+          },
+          {
+            "id": "b",
+            "text": "递归创建大量微任务可能饿死渲染和用户事件。"
+          },
+          {
+            "id": "c",
+            "text": "浏览器渲染发生在事件循环的渲染更新阶段，不是普通宏任务。"
+          },
+          {
+            "id": "d",
+            "text": "`setTimeout(fn, 0)` 一定会在所有 Promise 微任务之前执行。"
+          },
+          {
+            "id": "e",
+            "text": "Node.js 事件循环与浏览器完全相同，所有顺序都一致。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "面试里的“宏任务/微任务”是简化说法。浏览器渲染、Node 的 nextTick/setImmediate 等都有自己的细节。",
+        "focus": "事件循环陷阱"
+      }
+    ]
+  },
+  {
+    "questionId": "js-007",
+    "checks": [
+      {
+        "id": "js-007-check-01",
+        "kind": "single",
+        "prompt": "下面关于 Promise 状态的说法哪项正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Promise 可以从 fulfilled 再变回 pending。"
+          },
+          {
+            "id": "b",
+            "text": "Promise 一旦从 pending 变为 fulfilled 或 rejected，状态就不可再改变。"
+          },
+          {
+            "id": "c",
+            "text": "`resolved` 永远等于 `fulfilled`。"
+          },
+          {
+            "id": "d",
+            "text": "Promise rejected 后，后续 `catch` 不能处理它。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Promise 状态 settled 后不可再变。`resolved` 可能表示跟随另一个 Promise 的状态，此时外层不一定已经 fulfilled。",
+        "focus": "Promise 状态"
+      },
+      {
+        "id": "js-007-check-02",
+        "kind": "single",
+        "prompt": "下面代码最终打印什么？\n\n```js\nPromise.resolve(1)\n  .then((value) => value + 1)\n  .then((value) => {\n    throw new Error(String(value))\n  })\n  .catch((error) => error.message)\n  .then(console.log)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`1`"
+          },
+          {
+            "id": "b",
+            "text": "`2` 后程序崩溃，后续不会继续。"
+          },
+          {
+            "id": "c",
+            "text": "`'2'`"
+          },
+          {
+            "id": "d",
+            "text": "`undefined`"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "`then` 返回新 Promise。抛错会让链变成 rejected，`catch` 返回普通值后链恢复 fulfilled，最后打印错误 message。",
+        "focus": "then 返回值"
+      },
+      {
+        "id": "js-007-check-03",
+        "kind": "multiple",
+        "prompt": "关于 Promise 静态方法，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Promise.all` 全部 fulfilled 才成功，任意 rejected 就短路失败。"
+          },
+          {
+            "id": "b",
+            "text": "`Promise.allSettled` 等所有 Promise settled，并返回每个结果状态。"
+          },
+          {
+            "id": "c",
+            "text": "`Promise.race` 由第一个 settled 的结果决定。"
+          },
+          {
+            "id": "d",
+            "text": "`Promise.any` 由第一个 fulfilled 决定，全部 rejected 时抛 `AggregateError`。"
+          },
+          {
+            "id": "e",
+            "text": "`Promise.all` 会吞掉所有错误并返回成功数组。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同聚合方法对应不同失败策略。并行任务要按业务需求选择短路、收集全部结果或取最快成功。",
+        "focus": "聚合方法"
+      }
+    ]
+  },
+  {
+    "questionId": "js-008",
+    "checks": [
+      {
+        "id": "js-008-check-01",
+        "kind": "single",
+        "prompt": "下面函数调用后的结果是什么？\n\n```js\nasync function foo() {\n  return 1\n}\n\nconst result = foo()\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`result` 是数字 `1`。"
+          },
+          {
+            "id": "b",
+            "text": "`result` 是 fulfilled 为 `1` 的 Promise。"
+          },
+          {
+            "id": "c",
+            "text": "`async` 函数不允许返回普通值。"
+          },
+          {
+            "id": "d",
+            "text": "`foo()` 会阻塞主线程直到返回。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`async` 函数总是返回 Promise。返回普通值会被包装成 fulfilled Promise，抛错会变成 rejected Promise。",
+        "focus": "async 返回值"
+      },
+      {
+        "id": "js-008-check-02",
+        "kind": "single",
+        "prompt": "下面代码输出顺序是什么？\n\n```js\nasync function demo() {\n  console.log('a')\n  const value = await Promise.resolve('b')\n  console.log(value)\n}\n\ndemo()\nconsole.log('c')\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`a b c`"
+          },
+          {
+            "id": "b",
+            "text": "`a c b`"
+          },
+          {
+            "id": "c",
+            "text": "`c a b`"
+          },
+          {
+            "id": "d",
+            "text": "`b a c`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`await` 暂停当前 async 函数后续执行，把后续逻辑安排到微任务中。它不会阻塞同步代码继续执行。",
+        "focus": "await 顺序"
+      },
+      {
+        "id": "js-008-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `async/await` 并发控制，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "两个互不依赖的请求应优先用 `Promise.all` 并行。"
+          },
+          {
+            "id": "b",
+            "text": "`for...of` 里 `await` 会按顺序串行执行。"
+          },
+          {
+            "id": "c",
+            "text": "`async` 回调传给 `forEach`，外层不会等待这些异步任务完成。"
+          },
+          {
+            "id": "d",
+            "text": "所有 `await` 都会阻塞主线程。"
+          },
+          {
+            "id": "e",
+            "text": "`return await promise` 永远有害，任何场景都不应出现。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`await` 只暂停当前 async 函数，不阻塞主线程。`return await` 通常多余，但在 `try/catch` 捕获或保留异步栈时可能有意义。",
+        "focus": "串行与并行"
+      }
+    ]
+  },
+  {
+    "questionId": "js-009",
+    "checks": [
+      {
+        "id": "js-009-check-01",
+        "kind": "multiple",
+        "prompt": "哪些 `typeof` 结果是正确的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`typeof null === 'object'`"
+          },
+          {
+            "id": "b",
+            "text": "`typeof [] === 'object'`"
+          },
+          {
+            "id": "c",
+            "text": "`typeof function () {} === 'function'`"
+          },
+          {
+            "id": "d",
+            "text": "`typeof 1n === 'bigint'`"
+          },
+          {
+            "id": "e",
+            "text": "`typeof NaN === 'nan'`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`typeof null` 是历史遗留的 `'object'`。`NaN` 仍是 number，`typeof NaN === 'number'`。",
+        "focus": "typeof 结果"
+      },
+      {
+        "id": "js-009-check-02",
+        "kind": "multiple",
+        "prompt": "关于类型判断，哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "判断数组优先使用 `Array.isArray()`。"
+          },
+          {
+            "id": "b",
+            "text": "`instanceof` 依赖原型链，可能受跨 iframe 或手动改原型影响。"
+          },
+          {
+            "id": "c",
+            "text": "`Object.prototype.toString.call(value)` 通用性较好，但可能受 `Symbol.toStringTag` 影响。"
+          },
+          {
+            "id": "d",
+            "text": "`typeof` 能准确区分数组、日期、正则和 Map。"
+          },
+          {
+            "id": "e",
+            "text": "`instanceof` 判断的是对象是否有同名属性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "能用专用 API 时优先用专用 API。`instanceof` 看的是构造函数 prototype 是否在对象原型链上。",
+        "focus": "类型判断 API"
+      },
+      {
+        "id": "js-009-check-03",
+        "kind": "single",
+        "prompt": "下面关于 JavaScript 参数传递哪项正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "原始类型按值传递，对象按引用传递，所以函数可以改掉外部变量绑定。"
+          },
+          {
+            "id": "b",
+            "text": "参数都是按值传递；对象传的是引用值的副本，可改对象内容但不能改外部变量绑定。"
+          },
+          {
+            "id": "c",
+            "text": "对象传参时会深拷贝。"
+          },
+          {
+            "id": "d",
+            "text": "函数内部无法修改对象的属性。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "对象变量里保存的是引用值。函数得到的是这个引用值的副本，所以能通过它改对象内容，但重新赋值参数不会改变外部变量指向。",
+        "focus": "参数传递"
+      }
+    ]
+  },
+  {
+    "questionId": "js-010",
+    "checks": [
+      {
+        "id": "js-010-check-01",
+        "kind": "single",
+        "prompt": "下面代码执行结束后，如果没有其他外部引用，`a` 和 `b` 是否一定因为循环引用而无法回收？\n\n```js\nfunction demo() {\n  const a = {}\n  const b = {}\n  a.ref = b\n  b.ref = a\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "一定无法回收，因为任何循环引用都会泄漏。"
+          },
+          {
+            "id": "b",
+            "text": "可以被现代标记清除类 GC 回收，因为这组对象整体从根不可达。"
+          },
+          {
+            "id": "c",
+            "text": "只有把 `ref` 手动设为 `null` 才可能回收。"
+          },
+          {
+            "id": "d",
+            "text": "JavaScript 没有垃圾回收。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "现代 JS GC 主要基于可达性分析。循环引用本身不是泄漏，整体不可达时仍可回收。",
+        "focus": "可达性与循环引用"
+      },
+      {
+        "id": "js-010-check-02",
+        "kind": "multiple",
+        "prompt": "哪些情况可能导致浏览器端内存泄漏？",
+        "options": [
+          {
+            "id": "a",
+            "text": "事件监听器未移除，回调闭包长期持有 DOM 或大对象。"
+          },
+          {
+            "id": "b",
+            "text": "定时器未清理，持续引用不再需要的数据。"
+          },
+          {
+            "id": "c",
+            "text": "`Map` 缓存无限增长，没有淘汰策略。"
+          },
+          {
+            "id": "d",
+            "text": "Detached DOM 仍被 JS 变量或闭包引用。"
+          },
+          {
+            "id": "e",
+            "text": "函数里创建的所有局部对象都会永久泄漏。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "泄漏来自“无用但可达”。局部对象在函数结束后如果不可达，就可以被回收。",
+        "focus": "常见内存泄漏"
+      },
+      {
+        "id": "js-010-check-03",
+        "kind": "multiple",
+        "prompt": "哪些属于现代 V8 常见的 GC 优化思路？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分代收集，新生代频繁快速回收，存活久的对象晋升到老生代。"
+          },
+          {
+            "id": "b",
+            "text": "增量标记，把长标记过程拆成多个小片段。"
+          },
+          {
+            "id": "c",
+            "text": "并行/并发回收，把部分工作放到辅助线程降低主线程停顿。"
+          },
+          {
+            "id": "d",
+            "text": "标记整理/压缩，减少内存碎片。"
+          },
+          {
+            "id": "e",
+            "text": "只使用引用计数，完全无法处理循环引用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "引用计数有循环引用问题，不是现代 JS 引擎 GC 的核心。V8 会组合多种策略降低停顿和碎片。",
+        "focus": "V8 GC 思路"
+      }
+    ]
+  },
+  {
+    "questionId": "js-011",
+    "checks": [
+      {
+        "id": "js-011-check-01",
+        "kind": "single",
+        "prompt": "下面代码运行时会发生什么？\n\n```js\ngreet()\n\nvar greet = function () {\n  console.log('Hi')\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "输出 `Hi`，因为函数表达式会和函数声明一样完整提升。"
+          },
+          {
+            "id": "b",
+            "text": "抛出 `TypeError`，因为 `greet` 此时是 `undefined`，不是函数。"
+          },
+          {
+            "id": "c",
+            "text": "抛出 `ReferenceError`，因为 `var greet` 完全不会提升。"
+          },
+          {
+            "id": "d",
+            "text": "输出 `undefined`，不会报错。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "提升的是 `var greet` 声明并初始化为 `undefined`，函数表达式赋值仍在原位置执行。",
+        "focus": "函数表达式提升"
+      },
+      {
+        "id": "js-011-check-02",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nconsole.log(typeof foo)\nvar foo = 1\nfunction foo() {}\nconsole.log(foo)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`undefined`、`function`"
+          },
+          {
+            "id": "b",
+            "text": "`function`、`1`"
+          },
+          {
+            "id": "c",
+            "text": "`number`、`1`"
+          },
+          {
+            "id": "d",
+            "text": "第一行就抛出 `ReferenceError`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "创建阶段函数声明会初始化为函数，后续执行到 `var foo = 1` 时才把值改成 1。实际代码应避免这种同名声明。",
+        "focus": "函数声明与 var 同名"
+      },
+      {
+        "id": "js-011-check-03",
+        "kind": "multiple",
+        "prompt": "关于变量提升，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "提升不是源码真的被移动，而是声明在创建阶段进入环境记录。"
+          },
+          {
+            "id": "b",
+            "text": "`var` 声明会创建绑定并初始化为 `undefined`。"
+          },
+          {
+            "id": "c",
+            "text": "函数声明通常可以在声明前调用。"
+          },
+          {
+            "id": "d",
+            "text": "`let/const` 也会创建绑定，但声明执行前处于 TDZ。"
+          },
+          {
+            "id": "e",
+            "text": "只要是函数相关写法，都能在声明前安全调用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "函数声明和函数表达式的提升行为不同。`let/const` 的 TDZ 也说明“完全不提升”是错误说法。",
+        "focus": "提升理解"
+      }
+    ]
+  },
+  {
+    "questionId": "js-012",
+    "checks": [
+      {
+        "id": "js-012-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nlet value = 'global'\n\nfunction foo() {\n  console.log(value)\n}\n\nfunction bar() {\n  let value = 'bar'\n  foo()\n}\n\nbar()\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`global`"
+          },
+          {
+            "id": "b",
+            "text": "`bar`"
+          },
+          {
+            "id": "c",
+            "text": "`undefined`"
+          },
+          {
+            "id": "d",
+            "text": "抛出 `ReferenceError`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "JavaScript 使用词法作用域，函数作用域在定义时确定。`foo` 定义在全局作用域，所以查到全局 `value`。",
+        "focus": "词法作用域"
+      },
+      {
+        "id": "js-012-check-02",
+        "kind": "single",
+        "prompt": "变量查找的基本顺序是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "全局作用域 -> 父作用域 -> 当前作用域。"
+          },
+          {
+            "id": "b",
+            "text": "当前作用域 -> 父级词法作用域 -> 一直到全局作用域。"
+          },
+          {
+            "id": "c",
+            "text": "调用者作用域 -> 被调用函数作用域。"
+          },
+          {
+            "id": "d",
+            "text": "只查当前作用域，找不到就返回 `undefined`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "作用域链按词法嵌套关系向外查找。未声明变量被读取时最终会抛 `ReferenceError`。",
+        "focus": "变量查找顺序"
+      },
+      {
+        "id": "js-012-check-03",
+        "kind": "multiple",
+        "prompt": "关于作用域链，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "函数的外层词法环境由定义位置决定。"
+          },
+          {
+            "id": "b",
+            "text": "内层变量会遮蔽外层同名变量。"
+          },
+          {
+            "id": "c",
+            "text": "闭包能让函数在外层函数返回后仍访问其词法环境。"
+          },
+          {
+            "id": "d",
+            "text": "JavaScript 普通函数使用动态作用域，查找调用者中的变量。"
+          },
+          {
+            "id": "e",
+            "text": "作用域链和原型链是同一套查找机制。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "作用域链用于变量查找，原型链用于对象属性查找。两者方向和对象都不同。",
+        "focus": "作用域链判断"
+      }
+    ]
+  },
+  {
+    "questionId": "js-013",
+    "checks": [
+      {
+        "id": "js-013-check-01",
+        "kind": "multiple",
+        "prompt": "哪些属于 ES6 引入或标准化的常见语法能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`let` / `const` 和块级作用域。"
+          },
+          {
+            "id": "b",
+            "text": "箭头函数、模板字符串、解构和默认参数。"
+          },
+          {
+            "id": "c",
+            "text": "展开语法、剩余参数和增强对象字面量。"
+          },
+          {
+            "id": "d",
+            "text": "TypeScript 类型注解。"
+          },
+          {
+            "id": "e",
+            "text": "JSX 语法。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "TypeScript 和 JSX 都不是 ECMAScript 语言标准的一部分。ES6 的重点是更安全的声明、更简洁的函数和对象语法等。",
+        "focus": "ES6 语法增强"
+      },
+      {
+        "id": "js-013-check-02",
+        "kind": "single",
+        "prompt": "ES Module 相比传统脚本的一个关键特点是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`import/export` 只能在运行时字符串拼接决定。"
+          },
+          {
+            "id": "b",
+            "text": "静态 `import/export` 便于构建工具做依赖分析和 tree-shaking。"
+          },
+          {
+            "id": "c",
+            "text": "顶层声明都会自动挂到 `window`。"
+          },
+          {
+            "id": "d",
+            "text": "ES Module 不支持严格模式语义。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "ESM 的静态结构是它的重要价值。模块顶层是模块作用域，不会像普通脚本顶层 `var` 那样挂全局。",
+        "focus": "ES Module 特点"
+      },
+      {
+        "id": "js-013-check-03",
+        "kind": "multiple",
+        "prompt": "关于 ES6 的集合、Symbol 和迭代协议，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Map` 的 key 可以是任意值。"
+          },
+          {
+            "id": "b",
+            "text": "`Set` 表达唯一集合语义，可用于去重但要注意对象按引用比较。"
+          },
+          {
+            "id": "c",
+            "text": "`Symbol.iterator` 支撑 `for...of`、展开和解构等可迭代协议。"
+          },
+          {
+            "id": "d",
+            "text": "`Proxy` 可拦截对象基本操作，常用于响应式或代理访问。"
+          },
+          {
+            "id": "e",
+            "text": "`Symbol` 创建的值会自动转成同名字符串键。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Symbol 常用于唯一属性键和内置协议。Map/Set/Proxy/Iterator 是 ES6 带来的重要基础能力。",
+        "focus": "ES6 集合和协议"
+      }
+    ]
+  },
+  {
+    "questionId": "js-014",
+    "checks": [
+      {
+        "id": "js-014-check-01",
+        "kind": "single",
+        "prompt": "下面哪项说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`call` 和 `apply` 都不会立即调用函数。"
+          },
+          {
+            "id": "b",
+            "text": "`bind` 会立即调用函数并返回执行结果。"
+          },
+          {
+            "id": "c",
+            "text": "`call` 参数逐个传，`apply` 参数用数组或类数组，二者都会立即调用。"
+          },
+          {
+            "id": "d",
+            "text": "三者都能改变箭头函数的 `this`。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "`bind` 返回新函数，不立即执行；箭头函数没有自己的 `this`，三者都不能改变它的词法 `this`。",
+        "focus": "call/apply/bind 区别"
+      },
+      {
+        "id": "js-014-check-02",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nfunction show() {\n  return this.name\n}\n\nconst bound = show.bind({ name: 'A' })\nconsole.log(bound.call({ name: 'B' }))\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`A`"
+          },
+          {
+            "id": "b",
+            "text": "`B`"
+          },
+          {
+            "id": "c",
+            "text": "`undefined`"
+          },
+          {
+            "id": "d",
+            "text": "抛出 `TypeError`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "绑定函数的 `this` 已被固定，再用 `call/apply` 不能改掉绑定的 `thisArg`。",
+        "focus": "bind 后再 call"
+      },
+      {
+        "id": "js-014-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `call/apply/bind`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`apply` 适合已有参数数组的场景，但现代代码常可用展开语法替代。"
+          },
+          {
+            "id": "b",
+            "text": "`bind` 可以预置部分参数。"
+          },
+          {
+            "id": "c",
+            "text": "绑定函数被 `new` 调用时，`thisArg` 会被忽略，但预置参数仍生效。"
+          },
+          {
+            "id": "d",
+            "text": "严格模式下 `call(null)` 一定会把 `this` 替换成全局对象。"
+          },
+          {
+            "id": "e",
+            "text": "这三个方法只能用于构造函数，普通函数不能用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "非严格模式下 `null/undefined` 可能被替换为全局对象；严格模式会保留。三者属于普通函数调用控制工具。",
+        "focus": "边界规则"
+      }
+    ]
+  },
+  {
+    "questionId": "js-015",
+    "checks": [
+      {
+        "id": "js-015-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nconst source = { a: 1, nested: { count: 1 } }\nconst copy = { ...source }\n\ncopy.a = 2\ncopy.nested.count = 99\n\nconsole.log(source.a, source.nested.count)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`2 99`"
+          },
+          {
+            "id": "b",
+            "text": "`1 99`"
+          },
+          {
+            "id": "c",
+            "text": "`1 1`"
+          },
+          {
+            "id": "d",
+            "text": "`2 1`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "对象展开是浅拷贝。第一层原始值独立，嵌套对象仍共享引用。",
+        "focus": "浅拷贝共享嵌套引用"
+      },
+      {
+        "id": "js-015-check-02",
+        "kind": "multiple",
+        "prompt": "`JSON.parse(JSON.stringify(obj))` 有哪些常见缺陷？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不能处理循环引用。"
+          },
+          {
+            "id": "b",
+            "text": "`undefined`、函数、Symbol 等会丢失或失真。"
+          },
+          {
+            "id": "c",
+            "text": "`Date` 会变成字符串。"
+          },
+          {
+            "id": "d",
+            "text": "`Map`、`Set`、`RegExp` 等特殊对象会失真。"
+          },
+          {
+            "id": "e",
+            "text": "能完整保留原型、属性描述符和 getter/setter。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "JSON 方案只适合简单可序列化数据。复杂对象图应考虑 `structuredClone` 或成熟库。",
+        "focus": "JSON 深拷贝缺陷"
+      },
+      {
+        "id": "js-015-check-03",
+        "kind": "multiple",
+        "prompt": "关于深拷贝方案，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`structuredClone` 支持循环引用和多种结构化克隆类型。"
+          },
+          {
+            "id": "b",
+            "text": "`structuredClone` 不能克隆函数、DOM 节点、WeakMap、WeakSet 等值。"
+          },
+          {
+            "id": "c",
+            "text": "手写深拷贝需要用 `WeakMap` 处理循环引用。"
+          },
+          {
+            "id": "d",
+            "text": "手写递归只要遍历 `Object.keys` 就能完整复制所有对象语义。"
+          },
+          {
+            "id": "e",
+            "text": "深拷贝越多越好，任何状态更新都应该先深拷贝整棵树。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "深拷贝要按数据类型和业务需求选择。完整复制原型、描述符、不可枚举属性等并不简单。",
+        "focus": "structuredClone 与手写深拷贝"
+      }
+    ]
+  },
+  {
+    "questionId": "js-016",
+    "checks": [
+      {
+        "id": "js-016-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nfunction Foo() {\n  this.name = 'foo'\n  return { name: 'bar' }\n}\n\nfunction Bar() {\n  this.name = 'bar'\n  return 42\n}\n\nconsole.log(new Foo().name, new Bar().name)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`bar bar`"
+          },
+          {
+            "id": "b",
+            "text": "`foo bar`"
+          },
+          {
+            "id": "c",
+            "text": "`bar 42`"
+          },
+          {
+            "id": "d",
+            "text": "`foo 42`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "构造函数返回对象会覆盖默认实例；返回原始值会被忽略，仍返回新创建的实例。",
+        "focus": "new 的返回值规则"
+      },
+      {
+        "id": "js-016-check-02",
+        "kind": "multiple",
+        "prompt": "`new Constructor(...args)` 大致做了哪些事？",
+        "options": [
+          {
+            "id": "a",
+            "text": "创建一个新对象。"
+          },
+          {
+            "id": "b",
+            "text": "将新对象的 `[[Prototype]]` 指向 `Constructor.prototype`，若它不是对象则回退到 `Object.prototype`。"
+          },
+          {
+            "id": "c",
+            "text": "以新对象作为 `this` 执行构造函数。"
+          },
+          {
+            "id": "d",
+            "text": "根据构造函数返回值决定返回显式对象或新实例。"
+          },
+          {
+            "id": "e",
+            "text": "永远忽略构造函数显式返回的对象。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`new` 同时涉及对象创建、原型连接、this 绑定和返回值规则。",
+        "focus": "new 步骤"
+      },
+      {
+        "id": "js-016-check-03",
+        "kind": "single",
+        "prompt": "为什么手写 `myNew` 只能用于理解机制，不能说完整等价原生 `new`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "手写版本无法创建任何对象。"
+          },
+          {
+            "id": "b",
+            "text": "原生 `new` 对 class、`new.target`、内置构造器等还有很多细节。"
+          },
+          {
+            "id": "c",
+            "text": "手写版本不能使用 `Object.create`。"
+          },
+          {
+            "id": "d",
+            "text": "原生 `new` 不会设置原型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "面试手写版可覆盖主流程，但语言运行时的边界远比简化代码复杂。",
+        "focus": "手写 new 的局限"
+      }
+    ]
+  },
+  {
+    "questionId": "js-017",
+    "checks": [
+      {
+        "id": "js-017-check-01",
+        "kind": "single",
+        "prompt": "传统原型链继承 `Dog.prototype = new Animal()` 的一个典型问题是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "子类完全无法访问父类原型方法。"
+          },
+          {
+            "id": "b",
+            "text": "父构造函数中的引用类型属性可能被所有实例共享，也不方便传参。"
+          },
+          {
+            "id": "c",
+            "text": "`instanceof Animal` 一定为 false。"
+          },
+          {
+            "id": "d",
+            "text": "它不会建立任何原型关系。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "直接把父类实例作为子类原型，会把父构造函数里的实例属性放到原型上，引用类型容易共享。",
+        "focus": "原型链继承问题"
+      },
+      {
+        "id": "js-017-check-02",
+        "kind": "single",
+        "prompt": "下面哪段更接近寄生组合继承的核心写法？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Dog.prototype = Animal.prototype`"
+          },
+          {
+            "id": "b",
+            "text": "`Animal.call(this, name)` 配合 `Dog.prototype = Object.create(Animal.prototype)`"
+          },
+          {
+            "id": "c",
+            "text": "`Dog.prototype = new Animal()` 且不在构造函数中调用父构造函数"
+          },
+          {
+            "id": "d",
+            "text": "`Dog.__proto__ = new Animal()`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "寄生组合继承只调用一次父构造函数来初始化实例属性，同时让子类原型委托到父类原型。",
+        "focus": "寄生组合继承"
+      },
+      {
+        "id": "js-017-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `class extends`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它是更清晰的语法，本质仍基于原型链。"
+          },
+          {
+            "id": "b",
+            "text": "子类如果写 constructor，必须先调用 `super()` 才能使用 `this`。"
+          },
+          {
+            "id": "c",
+            "text": "`instanceof` 可以同时判断出子类实例属于子类和父类。"
+          },
+          {
+            "id": "d",
+            "text": "`class` 方法会复制到每个实例自身上。"
+          },
+          {
+            "id": "e",
+            "text": "`class` 继承完全不需要理解原型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`class` 改善语法，不改变底层原型模型。方法通常在原型上共享，而不是每个实例一份。",
+        "focus": "class extends"
+      }
+    ]
+  },
+  {
+    "questionId": "js-018",
+    "checks": [
+      {
+        "id": "js-018-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nconst arr = [1, 10, 2]\narr.sort()\nconsole.log(arr)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`[1, 2, 10]`"
+          },
+          {
+            "id": "b",
+            "text": "`[1, 10, 2]`"
+          },
+          {
+            "id": "c",
+            "text": "`[10, 2, 1]`"
+          },
+          {
+            "id": "d",
+            "text": "抛出错误，数字数组不能 sort。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`sort()` 默认按字符串字典序排序。数字升序应写 `arr.sort((a, b) => a - b)`。",
+        "focus": "sort 默认行为"
+      },
+      {
+        "id": "js-018-check-02",
+        "kind": "multiple",
+        "prompt": "哪些数组方法会修改原数组？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`push`"
+          },
+          {
+            "id": "b",
+            "text": "`splice`"
+          },
+          {
+            "id": "c",
+            "text": "`sort`"
+          },
+          {
+            "id": "d",
+            "text": "`reverse`"
+          },
+          {
+            "id": "e",
+            "text": "`map`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`map/filter/slice/concat` 等返回新结果，不修改原数组。现代还有 `toSorted/toReversed/toSpliced/with` 这类非变异替代。",
+        "focus": "会修改原数组的方法"
+      },
+      {
+        "id": "js-018-check-03",
+        "kind": "multiple",
+        "prompt": "关于数组方法选择，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "需要生成等长转换数组时用 `map`。"
+          },
+          {
+            "id": "b",
+            "text": "只做副作用遍历时可用 `forEach`，但它不能 `break` 提前退出。"
+          },
+          {
+            "id": "c",
+            "text": "需要判断是否包含 `NaN` 时，`includes` 比 `indexOf` 更合适。"
+          },
+          {
+            "id": "d",
+            "text": "需要提前找到第一个匹配元素时可用 `find`。"
+          },
+          {
+            "id": "e",
+            "text": "`forEach` 会返回映射后的新数组。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "数组方法要按返回值、是否可提前退出、是否变异和比较语义选择。",
+        "focus": "方法选择"
+      }
+    ]
+  },
+  {
+    "questionId": "js-019",
+    "checks": [
+      {
+        "id": "js-019-check-01",
+        "kind": "single",
+        "prompt": "用 `Promise.race([fetchData(), timeout])` 做超时时，哪个说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`race` 会自动取消输掉的 `fetchData()`。"
+          },
+          {
+            "id": "b",
+            "text": "`race` 只决定外层 Promise 状态，不会自动取消其他任务；取消 fetch 需配合 `AbortController`。"
+          },
+          {
+            "id": "c",
+            "text": "`race` 只会接受 fulfilled，不会被 rejected 决定。"
+          },
+          {
+            "id": "d",
+            "text": "`race([])` 会立即 fulfilled 为 `[]`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`race` 由第一个 settled 决定。输掉的任务仍可能继续运行，资源取消要额外设计。",
+        "focus": "Promise.race 超时"
+      },
+      {
+        "id": "js-019-check-02",
+        "kind": "multiple",
+        "prompt": "关于 Promise 聚合方法传入空数组，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Promise.all([])` fulfilled 为 `[]`。"
+          },
+          {
+            "id": "b",
+            "text": "`Promise.allSettled([])` fulfilled 为 `[]`。"
+          },
+          {
+            "id": "c",
+            "text": "`Promise.race([])` 会一直 pending。"
+          },
+          {
+            "id": "d",
+            "text": "`Promise.any([])` 会 rejected 为 `AggregateError`。"
+          },
+          {
+            "id": "e",
+            "text": "四者都会 fulfilled 为 `[]`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "空输入边界很适合检验对方法语义的理解。`race` 没有任何参赛者，无法 settle。",
+        "focus": "空数组边界"
+      },
+      {
+        "id": "js-019-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 Promise 聚合方法选择是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多个请求都必须成功才能继续，用 `Promise.all`。"
+          },
+          {
+            "id": "b",
+            "text": "批量任务部分失败也要展示全部结果，用 `Promise.allSettled`。"
+          },
+          {
+            "id": "c",
+            "text": "多源兜底，只要有一个成功即可，用 `Promise.any`。"
+          },
+          {
+            "id": "d",
+            "text": "超时控制或抢先响应，用 `Promise.race`。"
+          },
+          {
+            "id": "e",
+            "text": "所有并发场景都应该用 `Promise.all`，失败策略不重要。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "并发不是只看速度，还要看失败策略、结果顺序和取消机制。",
+        "focus": "业务场景选择"
+      }
+    ]
+  },
+  {
+    "questionId": "js-020",
+    "checks": [
+      {
+        "id": "js-020-check-01",
+        "kind": "single",
+        "prompt": "下面函数中，`console.log(a)` 和访问 `b` 的差异来自哪里？\n\n```js\nfunction foo() {\n  console.log(a)\n  var a = 10\n\n  console.log(b)\n  let b = 20\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`var` 和 `let` 都不会在创建阶段处理。"
+          },
+          {
+            "id": "b",
+            "text": "创建阶段 `var a` 初始化为 `undefined`，`let b` 建立绑定但处于 TDZ。"
+          },
+          {
+            "id": "c",
+            "text": "`let b` 会初始化为 `undefined`，所以也能正常输出。"
+          },
+          {
+            "id": "d",
+            "text": "差异来自原型链查找。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "执行上下文创建阶段会建立环境记录。`var` 与 `let/const` 的初始化时机不同。",
+        "focus": "创建阶段与执行阶段"
+      },
+      {
+        "id": "js-020-check-02",
+        "kind": "multiple",
+        "prompt": "函数执行上下文通常需要记录哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "词法环境和变量环境。"
+          },
+          {
+            "id": "b",
+            "text": "当前上下文的 `this` 绑定。"
+          },
+          {
+            "id": "c",
+            "text": "指向外层词法环境的引用，用于形成作用域链。"
+          },
+          {
+            "id": "d",
+            "text": "当前函数所有未来异步回调的执行结果。"
+          },
+          {
+            "id": "e",
+            "text": "当前对象的原型链完整副本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "执行上下文描述代码运行环境，核心是变量绑定、this 和外部环境引用。异步结果和对象原型不是上下文本身的组成。",
+        "focus": "执行上下文包含的信息"
+      },
+      {
+        "id": "js-020-check-03",
+        "kind": "multiple",
+        "prompt": "关于调用栈，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每次函数调用都会创建新的函数执行上下文并压入调用栈。"
+          },
+          {
+            "id": "b",
+            "text": "调用栈是后进先出结构。"
+          },
+          {
+            "id": "c",
+            "text": "异步回调要等当前调用栈清空后，才可能由事件循环取出执行。"
+          },
+          {
+            "id": "d",
+            "text": "无限递归可能导致 `Maximum call stack size exceeded`。"
+          },
+          {
+            "id": "e",
+            "text": "`setTimeout` 回调会在当前同步调用栈中立即执行。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "同步代码先在调用栈中跑完；事件循环负责后续把任务回调放入调用栈执行。",
+        "focus": "调用栈与异步"
+      }
+    ]
+  },
+  {
+    "questionId": "js-021",
+    "checks": [
+      {
+        "id": "js-021-check-01",
+        "kind": "single",
+        "prompt": "手写 Promise 时，为什么 `then` 必须返回一个新的 Promise？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了让原 Promise 状态重新回到 pending。"
+          },
+          {
+            "id": "b",
+            "text": "为了支持链式调用，并让回调返回值、thenable 或抛错决定下一环状态。"
+          },
+          {
+            "id": "c",
+            "text": "为了让 `then` 回调同步执行。"
+          },
+          {
+            "id": "d",
+            "text": "为了跳过 Promise Resolution Procedure。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "链式调用依赖每次 `then` 产生新的 Promise。新 Promise 的命运由当前回调返回值或错误按解析规则决定。",
+        "focus": "then 返回新 Promise"
+      },
+      {
+        "id": "js-021-check-02",
+        "kind": "multiple",
+        "prompt": "实现 `resolvePromise(nextPromise, x, resolve, reject)` 时，哪些边界需要处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "如果 `nextPromise === x`，要拒绝，避免自引用循环。"
+          },
+          {
+            "id": "b",
+            "text": "如果 `x` 是 Promise，要跟随它的最终状态。"
+          },
+          {
+            "id": "c",
+            "text": "如果 `x` 是 thenable，要读取并调用它的 `then`。"
+          },
+          {
+            "id": "d",
+            "text": "thenable 的 resolve/reject 只能第一次调用生效。"
+          },
+          {
+            "id": "e",
+            "text": "回调返回对象时应直接当普通值 fulfilled，不能读取 `then`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Promise Resolution Procedure 的核心是安全展开 Promise/thenable，同时防止自解析和多次 settle。",
+        "focus": "Promise 解析规则"
+      },
+      {
+        "id": "js-021-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是手写简版 Promise 也应该讲清楚的关键点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "状态只能从 pending 变为 fulfilled 或 rejected，且不可逆。"
+          },
+          {
+            "id": "b",
+            "text": "pending 时收集 fulfilled/rejected 队列，settle 后依次调度。"
+          },
+          {
+            "id": "c",
+            "text": "`then` 回调应异步执行，真实 Promise 使用微任务。"
+          },
+          {
+            "id": "d",
+            "text": "状态 settled 后再次调用 resolve/reject 应覆盖之前结果。"
+          },
+          {
+            "id": "e",
+            "text": "`catch` 是完全独立机制，不能由 `then(undefined, onRejected)` 表达。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "面试简版不用覆盖所有规范细节，但状态机、异步队列、链式调用和解析规则必须说到。",
+        "focus": "简版 Promise 关键点"
+      }
+    ]
+  },
+  {
+    "questionId": "js-022",
+    "checks": [
+      {
+        "id": "js-022-check-01",
+        "kind": "single",
+        "prompt": "下面代码第二次 `next(10)` 中的 `10` 会赋给谁？\n\n```js\nfunction* gen() {\n  const x = yield 1\n  return x\n}\n\nconst iterator = gen()\niterator.next()\nconsole.log(iterator.next(10))\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "传给第一个 `yield 1` 的返回对象的 `value`。"
+          },
+          {
+            "id": "b",
+            "text": "作为上一个 `yield` 表达式的结果赋给 `x`。"
+          },
+          {
+            "id": "c",
+            "text": "传给生成器函数的第一个形参。"
+          },
+          {
+            "id": "d",
+            "text": "被忽略，因为 `next` 不能传参。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "第一次 `next()` 启动执行，没有上一个 `yield` 接收参数；后续 `next(value)` 的参数会成为上一个 `yield` 的结果。",
+        "focus": "next 参数"
+      },
+      {
+        "id": "js-022-check-02",
+        "kind": "multiple",
+        "prompt": "关于 Generator，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "调用生成器函数不会立即执行函数体，而是返回迭代器对象。"
+          },
+          {
+            "id": "b",
+            "text": "Generator 天然实现 Iterator/Iterable 协议，可用于 `for...of`。"
+          },
+          {
+            "id": "c",
+            "text": "`yield* iterable` 可以把控制委托给另一个可迭代对象。"
+          },
+          {
+            "id": "d",
+            "text": "Generator 一旦暂停，就不能再恢复执行。"
+          },
+          {
+            "id": "e",
+            "text": "Generator 的第一次 `next(arg)` 参数会被函数体第一个 `yield` 接收。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Generator 的价值是可暂停和可恢复。它的 `next/throw/return` 是控制执行流的接口。",
+        "focus": "Generator 能力"
+      },
+      {
+        "id": "js-022-check-03",
+        "kind": "multiple",
+        "prompt": "用 Generator + Promise 写异步执行器时，哪些处理是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`yield` 出 Promise 后，用 `Promise.resolve(value)` 统一包装。"
+          },
+          {
+            "id": "b",
+            "text": "Promise fulfilled 后调用 `gen.next(data)`，把结果送回暂停点。"
+          },
+          {
+            "id": "c",
+            "text": "Promise rejected 后调用 `gen.throw(error)`，让生成器内部可以 `try/catch`。"
+          },
+          {
+            "id": "d",
+            "text": "不需要处理生成器函数内部同步抛错。"
+          },
+          {
+            "id": "e",
+            "text": "这说明原生 async/await 就是完全等价的 Generator。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Generator 执行器是 async/await 的历史转译思路之一，但原生 async/await 是语言内建机制，不能简单等同。",
+        "focus": "Generator 异步执行器"
+      }
+    ]
+  },
+  {
+    "questionId": "js-023",
+    "checks": [
+      {
+        "id": "js-023-check-01",
+        "kind": "single",
+        "prompt": "在 Proxy trap 中常写 `return Reflect.get(target, key, receiver)`，主要价值是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让代理和原对象变成同一个引用。"
+          },
+          {
+            "id": "b",
+            "text": "委托默认语义，正确处理原型链、getter/setter 和 receiver 等细节。"
+          },
+          {
+            "id": "c",
+            "text": "让所有属性都变成不可写。"
+          },
+          {
+            "id": "d",
+            "text": "绕过 Proxy 的所有不变量检查。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Reflect API 与很多内部操作和 trap 对应。先增强再委托默认行为，能减少手写语义错误。",
+        "focus": "Reflect 的价值"
+      },
+      {
+        "id": "js-023-check-02",
+        "kind": "multiple",
+        "prompt": "一个基于 Proxy 的响应式系统，哪些处理是核心思路？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`get` 中进行依赖收集。"
+          },
+          {
+            "id": "b",
+            "text": "`set` 中比较新旧值，变化时触发更新。"
+          },
+          {
+            "id": "c",
+            "text": "嵌套对象可按需懒代理，并用 WeakMap 缓存代理。"
+          },
+          {
+            "id": "d",
+            "text": "只要代理根对象，所有嵌套对象的读写都会自动被拦截，无需返回代理。"
+          },
+          {
+            "id": "e",
+            "text": "Proxy 可以完整 polyfill 到所有旧浏览器。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Proxy 拦截的是被代理对象的操作。嵌套对象要在读取时继续转成代理，且 Proxy 无法被完整 polyfill。",
+        "focus": "Proxy 响应式"
+      },
+      {
+        "id": "js-023-check-03",
+        "kind": "multiple",
+        "prompt": "关于 Proxy，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`proxy !== target`。"
+          },
+          {
+            "id": "b",
+            "text": "trap 不能违反不可配置、不可写等对象不变量，否则会抛 TypeError。"
+          },
+          {
+            "id": "c",
+            "text": "Proxy 可以拦截 `get`、`set`、`deleteProperty`、`ownKeys`、`apply`、`construct` 等操作。"
+          },
+          {
+            "id": "d",
+            "text": "Proxy 只能代理普通对象，不能代理函数。"
+          },
+          {
+            "id": "e",
+            "text": "使用 Proxy 没有任何性能成本，适合所有热点路径。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Proxy 很强，但不是透明零成本。函数也可以代理，并可通过 `apply/construct` 拦截调用和构造。",
+        "focus": "Proxy 边界"
+      }
+    ]
+  },
+  {
+    "questionId": "js-024",
+    "checks": [
+      {
+        "id": "js-024-check-01",
+        "kind": "single",
+        "prompt": "关于 WeakMap 的 key，哪项说法最准确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "key 可以是任意原始值和对象。"
+          },
+          {
+            "id": "b",
+            "text": "key 通常必须是对象这类可被 GC 的引用值。"
+          },
+          {
+            "id": "c",
+            "text": "key 必须是字符串。"
+          },
+          {
+            "id": "d",
+            "text": "key 必须是 Symbol。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "WeakMap 的弱引用意义建立在对象可被垃圾回收上。普通原始值不能作为 WeakMap key。",
+        "focus": "WeakMap key"
+      },
+      {
+        "id": "js-024-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是 WeakMap 相比 Map 的特点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不可迭代。"
+          },
+          {
+            "id": "b",
+            "text": "没有 `size`。"
+          },
+          {
+            "id": "c",
+            "text": "不会因为保存 key 就阻止 key 被 GC。"
+          },
+          {
+            "id": "d",
+            "text": "按插入顺序遍历 entries。"
+          },
+          {
+            "id": "e",
+            "text": "key 可以是任意类型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "WeakMap 不提供枚举和 size，是为了不暴露不可预测的 GC 行为。Map 则是强引用、可遍历字典。",
+        "focus": "Map vs WeakMap"
+      },
+      {
+        "id": "js-024-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合使用 WeakMap？",
+        "options": [
+          {
+            "id": "a",
+            "text": "给对象实例关联私有元数据。"
+          },
+          {
+            "id": "b",
+            "text": "缓存以对象为 key 的计算结果，同时不希望缓存单独阻止对象回收。"
+          },
+          {
+            "id": "c",
+            "text": "给 DOM 节点关联状态，节点不可达后状态可随之回收。"
+          },
+          {
+            "id": "d",
+            "text": "需要按插入顺序遍历所有 key/value 的业务列表。"
+          },
+          {
+            "id": "e",
+            "text": "需要统计缓存当前有多少条目。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "WeakMap 适合“不影响对象生命周期”的关联数据；需要遍历或计数时用 Map。",
+        "focus": "WeakMap 适用场景"
+      }
+    ]
+  },
+  {
+    "questionId": "js-025",
+    "checks": [
+      {
+        "id": "js-025-check-01",
+        "kind": "single",
+        "prompt": "下面代码输出什么？\n\n```js\nconst a = Symbol('id')\nconst b = Symbol('id')\nconsole.log(a === b)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`true`，因为描述字符串相同。"
+          },
+          {
+            "id": "b",
+            "text": "`false`，因为每次 `Symbol()` 都创建唯一值。"
+          },
+          {
+            "id": "c",
+            "text": "抛出错误，Symbol 不能带描述。"
+          },
+          {
+            "id": "d",
+            "text": "`undefined`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Symbol 的描述只用于调试，不参与相等判断。普通 `Symbol()` 每次都不同。",
+        "focus": "Symbol 唯一性"
+      },
+      {
+        "id": "js-025-check-02",
+        "kind": "multiple",
+        "prompt": "关于对象上的 Symbol 键，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Object.keys()` 不会返回 Symbol 键。"
+          },
+          {
+            "id": "b",
+            "text": "`Object.getOwnPropertySymbols()` 可以获取对象自有 Symbol 键。"
+          },
+          {
+            "id": "c",
+            "text": "`Reflect.ownKeys()` 会返回字符串键和 Symbol 键。"
+          },
+          {
+            "id": "d",
+            "text": "Symbol 属性是真正安全私有，任何反射 API 都无法看到。"
+          },
+          {
+            "id": "e",
+            "text": "`JSON.stringify()` 会正常序列化 Symbol 键。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Symbol 降低命名冲突，不等于安全私有。反射 API 仍能发现对象上的 Symbol 自有属性。",
+        "focus": "Symbol 属性枚举"
+      },
+      {
+        "id": "js-025-check-03",
+        "kind": "multiple",
+        "prompt": "哪些属于 well-known Symbol 的用途？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Symbol.iterator` 定义可迭代协议。"
+          },
+          {
+            "id": "b",
+            "text": "`Symbol.toPrimitive` 自定义对象转原始值。"
+          },
+          {
+            "id": "c",
+            "text": "`Symbol.toStringTag` 自定义 `Object.prototype.toString` 标签。"
+          },
+          {
+            "id": "d",
+            "text": "`Symbol.hasInstance` 自定义 `instanceof` 行为。"
+          },
+          {
+            "id": "e",
+            "text": "`Symbol.for` 每次都创建全新的本地 Symbol。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`Symbol.for` 使用全局注册表，同 key 会复用。well-known symbols 是语言内置协议入口。",
+        "focus": "well-known symbols"
+      }
+    ]
+  },
+  {
+    "questionId": "js-026",
+    "checks": [
+      {
+        "id": "js-026-check-01",
+        "kind": "single",
+        "prompt": "一个合法迭代器的 `next()` 方法应该返回什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只返回下一个值本身，例如 `1`。"
+          },
+          {
+            "id": "b",
+            "text": "返回形如 `{ value, done }` 的 iterator result。"
+          },
+          {
+            "id": "c",
+            "text": "返回数组 `[value, done]`。"
+          },
+          {
+            "id": "d",
+            "text": "永远返回 Promise。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "迭代器协议要求 `next()` 返回对象，至少表达 `value` 和 `done`。异步迭代器才涉及 Promise 包装。",
+        "focus": "迭代器结果"
+      },
+      {
+        "id": "js-026-check-02",
+        "kind": "multiple",
+        "prompt": "哪些对象默认通常是可迭代的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Array"
+          },
+          {
+            "id": "b",
+            "text": "String"
+          },
+          {
+            "id": "c",
+            "text": "Map"
+          },
+          {
+            "id": "d",
+            "text": "Set"
+          },
+          {
+            "id": "e",
+            "text": "普通对象字面量 `{ a: 1 }`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "普通对象默认没有 `[Symbol.iterator]`。遍历普通对象常用 `Object.keys/values/entries`。",
+        "focus": "可迭代对象"
+      },
+      {
+        "id": "js-026-check-03",
+        "kind": "multiple",
+        "prompt": "哪些语法或 API 会消费 iterable？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`for...of`"
+          },
+          {
+            "id": "b",
+            "text": "数组展开 `[...iterable]`"
+          },
+          {
+            "id": "c",
+            "text": "解构赋值 `const [a, b] = iterable`"
+          },
+          {
+            "id": "d",
+            "text": "`Promise.all(iterable)`"
+          },
+          {
+            "id": "e",
+            "text": "`for...in`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`for...in` 遍历可枚举字符串属性键，不走 iterable 协议。`for...of` 等会调用 `[Symbol.iterator]()`。",
+        "focus": "消费可迭代对象"
+      }
+    ]
+  },
+  {
+    "questionId": "js-027",
+    "checks": [
+      {
+        "id": "js-027-check-01",
+        "kind": "single",
+        "prompt": "下面代码中 `obj.arrow()` 为什么通常不会返回 `'obj'`？\n\n```js\nconst obj = {\n  name: 'obj',\n  arrow: () => this?.name,\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "箭头函数没有返回值。"
+          },
+          {
+            "id": "b",
+            "text": "箭头函数没有自己的 `this`，这里捕获的是定义位置外层的 `this`，不是调用点的 `obj`。"
+          },
+          {
+            "id": "c",
+            "text": "对象字面量里不能定义箭头函数。"
+          },
+          {
+            "id": "d",
+            "text": "`this` 在 JavaScript 中只能用于 class。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "普通对象方法通常不要写成箭头函数，除非你明确需要外层词法 `this`。",
+        "focus": "对象方法中的箭头函数"
+      },
+      {
+        "id": "js-027-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是箭头函数与普通函数的区别？",
+        "options": [
+          {
+            "id": "a",
+            "text": "箭头函数没有自己的 `arguments`。"
+          },
+          {
+            "id": "b",
+            "text": "箭头函数不能作为构造函数使用。"
+          },
+          {
+            "id": "c",
+            "text": "箭头函数没有自己的 `prototype` 属性。"
+          },
+          {
+            "id": "d",
+            "text": "箭头函数的 `this` 不能被 `call/apply/bind` 改变。"
+          },
+          {
+            "id": "e",
+            "text": "箭头函数可以写成生成器函数。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "箭头函数适合短函数和保留外层 `this` 的回调，不适合动态 `this`、构造函数或 Generator。",
+        "focus": "箭头函数限制"
+      },
+      {
+        "id": "js-027-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合使用箭头函数？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`arr.map((x) => x * 2)` 这类短小纯回调。"
+          },
+          {
+            "id": "b",
+            "text": "定时器或 Promise 回调中需要保留外层 `this`。"
+          },
+          {
+            "id": "c",
+            "text": "类组件中作为字段回调，避免手动 bind。"
+          },
+          {
+            "id": "d",
+            "text": "构造函数。"
+          },
+          {
+            "id": "e",
+            "text": "原型方法，需要让 `this` 指向调用对象。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "箭头函数的优点和限制都来自词法 `this`。需要动态接收者时选普通函数。",
+        "focus": "适用场景"
+      }
+    ]
+  },
+  {
+    "questionId": "js-028",
+    "checks": [
+      {
+        "id": "js-028-check-01",
+        "kind": "single",
+        "prompt": "为什么 Vue2 基于 `Object.defineProperty` 的响应式对新增属性和数组下标处理不自然？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Object.defineProperty` 不能定义 getter/setter。"
+          },
+          {
+            "id": "b",
+            "text": "它拦截的是已定义属性的读写，新增/删除属性和数组下标等需要额外处理。"
+          },
+          {
+            "id": "c",
+            "text": "它只能用于 Map 和 Set。"
+          },
+          {
+            "id": "d",
+            "text": "它会自动代理整个对象所有未来操作。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`defineProperty` 是属性级 getter/setter。新增属性、删除属性、数组 length/下标等不是同一类拦截模型。",
+        "focus": "defineProperty 限制"
+      },
+      {
+        "id": "js-028-check-02",
+        "kind": "multiple",
+        "prompt": "相比 `defineProperty`，Proxy 响应式有哪些优势？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以拦截对象层面的新增、删除、`in`、`ownKeys` 等更多操作。"
+          },
+          {
+            "id": "b",
+            "text": "可以对嵌套对象按需懒代理，降低初始化递归成本。"
+          },
+          {
+            "id": "c",
+            "text": "对数组下标和 length 相关操作有更统一的拦截能力。"
+          },
+          {
+            "id": "d",
+            "text": "可以完整 polyfill 到 IE。"
+          },
+          {
+            "id": "e",
+            "text": "代理后原对象和代理对象引用完全相等。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Proxy 覆盖面更广，但兼容性要求更高，且 `proxy !== target`。",
+        "focus": "Proxy 响应式优势"
+      },
+      {
+        "id": "js-028-check-03",
+        "kind": "multiple",
+        "prompt": "关于 Vue2/Vue3 响应式对比，哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Vue2 可概括为把每个属性改造成 getter/setter。"
+          },
+          {
+            "id": "b",
+            "text": "Vue3 可概括为给对象套代理，按操作追踪和触发。"
+          },
+          {
+            "id": "c",
+            "text": "Vue2 对新增属性常需要 `Vue.set` / `$set` 这类辅助。"
+          },
+          {
+            "id": "d",
+            "text": "Vue3 使用 Proxy 后不需要依赖收集和触发更新。"
+          },
+          {
+            "id": "e",
+            "text": "`Object.defineProperty` 可以拦截对象所有基本操作，包括 `delete` 和 `ownKeys`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Proxy 改变的是拦截层级，不是取消响应式系统。依赖收集、调度和触发仍然是核心。",
+        "focus": "Vue 响应式理解"
+      }
+    ]
+  },
+  {
+    "questionId": "js-029",
+    "checks": [
+      {
+        "id": "js-029-check-01",
+        "kind": "single",
+        "prompt": "搜索框输入联想，希望用户停止输入 300ms 后只请求最后一次关键词。应优先用什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "防抖 debounce。"
+          },
+          {
+            "id": "b",
+            "text": "节流 throttle。"
+          },
+          {
+            "id": "c",
+            "text": "`for...in`。"
+          },
+          {
+            "id": "d",
+            "text": "`Promise.race([])`。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "防抖的核心是“等停止后执行最后一次”，很适合输入搜索、校验、resize 结束处理。",
+        "focus": "防抖场景"
+      },
+      {
+        "id": "js-029-check-02",
+        "kind": "single",
+        "prompt": "滚动过程中每 200ms 最多上报一次位置，更适合什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "防抖，因为滚动期间完全不需要执行。"
+          },
+          {
+            "id": "b",
+            "text": "节流，因为它控制固定频率持续执行。"
+          },
+          {
+            "id": "c",
+            "text": "深拷贝。"
+          },
+          {
+            "id": "d",
+            "text": "`Object.freeze`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "节流适合高频持续事件中的周期性执行，例如 scroll、drag、mousemove、上报。",
+        "focus": "节流场景"
+      },
+      {
+        "id": "js-029-check-03",
+        "kind": "multiple",
+        "prompt": "手写防抖/节流时，哪些细节值得注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用闭包保存 timer、lastTime 等状态。"
+          },
+          {
+            "id": "b",
+            "text": "调用原函数时保留 `this` 和参数。"
+          },
+          {
+            "id": "c",
+            "text": "根据业务决定 leading/trailing 是否执行。"
+          },
+          {
+            "id": "d",
+            "text": "滚动监听可配合 `{ passive: true }`，视觉更新可考虑 `requestAnimationFrame`。"
+          },
+          {
+            "id": "e",
+            "text": "防抖和节流完全一样，只是名字不同。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "防抖等停下，节流控频率。实现质量常体现在 this/参数、头尾调用和事件监听策略上。",
+        "focus": "实现细节"
+      }
+    ]
+  },
+  {
+    "questionId": "js-030",
+    "checks": [
+      {
+        "id": "js-030-check-01",
+        "kind": "single",
+        "prompt": "下面代码可能输出哪些 key？\n\n```js\nconst arr = [10, 20, 30]\narr.extra = 'oops'\n\nfor (const key in arr) {\n  console.log(key)\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "只输出 `10 20 30`。"
+          },
+          {
+            "id": "b",
+            "text": "可能输出 `0 1 2 extra`。"
+          },
+          {
+            "id": "c",
+            "text": "抛出错误，数组不能用 `for...in`。"
+          },
+          {
+            "id": "d",
+            "text": "只输出 `extra`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`for...in` 遍历可枚举字符串属性键，不是值。数组额外可枚举属性也可能被遍历到。",
+        "focus": "数组上的 for...in"
+      },
+      {
+        "id": "js-030-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `for...of`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它消费 iterable 的 `[Symbol.iterator]()`。"
+          },
+          {
+            "id": "b",
+            "text": "遍历数组时拿到的是值，不是字符串索引。"
+          },
+          {
+            "id": "c",
+            "text": "遍历 Map 时常用 `for (const [key, value] of map)`。"
+          },
+          {
+            "id": "d",
+            "text": "普通对象默认可以直接 `for...of`。"
+          },
+          {
+            "id": "e",
+            "text": "它会遍历对象原型链上的可枚举属性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`for...of` 走迭代协议；普通对象默认不可迭代，原型链枚举是 `for...in` 的行为。",
+        "focus": "for...of"
+      },
+      {
+        "id": "js-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些遍历选择更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "普通对象自身键值对用 `Object.entries(obj)`。"
+          },
+          {
+            "id": "b",
+            "text": "可迭代数据如数组、字符串、Map、Set 用 `for...of`。"
+          },
+          {
+            "id": "c",
+            "text": "用 `for...in` 遍历对象时，如只要自身属性应配合 `Object.hasOwn`。"
+          },
+          {
+            "id": "d",
+            "text": "数组业务遍历优先用 `for...in`。"
+          },
+          {
+            "id": "e",
+            "text": "Symbol 键会被 `for...in` 自动遍历出来。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "对象属性和可迭代值是两套机制。`for...in` 不遍历 Symbol 键，也不适合普通数组值遍历。",
+        "focus": "遍历选择"
+      }
+    ]
+  },
+  {
+    "questionId": "js-031",
+    "checks": [
+      {
+        "id": "js-031-check-01",
+        "kind": "single",
+        "prompt": "`counter.cjs` 中 `module.exports = { count, increment, getCount }`，导入方写：\n\n```js\nconst { count, increment, getCount } = require('./counter.cjs')\n\nincrement()\nconsole.log(count)\nconsole.log(getCount())\n```\n\n如果 `increment` 修改的是模块内部 `count`，输出更可能是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`1`、`1`"
+          },
+          {
+            "id": "b",
+            "text": "`0`、`1`"
+          },
+          {
+            "id": "c",
+            "text": "`undefined`、`undefined`"
+          },
+          {
+            "id": "d",
+            "text": "抛出错误，CommonJS 不能解构。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "CJS 导出对象本身是引用，但解构属性得到的是当时属性值的本地变量。通过函数读取内部变量才能拿到最新值。",
+        "focus": "CJS 解构导出值"
+      },
+      {
+        "id": "js-031-check-02",
+        "kind": "multiple",
+        "prompt": "ES Module 有哪些特点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "静态 `import/export` 让依赖关系在解析阶段更清楚。"
+          },
+          {
+            "id": "b",
+            "text": "导出是 live binding，导入方读取到导出绑定的最新值。"
+          },
+          {
+            "id": "c",
+            "text": "导入绑定在导入模块中是只读视图，不能重新赋值。"
+          },
+          {
+            "id": "d",
+            "text": "静态结构更利于 tree shaking。"
+          },
+          {
+            "id": "e",
+            "text": "ESM 默认不是严格模式。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "ESM 更静态、更利于构建优化。导入绑定不是普通拷贝，也不能在导入方改写。",
+        "focus": "ESM 特点"
+      },
+      {
+        "id": "js-031-check-03",
+        "kind": "multiple",
+        "prompt": "关于 CJS 和 ESM，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "CJS 的 `require()` 是运行时同步加载，常见于 Node 旧生态。"
+          },
+          {
+            "id": "b",
+            "text": "CJS 可以动态 require，例如放在条件分支里。"
+          },
+          {
+            "id": "c",
+            "text": "ESM 动态加载应使用 `import()`，它返回 Promise。"
+          },
+          {
+            "id": "d",
+            "text": "CJS 和 ESM 都完全不缓存模块实例。"
+          },
+          {
+            "id": "e",
+            "text": "ESM 循环依赖完全没有 TDZ 风险。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "两者都有模块缓存。ESM 循环依赖会先建立绑定，但访问时仍可能遇到 TDZ。",
+        "focus": "CJS 与 ESM 对比"
+      }
+    ]
+  },
+  {
+    "questionId": "js-032",
+    "checks": [
+      {
+        "id": "js-032-check-01",
+        "kind": "single",
+        "prompt": "对 `sum = curry((a, b, c) => a + b + c)`，下面哪种调用通常不应该得到 `6`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`sum(1)(2)(3)`"
+          },
+          {
+            "id": "b",
+            "text": "`sum(1, 2)(3)`"
+          },
+          {
+            "id": "c",
+            "text": "`sum(1, 2, 3)`"
+          },
+          {
+            "id": "d",
+            "text": "`sum(1)(2)`"
+          }
+        ],
+        "answerIds": ["d"],
+        "explanation": "柯里化会先收集参数，参数数量达到 arity 后才执行原函数。只传两个参数时还应返回继续收集的函数。",
+        "focus": "curry 调用方式"
+      },
+      {
+        "id": "js-032-check-02",
+        "kind": "multiple",
+        "prompt": "手写通用 `curry(fn, arity = fn.length)` 时，哪些细节需要注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "参数不足时返回新的收集函数。"
+          },
+          {
+            "id": "b",
+            "text": "参数足够时用收集到的参数调用原函数。"
+          },
+          {
+            "id": "c",
+            "text": "需要保留调用时的 `this`，可用 `apply`。"
+          },
+          {
+            "id": "d",
+            "text": "`fn.length` 永远能准确表示所有函数需要的参数数量。"
+          },
+          {
+            "id": "e",
+            "text": "柯里化后函数必须一次只接收一个参数，不能支持 `sum(1, 2)(3)`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`fn.length` 不包含剩余参数，并会受默认参数影响；复杂函数最好显式传 arity。",
+        "focus": "curry 实现细节"
+      },
+      {
+        "id": "js-032-check-03",
+        "kind": "multiple",
+        "prompt": "关于柯里化，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以用于参数复用，例如先固定类型得到 `isString`。"
+          },
+          {
+            "id": "b",
+            "text": "可以配合函数组合生成更专用的函数。"
+          },
+          {
+            "id": "c",
+            "text": "过度使用会增加调用层级和阅读成本。"
+          },
+          {
+            "id": "d",
+            "text": "柯里化能自动提升所有函数性能。"
+          },
+          {
+            "id": "e",
+            "text": "柯里化只能用于数学函数，不能用于业务格式化函数。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "柯里化强调复用和组合，不是性能优化银弹。业务里要以可读性为先。",
+        "focus": "使用边界"
+      }
+    ]
+  },
+  {
+    "questionId": "js-033",
+    "checks": [
+      {
+        "id": "js-033-check-01",
+        "kind": "single",
+        "prompt": "`Object.create(proto)` 的核心作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "深拷贝 `proto` 的所有属性。"
+          },
+          {
+            "id": "b",
+            "text": "创建一个新对象，并把它的原型设为 `proto`。"
+          },
+          {
+            "id": "c",
+            "text": "冻结 `proto`。"
+          },
+          {
+            "id": "d",
+            "text": "把 `proto` 的属性全部变成不可枚举。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`Object.create` 建立原型委托关系，不复制整棵对象。常用于无原型字典、原型委托和寄生组合继承。",
+        "focus": "Object.create"
+      },
+      {
+        "id": "js-033-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `Object.assign(target, ...sources)`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它会修改并返回 `target`。"
+          },
+          {
+            "id": "b",
+            "text": "它是浅拷贝，嵌套对象仍共享引用。"
+          },
+          {
+            "id": "c",
+            "text": "它复制自有可枚举的 string key 和 Symbol key。"
+          },
+          {
+            "id": "d",
+            "text": "读取源属性时可能触发 getter，写目标属性时可能触发 setter。"
+          },
+          {
+            "id": "e",
+            "text": "它会完整复制原型和属性描述符。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`Object.assign` 是常用浅复制/合并工具，不是完整克隆工具。需要描述符时要用其他 API。",
+        "focus": "Object.assign"
+      },
+      {
+        "id": "js-033-check-03",
+        "kind": "multiple",
+        "prompt": "关于对象不可变相关 API，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Object.freeze` 是浅冻结，嵌套对象不会自动冻结。"
+          },
+          {
+            "id": "b",
+            "text": "frozen 对象不能新增、删除属性，也不能修改已有数据属性值。"
+          },
+          {
+            "id": "c",
+            "text": "`Object.seal` 禁止增删属性，但已有可写属性仍可改值。"
+          },
+          {
+            "id": "d",
+            "text": "`Object.preventExtensions` 禁止新增属性。"
+          },
+          {
+            "id": "e",
+            "text": "`Object.freeze` 会深度冻结 Map、Set、DOM 等所有结构。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "这些 API 只控制对象自身层级。深冻结需要递归，而且遇到特殊对象要谨慎。",
+        "focus": "freeze/seal/preventExtensions"
+      }
+    ]
+  },
+  {
+    "questionId": "js-034",
+    "checks": [
+      {
+        "id": "js-034-check-01",
+        "kind": "single",
+        "prompt": "关于 class 的 `#name` 私有字段，哪项正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它只是 `_name` 的语法糖，外部可以正常 `p.#name` 访问。"
+          },
+          {
+            "id": "b",
+            "text": "它是语言级私有，只能在声明它的类体内部访问。"
+          },
+          {
+            "id": "c",
+            "text": "可以通过 `p['#name']` 访问同一个私有字段。"
+          },
+          {
+            "id": "d",
+            "text": "它会被 `Object.keys(p)` 枚举出来。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`#name` 是私有品牌字段，类外访问是语法错误。`p['#name']` 只是普通字符串属性访问。",
+        "focus": "# 私有字段"
+      },
+      {
+        "id": "js-034-check-02",
+        "kind": "multiple",
+        "prompt": "关于 JavaScript 私有属性方案，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`_name` 只是命名约定，不是真正私有。"
+          },
+          {
+            "id": "b",
+            "text": "闭包可以隐藏变量，但每个实例通常会创建自己的函数。"
+          },
+          {
+            "id": "c",
+            "text": "WeakMap 可以用实例作为 key 存私有数据，且不阻止实例 GC。"
+          },
+          {
+            "id": "d",
+            "text": "现代项目优先考虑 `#` 私有字段/方法。"
+          },
+          {
+            "id": "e",
+            "text": "WeakMap 的私有数据可以通过 `Object.keys(instance)` 枚举出来。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同私有方案在封装强度、性能、兼容性和可读性上取舍不同。",
+        "focus": "私有方案对比"
+      },
+      {
+        "id": "js-034-check-03",
+        "kind": "single",
+        "prompt": "`#value in obj` 的用途是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "判断对象是否有字符串属性 `'#value'`。"
+          },
+          {
+            "id": "b",
+            "text": "检查对象是否拥有当前类声明的私有品牌。"
+          },
+          {
+            "id": "c",
+            "text": "把私有字段转换成公开字段。"
+          },
+          {
+            "id": "d",
+            "text": "枚举所有私有字段。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "私有字段有语言级品牌。`#value in obj` 只能在声明该私有名的类体内使用，用于安全检查。",
+        "focus": "私有品牌检查"
+      }
+    ]
+  },
+  {
+    "questionId": "js-035",
+    "checks": [
+      {
+        "id": "js-035-check-01",
+        "kind": "single",
+        "prompt": "下面代码结果是什么？\n\n```js\nnew Set([{ id: 1 }, { id: 1 }]).size\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`1`，因为两个对象结构相同。"
+          },
+          {
+            "id": "b",
+            "text": "`2`，因为对象按引用判断，不按结构判断。"
+          },
+          {
+            "id": "c",
+            "text": "`0`"
+          },
+          {
+            "id": "d",
+            "text": "抛出错误，Set 不能存对象。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Set 用 SameValueZero 判断值是否相同。对象值按引用比较，两个字面量是不同引用。",
+        "focus": "Set 对象去重"
+      },
+      {
+        "id": "js-035-check-02",
+        "kind": "multiple",
+        "prompt": "关于 Set，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "值唯一，按插入顺序迭代。"
+          },
+          {
+            "id": "b",
+            "text": "`NaN` 与 `NaN` 被视为相同。"
+          },
+          {
+            "id": "c",
+            "text": "`+0` 和 `-0` 被视为相同。"
+          },
+          {
+            "id": "d",
+            "text": "可用于数组去重和集合运算。"
+          },
+          {
+            "id": "e",
+            "text": "Set 会按对象结构自动去重。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Set 适合唯一集合语义，但复杂对象结构去重需要按业务 key 自己处理。",
+        "focus": "Set 特性"
+      },
+      {
+        "id": "js-035-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合 Map？",
+        "options": [
+          {
+            "id": "a",
+            "text": "key 可能是对象、函数等任意值。"
+          },
+          {
+            "id": "b",
+            "text": "需要频繁动态增删键值对。"
+          },
+          {
+            "id": "c",
+            "text": "需要原生 `.size` 和默认可迭代能力。"
+          },
+          {
+            "id": "d",
+            "text": "表示一条固定结构、需要 JSON 序列化的业务记录。"
+          },
+          {
+            "id": "e",
+            "text": "需要所有 key 自动转成字符串。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Object 适合固定记录模型和 JSON 数据；Map 适合字典、缓存、任意 key 和频繁增删。",
+        "focus": "Map vs Object"
+      }
+    ]
+  },
+  {
+    "questionId": "js-036",
+    "checks": [
+      {
+        "id": "js-036-check-01",
+        "kind": "single",
+        "prompt": "下面代码中哪个值更适合用 `??` 而不是 `||` 设置默认值？\n\n```js\nconst config = { timeout: 0 }\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`config.timeout || 5000`，因为 0 表示缺失。"
+          },
+          {
+            "id": "b",
+            "text": "`config.timeout ?? 5000`，因为 0 是有效值，不应被默认值覆盖。"
+          },
+          {
+            "id": "c",
+            "text": "`config.timeout && 5000`"
+          },
+          {
+            "id": "d",
+            "text": "`Boolean(config.timeout) ? 5000 : 0`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`??` 只在 `null/undefined` 时使用默认值，不会误伤 `0`、空字符串和 `false`。",
+        "focus": "?? 与 ||"
+      },
+      {
+        "id": "js-036-check-02",
+        "kind": "multiple",
+        "prompt": "关于可选链 `?.`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "左侧是 `null` 或 `undefined` 时短路并返回 `undefined`。"
+          },
+          {
+            "id": "b",
+            "text": "`obj?.a.b` 只保护 `obj`，不保护 `obj.a`。"
+          },
+          {
+            "id": "c",
+            "text": "安全访问深层链应写成 `obj?.a?.b`。"
+          },
+          {
+            "id": "d",
+            "text": "可选链可以直接作为赋值左侧，例如 `user?.name = 'A'`。"
+          },
+          {
+            "id": "e",
+            "text": "可选链会捕获所有运行时错误并返回 `undefined`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "可选链只处理 nullish 访问短路，不是通用 try/catch，也不能作为赋值目标。",
+        "focus": "可选链边界"
+      },
+      {
+        "id": "js-036-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `??` 和逻辑赋值，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`??` 不能和 `||`、`&&` 无括号混用。"
+          },
+          {
+            "id": "b",
+            "text": "`options.timeout ??= 5000` 只在左侧为 `null/undefined` 时赋值。"
+          },
+          {
+            "id": "c",
+            "text": "`flag ||= true` 会在左侧是假值时赋值。"
+          },
+          {
+            "id": "d",
+            "text": "`'' ?? 'default'` 的结果是 `'default'`。"
+          },
+          {
+            "id": "e",
+            "text": "`false ?? true` 的结果是 `true`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "空字符串和 false 都不是 nullish。`??` 适合保留有效假值。",
+        "focus": "混用与逻辑赋值"
+      }
+    ]
+  },
+  {
+    "questionId": "js-037",
+    "checks": [
+      {
+        "id": "js-037-check-01",
+        "kind": "single",
+        "prompt": "`fetch('/api')` 收到 HTTP 500 响应时，通常会发生什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "fetch Promise 一定 rejected。"
+          },
+          {
+            "id": "b",
+            "text": "fetch Promise 通常 fulfilled，需要检查 `res.ok` 或 `res.status` 并主动抛错。"
+          },
+          {
+            "id": "c",
+            "text": "浏览器会自动重试直到成功。"
+          },
+          {
+            "id": "d",
+            "text": "`finally` 会拿到 HTTP body。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "fetch 只在网络失败、CORS 等情况下 reject。HTTP 4xx/5xx 是成功收到响应，需要业务层判断。",
+        "focus": "fetch 与 HTTP 错误"
+      },
+      {
+        "id": "js-037-check-02",
+        "kind": "multiple",
+        "prompt": "哪些错误处理实践是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不要空 `catch` 静默吞错。"
+          },
+          {
+            "id": "b",
+            "text": "抛出 `Error` 或其子类，而不是直接抛字符串。"
+          },
+          {
+            "id": "c",
+            "text": "未知错误不要吞掉，应重新抛出或上报。"
+          },
+          {
+            "id": "d",
+            "text": "用 `finally` 做资源清理、loading 收尾或锁释放。"
+          },
+          {
+            "id": "e",
+            "text": "全局 `error/unhandledrejection` 可以替代所有局部错误处理。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "全局监听是兜底上报，不是恢复策略。局部代码应处理自己能理解和恢复的错误。",
+        "focus": "错误处理实践"
+      },
+      {
+        "id": "js-037-check-03",
+        "kind": "multiple",
+        "prompt": "哪些错误类型和含义匹配？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`ReferenceError`：访问不存在的绑定。"
+          },
+          {
+            "id": "b",
+            "text": "`TypeError`：值类型不支持当前操作。"
+          },
+          {
+            "id": "c",
+            "text": "`RangeError`：数值范围不合法。"
+          },
+          {
+            "id": "d",
+            "text": "`AggregateError`：多个错误聚合，例如 `Promise.any` 全部失败。"
+          },
+          {
+            "id": "e",
+            "text": "`SyntaxError`：运行时除零错误。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "不同错误类型帮助快速定位错误来源。自定义错误可携带 code、statusCode、cause 等结构化信息。",
+        "focus": "错误类型"
+      }
+    ]
+  },
+  {
+    "questionId": "js-038",
+    "checks": [
+      {
+        "id": "js-038-check-01",
+        "kind": "single",
+        "prompt": "为什么动画通常优先使用 `requestAnimationFrame` 而不是固定 `setInterval(..., 16)`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "rAF 会让 JavaScript 运行在独立线程，不占主线程。"
+          },
+          {
+            "id": "b",
+            "text": "rAF 在下一次重绘前调用，更贴合浏览器刷新节奏。"
+          },
+          {
+            "id": "c",
+            "text": "rAF 在后台页面一定保持 60fps。"
+          },
+          {
+            "id": "d",
+            "text": "rAF 只能用于网络请求超时。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "rAF 适合视觉更新。它跟随刷新率和页面状态，后台通常会暂停或降频。",
+        "focus": "rAF 动画"
+      },
+      {
+        "id": "js-038-check-02",
+        "kind": "multiple",
+        "prompt": "使用 rAF 做动画时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用回调传入的 timestamp 计算进度，而不是假设每帧固定 16.67ms。"
+          },
+          {
+            "id": "b",
+            "text": "停止动画时调用 `cancelAnimationFrame(rafId)`。"
+          },
+          {
+            "id": "c",
+            "text": "优先修改 `transform`、`opacity` 等更适合动画的属性。"
+          },
+          {
+            "id": "d",
+            "text": "在同一帧反复读写布局属性，强制浏览器多次 reflow。"
+          },
+          {
+            "id": "e",
+            "text": "所有非视觉延时逻辑都应该用 rAF 替代 `setTimeout`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "rAF 用于视觉更新。非视觉延时、超时控制、轮询等仍更适合定时器。",
+        "focus": "rAF 实践"
+      },
+      {
+        "id": "js-038-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`setTimeout` 到时间后只是进入任务队列，实际执行可能延后。"
+          },
+          {
+            "id": "b",
+            "text": "rAF 回调通常在浏览器绘制前执行。"
+          },
+          {
+            "id": "c",
+            "text": "主线程繁忙会影响定时器和 rAF 回调执行。"
+          },
+          {
+            "id": "d",
+            "text": "`setInterval(16)` 能精确保证每秒 60 帧。"
+          },
+          {
+            "id": "e",
+            "text": "rAF 回调不受页面刷新率影响。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "浏览器调度受主线程、刷新率、后台节流等影响。动画要基于时间差而非帧数假设。",
+        "focus": "rAF vs 定时器"
+      }
+    ]
+  },
+  {
+    "questionId": "js-039",
+    "checks": [
+      {
+        "id": "js-039-check-01",
+        "kind": "multiple",
+        "prompt": "哪些属于 ES2022 常见特性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "class fields 和 `#` 私有字段。"
+          },
+          {
+            "id": "b",
+            "text": "顶层 await。"
+          },
+          {
+            "id": "c",
+            "text": "`Array.prototype.at`。"
+          },
+          {
+            "id": "d",
+            "text": "`Object.hasOwn` 和 `Error.cause`。"
+          },
+          {
+            "id": "e",
+            "text": "JSX。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "JSX 不是 ECMAScript 标准特性。ES2022 的这些能力都已经常见于现代项目。",
+        "focus": "ES2022 常见特性"
+      },
+      {
+        "id": "js-039-check-02",
+        "kind": "multiple",
+        "prompt": "哪些数组方法返回新数组而不修改原数组？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`toSorted`"
+          },
+          {
+            "id": "b",
+            "text": "`toReversed`"
+          },
+          {
+            "id": "c",
+            "text": "`toSpliced`"
+          },
+          {
+            "id": "d",
+            "text": "`with`"
+          },
+          {
+            "id": "e",
+            "text": "`sort`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "ES2023 的非变异数组方法很适合 React/Redux 等不可变更新场景；`sort` 会原地修改。",
+        "focus": "非变异数组方法"
+      },
+      {
+        "id": "js-039-check-03",
+        "kind": "multiple",
+        "prompt": "关于 ES2024+ 常见新 API，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Promise.withResolvers()` 可创建 `{ promise, resolve, reject }`，替代手写 deferred。"
+          },
+          {
+            "id": "b",
+            "text": "`Object.groupBy` 的分组 key 会变成对象属性键。"
+          },
+          {
+            "id": "c",
+            "text": "需要对象作为分组 key 时可用 `Map.groupBy`，并复用同一个 key 对象。"
+          },
+          {
+            "id": "d",
+            "text": "Iterator helpers 可以链式 `filter/map/toArray` 处理迭代器。"
+          },
+          {
+            "id": "e",
+            "text": "`RegExp.escape` 的用途是执行正则匹配并返回结果数组。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "这些新 API 解决 deferred、分组、迭代器处理和正则转义等实际问题。回答年份不如说清用途重要。",
+        "focus": "groupBy 与新 API"
+      }
+    ]
+  },
+  {
+    "questionId": "js-040",
+    "checks": [
+      {
+        "id": "js-040-check-01",
+        "kind": "single",
+        "prompt": "对象参与 `+obj` 这类数值倾向转换时，如果没有 `[Symbol.toPrimitive]`，普通对象通常优先调用什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`toString()`，然后 `valueOf()`。"
+          },
+          {
+            "id": "b",
+            "text": "`valueOf()`，然后 `toString()`。"
+          },
+          {
+            "id": "c",
+            "text": "`JSON.stringify()`。"
+          },
+          {
+            "id": "d",
+            "text": "`Object.keys()`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "普通对象在 number/default hint 下通常先 `valueOf`，string hint 下通常先 `toString`。`Symbol.toPrimitive` 优先级最高。",
+        "focus": "ToPrimitive 顺序"
+      },
+      {
+        "id": "js-040-check-02",
+        "kind": "multiple",
+        "prompt": "哪些表达式结果为 `true`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`[] == 0`"
+          },
+          {
+            "id": "b",
+            "text": "`[1] == 1`"
+          },
+          {
+            "id": "c",
+            "text": "`[] == ![]`"
+          },
+          {
+            "id": "d",
+            "text": "`null >= 0`"
+          },
+          {
+            "id": "e",
+            "text": "`null == 0`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "关系比较和抽象相等规则不同。`null >= 0` 会走数值比较，`null == 0` 有单独规则，为 false。",
+        "focus": "隐式转换结果"
+      },
+      {
+        "id": "js-040-check-03",
+        "kind": "multiple",
+        "prompt": "哪些值在 ToBoolean 中是假值？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`false`"
+          },
+          {
+            "id": "b",
+            "text": "`0n`"
+          },
+          {
+            "id": "c",
+            "text": "`''`"
+          },
+          {
+            "id": "d",
+            "text": "`NaN`"
+          },
+          {
+            "id": "e",
+            "text": "`[]`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "对象都是真值，包括空数组、空对象和 `new Boolean(false)`。假值集合很少，应直接记清楚。",
+        "focus": "ToBoolean 假值"
+      }
+    ]
+  },
+  {
+    "questionId": "js-041",
+    "checks": [
+      {
+        "id": "js-041-check-01",
+        "kind": "single",
+        "prompt": "同样是 `...`，如何区分展开语法和剩余语法？",
+        "options": [
+          {
+            "id": "a",
+            "text": "在数组中一定是 rest，在函数中一定是 spread。"
+          },
+          {
+            "id": "b",
+            "text": "放在“使用值”的位置是 spread，放在“接收值”的位置是 rest。"
+          },
+          {
+            "id": "c",
+            "text": "spread 只能用于对象，rest 只能用于数组。"
+          },
+          {
+            "id": "d",
+            "text": "两者完全等价，没有区别。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`fn(...args)` 是展开；`function fn(...args)` 是收集。数组/对象字面量中也可能出现 spread，解构中可能出现 rest。",
+        "focus": "spread 与 rest 位置"
+      },
+      {
+        "id": "js-041-check-02",
+        "kind": "multiple",
+        "prompt": "关于展开语法，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "函数参数和数组字面量中的 spread 要求右侧是 iterable。"
+          },
+          {
+            "id": "b",
+            "text": "对象展开复制自有可枚举属性，不走迭代协议。"
+          },
+          {
+            "id": "c",
+            "text": "对象展开是浅拷贝，嵌套对象仍共享引用。"
+          },
+          {
+            "id": "d",
+            "text": "后展开的同名属性会覆盖前面的属性。"
+          },
+          {
+            "id": "e",
+            "text": "对象展开会复制原型和完整属性描述符。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "对象展开更像浅层属性复制，不是完整克隆。它会触发 getter，但不保留原型和完整描述符。",
+        "focus": "spread 边界"
+      },
+      {
+        "id": "js-041-check-03",
+        "kind": "multiple",
+        "prompt": "关于剩余参数和解构 rest，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "剩余参数必须放在形参最后。"
+          },
+          {
+            "id": "b",
+            "text": "剩余参数得到的是真数组，不是类数组。"
+          },
+          {
+            "id": "c",
+            "text": "箭头函数没有自己的 `arguments`，需要可变参数时应使用 rest。"
+          },
+          {
+            "id": "d",
+            "text": "解构中的 rest 也必须放在最后。"
+          },
+          {
+            "id": "e",
+            "text": "剩余参数和 `arguments` 完全相同。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "rest 比 `arguments` 更清晰、更现代。`arguments` 是类数组，并且箭头函数没有自己的 `arguments`。",
+        "focus": "rest 参数"
+      }
+    ]
+  },
+  {
+    "questionId": "js-042",
+    "checks": [
+      {
+        "id": "js-042-check-01",
+        "kind": "single",
+        "prompt": "下面哪个是尾调用？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`function foo(x) { return bar(x) }`"
+          },
+          {
+            "id": "b",
+            "text": "`function foo(x) { return bar(x) + 1 }`"
+          },
+          {
+            "id": "c",
+            "text": "`function foo(x) { const y = bar(x); return y }`"
+          },
+          {
+            "id": "d",
+            "text": "`function foo(x) { return 1 + bar(x) }`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "尾调用要求最后一步就是直接返回另一个函数调用结果。调用后还要加法或保留临时状态，通常不算尾调用。",
+        "focus": "尾调用判断"
+      },
+      {
+        "id": "js-042-check-02",
+        "kind": "multiple",
+        "prompt": "关于尾调用优化，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "尾递归是尾调用的一种特殊情况。"
+          },
+          {
+            "id": "b",
+            "text": "TCO 可以理论上把尾递归空间从 O(n) 降到 O(1)。"
+          },
+          {
+            "id": "c",
+            "text": "主流 Chrome、Node.js 不能依赖 TCO 避免栈溢出。"
+          },
+          {
+            "id": "d",
+            "text": "只要写成尾递归，所有 JavaScript 引擎都会优化。"
+          },
+          {
+            "id": "e",
+            "text": "尾调用只能发生在递归函数里。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "TCO 是语言/引擎优化概念。工程上深递归不能假设浏览器或 Node 会优化。",
+        "focus": "JavaScript 中的 TCO"
+      },
+      {
+        "id": "js-042-check-03",
+        "kind": "single",
+        "prompt": "Trampoline 的核心思路是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让递归调用在浏览器渲染线程中执行。"
+          },
+          {
+            "id": "b",
+            "text": "递归步骤返回下一个函数，再用循环反复执行，避免调用栈增长。"
+          },
+          {
+            "id": "c",
+            "text": "用 `setTimeout` 把所有计算丢到宏任务。"
+          },
+          {
+            "id": "d",
+            "text": "把所有递归函数改成 Generator 就一定不会栈溢出。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "蹦床把“调用下一层”变成“返回下一步”，由外层循环驱动，从而避免堆叠调用栈。",
+        "focus": "蹦床函数"
+      }
+    ]
+  },
+  {
+    "questionId": "js-043",
+    "checks": [
+      {
+        "id": "js-043-check-01",
+        "kind": "single",
+        "prompt": "为什么构造函数或 class constructor 中一次性按固定顺序初始化字段更利于 V8 优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为这样对象会自动变成不可变。"
+          },
+          {
+            "id": "b",
+            "text": "因为相同属性集合和添加顺序的对象更容易共享隐藏类/shape。"
+          },
+          {
+            "id": "c",
+            "text": "因为这样可以跳过垃圾回收。"
+          },
+          {
+            "id": "d",
+            "text": "因为 V8 不允许运行时添加属性。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "隐藏类稳定能让属性访问更容易走固定偏移和内联缓存。随意增删属性会增加优化难度。",
+        "focus": "隐藏类稳定性"
+      },
+      {
+        "id": "js-043-check-02",
+        "kind": "multiple",
+        "prompt": "哪些写法可能破坏对象 shape 或让 IC 变复杂？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不同实例用不同顺序添加属性。"
+          },
+          {
+            "id": "b",
+            "text": "热路径中频繁 `delete` 属性。"
+          },
+          {
+            "id": "c",
+            "text": "同一个函数调用点传入很多不同形状的对象。"
+          },
+          {
+            "id": "d",
+            "text": "数组中混入多种元素类型或制造稀疏数组。"
+          },
+          {
+            "id": "e",
+            "text": "构造阶段统一初始化所有字段。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "JIT 优化依赖运行时反馈的稳定性。形状、参数类型、数组元素类型越稳定，越容易优化。",
+        "focus": "破坏优化的写法"
+      },
+      {
+        "id": "js-043-check-03",
+        "kind": "multiple",
+        "prompt": "关于 V8 JIT，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "解释执行会收集类型反馈，热点代码可能进入优化编译。"
+          },
+          {
+            "id": "b",
+            "text": "优化代码基于运行时假设，假设失效可能 deopt。"
+          },
+          {
+            "id": "c",
+            "text": "微优化应以 Performance/Profiler 实测为准，不要牺牲清晰结构。"
+          },
+          {
+            "id": "d",
+            "text": "JIT 优化后代码永远不会退回低层执行。"
+          },
+          {
+            "id": "e",
+            "text": "不同 V8 版本优化策略完全不变。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "JIT 是投机优化。版本、数据形状和调用模式都会影响结果，真实性能要测。",
+        "focus": "JIT 与反优化"
+      }
+    ]
+  },
+  {
+    "questionId": "js-044",
+    "checks": [
+      {
+        "id": "js-044-check-01",
+        "kind": "single",
+        "prompt": "什么更准确地描述了 JavaScript 内存泄漏？",
+        "options": [
+          {
+            "id": "a",
+            "text": "任意占用内存大的对象都是泄漏。"
+          },
+          {
+            "id": "b",
+            "text": "对象已经不再被业务需要，但仍能从 GC Roots 通过引用链访问到。"
+          },
+          {
+            "id": "c",
+            "text": "只要有闭包就是泄漏。"
+          },
+          {
+            "id": "d",
+            "text": "循环引用一定是泄漏。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "泄漏的关键是“无用但可达”。现代标记清除能回收整体不可达的循环引用。",
+        "focus": "内存泄漏定义"
+      },
+      {
+        "id": "js-044-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于常见前端内存泄漏来源？",
+        "options": [
+          {
+            "id": "a",
+            "text": "全局对象上的事件监听未移除，闭包持有组件实例。"
+          },
+          {
+            "id": "b",
+            "text": "定时器、WebSocket、Observer、订阅没有在销毁时清理。"
+          },
+          {
+            "id": "c",
+            "text": "Detached DOM 仍被 JS 变量或缓存引用。"
+          },
+          {
+            "id": "d",
+            "text": "Map 缓存无限增长，没有容量或过期策略。"
+          },
+          {
+            "id": "e",
+            "text": "函数执行结束后的所有局部变量都一定可达。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "事件、订阅、缓存、DOM 引用都是长期引用链的常见来源。局部变量是否可回收取决于是否仍可达。",
+        "focus": "常见泄漏源"
+      },
+      {
+        "id": "js-044-check-03",
+        "kind": "multiple",
+        "prompt": "使用 Chrome DevTools 排查内存泄漏时，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "反复执行同一用户流程，观察 JS Heap 是否持续抬升且不回落。"
+          },
+          {
+            "id": "b",
+            "text": "操作前后拍 Heap Snapshot，并对比增量对象。"
+          },
+          {
+            "id": "c",
+            "text": "查看 Retainers，找到是谁还在引用目标对象。"
+          },
+          {
+            "id": "d",
+            "text": "重点关注 Detached DOM tree、listener、timer、closure、Map cache。"
+          },
+          {
+            "id": "e",
+            "text": "只看网络面板就能定位所有内存泄漏。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "内存泄漏要看对象分配、保留路径和可达性。Network 面板不是主要工具。",
+        "focus": "排查内存泄漏"
+      }
+    ]
+  },
+  {
+    "questionId": "js-045",
+    "checks": [
+      {
+        "id": "js-045-check-01",
+        "kind": "single",
+        "prompt": "哪个任务最适合放到 Web Worker 中？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接修改 DOM 样式。"
+          },
+          {
+            "id": "b",
+            "text": "大数据解析、压缩、图片处理等 CPU 密集计算。"
+          },
+          {
+            "id": "c",
+            "text": "读取按钮当前 hover 状态。"
+          },
+          {
+            "id": "d",
+            "text": "调用 `document.querySelector` 批量操作页面。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Worker 运行在独立线程，不能直接访问 DOM。它适合把 CPU 密集任务移出主线程。",
+        "focus": "Worker 适用场景"
+      },
+      {
+        "id": "js-045-check-02",
+        "kind": "multiple",
+        "prompt": "关于 Worker 通信和数据传递，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`postMessage` 默认使用结构化克隆。"
+          },
+          {
+            "id": "b",
+            "text": "大二进制数据可用 Transferable 转移所有权，避免拷贝。"
+          },
+          {
+            "id": "c",
+            "text": "转移 ArrayBuffer 后，发送方的 buffer 会被 detached。"
+          },
+          {
+            "id": "d",
+            "text": "Worker 和主线程共享同一个 JS 调用栈。"
+          },
+          {
+            "id": "e",
+            "text": "Worker 可以直接同步读取主线程 DOM。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Worker 与主线程通过消息通信。要共享内存则需要 SharedArrayBuffer/Atomics，而不是直接共享调用栈或 DOM。",
+        "focus": "Worker 通信"
+      },
+      {
+        "id": "js-045-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `SharedArrayBuffer`、`Atomics` 和 Worker 限制，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`SharedArrayBuffer` 允许多线程共享同一块内存。"
+          },
+          {
+            "id": "b",
+            "text": "`Atomics` 提供原子读写和同步能力。"
+          },
+          {
+            "id": "c",
+            "text": "浏览器使用 SharedArrayBuffer 通常需要跨源隔离。"
+          },
+          {
+            "id": "d",
+            "text": "Worker 启动和通信都有成本，短小任务不一定值得拆。"
+          },
+          {
+            "id": "e",
+            "text": "Service Worker 主要用于 UI 线程计算加速。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Service Worker 主要是网络代理、缓存和离线能力。UI 计算任务通常用 Dedicated Worker。",
+        "focus": "SharedArrayBuffer 与限制"
+      }
+    ]
+  },
+  {
+    "questionId": "js-046",
+    "checks": [
+      {
+        "id": "js-046-check-01",
+        "kind": "single",
+        "prompt": "事件委托的核心原理是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有事件都必须绑定到 `document.body`。"
+          },
+          {
+            "id": "b",
+            "text": "利用事件冒泡，在共同祖先统一监听，再根据事件目标判断子元素。"
+          },
+          {
+            "id": "c",
+            "text": "让事件不再传播。"
+          },
+          {
+            "id": "d",
+            "text": "把所有事件都转成自定义事件。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "事件委托减少监听器数量，并让动态新增子元素也能被统一处理。",
+        "focus": "事件委托核心"
+      },
+      {
+        "id": "js-046-check-02",
+        "kind": "multiple",
+        "prompt": "实现事件委托时，哪些细节合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用 `event.target.closest(selector)` 找到匹配子元素。"
+          },
+          {
+            "id": "b",
+            "text": "用 `root.contains(target)` 防止误命中容器外节点。"
+          },
+          {
+            "id": "c",
+            "text": "返回 cleanup，卸载时移除监听器。"
+          },
+          {
+            "id": "d",
+            "text": "不管什么事件都能冒泡到父级。"
+          },
+          {
+            "id": "e",
+            "text": "子元素调用 `stopPropagation()` 不会影响父级委托。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不是所有事件都冒泡；传播被阻止后父级监听器可能收不到。委托也要清理监听器。",
+        "focus": "委托实现细节"
+      },
+      {
+        "id": "js-046-check-03",
+        "kind": "multiple",
+        "prompt": "关于事件委托边界，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`focus/blur` 不冒泡，可考虑 `focusin/focusout` 或捕获阶段。"
+          },
+          {
+            "id": "b",
+            "text": "`mouseenter/mouseleave` 不冒泡，常用 `mouseover/mouseout` 加 relatedTarget 判断。"
+          },
+          {
+            "id": "c",
+            "text": "Shadow DOM 中事件目标可能 retarget，可结合 `composedPath()`。"
+          },
+          {
+            "id": "d",
+            "text": "高频事件委托后就不需要节流、防抖或 passive。"
+          },
+          {
+            "id": "e",
+            "text": "`preventDefault()` 和 `stopPropagation()` 是同一件事。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`preventDefault` 阻止默认行为，`stopPropagation` 阻止继续传播。高频事件仍要考虑性能。",
+        "focus": "边界事件"
+      }
+    ]
+  },
+  {
+    "questionId": "js-047",
+    "checks": [
+      {
+        "id": "js-047-check-01",
+        "kind": "single",
+        "prompt": "一个 `AbortController` 调用 `abort()` 后，能否 reset 后继续用于下一轮请求？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以，设置 `signal.aborted = false` 即可。"
+          },
+          {
+            "id": "b",
+            "text": "不可以；同一个 signal 已经处于 aborted，新一轮操作应创建新的 controller。"
+          },
+          {
+            "id": "c",
+            "text": "只有 fetch 可以 reset，其他 API 不行。"
+          },
+          {
+            "id": "d",
+            "text": "只有 Node.js 中不能 reset。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`abort()` 是一次性的取消信号。后续复用已 abort 的 signal 会让支持 signal 的操作立即处于取消状态。",
+        "focus": "AbortController 复用"
+      },
+      {
+        "id": "js-047-check-02",
+        "kind": "multiple",
+        "prompt": "关于取消请求，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`fetch(url, { signal })` 支持 AbortController 取消。"
+          },
+          {
+            "id": "b",
+            "text": "`Promise.race` 做超时不会自动取消输掉的 fetch。"
+          },
+          {
+            "id": "c",
+            "text": "`AbortSignal.timeout(3000)` 可表达超时取消。"
+          },
+          {
+            "id": "d",
+            "text": "`AbortSignal.any([...])` 可组合用户取消、超时等多个信号。"
+          },
+          {
+            "id": "e",
+            "text": "客户端 abort 一定会让服务端停止处理请求。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "取消是协作式的。客户端不再等待结果，不保证服务端业务已经停止。",
+        "focus": "超时和取消"
+      },
+      {
+        "id": "js-047-check-03",
+        "kind": "multiple",
+        "prompt": "React effect 中使用 AbortController，哪些处理是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每次 effect 创建新的 controller。"
+          },
+          {
+            "id": "b",
+            "text": "cleanup 中调用 `controller.abort()`。"
+          },
+          {
+            "id": "c",
+            "text": "catch 中区分 `AbortError`，避免把主动取消当异常提示。"
+          },
+          {
+            "id": "d",
+            "text": "所有依赖变化时都复用同一个已 abort 的 signal。"
+          },
+          {
+            "id": "e",
+            "text": "不需要 cleanup，因为 React 会自动取消 fetch。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "依赖变化和组件卸载时取消旧请求，可以减少过期响应和无意义网络成本。",
+        "focus": "React 中的 abort"
+      }
+    ]
+  },
+  {
+    "questionId": "js-048",
+    "checks": [
+      {
+        "id": "js-048-check-01",
+        "kind": "single",
+        "prompt": "手写并发控制器时，为什么任务通常要传函数 `() => fetch(...)`，而不是直接传已经创建的 Promise？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Promise 不能被数组保存。"
+          },
+          {
+            "id": "b",
+            "text": "Promise 一创建就可能已经开始执行，控制器无法限制启动时机。"
+          },
+          {
+            "id": "c",
+            "text": "函数一定比 Promise 更快。"
+          },
+          {
+            "id": "d",
+            "text": "只有函数才能被 `await`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "并发限制控制的是“何时启动任务”。已经开始的 Promise 只能等待，不能被调度器延后启动。",
+        "focus": "并发控制任务形态"
+      },
+      {
+        "id": "js-048-check-02",
+        "kind": "multiple",
+        "prompt": "一个可靠的 Promise 并发调度器需要考虑哪些点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`running` 记录当前并发数。"
+          },
+          {
+            "id": "b",
+            "text": "任务完成后从队列补充新任务。"
+          },
+          {
+            "id": "c",
+            "text": "返回的 Promise 要透传每个任务的成功或失败。"
+          },
+          {
+            "id": "d",
+            "text": "用 `Promise.resolve().then(task)` 捕获同步抛错。"
+          },
+          {
+            "id": "e",
+            "text": "同时启动所有任务，然后只等待前 N 个结果。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "并发控制是队列调度，不是结果筛选。任务要按 limit 启动，并在完成时补位。",
+        "focus": "调度器核心"
+      },
+      {
+        "id": "js-048-check-03",
+        "kind": "multiple",
+        "prompt": "实现 `pMap(items, mapper, limit)` 时，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "结果数组通常应按输入顺序保存，而不是完成顺序。"
+          },
+          {
+            "id": "b",
+            "text": "`nextIndex` 可用于分配下一个待启动任务。"
+          },
+          {
+            "id": "c",
+            "text": "任何任务失败后，可按 fail-fast 策略 reject 外层 Promise。"
+          },
+          {
+            "id": "d",
+            "text": "并发限制只能用于请求，不能用于文件处理或计算任务。"
+          },
+          {
+            "id": "e",
+            "text": "`limit` 可以是 0，这样表示无限并发。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "并发控制常用于请求、文件、计算等各种异步任务。limit 应为正整数。",
+        "focus": "pMap 结果顺序"
+      }
+    ]
+  },
+  {
+    "questionId": "js-049",
+    "checks": [
+      {
+        "id": "js-049-check-01",
+        "kind": "single",
+        "prompt": "下面代码会发生什么？\n\n```js\n42n + 1\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "得到 `43n`。"
+          },
+          {
+            "id": "b",
+            "text": "得到 `43`。"
+          },
+          {
+            "id": "c",
+            "text": "抛出 `TypeError`，BigInt 和 Number 不能混合算术运算。"
+          },
+          {
+            "id": "d",
+            "text": "得到字符串 `'421'`。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "BigInt 和 Number 算术运算不能混用，要显式转换。过大 BigInt 转 Number 可能丢精度。",
+        "focus": "BigInt 混合运算"
+      },
+      {
+        "id": "js-049-check-02",
+        "kind": "multiple",
+        "prompt": "关于 BigInt，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`typeof 42n === 'bigint'`。"
+          },
+          {
+            "id": "b",
+            "text": "`5n / 2n` 得到 `2n`，整数除法截断小数部分。"
+          },
+          {
+            "id": "c",
+            "text": "`42n == 42` 为 true，但 `42n === 42` 为 false。"
+          },
+          {
+            "id": "d",
+            "text": "`Math.sqrt(4n)` 可以直接得到 `2n`。"
+          },
+          {
+            "id": "e",
+            "text": "BigInt 适合直接表示小数金额。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "BigInt 只表示整数，不走 Math 的 Number API。金额小数通常用最小货币单位整数或 decimal 库。",
+        "focus": "BigInt 规则"
+      },
+      {
+        "id": "js-049-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 BigInt 工程实践合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "超大 ID 前后端传输时常用字符串，避免 JSON 解析丢精度。"
+          },
+          {
+            "id": "b",
+            "text": "`JSON.stringify({ id: 42n })` 会抛错，需要 replacer 或接口层转换。"
+          },
+          {
+            "id": "c",
+            "text": "BigInt 可用于超过安全整数范围的整数算法或 WASM i64 互操作。"
+          },
+          {
+            "id": "d",
+            "text": "随意修改 `BigInt.prototype.toJSON` 是最推荐做法。"
+          },
+          {
+            "id": "e",
+            "text": "BigInt 运算天然恒定时间，适合直接写高安全密码学。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "BigInt 解决整数精度，不解决 JSON、decimal 和密码学常数时间等问题。",
+        "focus": "BigInt 工程边界"
+      }
+    ]
+  },
+  {
+    "questionId": "js-050",
+    "checks": [
+      {
+        "id": "js-050-check-01",
+        "kind": "single",
+        "prompt": "`WeakRef.prototype.deref()` 返回什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "永远返回原对象。"
+          },
+          {
+            "id": "b",
+            "text": "返回目标对象或 `undefined`，取决于对象是否仍存活。"
+          },
+          {
+            "id": "c",
+            "text": "返回目标对象的深拷贝。"
+          },
+          {
+            "id": "d",
+            "text": "返回对象被回收的准确时间。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "弱引用不阻止 GC。读取到对象后应放入局部变量并在当前同步片段内使用。",
+        "focus": "WeakRef.deref"
+      },
+      {
+        "id": "js-050-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `FinalizationRegistry`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "回调执行时机不可预测。"
+          },
+          {
+            "id": "b",
+            "text": "回调不保证一定执行。"
+          },
+          {
+            "id": "c",
+            "text": "`heldValue` 不应引用 target 本身，否则可能让 target 继续可达。"
+          },
+          {
+            "id": "d",
+            "text": "它适合关闭文件、连接、锁等必须可靠释放的资源。"
+          },
+          {
+            "id": "e",
+            "text": "它可以替代所有显式 cleanup。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "FinalizationRegistry 只能做兜底辅助，不能承担核心业务流程或可靠资源释放。",
+        "focus": "FinalizationRegistry 边界"
+      },
+      {
+        "id": "js-050-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景可能适合 WeakRef/FinalizationRegistry？",
+        "options": [
+          {
+            "id": "a",
+            "text": "内存敏感、可丢弃的缓存。"
+          },
+          {
+            "id": "b",
+            "text": "框架或底层库做对象元数据的辅助清理。"
+          },
+          {
+            "id": "c",
+            "text": "弱关联优化，配合显式生命周期作为兜底。"
+          },
+          {
+            "id": "d",
+            "text": "支付成功后的业务确认流程。"
+          },
+          {
+            "id": "e",
+            "text": "必须在固定时间点执行的资源释放。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "可靠释放应使用 `close/dispose/AbortController/cleanup` 等显式生命周期。弱引用只适合非关键辅助。",
+        "focus": "WeakRef 适用场景"
+      }
+    ]
+  },
+  {
+    "questionId": "js-051",
+    "checks": [
+      {
+        "id": "js-051-check-01",
+        "kind": "single",
+        "prompt": "下面代码表示哪一天？\n\n```js\nnew Date(2024, 0, 1)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "2024 年 1 月 1 日。"
+          },
+          {
+            "id": "b",
+            "text": "2024 年 0 月 1 日，非法日期。"
+          },
+          {
+            "id": "c",
+            "text": "2024 年 12 月 1 日。"
+          },
+          {
+            "id": "d",
+            "text": "2024 年 2 月 1 日。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`Date` 构造函数的月份从 0 开始，这是 Date API 的典型坑之一。",
+        "focus": "Date 的月份"
+      },
+      {
+        "id": "js-051-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是 JavaScript `Date` 的常见痛点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "对象可变，`setMonth` 等方法会原地修改。"
+          },
+          {
+            "id": "b",
+            "text": "字符串解析容易踩时区和兼容性坑。"
+          },
+          {
+            "id": "c",
+            "text": "同一个类型混合表示时间点、本地日期、时区展示等语义。"
+          },
+          {
+            "id": "d",
+            "text": "日期加减、DST 和时区转换不直观。"
+          },
+          {
+            "id": "e",
+            "text": "`Date` 内部不存储时间戳。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Date 本质存储 Unix epoch 毫秒，但许多 API 按本地时区解释，语义容易混乱。",
+        "focus": "Date 痛点"
+      },
+      {
+        "id": "js-051-check-03",
+        "kind": "multiple",
+        "prompt": "关于 Temporal，哪些选择合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "精确时间点使用 `Temporal.Instant`。"
+          },
+          {
+            "id": "b",
+            "text": "生日、日程日期这类纯日期使用 `Temporal.PlainDate`。"
+          },
+          {
+            "id": "c",
+            "text": "带 IANA 时区和 DST 规则的业务时间使用 `Temporal.ZonedDateTime`。"
+          },
+          {
+            "id": "d",
+            "text": "所有日期时间都应该只用 `PlainDateTime`，不需要区分时区。"
+          },
+          {
+            "id": "e",
+            "text": "Temporal 对象和 Date 一样以原地修改为主要 API。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Temporal 的核心价值是不可变和强语义。实际工程还要检查运行时支持或使用 polyfill。",
+        "focus": "Temporal 类型选择"
+      }
+    ]
+  },
+  {
+    "questionId": "js-052",
+    "checks": [
+      {
+        "id": "js-052-check-01",
+        "kind": "single",
+        "prompt": "下面正则中，如何读取年份？\n\n```js\nconst re = /(?<year>\\d{4})-(?<month>\\d{2})-(?<day>\\d{2})/\nconst match = re.exec('2024-01-15')\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`match.year`"
+          },
+          {
+            "id": "b",
+            "text": "`match.groups.year`"
+          },
+          {
+            "id": "c",
+            "text": "`match[year]`"
+          },
+          {
+            "id": "d",
+            "text": "`re.groups.year`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "命名捕获组结果在 `match.groups` 上；替换字符串里可用 `$<year>` 引用。",
+        "focus": "命名捕获组"
+      },
+      {
+        "id": "js-052-check-02",
+        "kind": "multiple",
+        "prompt": "关于正则环视，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`(?=...)` 是正向前瞻。"
+          },
+          {
+            "id": "b",
+            "text": "`(?!...)` 是负向前瞻。"
+          },
+          {
+            "id": "c",
+            "text": "`(?<=...)` 是正向后顾，旧环境兼容性要确认。"
+          },
+          {
+            "id": "d",
+            "text": "环视只做条件判断，不消耗字符。"
+          },
+          {
+            "id": "e",
+            "text": "环视会把匹配到的内容从字符串中删除。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Lookaround 是零宽断言，只判断当前位置前后是否满足条件，不消费字符。",
+        "focus": "环视"
+      },
+      {
+        "id": "js-052-check-03",
+        "kind": "multiple",
+        "prompt": "哪些正则实践是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "动态拼接用户输入到正则前要转义，例如使用 `RegExp.escape` 或可靠 polyfill。"
+          },
+          {
+            "id": "b",
+            "text": "全量遍历并保留捕获组信息时可以用 `matchAll`。"
+          },
+          {
+            "id": "c",
+            "text": "避免嵌套贪婪量词导致灾难性回溯。"
+          },
+          {
+            "id": "d",
+            "text": "URL、HTML、JSON 等复杂结构都应该优先用一个巨大正则解析。"
+          },
+          {
+            "id": "e",
+            "text": "ReDoS 只会发生在服务端，前端不用关心输入长度。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "正则适合局部模式匹配。复杂格式优先专用解析器，对不可信输入要考虑长度和回溯风险。",
+        "focus": "正则安全与 API"
+      }
+    ]
+  },
+  {
+    "questionId": "js-053",
+    "checks": [
+      {
+        "id": "js-053-check-01",
+        "kind": "single",
+        "prompt": "异步迭代器的 `next()` 返回什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "直接返回 `{ value, done }`。"
+          },
+          {
+            "id": "b",
+            "text": "返回 Promise，fulfilled 后得到 `{ value, done }`。"
+          },
+          {
+            "id": "c",
+            "text": "永远返回数组。"
+          },
+          {
+            "id": "d",
+            "text": "只能返回字符串。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "异步迭代协议把每次取值变成异步过程，适合流、分页和消息队列。",
+        "focus": "异步迭代器 next"
+      },
+      {
+        "id": "js-053-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `for await...of`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它会依次等待每次 `next()` 返回的 Promise。"
+          },
+          {
+            "id": "b",
+            "text": "循环中 `break` 或抛错时，会尝试调用迭代器的 `return()` 清理。"
+          },
+          {
+            "id": "c",
+            "text": "`async function*` 可以同时使用 `await` 和 `yield`。"
+          },
+          {
+            "id": "d",
+            "text": "它会把所有异步任务一次性并行执行。"
+          },
+          {
+            "id": "e",
+            "text": "它只适用于数组，不能用于流式数据。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`for await...of` 是顺序消费异步数据流。并行等待一组已知任务更适合 `Promise.all`。",
+        "focus": "for await...of"
+      },
+      {
+        "id": "js-053-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景适合异步迭代器？",
+        "options": [
+          {
+            "id": "a",
+            "text": "分页 API 一页页拉取和处理。"
+          },
+          {
+            "id": "b",
+            "text": "fetch stream 或日志流边读边处理。"
+          },
+          {
+            "id": "c",
+            "text": "异步队列中生产者不断 push，消费者持续消费。"
+          },
+          {
+            "id": "d",
+            "text": "三个已知请求必须并行等待全部完成。"
+          },
+          {
+            "id": "e",
+            "text": "同步计算数组总和。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "异步迭代器适合数量未知、逐步到达、可边读边处理的数据。固定并行任务用 Promise 聚合更直接。",
+        "focus": "异步迭代场景"
+      }
+    ]
+  },
+  {
+    "questionId": "js-054",
+    "checks": [
+      {
+        "id": "js-054-check-01",
+        "kind": "single",
+        "prompt": "`typeof null` 的结果是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`'null'`"
+          },
+          {
+            "id": "b",
+            "text": "`'object'`"
+          },
+          {
+            "id": "c",
+            "text": "`'undefined'`"
+          },
+          {
+            "id": "d",
+            "text": "`'function'`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "这是历史遗留行为。判断 null 要直接用 `value === null`，不要依赖 typeof。",
+        "focus": "typeof null"
+      },
+      {
+        "id": "js-054-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `instanceof`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它通常沿对象原型链查找右侧构造函数的 `prototype`。"
+          },
+          {
+            "id": "b",
+            "text": "右侧可通过 `Symbol.hasInstance` 自定义判断逻辑。"
+          },
+          {
+            "id": "c",
+            "text": "跨 iframe/realm 时，数组的 `instanceof Array` 可能失败。"
+          },
+          {
+            "id": "d",
+            "text": "它可以准确判断所有原始类型。"
+          },
+          {
+            "id": "e",
+            "text": "它比较的是对象是否有同名字符串属性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`instanceof` 是原型链/品牌逻辑，受 realm 和 `Symbol.hasInstance` 影响。数组判断优先用 `Array.isArray`。",
+        "focus": "instanceof 局限"
+      },
+      {
+        "id": "js-054-check-03",
+        "kind": "multiple",
+        "prompt": "哪些类型判断实践合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "原始类型多用 `typeof`，但 null 单独判断。"
+          },
+          {
+            "id": "b",
+            "text": "数组用 `Array.isArray()`。"
+          },
+          {
+            "id": "c",
+            "text": "`Object.prototype.toString.call` 可判断许多内置对象，但会受 `Symbol.toStringTag` 影响。"
+          },
+          {
+            "id": "d",
+            "text": "业务类型优先用显式字段、品牌标记或 TypeScript 类型系统。"
+          },
+          {
+            "id": "e",
+            "text": "`typeof` 能区分数组、Date、Map 和普通对象。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "运行时类型判断没有一个万能 API。选择方式要看目标类型和跨 realm 等边界。",
+        "focus": "类型判断实践"
+      }
+    ]
+  },
+  {
+    "questionId": "js-055",
+    "checks": [
+      {
+        "id": "js-055-check-01",
+        "kind": "single",
+        "prompt": "`Reflect.get(obj, 'name', receiver)` 中 `receiver` 主要影响什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "决定属性是否可枚举。"
+          },
+          {
+            "id": "b",
+            "text": "当属性是 getter 时，getter 内部的 `this`。"
+          },
+          {
+            "id": "c",
+            "text": "决定对象是否可扩展。"
+          },
+          {
+            "id": "d",
+            "text": "让读取操作变成异步。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`receiver` 用于 getter/setter 的 this 绑定，也是在 Proxy 转发中保持语义的重要参数。",
+        "focus": "receiver"
+      },
+      {
+        "id": "js-055-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 Reflect API 与操作符或对象内部操作对应？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Reflect.has(obj, key)` 对应 `key in obj`。"
+          },
+          {
+            "id": "b",
+            "text": "`Reflect.deleteProperty(obj, key)` 对应 `delete obj[key]`。"
+          },
+          {
+            "id": "c",
+            "text": "`Reflect.apply(fn, thisArg, args)` 对应函数调用。"
+          },
+          {
+            "id": "d",
+            "text": "`Reflect.construct(Constructor, args)` 对应构造调用。"
+          },
+          {
+            "id": "e",
+            "text": "`Reflect.ownKeys(obj)` 只返回可枚举字符串 key。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`Reflect.ownKeys` 返回所有自有 key，包括不可枚举 key 和 Symbol key。",
+        "focus": "Reflect 方法"
+      },
+      {
+        "id": "js-055-check-03",
+        "kind": "multiple",
+        "prompt": "为什么 Proxy trap 中常用 Reflect 转发？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以保留默认语言语义，减少手写错误。"
+          },
+          {
+            "id": "b",
+            "text": "能正确处理 getter/setter、原型链和 receiver。"
+          },
+          {
+            "id": "c",
+            "text": "`Reflect.set` 等返回 boolean，符合 trap 返回值约束。"
+          },
+          {
+            "id": "d",
+            "text": "Reflect 会自动取消所有代理开销。"
+          },
+          {
+            "id": "e",
+            "text": "Reflect 会把所有对象变成深冻结。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Reflect 是元编程中的默认操作工具，不是性能或不可变魔法。",
+        "focus": "Proxy 中使用 Reflect"
+      }
+    ]
+  },
+  {
+    "questionId": "js-056",
+    "checks": [
+      {
+        "id": "js-056-check-01",
+        "kind": "single",
+        "prompt": "`str.replaceAll(/o/, '0')` 会有什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "正常替换全部 `o`。"
+          },
+          {
+            "id": "b",
+            "text": "传正则给 `replaceAll` 时必须带 `g` flag，否则会抛错。"
+          },
+          {
+            "id": "c",
+            "text": "`replaceAll` 只能接收数字。"
+          },
+          {
+            "id": "d",
+            "text": "`replaceAll` 会修改原字符串。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "字符串是不可变值，替换返回新字符串。`replaceAll` 的正则参数必须是全局正则。",
+        "focus": "replaceAll 正则"
+      },
+      {
+        "id": "js-056-check-02",
+        "kind": "multiple",
+        "prompt": "关于字符串和 Unicode，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "很多索引和长度操作基于 UTF-16 code unit。"
+          },
+          {
+            "id": "b",
+            "text": "`'😀'.length` 为 2。"
+          },
+          {
+            "id": "c",
+            "text": "`[...'😀']` 能按 code point 展开成一个元素。"
+          },
+          {
+            "id": "d",
+            "text": "`str[0]` 总能得到用户看到的完整字符。"
+          },
+          {
+            "id": "e",
+            "text": "`split('')` 适合所有 emoji 和组合字符处理。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "复杂 emoji、组合音标和多语言分词要用更专业 API，如 `Intl.Segmenter`。",
+        "focus": "字符串 Unicode"
+      },
+      {
+        "id": "js-056-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`slice` 支持负数，通常比 `substring` 更直观。"
+          },
+          {
+            "id": "b",
+            "text": "`at(-1)` 可以取最后一个 code unit 位置的字符。"
+          },
+          {
+            "id": "c",
+            "text": "本地化排序或比较可用 `localeCompare`。"
+          },
+          {
+            "id": "d",
+            "text": "标签模板可用于 i18n、SQL builder、CSS-in-JS 或 HTML 转义。"
+          },
+          {
+            "id": "e",
+            "text": "`indexOf` 返回 boolean。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`indexOf` 返回索引或 -1，`includes` 返回 boolean。字符串 API 要注意返回值和 Unicode 边界。",
+        "focus": "字符串方法选择"
+      }
+    ]
+  },
+  {
+    "questionId": "js-057",
+    "checks": [
+      {
+        "id": "js-057-check-01",
+        "kind": "single",
+        "prompt": "为什么经典 IIFE 常写成 `(function () { ... })()`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了让函数变成箭头函数。"
+          },
+          {
+            "id": "b",
+            "text": "外层括号把函数声明位置变成函数表达式，随后才能立即调用。"
+          },
+          {
+            "id": "c",
+            "text": "为了让函数异步执行。"
+          },
+          {
+            "id": "d",
+            "text": "为了让函数自动绑定 `this`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`function` 在语句开头会被解析为声明。IIFE 需要先成为表达式，再调用。",
+        "focus": "IIFE 括号作用"
+      },
+      {
+        "id": "js-057-check-02",
+        "kind": "multiple",
+        "prompt": "IIFE 常见用途有哪些？",
+        "options": [
+          {
+            "id": "a",
+            "text": "ES5 时代创建独立作用域，避免全局污染。"
+          },
+          {
+            "id": "b",
+            "text": "模块模式中用闭包保存私有状态。"
+          },
+          {
+            "id": "c",
+            "text": "修复 `var` 循环闭包问题。"
+          },
+          {
+            "id": "d",
+            "text": "用 async IIFE 在没有顶层 await 的脚本中使用 await。"
+          },
+          {
+            "id": "e",
+            "text": "让所有变量自动变成块级作用域。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "现代 ES Module 和 `let/const` 替代了许多历史用途，但 IIFE 在老代码和临时异步入口中仍常见。",
+        "focus": "IIFE 用途"
+      },
+      {
+        "id": "js-057-check-03",
+        "kind": "single",
+        "prompt": "下面哪种现代写法最直接替代 IIFE 修复循环变量问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把 `var i` 改成全局变量。"
+          },
+          {
+            "id": "b",
+            "text": "在循环中使用 `let i`。"
+          },
+          {
+            "id": "c",
+            "text": "把 `setTimeout` 改成 `setInterval`。"
+          },
+          {
+            "id": "d",
+            "text": "删除闭包。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`let` 在每次循环迭代创建新的词法绑定，回调能捕获对应的 i。",
+        "focus": "ES5 循环闭包"
+      }
+    ]
+  },
+  {
+    "questionId": "js-058",
+    "checks": [
+      {
+        "id": "js-058-check-01",
+        "kind": "single",
+        "prompt": "下面代码中 `a` 和 `b` 分别是什么？\n\n```js\nconst { a = 1 } = { a: undefined }\nconst { b = 1 } = { b: null }\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`undefined`、`1`"
+          },
+          {
+            "id": "b",
+            "text": "`1`、`null`"
+          },
+          {
+            "id": "c",
+            "text": "`1`、`1`"
+          },
+          {
+            "id": "d",
+            "text": "`undefined`、`null`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "解构默认值只在属性值为 `undefined` 时生效，`null` 不会触发默认值。",
+        "focus": "解构默认值"
+      },
+      {
+        "id": "js-058-check-02",
+        "kind": "multiple",
+        "prompt": "关于解构赋值，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数组解构依赖可迭代协议，不只适用于数组。"
+          },
+          {
+            "id": "b",
+            "text": "对象解构按属性名匹配，不受属性顺序影响。"
+          },
+          {
+            "id": "c",
+            "text": "嵌套解构要防空，例如 `address: { city } = {}`。"
+          },
+          {
+            "id": "d",
+            "text": "解构赋值给已声明变量时，对象解构要加括号：`({ a } = obj)`。"
+          },
+          {
+            "id": "e",
+            "text": "对象 rest 会收集原型链上的所有属性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "对象 rest 只收集剩余自有可枚举属性。解构过深时应考虑可读性和空值保护。",
+        "focus": "解构边界"
+      },
+      {
+        "id": "js-058-check-03",
+        "kind": "single",
+        "prompt": "用解构交换两个变量的正确写法是？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`[a, b] = [b, a]`"
+          },
+          {
+            "id": "b",
+            "text": "`{ a, b } = { b, a }`"
+          },
+          {
+            "id": "c",
+            "text": "`a, b = b, a`"
+          },
+          {
+            "id": "d",
+            "text": "`[a, b] == [b, a]`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "数组解构按迭代顺序赋值，适合简单交换。对象赋值给已声明变量时还要注意括号。",
+        "focus": "交换变量"
+      }
+    ]
+  },
+  {
+    "questionId": "js-059",
+    "checks": [
+      {
+        "id": "js-059-check-01",
+        "kind": "single",
+        "prompt": "下面代码结果是什么？\n\n```js\nNumber(null)\nNumber(undefined)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`0`、`NaN`"
+          },
+          {
+            "id": "b",
+            "text": "`NaN`、`0`"
+          },
+          {
+            "id": "c",
+            "text": "`0`、`0`"
+          },
+          {
+            "id": "d",
+            "text": "`NaN`、`NaN`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`null` 数值转换为 0，`undefined` 转为 NaN。这也是隐式转换题里常见差异。",
+        "focus": "数值转换"
+      },
+      {
+        "id": "js-059-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `null` 和 `undefined`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`undefined` 常表示未赋值或取不到值。"
+          },
+          {
+            "id": "b",
+            "text": "`null` 常表示开发者有意设置的空值。"
+          },
+          {
+            "id": "c",
+            "text": "`null == undefined` 为 true，但 `null === undefined` 为 false。"
+          },
+          {
+            "id": "d",
+            "text": "DOM 查询找不到节点常返回 `null`。"
+          },
+          {
+            "id": "e",
+            "text": "`typeof null === 'null'`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`typeof null` 是 `'object'`。API 设计应统一空值策略，避免同一字段混用多种缺失表达。",
+        "focus": "null 与 undefined"
+      },
+      {
+        "id": "js-059-check-03",
+        "kind": "multiple",
+        "prompt": "哪些默认值判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`null ?? 'default'` 得到 `'default'`。"
+          },
+          {
+            "id": "b",
+            "text": "`undefined ?? 'default'` 得到 `'default'`。"
+          },
+          {
+            "id": "c",
+            "text": "解构默认值只在值为 `undefined` 时触发。"
+          },
+          {
+            "id": "d",
+            "text": "`{ x = 1 } = { x: null }` 会让 x 等于 1。"
+          },
+          {
+            "id": "e",
+            "text": "判断 null 和 undefined 永远不能用 `value == null`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`value == null` 是少数有意识使用 `==` 的场景，可同时匹配 `null` 和 `undefined`。",
+        "focus": "默认值处理"
+      }
+    ]
+  },
+  {
+    "questionId": "js-060",
+    "checks": [
+      {
+        "id": "js-060-check-01",
+        "kind": "single",
+        "prompt": "Mixin 更适合表达哪类关系？",
+        "options": [
+          {
+            "id": "a",
+            "text": "严格的 `is-a` 父子继承关系。"
+          },
+          {
+            "id": "b",
+            "text": "横向可复用的 “can-do” 能力，例如 serializable、logging。"
+          },
+          {
+            "id": "c",
+            "text": "所有业务实体都必须继承同一个基类。"
+          },
+          {
+            "id": "d",
+            "text": "数据库表之间的外键关系。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Mixin 是组合能力，不是严格分类继承。复杂业务通常更适合显式组合和依赖注入。",
+        "focus": "Mixin 适用语义"
+      },
+      {
+        "id": "js-060-check-02",
+        "kind": "multiple",
+        "prompt": "用 `Object.assign(User.prototype, Serializable, Validatable)` 混入能力时，哪些风险存在？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只复制可枚举属性。"
+          },
+          {
+            "id": "b",
+            "text": "不复制完整属性描述符。"
+          },
+          {
+            "id": "c",
+            "text": "可能覆盖已有同名方法。"
+          },
+          {
+            "id": "d",
+            "text": "会自动解决所有命名冲突。"
+          },
+          {
+            "id": "e",
+            "text": "会复制私有字段。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "简单 Mixin 直接但粗糙。需要保留 getter/setter、Symbol 或不可枚举属性时，应复制属性描述符。",
+        "focus": "Object.assign Mixin"
+      },
+      {
+        "id": "js-060-check-03",
+        "kind": "multiple",
+        "prompt": "Mixin 模式有哪些常见风险？",
+        "options": [
+          {
+            "id": "a",
+            "text": "多个 mixin 定义同名方法时覆盖顺序敏感。"
+          },
+          {
+            "id": "b",
+            "text": "mixin 方法可能隐式依赖实例上存在某些字段。"
+          },
+          {
+            "id": "c",
+            "text": "函数式 mixin 可能让继承层级和调试栈变复杂。"
+          },
+          {
+            "id": "d",
+            "text": "TypeScript 中可能需要额外类型辅助。"
+          },
+          {
+            "id": "e",
+            "text": "Mixin 能保证所有组合都没有菱形问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Mixin 能复用横向能力，但容易引入隐式依赖和命名冲突。规模变大时优先显式组合。",
+        "focus": "Mixin 风险"
+      }
+    ]
+  },
+  {
+    "questionId": "js-061",
+    "checks": [
+      {
+        "id": "js-061-check-01",
+        "kind": "single",
+        "prompt": "朴素递归 `fib(n) = fib(n - 1) + fib(n - 2)` 的主要性能问题是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它不能返回数字。"
+          },
+          {
+            "id": "b",
+            "text": "大量重复计算子问题，时间复杂度呈指数级增长。"
+          },
+          {
+            "id": "c",
+            "text": "它不会产生调用栈。"
+          },
+          {
+            "id": "d",
+            "text": "它只能在浏览器中运行。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "朴素 Fibonacci 会反复计算相同子问题。记忆化或动态规划可以把时间复杂度降到 O(n)。",
+        "focus": "Fibonacci 重复计算"
+      },
+      {
+        "id": "js-061-check-02",
+        "kind": "multiple",
+        "prompt": "哪些手段可以优化递归问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "记忆化缓存已计算子问题。"
+          },
+          {
+            "id": "b",
+            "text": "改写为 bottom-up 动态规划。"
+          },
+          {
+            "id": "c",
+            "text": "使用迭代或显式栈避免调用栈过深。"
+          },
+          {
+            "id": "d",
+            "text": "用蹦床函数模拟尾调用。"
+          },
+          {
+            "id": "e",
+            "text": "依赖主流 JS 引擎一定会自动做尾调用优化。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "JS 工程中不要依赖自动 TCO。深递归要显式控制栈，重复子问题要缓存或改 DP。",
+        "focus": "递归优化手段"
+      },
+      {
+        "id": "js-061-check-03",
+        "kind": "multiple",
+        "prompt": "手写 `memoize(fn, keyFn)` 时，哪些细节值得注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "缓存 key 的生成要符合参数类型和业务唯一性。"
+          },
+          {
+            "id": "b",
+            "text": "`JSON.stringify(args)` 简单但有成本，也不适合所有参数类型。"
+          },
+          {
+            "id": "c",
+            "text": "需要保留调用时的 `this`，可用 `fn.apply(this, args)`。"
+          },
+          {
+            "id": "d",
+            "text": "使用 Map 缓存后永远不会有内存增长风险。"
+          },
+          {
+            "id": "e",
+            "text": "记忆化可以解决所有栈溢出问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "记忆化解决重复计算，不解决递归层级过深。缓存还要考虑 key、容量和生命周期。",
+        "focus": "memoize 边界"
+      }
+    ]
+  },
+  {
+    "questionId": "js-062",
+    "checks": [
+      {
+        "id": "js-062-check-01",
+        "kind": "single",
+        "prompt": "下面哪个函数更符合纯函数？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`const add = (a, b) => a + b`"
+          },
+          {
+            "id": "b",
+            "text": "`const now = () => Date.now()`"
+          },
+          {
+            "id": "c",
+            "text": "`const inc = () => { count += 1; return count }`"
+          },
+          {
+            "id": "d",
+            "text": "`const save = (x) => localStorage.setItem('x', x)`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "纯函数相同输入得到相同输出，且没有可观察副作用。时间、外部状态和 IO 都会破坏纯度。",
+        "focus": "纯函数"
+      },
+      {
+        "id": "js-062-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于函数式编程常见思想？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不可变更新，避免原地修改已有数据。"
+          },
+          {
+            "id": "b",
+            "text": "高阶函数，接收函数或返回函数。"
+          },
+          {
+            "id": "c",
+            "text": "函数组合，把多个小转换串起来。"
+          },
+          {
+            "id": "d",
+            "text": "把网络、日志、DOM 等副作用隔离在边界。"
+          },
+          {
+            "id": "e",
+            "text": "禁止程序中出现任何副作用。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "函数式不是没有副作用，而是让核心逻辑尽量纯，把副作用集中在边界。",
+        "focus": "函数式实践"
+      },
+      {
+        "id": "js-062-check-03",
+        "kind": "multiple",
+        "prompt": "关于函数式风格，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "纯函数更容易测试、缓存、并行和组合。"
+          },
+          {
+            "id": "b",
+            "text": "过度链式调用可能降低可读性。"
+          },
+          {
+            "id": "c",
+            "text": "频繁复制大对象可能带来性能成本。"
+          },
+          {
+            "id": "d",
+            "text": "函数式代码一定比命令式代码快。"
+          },
+          {
+            "id": "e",
+            "text": "不可变性意味着永远不能创建新数据。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "不可变性是不修改已有数据，而是返回新数据。工程上要在可读性、性能和可测试性之间取舍。",
+        "focus": "工程取舍"
+      }
+    ]
+  },
+  {
+    "questionId": "js-063",
+    "checks": [
+      {
+        "id": "js-063-check-01",
+        "kind": "single",
+        "prompt": "下面表达式为什么是 `false`？\n\n```js\n0.1 + 0.2 === 0.3\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "JavaScript 不支持小数。"
+          },
+          {
+            "id": "b",
+            "text": "很多十进制小数无法用二进制浮点有限表示，计算会产生误差。"
+          },
+          {
+            "id": "c",
+            "text": "`===` 不能比较 number。"
+          },
+          {
+            "id": "d",
+            "text": "`0.3` 会被解析成字符串。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Number 使用 IEEE 754 双精度浮点数。小数运算需要误差比较或十进制库。",
+        "focus": "浮点精度"
+      },
+      {
+        "id": "js-063-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`NaN === NaN` 为 false。"
+          },
+          {
+            "id": "b",
+            "text": "`Number.isNaN(NaN)` 为 true。"
+          },
+          {
+            "id": "c",
+            "text": "`Number.MAX_SAFE_INTEGER` 是 `2^53 - 1`。"
+          },
+          {
+            "id": "d",
+            "text": "`Number.isSafeInteger(9007199254740992)` 为 false。"
+          },
+          {
+            "id": "e",
+            "text": "`isNaN('hello')` 和 `Number.isNaN('hello')` 都为 true。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "全局 `isNaN` 会先做类型转换，`Number.isNaN` 不会。安全整数范围由双精度有效位决定。",
+        "focus": "Number 特殊值"
+      },
+      {
+        "id": "js-063-check-03",
+        "kind": "multiple",
+        "prompt": "哪些处理金额或高精度数值的方式更合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "金额存储和计算优先用最小货币单位整数。"
+          },
+          {
+            "id": "b",
+            "text": "展示层可用 `toFixed`，但它返回字符串，不是底层精确计算方案。"
+          },
+          {
+            "id": "c",
+            "text": "财务、计费等十进制精确场景使用 decimal.js、big.js 等库。"
+          },
+          {
+            "id": "d",
+            "text": "直接用浮点数做所有金额运算，不需要测试。"
+          },
+          {
+            "id": "e",
+            "text": "BigInt 能直接解决小数精度问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "BigInt 只解决大整数，不解决小数。金额通常用整数单位或十进制库。",
+        "focus": "金额与精度"
+      }
+    ]
+  },
+  {
+    "questionId": "js-064",
+    "checks": [
+      {
+        "id": "js-064-check-01",
+        "kind": "single",
+        "prompt": "下面代码中，实际生效的是哪个 `fn`？\n\n```js\nfunction fn(x) {\n  return x\n}\n\nfunction fn(x, y) {\n  return x + y\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "两个都会根据参数数量自动分发。"
+          },
+          {
+            "id": "b",
+            "text": "后面的函数声明覆盖前面的声明。"
+          },
+          {
+            "id": "c",
+            "text": "第一个永远生效。"
+          },
+          {
+            "id": "d",
+            "text": "运行前语法错误。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "JavaScript 运行时没有原生函数重载。要重载只能在一个实现函数里按参数数量、类型或结构分发。",
+        "focus": "JS 原生重载"
+      },
+      {
+        "id": "js-064-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方式可以模拟函数重载？",
+        "options": [
+          {
+            "id": "a",
+            "text": "根据 `arguments.length` 或参数数量分支。"
+          },
+          {
+            "id": "b",
+            "text": "根据 `typeof`、`Array.isArray` 等参数类型分支。"
+          },
+          {
+            "id": "c",
+            "text": "使用选项对象，减少重载分支。"
+          },
+          {
+            "id": "d",
+            "text": "用 Map 分发表按 kind 派发 handler。"
+          },
+          {
+            "id": "e",
+            "text": "在同一作用域写多个同名函数，运行时自动保留全部签名。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "模拟重载的本质是手动分发。参数越来越多时，选项对象通常更可维护。",
+        "focus": "模拟重载策略"
+      },
+      {
+        "id": "js-064-check-03",
+        "kind": "multiple",
+        "prompt": "关于 TypeScript 重载，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "重载签名主要存在于类型层面。"
+          },
+          {
+            "id": "b",
+            "text": "运行时仍然只有一个实现函数。"
+          },
+          {
+            "id": "c",
+            "text": "实现函数内部必须自己做类型判断。"
+          },
+          {
+            "id": "d",
+            "text": "TypeScript 会为每个重载签名生成一个独立 JS 函数。"
+          },
+          {
+            "id": "e",
+            "text": "使用 TypeScript 重载后无需处理非法参数。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "TS 能帮助调用方类型检查，但运行时安全仍靠实现函数的分支和错误处理。",
+        "focus": "TypeScript 重载"
+      }
+    ]
+  },
+  {
+    "questionId": "js-065",
+    "checks": [
+      {
+        "id": "js-065-check-01",
+        "kind": "single",
+        "prompt": "把 `SharedArrayBuffer` 传给 Worker 时，发生什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "像 ArrayBuffer transfer 一样转移所有权，主线程无法再访问。"
+          },
+          {
+            "id": "b",
+            "text": "主线程和 Worker 看到同一块共享内存。"
+          },
+          {
+            "id": "c",
+            "text": "自动深拷贝一份给 Worker。"
+          },
+          {
+            "id": "d",
+            "text": "浏览器会把它转换成 JSON。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "SharedArrayBuffer 是共享内存，不是复制也不是转移所有权。多线程读写要用 Atomics 协调。",
+        "focus": "SharedArrayBuffer 传给 Worker"
+      },
+      {
+        "id": "js-065-check-02",
+        "kind": "multiple",
+        "prompt": "哪些属于 Atomics 提供的能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Atomics.load/store` 原子读写。"
+          },
+          {
+            "id": "b",
+            "text": "`Atomics.add/sub` 原子读改写。"
+          },
+          {
+            "id": "c",
+            "text": "`Atomics.compareExchange` CAS。"
+          },
+          {
+            "id": "d",
+            "text": "`Atomics.wait/notify` 线程等待和唤醒。"
+          },
+          {
+            "id": "e",
+            "text": "自动把所有竞态变成无锁安全代码。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Atomics 提供底层原子操作和同步原语，但锁、死锁、公平性和异常释放仍要自己设计。",
+        "focus": "Atomics API"
+      },
+      {
+        "id": "js-065-check-03",
+        "kind": "multiple",
+        "prompt": "关于 SharedArrayBuffer/Atomics，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "浏览器中使用 SharedArrayBuffer 通常需要 COOP/COEP 等跨源隔离。"
+          },
+          {
+            "id": "b",
+            "text": "`Atomics.wait` 会阻塞当前线程，浏览器主线程不能使用。"
+          },
+          {
+            "id": "c",
+            "text": "多数 Atomics 操作要求整数 TypedArray。"
+          },
+          {
+            "id": "d",
+            "text": "普通前端任务优先用消息传递或 Transferable，避免过早共享内存。"
+          },
+          {
+            "id": "e",
+            "text": "共享内存编程比消息传递更简单，适合所有业务交互。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "共享内存复杂且风险高，适合高性能计算等少数场景。普通业务用消息模型更稳。",
+        "focus": "SharedArrayBuffer 边界"
+      }
+    ]
+  }
+]

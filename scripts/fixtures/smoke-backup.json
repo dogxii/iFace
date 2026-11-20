@@ -1,0 +1,65 @@
+{
+  "formatVersion": 3,
+  "exportedAt": "2026-05-05T00:00:00.000Z",
+  "questions": [
+    {
+      "id": "custom_smoke-backup_smoke-backup-001",
+      "module": "Smoke Backup",
+      "difficulty": 2,
+      "question": "Smoke Backup：为什么本地备份导入需要预览？",
+      "answer": "本地备份导入需要预览，是因为备份可能覆盖已有题目、学习记录、题目笔记和 AI 会话。预览可以在真正写入前展示新增与覆盖影响，帮助用户确认数据来源、备份时间和恢复范围，避免误把旧备份导入导致较新的学习数据丢失。",
+      "tags": ["备份", "数据安全", "导入"],
+      "source": "smoke-backup"
+    }
+  ],
+  "studyRecords": [
+    {
+      "questionId": "custom_smoke-backup_smoke-backup-001",
+      "status": "review",
+      "lastUpdated": 1777777777000,
+      "reviewCount": 2
+    }
+  ],
+  "questionNotes": [
+    {
+      "questionId": "custom_smoke-backup_smoke-backup-001",
+      "content": "## Smoke Backup Note\n\n- 导入前应展示预览。\n- 确认后才写入本地数据。",
+      "createdAt": 1777777700000,
+      "updatedAt": 1777777777000
+    }
+  ],
+  "questionFlags": [
+    {
+      "questionId": "custom_smoke-backup_smoke-backup-001",
+      "starred": true,
+      "createdAt": 1777777700000,
+      "updatedAt": 1777777777000
+    }
+  ],
+  "aiSessions": [
+    {
+      "questionId": "custom_smoke-backup_smoke-backup-001",
+      "messages": [
+        {
+          "role": "user",
+          "content": "请检查我的备份恢复理解。"
+        },
+        {
+          "role": "assistant",
+          "content": "你的理解是对的：预览和确认步骤能降低误覆盖风险。"
+        }
+      ],
+      "createdAt": 1777777700000,
+      "updatedAt": 1777777777000
+    }
+  ],
+  "customSources": ["smoke-backup"],
+  "customCategories": {
+    "Smoke Backup": {
+      "name": "Smoke Backup",
+      "modules": ["Smoke Backup"],
+      "builtin": false,
+      "order": 3
+    }
+  }
+}

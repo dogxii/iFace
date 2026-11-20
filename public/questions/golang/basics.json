@@ -1,0 +1,362 @@
+[
+  {
+    "id": "go-basics-001",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中 `var` 声明和 `:=` 短变量声明有什么区别？",
+    "answer": "### var 声明\n`var` 是完整变量声明语法，函数内和包级作用域都能用。\n\n```go\nvar x int          // 零值初始化，x == 0\nvar y int = 10     // 显式类型 + 初始化\nvar z = 10         // 类型推断，z 是 int\nvar a, b int       // 多变量声明\n```\n\n包级变量只能用 `var`，不能用 `:=`。\n\n### := 短变量声明\n`:=` 只能在函数内部使用，并且左侧至少要有一个新变量。\n\n```go\nx := 10\nname, age := \"Alice\", 18\n```\n\n同一作用域内允许“部分重声明”：\n\n```go\nn, err := strconv.Atoi(\"42\")\nvalue, err := readValue() // value 是新变量，err 是重新赋值\n```\n\n如果左侧没有任何新变量，会编译失败。\n\n### 核心区别\n| 特性 | var | := |\n|---|---|---|\n| 作用域 | 函数内、包级 | 只能函数内 |\n| 零值声明 | 可以 | 不可以，必须初始化 |\n| 类型标注 | 可以显式写 | 只能由右侧推断 |\n| 部分重声明 | 不适用 | 同一作用域至少一个新变量 |\n\n### 常见坑\n```go\nerr := doSomething()\nif err := doAnotherThing(); err != nil {\n    return err // 这里的 err 是 if 语句内的新变量\n}\n_ = err // 外层 err 没变\n```\n\n`:=` 在 `if/for/switch` 的短语句或内部块中容易遮蔽外部变量。工程中遇到错误处理和状态变量时要特别注意。",
+    "tags": ["变量", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-002",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中空白标识符 `_` 有哪些使用场景？",
+    "answer": "空白标识符 `_` 表示“这里需要一个标识符位置，但我不需要这个值”。它不会引入可使用的变量，也能避免未使用变量的编译错误。\n\n### 忽略多返回值\n```go\nn, err := strconv.Atoi(\"42\")\n_ = n\n_ = err\n\n_, ok := m[\"key\"] // 只关心 key 是否存在\n```\n\n忽略 error 要谨慎，通常只有在错误确实无意义或已经通过其他方式保证不会发生时才这么做。\n\n### range 中忽略索引或值\n```go\nfor _, v := range values {\n    fmt.Println(v)\n}\n\nfor i := range values { // 比 for i, _ := range values 更简洁\n    fmt.Println(i)\n}\n```\n\n### 副作用导入\n```go\nimport _ \"net/http/pprof\"\nimport _ \"image/png\"\n```\n\n这种导入只执行目标包的 `init`，常用于注册驱动、解码器或调试端点。\n\n### 编译期接口实现检查\n```go\nvar _ io.Writer = (*MyWriter)(nil)\n```\n\n如果 `*MyWriter` 没有实现 `io.Writer`，这一行会编译失败。\n\n### 明确丢弃结果\n```go\n_ = os.Remove(path)\n```\n\n这比留下未使用返回值更明确，但团队应约定哪些错误允许忽略，避免隐藏生产问题。",
+    "tags": ["变量", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-003",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "请说明 `iota` 的用法，以及它在 `const` 块中的行为规则。",
+    "answer": "`iota` 是 Go 的预声明标识符，只能在常量声明中使用。它表示当前 `const` 声明中第几个常量规格，默认从 0 开始。\n\n### 基本用法\n```go\nconst (\n    A = iota // 0\n    B        // 1，省略表达式时重复上一行表达式\n    C        // 2\n)\n```\n\n### 位移常量\n```go\nconst (\n    _  = iota\n    KB = 1 << (10 * iota) // 1 << 10\n    MB                    // 1 << 20\n    GB                    // 1 << 30\n)\n```\n\n省略表达式时，Go 会复用上一条常量规格的表达式，但 `iota` 会按当前行重新取值。\n\n### 同一行共享 iota\n```go\nconst (\n    A, B = iota, iota * 2 // 0, 0\n    C, D                  // 1, 2\n    E, F                  // 2, 4\n)\n```\n\n### 中断不会重置\n```go\nconst (\n    P = iota // 0\n    Q = 100  // iota 仍然是 1，只是没使用\n    R = iota // 2\n)\n```\n\n新的 `const` 声明会重新从 0 开始：\n\n```go\nconst X = iota // 0\nconst Y = iota // 0\n```\n\n### 规则总结\n1. 每个 `const` 声明内从 0 开始。\n2. 每个 ConstSpec 行递增一次。\n3. 同一行多个常量共享同一个 `iota`。\n4. 省略表达式会复用上一行表达式，但 `iota` 用当前行的值。",
+    "tags": ["变量", "iota"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-004",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中 `byte`、`rune`、`string` 的区别是什么？",
+    "answer": "### byte\n`byte` 是 `uint8` 的别名，表示一个字节，适合处理二进制数据、ASCII、网络协议缓冲区。\n\n```go\nvar b byte = 65\nfmt.Printf(\"%c\\n\", b) // A\n```\n\n### rune\n`rune` 是 `int32` 的别名，表示一个 Unicode code point。一个用户感知的字符不一定等于一个 rune，例如带组合符号的字符和部分 emoji 可能由多个 code point 组成。\n\n```go\nvar r rune = '中'\nfmt.Println(r) // 20013\n```\n\n### string\nGo 的 `string` 是不可变的字节序列，不是 `[]byte`。可以把 string 转成 `[]byte` 或 `[]rune`，但转换通常会产生拷贝。\n\n```go\ns := \"Hello, 世界\"\n\nfmt.Println(len(s))         // 13，字节数\nfmt.Println(len([]rune(s))) // 9，rune 数\n```\n\n### 遍历差异\n```go\nfor i := 0; i < len(s); i++ {\n    fmt.Printf(\"%x \", s[i]) // 按字节遍历，s[i] 是 byte\n}\n\nfor i, r := range s {\n    fmt.Printf(\"%d: %c\\n\", i, r) // 按 UTF-8 解码后的 rune 遍历，i 是字节下标\n}\n```\n\n### 转换\n```go\nbs := []byte(s) // 文本的 UTF-8 字节\nrs := []rune(s) // Unicode code points\n\ns1 := string(byte('A'))\ns2 := string(rune('中'))\n```\n\n### 总结\n| 类型 | 本质 | 常见用途 |\n|---|---|---|\n| `byte` | `uint8` | 二进制、ASCII、单字节处理 |\n| `rune` | `int32` | Unicode code point |\n| `string` | 不可变字节序列 | UTF-8 文本、只读数据 |",
+    "tags": ["类型", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-005",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 中整数类型有哪些？`int` 和 `int32` 有什么区别？类型转换需要注意什么？",
+    "answer": "### 整数类型\n```text\n有符号：int8, int16, int32, int64, int\n无符号：uint8, uint16, uint32, uint64, uint, uintptr\n别名：byte = uint8, rune = int32\n```\n\n`uintptr` 主要用于 unsafe 场景，不应当成普通整数保存指针生命周期。\n\n### int 和 int32\n- `int` 宽度依赖目标平台，通常在 32 位平台是 32 位，在 64 位平台是 64 位。\n- `int32` 固定 32 位，跨平台一致。\n- Go 不做隐式数值类型转换，即使底层宽度相同也不能直接赋值。\n\n```go\nvar a int = 10\nvar b int32\nb = int32(a)\n```\n\n### 转换注意事项\n#### 1. 整数窄化会截断\n```go\nvar x int64 = 300\nfmt.Println(int8(x)) // 44\n```\n\nGo 对非常量整数转换不会报溢出错误，结果按目标类型宽度截断。\n\n#### 2. 有符号和无符号转换只改变解释方式\n```go\nvar u uint8 = 255\nfmt.Println(int8(u)) // -1\n```\n\n#### 3. 浮点转整数会截断小数\n```go\nfmt.Println(int(3.9))  // 3\nfmt.Println(int(-3.9)) // -3\n```\n\n如果浮点值超出目标整数范围，结果依赖实现，不要依赖这种转换。\n\n#### 4. 常量转换更严格\n```go\nconst n = 300\nvar x int8 = n // 编译错误：constant 300 overflows int8\n```\n\n#### 5. 字符串和数字转换用 strconv\n```go\ns := strconv.Itoa(42)\nn, err := strconv.Atoi(\"42\")\n_ = err\n\nfmt.Println(string(65)) // \"A\"，这是 code point 转 string，不是数字格式化\n```",
+    "tags": ["类型", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-006",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中 array（数组）和 slice（切片）有什么区别？",
+    "answer": "### 数组（array）\n数组长度固定，长度是类型的一部分：`[3]int` 和 `[4]int` 是不同类型。数组是值，赋值和传参会复制整个数组。\n\n```go\na := [3]int{1, 2, 3}\nb := a\nb[0] = 100\nfmt.Println(a[0]) // 1\n```\n\n数组元素类型可比较时，数组也可以用 `==` 比较。\n\n### 切片（slice）\n切片是一个描述符，包含指向底层数组的指针、长度和容量。切片本身按值传递，但复制切片描述符后通常仍共享同一个底层数组。\n\n```go\ns := []int{1, 2, 3}\nt := s\nt[0] = 100\nfmt.Println(s[0]) // 100\n```\n\n简化理解：\n\n```go\ntype slice struct {\n    ptr unsafe.Pointer\n    len int\n    cap int\n}\n```\n\n### nil slice 和空 slice\n```go\nvar a []int          // nil slice, len=0, cap=0\nb := []int{}         // non-nil empty slice\nc := make([]int, 0)  // non-nil empty slice\n```\n\n多数场景下它们都能 `append`，但 JSON 编码、nil 判断等行为可能不同。\n\n### 对比\n| 维度 | array | slice |\n|---|---|---|\n| 长度 | 固定，属于类型 | 可变 |\n| 赋值/传参 | 复制所有元素 | 复制 slice 头，底层数组共享 |\n| 比较 | 元素可比较时可比较 | 只能和 nil 比较 |\n| 零值 | 元素零值数组 | nil |\n| 常用场景 | 固定长度数据、值语义 | 动态序列、函数参数 |",
+    "tags": ["切片", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-007",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "请详细解释 Go 切片的扩容机制，`append` 时发生了什么？",
+    "answer": "### append 的基本行为\n`append` 会返回新的 slice 头，调用方必须接住返回值。\n\n```go\ns = append(s, x)\n```\n\n如果容量足够，`append` 直接写入原底层数组；如果容量不足，会分配更大的底层数组，把旧元素复制过去，再返回指向新数组的 slice。\n\n```go\ns := make([]int, 3, 3)\ns2 := append(s, 4) // 扩容\ns[0] = 100\nfmt.Println(s2[0]) // 0，s2 已经指向新数组\n```\n\n### 扩容策略\n当前 Go 运行时的大致策略是：小切片容量通常翻倍；容量较大后增长比例逐步降低，趋近约 1.25 倍。实际容量还会受元素大小、内存规格和对齐影响，所以不要依赖精确 cap 数值写业务逻辑。\n\n```go\ns := make([]int, 0)\nfor i := 0; i < 10; i++ {\n    s = append(s, i)\n    fmt.Println(len(s), cap(s))\n}\n```\n\n### 共享底层数组陷阱\n```go\na := []int{1, 2, 3, 4, 5}\nb := a[:3]         // len=3, cap=5\nb = append(b, 100) // 未超过 cap，写入 a[3]\nfmt.Println(a)     // [1 2 3 100 5]\n```\n\n### 隔离方式\n三索引切片限制容量：\n\n```go\nb := a[:3:3]\nb = append(b, 100) // 必然分配新底层数组\n```\n\n或者显式复制：\n\n```go\nb := append([]int(nil), a[:3]...)\n// 或\nb := make([]int, 3)\ncopy(b, a[:3])\n```\n\n### 实战建议\n已知最终长度时，用 `make([]T, 0, n)` 预分配容量，减少扩容和复制。函数内部 `append` 后要返回新切片，因为底层数组可能已经变化。",
+    "tags": ["切片", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-008",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "`copy` 函数的行为是什么？有哪些注意事项？",
+    "answer": "### copy 语法\n```go\nn := copy(dst, src)\n```\n\n`copy` 返回实际复制的元素个数，数量是 `min(len(dst), len(src))`。\n\n```go\nsrc := []int{1, 2, 3, 4, 5}\ndst := make([]int, 3)\nn := copy(dst, src)\nfmt.Println(dst, n) // [1 2 3] 3\n```\n\n### dst 必须有长度\n```go\nvar dst []int\nn := copy(dst, src)\nfmt.Println(n) // 0\n\nclone := make([]int, len(src))\ncopy(clone, src)\n```\n\n`copy` 写入的是 `dst[:len(dst)]`，只设置容量不够：\n\n```go\ndst := make([]int, 0, len(src))\ncopy(dst, src) // 0，因为 len(dst)==0\n```\n\n### 支持重叠复制\n```go\ns := []int{1, 2, 3, 4, 5}\ncopy(s[1:], s[:3])\nfmt.Println(s) // [1 1 2 3 5]\n```\n\n`copy` 能正确处理源和目标重叠。它只是复制元素，不保证复制后两个切片不共享底层数组；是否共享取决于 `dst` 怎么来的。\n\n### string 到 []byte\n```go\nbuf := []byte(\"hello\")\nn := copy(buf, \"world\")\nfmt.Println(string(buf), n) // world 5\n```\n\n特殊规则是源可以是 string、目标是 `[]byte`。\n\n### 删除元素\n```go\ns := []int{1, 2, 3, 4, 5}\ni := 2\ncopy(s[i:], s[i+1:])\ns = s[:len(s)-1]\n```\n\n如果元素持有指针且切片长期存在，删除后可把最后一个元素置零，帮助 GC 回收。",
+    "tags": ["切片", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-009",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中 map 如何初始化？直接声明和 make 有什么区别？",
+    "answer": "### nil map\n```go\nvar m map[string]int\n\nfmt.Println(m == nil) // true\nfmt.Println(len(m))   // 0\nfmt.Println(m[\"x\"])   // 0，读 nil map 安全\n\nm[\"x\"] = 1 // panic: assignment to entry in nil map\n```\n\nnil map 可以读、查、删，但不能写。\n\n### 字面量初始化\n```go\nm := map[string]int{\n    \"apple\":  5,\n    \"banana\": 3,\n}\n```\n\n### make 初始化\n```go\nm := make(map[string]int)\nm2 := make(map[string]int, 100) // 容量 hint，不是固定容量\n```\n\nmap 的容量 hint 用于减少扩容成本，不能用 `cap(m)` 查询，也不是上限。\n\n### 常用操作\n```go\nv := m[\"key\"]\nv, ok := m[\"key\"] // 区分不存在和零值\n\ndelete(m, \"key\") // key 不存在也安全\nclear(m)         // 清空整个 map\n```\n\n### 注意事项\n- map 的 key 类型必须可比较，slice、map、function 不能做 key。\n- map value 不是可寻址值，不能写 `&m[k]`，也不能直接修改 `m[k].Field`。\n- 需要修改结构体字段时，取出副本、修改、再放回，或把 value 存成指针。\n- map 不是并发安全容器，并发写入要加锁或使用 `sync.Map`。",
+    "tags": ["map", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-010",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "为什么 Go 的 map 并发不安全？如何安全地并发使用 map？",
+    "answer": "### 哪些并发访问不安全\n多个 goroutine 只读同一个 map 是安全的；只要存在并发写，或读写并发，就不安全。\n\n```go\nm := map[int]int{}\n\ngo func() {\n    for { m[1] = 1 }\n}()\ngo func() {\n    for { _ = m[1] }\n}()\n```\n\n运行时可能报 `fatal error: concurrent map read and map write` 或 `concurrent map writes`。这不是普通 panic，不能指望 recover。即使没触发 fatal，也已经是数据竞争，`go test -race` 能帮助发现。\n\n### 原因\nmap 底层是哈希表，会有桶、溢出桶、扩容和渐进搬迁。并发写或读写会破坏内部状态，也违反 Go 内存模型。\n\n### 方案一：map + sync.RWMutex\n```go\ntype SafeMap[K comparable, V any] struct {\n    mu sync.RWMutex\n    m  map[K]V\n}\n\nfunc NewSafeMap[K comparable, V any]() *SafeMap[K, V] {\n    return &SafeMap[K, V]{m: make(map[K]V)}\n}\n\nfunc (s *SafeMap[K, V]) Get(key K) (V, bool) {\n    s.mu.RLock()\n    defer s.mu.RUnlock()\n    v, ok := s.m[key]\n    return v, ok\n}\n\nfunc (s *SafeMap[K, V]) Set(key K, value V) {\n    s.mu.Lock()\n    defer s.mu.Unlock()\n    s.m[key] = value\n}\n```\n\n这是最通用、类型安全、可维护的方案。\n\n### 方案二：sync.Map\n```go\nvar sm sync.Map\nsm.Store(\"key\", 42)\nvalue, ok := sm.Load(\"key\")\nsm.Delete(\"key\")\n```\n\n`sync.Map` 适合两类场景：写一次读多次的缓存，或多个 goroutine 操作互不相交的 key 集合。普通业务 map 不要默认上 `sync.Map`，因为它牺牲了静态类型，也有额外复杂度。\n\n### 方案三：单 goroutine 拥有 map\n通过 channel 把所有操作发送给一个 goroutine，让它独占 map。这适合需要串行化状态变更的 actor 风格设计。",
+    "tags": ["map", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-011",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go map 的遍历顺序是什么？为什么？",
+    "answer": "### 结论\nGo 规范只保证：map 的 `range` 遍历顺序**未指定**，不能依赖稳定顺序。实际运行时为了暴露错误依赖，会使用随机哈希种子、随机起始位置等策略，所以同一个 map 在不同进程、不同迭代之间都可能顺序不同。\n\n```go\nm := map[string]int{\"a\": 1, \"b\": 2, \"c\": 3}\nfor k, v := range m {\n    fmt.Printf(\"%s: %d\\n\", k, v)\n}\n// 输出顺序不可作为业务逻辑依据\n```\n\n### 为什么这样设计\n- map 是哈希表，桶布局会受哈希种子、扩容、删除和插入影响\n- 规范不承诺顺序，运行时可以自由优化实现\n- 如果程序依赖遍历顺序，换 Go 版本、换机器或数据规模变化都可能出 bug\n\n### 遍历期间修改 map\n- 删除尚未遍历到的 key：该元素不会再被产出\n- 新增 key：可能被遍历到，也可能不会\n- nil map：遍历 0 次\n\n### 需要稳定顺序时\n先取出 key，再排序，然后按 key 访问：\n\n```go\nimport \"sort\"\n\nm := map[string]int{\"banana\": 2, \"apple\": 5, \"cherry\": 1}\nkeys := make([]string, 0, len(m))\nfor k := range m {\n    keys = append(keys, k)\n}\nsort.Strings(keys)\n\nfor _, k := range keys {\n    fmt.Printf(\"%s: %d\\n\", k, m[k])\n}\n```\n\n非字符串 key 可用 `sort.Slice` 或 Go 1.21+ 的 `slices.SortFunc` 定义排序规则。",
+    "tags": ["map", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-012",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go struct 如何定义？什么是嵌入（embedding）？有什么特点？",
+    "answer": "### 基本定义\n```go\ntype Person struct {\n    Name string `json:\"name\"`\n    Age  int\n    addr string // 小写，包内可见\n}\n\np1 := Person{Name: \"Alice\", Age: 30} // 推荐：按字段名初始化\np2 := Person{\"Bob\", 25, \"北京\"}       // 按字段顺序，字段变化时更脆弱\nvar p3 Person                        // 各字段零值：{\"\", 0, \"\"}\np4 := &Person{Name: \"Carol\"}        // 取结构体指针\n```\n\n### 嵌入（Embedding）\n嵌入是结构体的**匿名字段**：字段声明只写类型，不显式写字段名。被嵌入类型的字段和方法会被提升到外层，方便选择器访问，但数据仍然存放在内层字段里。\n\n```go\ntype Animal struct {\n    Name string\n}\n\nfunc (a Animal) Speak() string { return a.Name + \" speaks\" }\n\ntype Dog struct {\n    Animal // 字段名默认为 Animal\n    Breed  string\n}\n\nd := Dog{Animal: Animal{Name: \"Rex\"}, Breed: \"Labrador\"}\nfmt.Println(d.Name)    // 等价于 d.Animal.Name\nfmt.Println(d.Speak()) // 等价于 d.Animal.Speak()\n```\n\n### 关键特点\n- Go 没有类继承，嵌入是组合；外层类型不会变成内层类型\n- 外层同名字段或方法会遮蔽内层；同一深度出现重名会产生歧义，必须显式写路径\n- 可以嵌入 `T` 或 `*T`；嵌入指针能避免复制，但要处理 nil\n- 可以嵌入接口，用于把一组方法提升到外层类型\n- 方法提升会影响外层类型的方法集，从而影响它是否实现某个接口\n\n```go\ntype MyWriter struct {\n    io.Writer // 嵌入接口，MyWriter 提升 Write 方法\n}\n```",
+    "tags": ["结构体", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-013",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 中值接收者和指针接收者有什么区别？如何选择？",
+    "answer": "### 基本区别\n```go\ntype Counter struct{ count int }\n\nfunc (c Counter) Value() int { // 值接收者：接收者被复制\n    return c.count\n}\n\nfunc (c *Counter) Increment() { // 指针接收者：可修改原对象\n    c.count++\n}\n```\n\n```go\nc := Counter{}\nc.Increment()        // c 可寻址，编译器自动改写为 (&c).Increment()\nfmt.Println(c.Value()) // 1\n```\n\n值接收者拿到的是副本；指针接收者拿到的是地址。注意自动取地址只对**可寻址**的值成立，`m[\"x\"].Increment()` 这类 map 元素不行，因为 map 元素不可寻址。\n\n### 方法集规则（影响接口实现）\n| 类型 | 方法集 |\n|------|--------|\n| `T` | 只有接收者为 `T` 的方法 |\n| `*T` | 接收者为 `T` 和 `*T` 的方法 |\n\n```go\ntype Stringer interface{ String() string }\nfunc (c *Counter) String() string { return fmt.Sprintf(\"%d\", c.count) }\n\nvar _ Stringer = &Counter{} // OK\nvar _ Stringer = Counter{}  // 编译错误：Counter 的方法集没有 String\n```\n\n接口赋值看的是方法集，不会因为普通调用时可以自动取地址，就让 `T` 自动实现需要 `*T` 方法的接口。\n\n### 如何选择\n优先选指针接收者：\n- 方法需要修改接收者状态\n- 接收者较大，复制成本明显\n- 类型包含 `sync.Mutex`、`sync.Once` 等不能复制的字段\n- 同一类型已经有指针接收者，保持一致通常更清晰\n\n适合值接收者：\n- 小型、不可变、复制语义明确的类型，例如 `time.Time` 风格的值对象\n- 方法只读且复制成本低\n- 希望调用者拿到的是快照语义\n\nmap、slice、channel 作为字段或别名类型时要谨慎：值接收者只复制描述符，仍可能修改底层数据；但重新赋值、`append` 后的新 slice 头不会自动写回调用方。",
+    "tags": ["结构体", "指针"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-014",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 接口是如何实现的？什么是隐式实现？",
+    "answer": "### 接口定义\n```go\ntype Animal interface {\n    Sound() string\n    Move() string\n}\n```\n\n### 隐式实现\nGo 的接口实现是**隐式的**：只要一个类型的方法集包含接口要求的全部方法，它就实现了该接口，不需要 `implements` 声明。\n\n```go\ntype Dog struct{ Name string }\n\nfunc (d Dog) Sound() string { return \"汪汪\" }\nfunc (d Dog) Move() string  { return \"跑\" }\n\nvar a Animal = Dog{Name: \"旺财\"} // Dog 自动实现 Animal\nfmt.Println(a.Sound())\n```\n\n如果方法都是值接收者，`Dog` 和 `*Dog` 都实现接口；如果方法是指针接收者，通常只有 `*Dog` 实现接口。\n\n### 接口值的组成\n概念上，接口值由**动态类型**和**动态值**组成：\n\n```go\nvar a Animal       // (nil, nil)，接口零值\na = Dog{\"Rex\"}     // (Dog, Dog{Name: \"Rex\"})，有类型有值\n\nvar d *Dog = nil\na = d              // (*Dog, nil)，接口本身不是 nil\nfmt.Println(a == nil) // false\n```\n\n这就是常见的 nil 接口陷阱：只有动态类型和动态值都为 nil 时，接口值才等于 nil。\n\n### 编译时接口检查\n```go\nvar _ Animal = Dog{}       // 检查 Dog 是否实现 Animal\nvar _ Animal = (*Dog)(nil) // 检查 *Dog 是否实现 Animal\n```\n\n这种写法不生成运行时代码，但能让接口兼容性问题提前在编译期暴露。\n\n### 额外注意\n- 接口比较要求动态值可比较；如果动态值是 slice、map、func，直接比较接口值会 panic\n- 接口应尽量小，调用方按行为定义接口，比在生产方提前定义大接口更灵活",
+    "tags": ["接口", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-015",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 中类型断言和类型 switch 的使用方式是什么？",
+    "answer": "### 类型断言（Type Assertion）\n类型断言只能用于接口类型表达式，用来取出接口中的动态值。\n\n```go\nvar x any = \"hello\"\n\ns := x.(string)      // 成功，s 是 string\nn := x.(int)         // 失败会 panic\ns, ok := x.(string)  // comma-ok 写法，失败时 ok=false，不 panic\n```\n\n断言目标既可以是具体类型，也可以是接口类型：\n\n```go\nvar v any = bytes.NewBuffer(nil)\nr, ok := v.(io.Reader) // 判断动态类型是否实现 io.Reader\n```\n\n### 类型 switch（Type Switch）\n适合对多个可能的动态类型分支处理：\n\n```go\nfunc describe(x any) {\n    switch v := x.(type) {\n    case nil:\n        fmt.Println(\"nil\")\n    case int:\n        fmt.Printf(\"int: %d\\n\", v)       // v 是 int\n    case string:\n        fmt.Printf(\"string: %q\\n\", v)   // v 是 string\n    case []int:\n        fmt.Printf(\"[]int len=%d\\n\", len(v))\n    case io.Reader:\n        fmt.Println(\"reader\")\n    default:\n        fmt.Printf(\"unknown: %T\\n\", v)\n    }\n}\n```\n\n### 注意事项\n- `any` 是 `interface{}` 的别名，Go 1.18+ 引入，语义完全相同\n- 直接断言用于确定类型的场景；外部输入、反序列化结果通常用 comma-ok\n- 多类型合并 case 时，变量的静态类型仍是 switch 表达式的接口类型：`case int, string:` 中的 `v` 是 `any`\n- 类型 switch 匹配的是接口的动态类型；nil 接口会进入 `case nil`",
+    "tags": ["接口", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-016",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 函数支持多返回值，如何使用具名返回值？有什么优缺点？",
+    "answer": "### 多返回值\nGo 函数可以返回多个值，最常见的是 `(value, error)`：\n\n```go\nfunc divide(a, b float64) (float64, error) {\n    if b == 0 {\n        return 0, errors.New(\"division by zero\")\n    }\n    return a / b, nil\n}\n\nresult, err := divide(10, 2)\nif err != nil {\n    return err\n}\n_ = result\n```\n\n### 具名返回值\n在签名中给返回值命名后，它们会在函数进入时初始化为零值，并在函数体内作为普通局部变量使用：\n\n```go\nfunc minMax(nums []int) (min int, max int, ok bool) {\n    if len(nums) == 0 {\n        return 0, 0, false\n    }\n    min, max = nums[0], nums[0]\n    for _, v := range nums[1:] {\n        if v < min { min = v }\n        if v > max { max = v }\n    }\n    return min, max, true // 显式返回更清晰\n}\n```\n\n裸 `return` 会返回当前具名返回值，但只建议在很短的函数里使用。\n\n### 典型用途：defer 修改返回错误\n```go\nfunc readFile(path string) (data []byte, err error) {\n    f, err := os.Open(path)\n    if err != nil {\n        return nil, err\n    }\n    defer func() {\n        if cerr := f.Close(); cerr != nil && err == nil {\n            err = cerr\n        }\n    }()\n\n    data, err = io.ReadAll(f)\n    return data, err\n}\n```\n\n### 优缺点\n优点：\n- 返回值名称有文档作用，尤其是多个同类型返回值\n- defer 可以读取或修改最终返回值，常用于补充 close/rollback 错误\n\n缺点：\n- 裸返回会降低可读性，大函数里容易误读当前返回值\n- 变量遮蔽会制造陷阱，例如内层 `err := ...` 可能遮住具名 `err`\n- 不要为了省几行代码滥用具名返回值；公共 API 更应看重清晰性",
+    "tags": ["函数", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-017",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中可变参数函数（variadic）如何定义和调用？",
+    "answer": "### 定义和调用\n可变参数必须放在参数列表最后，函数内部看到的是一个切片：\n\n```go\nfunc sum(nums ...int) int {\n    total := 0\n    for _, n := range nums {\n        total += n\n    }\n    return total\n}\n\nfmt.Println(sum())          // 0\nfmt.Println(sum(1, 2, 3))   // 6\n\nnums := []int{1, 2, 3, 4}\nfmt.Println(sum(nums...))   // 展开切片\n```\n\n```go\nfunc f(prefix string, args ...int) {} // OK\nfunc g(args ...int, suffix string) {} // 编译错误：可变参数必须最后\n```\n\n### 切片展开的语义\n用 `s...` 展开时，传入的 variadic 参数和原切片共享同一个底层数组：\n\n```go\nfunc modify(nums ...int) {\n    nums[0] = 999\n}\n\ns := []int{1, 2, 3}\nmodify(s...)\nfmt.Println(s[0]) // 999\n```\n\n如果函数会修改元素，要在文档或命名上明确，或者在函数内部先 `append([]T(nil), nums...)` 复制。\n\n### 与 any 的常见坑\n```go\nfunc Println(a ...any) (n int, err error)\n```\n\n`[]string` 不能直接作为 `...any` 展开，因为 `[]string` 不是 `[]any`。需要逐个转换：\n\n```go\nss := []string{\"a\", \"b\"}\nargs := make([]any, len(ss))\nfor i, s := range ss {\n    args[i] = s\n}\nfmt.Println(args...)\n```\n\n### 实用模式：函数式选项\n```go\ntype Option func(*Server)\n\nfunc WithPort(port int) Option {\n    return func(s *Server) { s.port = port }\n}\n\nfunc NewServer(opts ...Option) *Server {\n    s := &Server{port: 8080}\n    for _, opt := range opts {\n        opt(s)\n    }\n    return s\n}\n```",
+    "tags": ["函数", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-018",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "请详细说明 `defer` 的执行顺序和核心特性。",
+    "answer": "### 执行顺序：LIFO\n`defer` 注册的调用会在**当前函数返回前**执行，顺序是后进先出：\n\n```go\nfunc main() {\n    defer fmt.Println(\"first\")\n    defer fmt.Println(\"second\")\n    defer fmt.Println(\"third\")\n}\n// third\n// second\n// first\n```\n\n它不是块级作用域，放在 `for` 或 `if` 里也要等外层函数返回才执行。\n\n### 参数和接收者立即求值\n`defer` 语句执行时，函数值、接收者和参数都会立即求值；真正的函数调用延迟到返回前：\n\n```go\nx := 10\ndefer fmt.Println(x) // 保存 10\nx = 20               // 最后仍输出 10\n```\n\n闭包则不同，闭包体里的变量读取发生在闭包执行时：\n\n```go\nx := 10\ndefer func() { fmt.Println(x) }()\nx = 20 // 最后输出 20\n```\n\n### 与具名返回值交互\n```go\nfunc double(x int) (result int) {\n    defer func() { result *= 2 }()\n    return x // 先把 x 赋给 result，再执行 defer，最终返回 2*x\n}\n```\n\n### 常见用途\n```go\nf, err := os.Open(\"file.txt\")\nif err != nil { return err }\ndefer f.Close()\n\nmu.Lock()\ndefer mu.Unlock()\n\nstart := time.Now()\ndefer func() { log.Println(time.Since(start)) }()\n```\n\n### 注意事项\n- 循环中 `defer` 会积累到函数结束，长循环里应提取小函数或手动释放\n- `defer` 中若要覆盖返回错误，需要使用具名返回值或显式变量\n- Go 1.14 起简单 defer 有 open-coded 优化，普通资源释放场景不必为了微小开销牺牲可读性",
+    "tags": ["defer", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-019",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "`defer`、`panic`、`recover` 三者如何配合工作？请给出完整示例并说明执行流程。",
+    "answer": "### 基本概念\n- `panic`：让当前 goroutine 进入 panicking 状态，停止当前控制流，开始展开调用栈\n- `defer`：栈展开时，每一层已注册的 defer 都会按 LIFO 执行\n- `recover`：只能在同一 goroutine 的 deferred function 中直接调用，才能截获正在传播的 panic\n\n### 示例\n```go\nfunc safeDiv(a, b int) (result int, err error) {\n    defer func() {\n        if r := recover(); r != nil {\n            err = fmt.Errorf(\"panic while dividing: %v\", r)\n        }\n    }()\n\n    result = a / b // b == 0 时 panic\n    return result, nil\n}\n\nfunc main() {\n    n, err := safeDiv(10, 0)\n    fmt.Println(n, err) // 0 panic while dividing: runtime error: integer divide by zero\n}\n```\n\n执行流程：`a / b` panic → 执行 `safeDiv` 的 defer → `recover` 拿到 panic 值并给 `err` 赋值 → `safeDiv` 正常返回。recover 后不会回到 panic 发生的那一行继续执行。\n\n### recover 的限制\n```go\nfunc bad() {\n    recover()      // 不在 defer 中，返回 nil\n    panic(\"boom\")\n}\n\nfunc alsoBad() {\n    defer func() {\n        func() { recover() }() // 不是 deferred function 直接调用，不能恢复\n    }()\n    panic(\"boom\")\n}\n\ngo func() {\n    panic(\"boom\") // 只能由这个 goroutine 自己的 defer recover\n}()\n```\n\n### 使用边界\n- 普通业务失败应返回 `error`，不要用 panic 做正常控制流\n- panic 适合不可继续的程序错误，例如越界、nil 指针、违反内部不变量\n- recover 适合放在框架边界，例如 HTTP middleware、任务调度器、goroutine worker 顶层\n- 一些运行时 fatal error（如 concurrent map writes）不能当作普通 panic 可靠 recover",
+    "tags": ["defer", "panic"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-020",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中 `error` 是什么？如何创建和处理 error？",
+    "answer": "### error 是什么\n`error` 是内置接口类型，错误是普通值，不是异常：\n\n```go\ntype error interface {\n    Error() string\n}\n```\n\n任何实现 `Error() string` 的类型都可以作为 error。\n\n### 创建 error\n```go\nvar ErrNotFound = errors.New(\"not found\")\n\nerr := fmt.Errorf(\"user %d not found\", userID)\n\ntype ValidationError struct {\n    Field   string\n    Message string\n}\n\nfunc (e *ValidationError) Error() string {\n    return fmt.Sprintf(\"validation error: %s: %s\", e.Field, e.Message)\n}\n```\n\n### 处理 error\n标准模式是立即检查，并在向上传递时补充上下文：\n\n```go\nuser, err := repo.FindUser(id)\nif err != nil {\n    return nil, fmt.Errorf(\"find user %d: %w\", id, err)\n}\nreturn user, nil\n```\n\n用 `%w` 包裹后，调用方仍可用 `errors.Is` 或 `errors.As` 判断根因：\n\n```go\nif errors.Is(err, ErrNotFound) {\n    return http.StatusNotFound\n}\n\nvar ve *ValidationError\nif errors.As(err, &ve) {\n    log.Println(ve.Field)\n}\n```\n\n### 实践要点\n- 不要忽略 error，除非明确说明为什么可以忽略\n- 不要靠字符串比较判断错误类型，用 sentinel error、类型化 error、`errors.Is/As`\n- 库函数通常返回 error；应用边界决定记录日志、重试、降级或返回给用户\n- 返回接口类型 error 时注意 nil 陷阱：不要返回一个值为 nil 的具体错误指针",
+    "tags": ["error", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-021",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "`errors.Is`、`errors.As` 和 `fmt.Errorf %w` 分别是什么？如何配合使用？",
+    "answer": "### fmt.Errorf %w：包裹 error\n`%w` 用于把一个 error 放进新的 error 中，保留错误链：\n\n```go\nvar ErrNotFound = errors.New(\"not found\")\n\nfunc findUser(id int) error {\n    return fmt.Errorf(\"find user %d: %w\", id, ErrNotFound)\n}\n```\n\n包裹后的错误字符串有上下文，但根因仍可被识别。\n\n### errors.Is：判断错误链里是否包含目标错误\n```go\nerr := findUser(42)\nfmt.Println(err)                         // find user 42: not found\nfmt.Println(err == ErrNotFound)          // false\nfmt.Println(errors.Is(err, ErrNotFound)) // true\n```\n\n`errors.Is` 会沿着 `Unwrap()` 链查找，并支持自定义 `Is(target error) bool`。\n\n### errors.As：提取错误链里的特定类型\n```go\ntype NotFoundError struct {\n    Resource string\n    ID       int\n}\nfunc (e *NotFoundError) Error() string {\n    return fmt.Sprintf(\"%s %d not found\", e.Resource, e.ID)\n}\n\nfunc getUser(id int) error {\n    return fmt.Errorf(\"get user: %w\", &NotFoundError{Resource: \"user\", ID: id})\n}\n\nvar nfe *NotFoundError\nif errors.As(getUser(42), &nfe) {\n    fmt.Println(nfe.Resource, nfe.ID)\n}\n```\n\n`errors.As` 的第二个参数必须是非 nil 指针，通常写成 `&target`。\n\n### 多错误\nGo 1.20 起，`errors.Join` 和 `fmt.Errorf` 中多个 `%w` 可以形成多错误树，`errors.Is/As` 会遍历它：\n\n```go\nerr := errors.Join(ErrNotFound, context.DeadlineExceeded)\nfmt.Println(errors.Is(err, ErrNotFound)) // true\n```\n\n### 选择建议\n- 补上下文：`fmt.Errorf(\"operation: %w\", err)`\n- 判断某个 sentinel：`errors.Is`\n- 需要读取结构化字段：`errors.As`\n- 不要用字符串匹配 error 文案做业务判断",
+    "tags": ["error", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-022",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "如何自定义一个携带更多上下文信息的 error 类型？",
+    "answer": "### 定义结构化错误类型\n自定义 error 通常包含机器可读字段、给人看的消息，以及可选的底层原因：\n\n```go\ntype AppError struct {\n    Code    int\n    Op      string\n    Message string\n    Cause   error\n}\n\nfunc (e *AppError) Error() string {\n    if e.Cause != nil {\n        return fmt.Sprintf(\"%s: [%d] %s: %v\", e.Op, e.Code, e.Message, e.Cause)\n    }\n    return fmt.Sprintf(\"%s: [%d] %s\", e.Op, e.Code, e.Message)\n}\n\nfunc (e *AppError) Unwrap() error { return e.Cause }\n```\n\n`Error()` 面向日志和人类阅读；程序判断应优先看字段，或用 `errors.Is/As`。\n\n### 构造函数和错误码\n```go\nconst (\n    ErrCodeNotFound = 404\n    ErrCodeInternal = 500\n)\n\nfunc NewNotFound(op, resource string, cause error) error {\n    return &AppError{\n        Code:    ErrCodeNotFound,\n        Op:      op,\n        Message: resource + \" not found\",\n        Cause:   cause,\n    }\n}\n```\n\n### 使用示例\n```go\nfunc GetUser(id int) (*User, error) {\n    user, err := db.Find(id)\n    if errors.Is(err, sql.ErrNoRows) {\n        return nil, NewNotFound(\"GetUser\", fmt.Sprintf(\"user(%d)\", id), err)\n    }\n    if err != nil {\n        return nil, &AppError{Code: ErrCodeInternal, Op: \"GetUser\", Message: \"db error\", Cause: err}\n    }\n    return user, nil\n}\n\nuser, err := GetUser(42)\nif err != nil {\n    var appErr *AppError\n    if errors.As(err, &appErr) && appErr.Code == ErrCodeNotFound {\n        // 返回 404 或执行降级逻辑\n    }\n    return nil, err\n}\n_ = user\n```\n\n### 设计要点\n- 需要保留根因时实现 `Unwrap()`，让 `errors.Is/As` 能穿透\n- 不要让调用方解析 `Error()` 字符串\n- 如果错误有固定类别，可定义 sentinel error 并实现 `Is` 做类别匹配\n- 返回 `error` 接口时避免返回 nil 的具体指针，防止 nil 接口陷阱",
+    "tags": ["error", "Go基础"],
+    "source": "字节"
+  },
+  {
+    "id": "go-basics-023",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "Go 中标识符大小写与可见性有什么关系？",
+    "answer": "### 规则\nGo 用标识符首字母是否为大写来决定是否导出：\n\n- 大写字母开头：exported，包外可访问\n- 小写字母开头：unexported，仅声明它的包内可访问\n\n```go\npackage account\n\ntype User struct {\n    Name  string // 导出字段\n    Email string // 导出字段\n    age   int    // 未导出字段，包外不能直接访问或设置\n}\n\nfunc NewUser(name, email string) *User { return &User{Name: name, Email: email} }\nfunc validateEmail(email string) bool { return true }\n\nvar ErrNotFound = errors.New(\"not found\")\nconst DefaultLimit = 20\n```\n\n### struct、method、interface 的影响\n- 结构体类型导出，不代表字段都导出；包外只能访问导出字段和方法\n- 接口方法如果是未导出的，包外类型基本无法实现该接口，因为未导出方法带有包身份\n- 导出 API 通常需要配套文档注释，供 `go doc` 和 lint 使用\n\n```go\ntype Reader interface {\n    Read(p []byte) (n int, err error) // 包外类型可以实现\n}\n\ntype sealed interface {\n    isAccountToken() // 未导出方法，用于限制实现者在本包内\n}\n```\n\n### 序列化与反射\n`encoding/json` 只能访问导出字段；未导出字段即使写了 tag 也不会被序列化：\n\n```go\ntype Person struct {\n    Name string `json:\"name\"`\n    age  int `json:\"age\"` // 不会输出\n}\n```\n\n这也是 Go 常用的封装方式：导出类型和构造函数，隐藏不变量字段。",
+    "tags": ["包管理", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-024",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 中 `init()` 函数的执行顺序是什么？有什么特点？",
+    "answer": "### init 的特点\n- `init` 没有参数和返回值\n- 不能手动调用，也不能被引用\n- 一个包、一个文件里都可以有多个 `init`\n- 每个被导入的包只初始化一次，即使被多个包导入\n\n### 初始化顺序\n整体顺序是：\n\n```text\n先初始化导入的包 → 当前包的包级变量 → 当前包的 init → main.main\n```\n\n更具体地说：\n- 按 import 依赖图自底向上初始化，循环导入在编译期禁止\n- 同一个包内，包级变量按依赖顺序初始化\n- 变量初始化完成后，再按源文件顺序和声明顺序执行 `init`\n- go tool 通常按文件名词法顺序把文件交给编译器，但业务代码不要依赖跨文件 init 顺序\n\n```go\n// db/db.go\nvar Driver = registerDriver()\n\nfunc init() {\n    fmt.Println(\"db init\")\n}\n\n// main.go\nimport _ \"example.com/app/db\"\n\nfunc init() { fmt.Println(\"main init\") }\nfunc main() { fmt.Println(\"main\") }\n```\n\n输出一定满足：`db` 包完成初始化后，才会执行 `main` 包的 `init` 和 `main`。\n\n### 常见用途\n- 注册数据库驱动、图片解码器、pprof handler 等副作用\n- 初始化不可变查找表或全局注册表\n- 测试包中的一次性准备\n\n### 注意事项\n- 不要在 `init` 中做复杂、耗时或可能失败的业务初始化，因为无法返回 error\n- 需要显式错误处理的资源，例如数据库连接，通常放到 `main` 或构造函数里\n- 过度依赖 init 会让依赖关系隐蔽，降低测试和复用性",
+    "tags": ["包管理", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-025",
+    "module": "Go基础",
+    "difficulty": 1,
+    "question": "`import _ \"pkg\"` 和 `import . \"pkg\"` 分别是什么意思？",
+    "answer": "### `import _ \"pkg\"`：空白导入 / 副作用导入\n空白导入会导入并初始化这个包，但不把包名绑定到当前文件作用域。初始化包括包级变量初始化和 `init()`。\n\n```go\nimport (\n    \"database/sql\"\n    _ \"github.com/lib/pq\" // 注册 postgres driver\n)\n\nfunc main() {\n    db, err := sql.Open(\"postgres\", \"...\") // driver 已注册\n    _, _ = db, err\n}\n```\n\n常见场景：数据库驱动、图片格式解码器、`net/http/pprof` handler 注册等。使用时最好在注释里说明副作用，否则读代码的人很难知道为什么需要这个导入。\n\n### `import . \"pkg\"`：点导入\n点导入会把被导入包的所有导出标识符放进当前文件作用域，调用时不需要包名前缀：\n\n```go\nimport . \"fmt\"\n\nfunc main() {\n    Println(\"hello\") // 等价于 fmt.Println\n}\n```\n\n它通常不推荐，因为会污染命名空间、降低可读性，并且更容易产生标识符冲突。少数可接受场景包括测试中有意写成外部包视角，或某些 DSL/生成代码。\n\n### 对比\n| 导入方式 | 示例 | 效果 |\n|----------|------|------|\n| 普通导入 | `import \"fmt\"` | 用 `fmt.Println` 访问 |\n| 别名导入 | `import f \"fmt\"` | 用 `f.Println` 访问 |\n| 空白导入 | `import _ \"image/png\"` | 只为包初始化副作用 |\n| 点导入 | `import . \"fmt\"` | 直接用 `Println` |\n\n空白导入和点导入都应少用；前者要求副作用合理，后者要求可读性收益大于命名污染成本。",
+    "tags": ["包管理", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-026",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "以下代码输出什么？请解释原因。\n\n```go\nfunc main() {\n    s := []int{1, 2, 3}\n    modify(s)\n    fmt.Println(s)\n\n    grow(s)\n    fmt.Println(s)\n}\n\nfunc modify(s []int) {\n    s[0] = 100\n}\n\nfunc grow(s []int) {\n    s = append(s, 4)\n    s[0] = 999\n}\n```",
+    "answer": "### 输出\n```go\n[100 2 3]\n[100 2 3]\n```\n\n### `modify` 为什么会影响外部\nslice 传参传的是 slice header 的副本，概念上包含指针、长度和容量。两个 header 不同，但指向同一个底层数组：\n\n```text\nmain.s   -> array [1, 2, 3], len=3, cap=3\nmodify.s -> array [1, 2, 3], len=3, cap=3\n```\n\n所以 `s[0] = 100` 修改的是共享底层数组，外部能看到 `[100 2 3]`。\n\n### `grow` 为什么没有影响外部\n这里 `[]int{1, 2, 3}` 的长度和容量都是 3。调用 `grow` 时已经是 `[100 2 3]`，`append(s, 4)` 容量不够，会分配新底层数组：\n\n```go\nfunc grow(s []int) {\n    s = append(s, 4) // 新数组 [100, 2, 3, 4]\n    s[0] = 999       // 改的是新数组\n}\n```\n\n外部的 slice header 仍指向旧数组，长度也仍是 3，所以第二次打印还是 `[100 2 3]`。\n\n### 追问点\n如果外部 slice 还有剩余容量，`append` 可能复用同一个底层数组，此时 `grow` 里的 `s[0] = 999` 会影响外部已有元素，但外部长度不会自动变长。\n\n```go\ns := make([]int, 3, 6)\ncopy(s, []int{1, 2, 3})\ngrow(s)\nfmt.Println(s) // 可能看到 [999 2 3]\n```\n\n如果函数需要改变调用方看到的长度，最常见做法是返回新 slice：\n\n```go\nfunc grow(s []int) []int {\n    s = append(s, 4)\n    return s\n}\n```",
+    "tags": ["切片", "Go基础"],
+    "source": "字节"
+  },
+  {
+    "id": "go-basics-027",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "解释\"接口的 nil 陷阱\"，以下代码为什么 `err != nil` 为 true？\n\n```go\nfunc getError() error {\n    var p *PathError = nil\n    return p\n}\n\nfunc main() {\n    err := getError()\n    fmt.Println(err == nil)  // false，为什么？\n}\n```",
+    "answer": "### 接口值的结构\n接口值只有在“动态类型”和“动态值”都为 nil 时才等于 nil。概念上可以理解为：\n\n```text\ninterface value = (dynamic type, dynamic value)\n```\n\n### 代码分析\n```go\nfunc getError() error {\n    var p *PathError = nil\n    return p\n}\n```\n\n`p` 是一个具体类型为 `*PathError`、值为 nil 的指针。把它返回给 `error` 接口后，接口值变成：\n\n```text\n(type: *PathError, value: nil)\n```\n\n动态类型不是 nil，所以：\n\n```go\nerr := getError()\nfmt.Println(err == nil)              // false\nfmt.Println(err.(*PathError) == nil) // true\n```\n\n如果之后调用 `err.Error()`，还可能因为 nil 指针接收者而 panic，取决于 `Error` 方法是否处理 nil。\n\n### 正确写法\n不要把“可能为 nil 的具体错误指针”直接作为 `error` 返回：\n\n```go\nfunc getError() error {\n    if failed {\n        return &PathError{Op: \"open\", Path: path}\n    }\n    return nil // 真正的 nil interface：(nil, nil)\n}\n```\n\n如果内部函数返回的是具体指针，要先判断：\n\n```go\np := makePathError()\nif p != nil {\n    return p\n}\nreturn nil\n```\n\n### 常见场景\n这个问题不限于 `error`，任何接口都一样：\n\n```go\nvar r *bytes.Buffer = nil\nvar x io.Reader = r\nfmt.Println(x == nil) // false\n```\n\n总结：接口 nil 判断看的是接口本身，不是只看内部指针值。",
+    "tags": ["接口", "Go基础"],
+    "source": "阿里"
+  },
+  {
+    "id": "go-basics-028",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "以下代码输出什么？解释 `defer` 与循环、闭包的交互。\n\n```go\nfunc main() {\n    for i := 0; i < 3; i++ {\n        defer fmt.Println(i)\n    }\n}\n\nfunc main2() {\n    for i := 0; i < 3; i++ {\n        defer func() {\n            fmt.Println(i)\n        }()\n    }\n}\n```",
+    "answer": "### `main` 输出\n```text\n2\n1\n0\n```\n\n`defer fmt.Println(i)` 在注册 defer 时会立即求值参数 `i`，分别保存 0、1、2；函数返回时按 LIFO 执行，所以输出 2、1、0。\n\n### `main2` 输出要看 Go 语言版本\n在 `go.mod` 声明 `go 1.22` 及以上的包里，循环变量按每次迭代创建，闭包分别捕获每次迭代自己的 `i`，所以输出也是：\n\n```text\n2\n1\n0\n```\n\n在 Go 1.21 及以前语义下，或等价地把 `i` 声明在循环外时，三个闭包捕获同一个变量，循环结束后 `i == 3`，所以输出：\n\n```text\n3\n3\n3\n```\n\n```go\ni := 0\nfor ; i < 3; i++ {\n    defer func() { fmt.Println(i) }()\n}\n// 仍会输出 3 3 3，因为 i 不是循环声明创建的 per-iteration 变量\n```\n\n### 跨版本最稳的写法\n把当前值作为 deferred function 的参数传入，参数会在注册 defer 时求值：\n\n```go\nfor i := 0; i < 3; i++ {\n    defer func(n int) {\n        fmt.Println(n)\n    }(i)\n}\n// 2 1 0\n```\n\n结论：`defer` 的实参立即求值，闭包读取变量发生在执行时；Go 1.22 修复的是循环语句自己声明的循环变量捕获问题，不代表所有闭包捕获都变成值拷贝。",
+    "tags": ["defer", "Go基础"],
+    "source": "腾讯"
+  },
+  {
+    "id": "go-basics-029",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "为什么不能对 map 中的 struct 字段直接赋值？如何绕过这个限制？",
+    "answer": "### 问题复现\n```go\ntype Point struct{ X, Y int }\n\nm := map[string]Point{\n    \"origin\": {0, 0},\n}\n\nm[\"origin\"].X = 10 // 编译错误：cannot assign to struct field in map\n```\n\n### 原因\nmap 索引表达式得到的 value 不可寻址。可以把 `m[\"origin\"]` 理解为取出一份值副本，而不是拿到 map 桶里元素的稳定地址。\n\nGo 这样设计是因为 map 会扩容、搬迁 bucket，元素地址不稳定；如果允许对 map value 的字段取地址或直接改字段，会破坏实现和语义。\n\nslice 元素不同，它们在底层数组中有稳定地址：\n\n```go\ns := []Point{{0, 0}}\ns[0].X = 10 // OK\n```\n\n### 方案一：取出、修改、整体写回\n```go\np := m[\"origin\"]\np.X = 10\nm[\"origin\"] = p\n```\n\n这是值语义，适合小结构体，也避免共享可变对象。\n\n### 方案二：map value 存指针\n```go\nm := map[string]*Point{\n    \"origin\": {0, 0},\n}\n\nif p := m[\"origin\"]; p != nil {\n    p.X = 10\n}\n```\n\n注意：map 返回的指针值本身仍是副本，但这个指针指向的对象可修改。缺点是需要处理 nil、生命周期和 GC 压力，也可能引入共享可变状态。\n\n### 类似限制\n```go\nm[\"origin\"].Move() // 如果 Move 是 *Point 接收者，也会失败，因为需要对 map 元素取地址\n```\n\n这类场景同样要先取出再写回，或改成指针 map。",
+    "tags": ["map", "结构体"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-030",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "Go 中函数是一等公民，请解释闭包的原理，并给出一个实际应用场景中的陷阱案例。",
+    "answer": "### 闭包的原理\n闭包是函数值和它引用的外部变量一起形成的运行时对象。闭包捕获的是变量本身，而不是简单地把当前值复制进函数体。\n\n```go\nfunc makeCounter() func() int {\n    count := 0\n    return func() int {\n        count++\n        return count\n    }\n}\n\nc1 := makeCounter()\nc2 := makeCounter()\nfmt.Println(c1()) // 1\nfmt.Println(c1()) // 2，同一个 count\nfmt.Println(c2()) // 1，另一个 count\n```\n\n被闭包捕获的变量可能逃逸到堆上，由编译器逃逸分析决定；语义上不需要开发者手动管理生命周期。\n\n### 现代 Go 里的循环变量陷阱\nGo 1.22 起，包语言版本为 `go 1.22` 及以上时，`for`/`range` 语句自己声明的循环变量是每次迭代独立的，经典的 `for i := ...` 闭包打印全是 5 的问题已经被修复。\n\n但陷阱仍然存在：如果变量声明在循环外，闭包还是捕获同一个变量。\n\n```go\nfuncs := make([]func(), 0, 5)\n\ni := 0\nfor ; i < 5; i++ {\n    funcs = append(funcs, func() {\n        fmt.Println(i)\n    })\n}\n\nfor _, f := range funcs { f() }\n// 输出 5 5 5 5 5\n```\n\n### 修复方式\n显式把当前值复制到本轮作用域，或通过参数传递：\n\n```go\nfor i := 0; i < 5; i++ {\n    n := i\n    funcs = append(funcs, func() { fmt.Println(n) })\n}\n\nfor i := 0; i < 5; i++ {\n    funcs = append(funcs, func(n int) func() {\n        return func() { fmt.Println(n) }\n    }(i))\n}\n```\n\n### 工程注意\n- 闭包捕获共享可变变量时，要考虑数据竞争；goroutine 中读写同一变量需要同步\n- Go 1.22 解决的是循环声明变量的捕获问题，不改变闭包“捕获变量”的基本模型\n- 面试回答要主动说明版本差异，否则旧答案在新 Go 项目里会错误",
+    "tags": ["函数", "变量"],
+    "source": "字节"
+  },
+  {
+    "id": "go-basics-031",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 中字符串是不可变的，这意味着什么？字符串拼接的最佳实践是什么？",
+    "answer": "### 字符串不可变意味着什么\n```go\ns := \"hello\"\n// s[0] = 'H' // 编译错误：cannot assign to s[0]\n\ns = \"Hello\" // 可以让变量指向另一个字符串，但不是修改原字符串\n```\n\n字符串可以理解为 `(data, len)`，但语言层面保证字符串内容不可变。底层数据可能来自只读段，也可能来自堆；不要依赖具体布局。\n\n字符串按字节索引，`s[i]` 得到 `byte`；如果要按 Unicode 字符处理，应使用 `range` 得到 rune。\n\n### 拼接方式\n少量、单个表达式里的拼接直接用 `+`，编译器通常能做常量折叠或合并优化：\n\n```go\ns := \"Hello\" + \", \" + name\n```\n\n循环里反复 `s += part` 才是常见性能问题，因为每次都可能生成新字符串并复制已有内容：\n\n```go\nvar b strings.Builder\nb.Grow(estimatedSize)\nfor _, part := range parts {\n    b.WriteString(part)\n}\nresult := b.String()\n```\n\n已有字符串切片时优先用 `strings.Join`：\n\n```go\ns := strings.Join([]string{\"a\", \"b\", \"c\"}, \",\")\n```\n\n需要格式化时用 `fmt.Sprintf` 或 `fmt.Fprintf(&b, ...)`，但要知道 `fmt` 有解析和反射开销；性能敏感路径可用 `strconv` 和 `Builder.WriteString`。\n\n`bytes.Buffer` 更适合同时处理字节和 `io.Writer` 场景：\n\n```go\nvar buf bytes.Buffer\nio.Copy(&buf, r)\ns := buf.String()\n```\n\n### 总结\n- 少量拼接：`+`\n- 循环拼接：`strings.Builder`，最好预估容量后 `Grow`\n- 已有切片：`strings.Join`\n- 字节流或 `io.Writer`：`bytes.Buffer`",
+    "tags": ["类型", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-032",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go struct 的零值初始化是什么？有哪些实际应用？",
+    "answer": "### 零值规则\nGo 中每种类型都有零值，变量声明后会自动初始化：\n\n| 类型 | 零值 |\n|------|------|\n| 数值类型 | `0` |\n| bool | `false` |\n| string | `\"\"` |\n| pointer/slice/map/channel/function/interface | `nil` |\n| struct | 每个字段各自的零值 |\n\n```go\ntype Server struct {\n    Host    string\n    Port    int\n    Timeout time.Duration\n    TLS     bool\n}\n\nvar s Server\nfmt.Println(s.Host == \"\") // true\nfmt.Println(s.Port == 0)  // true\n```\n\n### 零值可用\nGo 鼓励类型设计成零值就处于可用状态：\n\n```go\nvar mu sync.Mutex\nmu.Lock()\nmu.Unlock()\n\nvar buf bytes.Buffer\nbuf.WriteString(\"hello\")\n\nvar once sync.Once\nonce.Do(initSomething)\n```\n\n这能减少构造函数依赖，让字段嵌入和局部变量更自然。注意 `sync.Mutex`、`sync.Once` 等零值可用，但**使用后不能复制**。\n\n### 需要显式初始化的字段\n有些 nil 零值可以读或判断，但不能完整工作：\n\n```go\nvar s []int\ns = append(s, 1) // nil slice 可 append\n\nvar m map[string]int\nfmt.Println(m[\"x\"]) // 读 OK，得到零值\n// m[\"x\"] = 1       // panic：nil map 不能写\n\nvar ch chan int\n// <-ch 或 ch <- 1 会永久阻塞\n```\n\n因此包含 map/channel 的结构体通常需要构造函数：\n\n```go\ntype Cache struct {\n    data map[string]string\n}\n\nfunc NewCache() *Cache {\n    return &Cache{data: make(map[string]string)}\n}\n```\n\n设计时要明确：零值是否可用；如果不可用，就用构造函数、文档或私有字段保证初始化。",
+    "tags": ["结构体", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-033",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "Go 中如何用接口实现多态？与面向对象语言的继承有什么本质区别？",
+    "answer": "### 接口实现多态\nGo 的多态来自接口的动态分发：函数依赖一组行为，而不是依赖具体类型。\n\n```go\ntype Shape interface {\n    Area() float64\n    Perimeter() float64\n}\n\ntype Circle struct{ Radius float64 }\nfunc (c Circle) Area() float64      { return math.Pi * c.Radius * c.Radius }\nfunc (c Circle) Perimeter() float64 { return 2 * math.Pi * c.Radius }\n\ntype Rectangle struct{ Width, Height float64 }\nfunc (r Rectangle) Area() float64      { return r.Width * r.Height }\nfunc (r Rectangle) Perimeter() float64 { return 2 * (r.Width + r.Height) }\n\nfunc printShape(s Shape) {\n    fmt.Printf(\"area=%.2f perimeter=%.2f\\n\", s.Area(), s.Perimeter())\n}\n```\n\n`Circle` 和 `Rectangle` 不需要声明 `implements Shape`；只要方法集满足接口即可。\n\n### 与继承的区别\n| 维度 | 继承 | Go 接口 |\n|------|------|---------|\n| 关系 | 子类显式继承父类 | 结构化类型，隐式满足方法集 |\n| 代码复用 | 继承父类实现 | 组合、嵌入、普通字段委托 |\n| 多态 | 基于类层级 | 基于行为接口 |\n| 耦合 | 子类依赖父类设计 | 调用方只依赖所需方法 |\n| 扩展 | 改类层级或适配器 | 给类型增加方法即可满足更多接口 |\n\n嵌入不是继承：外层类型不会自动成为内层类型，只是获得字段和方法提升。\n\n### 设计建议\n接口通常由消费方定义，并保持小而聚焦：\n\n```go\nfunc Save(w io.Writer, data []byte) error {\n    _, err := w.Write(data)\n    return err\n}\n```\n\n“接受接口，返回具体类型”是常见经验法则，不是硬规则。返回具体类型能保留调用方能力；只有确实需要隐藏实现或替换实现时才返回接口。\n\n```go\ntype Logger interface { Log(msg string) }\ntype Saver interface { Save([]byte) error }\n\ntype Service interface {\n    Logger\n    Saver\n}\n```\n\n这种接口组合表达的是行为集合，而不是继承层级。",
+    "tags": ["接口", "结构体"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-034",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "Go 中指针的基本用法是什么？什么时候应该使用指针？",
+    "answer": "### 基本操作\n```go\nx := 42\np := &x           // 取地址，p 的类型是 *int\nfmt.Println(*p)   // 解引用，42\n*p = 100          // 通过指针修改 x\nfmt.Println(x)    // 100\n\nvar q *int        // 指针零值是 nil\nfmt.Println(q == nil)\n// *q = 1         // panic: nil pointer dereference\n```\n\n`new(T)` 分配一个 T 的零值并返回 `*T`：\n\n```go\np := new(int)\n*p = 42\n```\n\n语义上类似：\n\n```go\nvar x int\np := &x\n```\n\n具体放栈上还是堆上由编译器逃逸分析决定。\n\n### 什么时候使用指针\n需要修改调用方对象：\n\n```go\nfunc increment(n *int) { (*n)++ }\n```\n\n避免复制大对象，或避免复制包含锁的对象：\n\n```go\nfunc process(data *BigStruct) error { return nil }\n```\n\n表达可选值，区分“没传”和“传了零值”：\n\n```go\ntype Config struct {\n    Timeout *time.Duration // nil=未设置，0=明确设置为不超时\n}\n```\n\n实现需要修改接收者的指针方法：\n\n```go\nfunc (s *Stack) Push(v int) { s.data = append(s.data, v) }\n```\n\n### 什么时候避免指针\n- 小型值对象、基础类型、不可变语义，直接传值更清晰\n- slice/map/channel 本身的 descriptor 会被复制，但仍指向共享底层数据；只有需要替换 slice header、map 或 channel 本身时才考虑指针\n- 很少需要 `*interface{}`；接口值可以持有指针或值，传接口通常已经足够\n- Go 没有普通指针算术，除非使用 `unsafe`，业务代码应避免",
+    "tags": ["指针", "Go基础"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-035",
+    "module": "Go基础",
+    "difficulty": 2,
+    "question": "什么是函数类型？Go 中函数类型如何实现策略模式？",
+    "answer": "### 函数类型\n函数可以作为值传递、赋值、返回，也可以定义成具名类型：\n\n```go\ntype Handler func(string) error\ntype Predicate func(int) bool\n\nvar h Handler = func(s string) error {\n    fmt.Println(s)\n    return nil\n}\n\n_ = h(\"hello\")\n```\n\n函数值的零值是 nil，调用 nil 函数会 panic；函数值只能和 nil 比较，不能互相比较。\n\n### 函数类型实现接口\n具名函数类型可以定义方法，所以能适配接口。`http.HandlerFunc` 就是典型例子：\n\n```go\ntype HandlerFunc func(http.ResponseWriter, *http.Request)\n\nfunc (f HandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {\n    f(w, r)\n}\n```\n\n这让普通函数可以被包装成 `http.Handler`。\n\n### 策略模式\n把可变算法抽象成函数字段，比定义一堆小 struct 更轻：\n\n```go\ntype SortStrategy func([]int) []int\n\ntype Sorter struct {\n    strategy SortStrategy\n}\n\nfunc NewSorter(strategy SortStrategy) *Sorter {\n    if strategy == nil {\n        strategy = func(data []int) []int { return data }\n    }\n    return &Sorter{strategy: strategy}\n}\n\nfunc (s *Sorter) Sort(data []int) []int {\n    return s.strategy(data)\n}\n```\n\n使用：\n\n```go\nsorter := NewSorter(func(data []int) []int {\n    out := append([]int(nil), data...)\n    sort.Ints(out)\n    return out\n})\nresult := sorter.Sort([]int{3, 1, 4})\n```\n\n### 实际应用：中间件链\n```go\ntype Middleware func(http.Handler) http.Handler\n\nfunc Logger(next http.Handler) http.Handler {\n    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n        log.Printf(\"%s %s\", r.Method, r.URL.Path)\n        next.ServeHTTP(w, r)\n    })\n}\n\nhandler := Logger(Auth(RateLimit(myHandler)))\n```\n\n函数类型适合无状态或少量闭包状态的策略；状态复杂、生命周期复杂时，用结构体实现接口会更清晰。",
+    "tags": ["函数", "接口"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-036",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "以下代码输出什么？解释 `make` 创建切片时 len 和 cap 的关系。\n\n```go\nfunc main() {\n    s1 := make([]int, 5)\n    s2 := make([]int, 0, 5)\n\n    s1 = append(s1, 1)\n    s2 = append(s2, 1)\n\n    fmt.Println(s1, len(s1), cap(s1))\n    fmt.Println(s2, len(s2), cap(s2))\n}\n```",
+    "answer": "### 输出\n`s1` 一定包含 5 个零值再追加 1，`s2` 只包含追加的 1：\n\n```text\n[0 0 0 0 0 1] 6 <new-cap>\n[1] 1 5\n```\n\n在当前常见 Go 实现中，第一行的 `<new-cap>` 通常是 `10`，但规范只保证 append 后容量至少能容纳 6 个元素，不保证具体扩容策略。\n\n### 解析\n`make([]int, 5)` 表示长度为 5、容量为 5，已有 5 个可访问的零值元素：\n\n```go\ns1 := make([]int, 5) // [0 0 0 0 0], len=5, cap=5\ns1 = append(s1, 1)  // 追加到第 6 个位置\n```\n\n`make([]int, 0, 5)` 表示长度为 0、容量为 5，只预留空间，不产生可访问元素：\n\n```go\ns2 := make([]int, 0, 5) // [], len=0, cap=5\ns2 = append(s2, 1)      // [1], len=1, cap=5\n```\n\n### make 的参数\n```go\nmake([]T, length)           // cap == length\nmake([]T, length, capacity) // capacity >= length\n```\n\n### 实践建议\n已知最终元素数、准备按下标赋值：\n\n```go\ns := make([]int, n)\nfor i := range s {\n    s[i] = i\n}\n```\n\n准备逐步 append，且有预估数量：\n\n```go\ns := make([]int, 0, estimated)\nfor _, item := range items {\n    s = append(s, process(item))\n}\n```\n\n最常见坑是 `make([]T, n)` 后又 append，导致前面出现 n 个零值。",
+    "tags": ["切片", "变量"],
+    "source": "腾讯"
+  },
+  {
+    "id": "go-basics-037",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "Go 中 `interface{}` / `any` 有什么特性？为什么要谨慎使用？",
+    "answer": "### any 与 interface{}\n`any` 是 Go 1.18 引入的预声明标识符，本质上是 `interface{}` 的别名：\n\n```go\nvar x any = 42\nvar y interface{} = 42\n```\n\n空接口没有方法要求，所以所有类型都满足它。\n\n```go\nfunc printAny(v any) {\n    fmt.Printf(\"%T %v\\n\", v, v)\n}\n\nprintAny(42)\nprintAny(\"hello\")\nprintAny([]int{1, 2, 3})\nprintAny(nil)\n```\n\n### 合理使用场景\n- `fmt.Println(a ...any)` 这类确实接受任意值的 API\n- JSON/YAML 等未知结构的中间表示，例如 `map[string]any`\n- 日志字段、通用容器、测试辅助工具\n- 泛型约束里表示“不限制类型参数”：`func Clone[S ~[]E, E any](s S) S`\n\n### 为什么要谨慎\n丢失静态类型检查：\n\n```go\nfunc add(a, b any) any {\n    return a.(int) + b.(int) // 错误到运行时才暴露\n}\n```\n\n使用时需要断言或 type switch：\n\n```go\nn, ok := v.(int)\nif !ok { return errors.New(\"want int\") }\n```\n\n可能带来装箱、逃逸和反射开销，但是否分配由具体类型、大小和逃逸分析决定，不能简单说一定堆分配。\n\n还要注意接口 nil 陷阱和比较限制：如果接口动态值是 slice/map/function，比较接口值会 panic。\n\n### 替代方案\n- 类型已知：用具体类型\n- 多个类型但逻辑相同：用泛型\n- 依赖行为：定义小接口，例如 `io.Reader`\n- JSON 延迟解析：用 `json.RawMessage`，避免过早变成 `map[string]any`",
+    "tags": ["接口", "类型"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-038",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "在 Go 中，什么时候应该使用 `panic`，什么时候应该返回 `error`？",
+    "answer": "### 核心原则\n`error` 用于调用方可以预期并处理的失败；`panic` 用于程序员错误、违反内部不变量，或继续运行已经不可信的状态。\n\n### 应返回 error\n```go\nfunc ReadConfig(path string) (*Config, error)      // 文件不存在、权限不足\nfunc Fetch(ctx context.Context, url string) error  // 超时、网络失败\nfunc ParseDate(s string) (time.Time, error)        // 输入格式错误\nfunc GetUser(id int) (*User, error)                // 记录不存在\n```\n\n这些失败属于正常控制流的一部分，调用方可能重试、降级、返回 4xx/5xx 或提示用户。\n\n### 可使用 panic\n```go\nvar uuidRE = regexp.MustCompile(`^[a-f0-9-]+$`) // 硬编码正则错误就是程序错误\n\nfunc mustPositive(n int) int {\n    if n <= 0 {\n        panic(fmt.Sprintf(\"internal invariant violated: %d\", n))\n    }\n    return n\n}\n\nswitch state {\ncase Ready, Running, Stopped:\n    // ...\ndefault:\n    panic(fmt.Sprintf(\"unknown state: %v\", state))\n}\n```\n\n`MustXxx` 函数的惯例是：普通版本返回 `(T, error)`，`MustXxx` 在失败时 panic，通常用于初始化阶段或测试。\n\n### recover 放在边界\n库代码不应把可预期错误变成 panic；框架或应用边界可以 recover，记录堆栈并隔离失败：\n\n```go\nfunc Recover(next http.Handler) http.Handler {\n    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n        defer func() {\n            if v := recover(); v != nil {\n                log.Printf(\"panic: %v\\n%s\", v, debug.Stack())\n                http.Error(w, \"internal error\", http.StatusInternalServerError)\n            }\n        }()\n        next.ServeHTTP(w, r)\n    })\n}\n```\n\n### 判断标准\n- 调用方能合理处理：返回 error\n- 调用方传错参数但 API 能表达错误：优先返回 error\n- 不可能状态、内部 bug、初始化期硬编码错误：可以 panic\n- goroutine 顶层、HTTP/RPC 边界、任务调度器：适合 recover 并隔离影响",
+    "tags": ["error", "panic"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-039",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "请解释 Go 的\"组合优于继承\"理念，并给出一个实际的设计示例。",
+    "answer": "### 核心理念\nGo 没有类继承。代码复用靠组合、字段委托和嵌入；多态靠接口。这样依赖的是行为和小组件，而不是深继承树。\n\n继承常见问题包括：父类改动影响子类、层级过深难测试、多重继承或菱形继承复杂。Go 更倾向把能力拆成小接口和字段。\n\n### 组合依赖的例子\n```go\ntype Logger interface {\n    Log(level, msg string)\n}\n\ntype Metrics interface {\n    Increment(key string)\n}\n\ntype UserService struct {\n    db      *DB\n    logger  Logger\n    metrics Metrics\n}\n\nfunc NewUserService(db *DB, logger Logger, metrics Metrics) *UserService {\n    return &UserService{db: db, logger: logger, metrics: metrics}\n}\n\nfunc (s *UserService) CreateUser(name string) error {\n    s.logger.Log(\"INFO\", \"creating user: \"+name)\n    if err := s.db.Insert(name); err != nil {\n        s.logger.Log(\"ERROR\", err.Error())\n        return fmt.Errorf(\"insert user: %w\", err)\n    }\n    s.metrics.Increment(\"user.created\")\n    return nil\n}\n```\n\n测试时只需要替换小接口实现，不需要继承一个庞大基类。\n\n### 嵌入复用\n```go\ntype Base struct {\n    ID        int\n    CreatedAt time.Time\n}\n\nfunc (b Base) IsNew() bool {\n    return time.Since(b.CreatedAt) < 24*time.Hour\n}\n\ntype User struct {\n    Base\n    Name string\n}\n\ntype Post struct {\n    Base\n    Title string\n}\n```\n\n`User` 可以调用 `u.IsNew()`，但 `User` 不是 `Base` 的子类；只是选择器被提升了。\n\n### 设计注意\n- 嵌入会把字段和方法提升到外层 API，公共类型中要谨慎，避免意外暴露太多能力\n- 只是为了持有依赖时，用命名字段通常比嵌入更清楚\n- 接口应尽量小，并由消费方按需要定义\n- 组合不是“不要抽象”，而是把抽象建立在行为边界上，而不是类层级上",
+    "tags": ["结构体", "接口"],
+    "source": "高频"
+  },
+  {
+    "id": "go-basics-040",
+    "module": "Go基础",
+    "difficulty": 3,
+    "question": "Go 中类型别名（type alias）和类型定义（type definition）有什么区别？",
+    "answer": "### 类型定义：创建新类型\n```go\ntype Celsius float64\ntype Fahrenheit float64\n```\n\n`Celsius` 和 `Fahrenheit` 是两个新的定义类型，底层类型都是 `float64`，但彼此不是同一个类型：\n\n```go\nvar c Celsius = 100\nvar f Fahrenheit = 212\n\n// c = f        // 编译错误\nc = Celsius(f) // 显式转换\n\nfunc (c Celsius) ToFahrenheit() Fahrenheit {\n    return Fahrenheit(c*9/5 + 32)\n}\n```\n\n类型定义适合领域建模、增加类型安全、给类型添加方法。\n\n### 类型别名：同一个类型的另一个名字\n```go\ntype MyInt = int\n```\n\n别名不创建新类型，`MyInt` 和 `int` 完全相同：\n\n```go\ntype Rune = int32\n\ntype User = model.User // 跨包迁移时保持兼容\n```\n\nGo 1.24 起，类型别名也可以带类型参数：\n\n```go\ntype Set[K comparable] = map[K]bool\n```\n\n### 方法差异\n类型定义可以定义新方法，前提是接收者基类型定义在当前包中。\n\n别名本身不是新类型，不能给“外包类型的别名”添加方法：\n\n```go\ntype MyTime = time.Time\n// func (t MyTime) IsZero2() bool { return t.IsZero() } // 非法：不能给非本包类型定义方法\n```\n\n如果别名指向本包已有定义类型，方法实际仍绑定到原定义类型；但泛型别名、或指向已实例化泛型类型的别名不能作为方法接收者基类型。\n\n### 对比\n| 维度 | 类型定义 `type T U` | 类型别名 `type T = U` |\n|------|---------------------|------------------------|\n| 是否新类型 | 是 | 否 |\n| 与原类型赋值 | 通常需要显式转换 | 直接兼容 |\n| 方法 | 可为本包新定义类型加方法 | 共享目标类型方法，新增方法受接收者规则限制 |\n| 用途 | 类型安全、领域语义 | 渐进重构、兼容旧包路径、简化复杂类型名 |\n\n### 应用示例\n```go\ntype UserID int64\ntype OrderID int64\n\nfunc GetUser(id UserID) (*User, error) { return nil, nil }\n\nvar oid OrderID = 42\n// GetUser(oid) // 编译错误，防止 ID 混用\n```\n\n```go\n// v1 包里兼容旧 API\ntype Config = v2.Config\n```",
+    "tags": ["变量", "类型"],
+    "source": "字节"
+  }
+]

@@ -1,0 +1,326 @@
+[
+  {
+    "id": "java-basics-001",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 的基本类型、包装类型和自动装箱有哪些边界与陷阱？",
+    "answer": "### 基本类型和包装类型\n\nJava 的 8 个基本类型保存的是值本身，包装类型是对象。基本类型适合局部计算和高频字段；包装类型适合泛型、集合、可为空字段和需要对象语义的场景。\n\n| 维度 | 基本类型 | 包装类型 |\n| --- | --- | --- |\n| 空值 | 不能为 null | 可以为 null |\n| 存储 | 直接保存值 | 对象，有对象头和引用成本 |\n| 泛型/集合 | 不能直接使用 | 可以放入 List、Map 等集合 |\n| 比较 | == 比较值 | == 比较引用，值比较用 equals |\n\n### 自动装箱的坑\n\n自动装箱只是编译器帮你插入 valueOf、xxxValue 调用，不代表没有成本。\n\n~~~java\nInteger a = 128;\nInteger b = 128;\nSystem.out.println(a == b);      // false，比较引用\nSystem.out.println(a.equals(b)); // true，比较值\n\nInteger n = null;\n// int x = n; // 自动拆箱，抛 NullPointerException\n~~~\n\nInteger.valueOf 默认缓存 -128 到 127，所以小整数用 == 可能“碰巧”为 true，但代码不能依赖这个行为。Long、Short、Byte、Character 也有类似缓存边界，Float 和 Double 没有这种常用缓存。\n\n### 项目里怎么用\n\n- 数据库字段、接口 DTO 中可能缺失的值用包装类型，业务计算前显式判空。\n- 热路径、计数器、大数组优先用基本类型，避免大量装箱带来的内存和 GC 压力。\n- 包装类型比较统一用 equals 或 Objects.equals，避免 ==。\n- Map key、Set 元素如果是包装类型，要注意 null 和类型转换问题。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-002",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "String 的不可变性、常量池和 intern() 机制如何工作？",
+    "answer": "### String 为什么不可变\n\nString 底层持有不可变的字符数据。不可变带来几个直接收益：可以安全作为 HashMap key，可以缓存 hashCode，可以被字符串常量池复用，也更容易在线程之间共享。代价是频繁拼接会产生新对象，所以循环拼接应使用 StringBuilder。\n\n### 常量池和创建方式\n\n~~~java\nString a = \"hello\";\nString b = \"hello\";\nString c = new String(\"hello\");\n\nSystem.out.println(a == b);      // true，同一个常量池对象\nSystem.out.println(a == c);      // false，c 是堆上的新对象\nSystem.out.println(a.equals(c)); // true，内容相同\n~~~\n\n字面量会进入字符串常量池；new String 会创建新的 String 对象。编译期可确定的常量拼接通常会被折叠，例如 \"a\" + \"b\" 直接变成 \"ab\"；运行期变量拼接会创建新对象或由编译器转成 StringBuilder / invokedynamic 相关实现。\n\n### intern() 怎么理解\n\nintern() 会返回常量池中与当前字符串内容相同的引用；如果池中没有，则把它放入池中并返回池里的引用。它适合少量、高重复、生命周期可控的字符串去重，不适合对大量用户输入盲目 intern，否则会增加内存占用和排查难度。\n\n### 常见误区\n\n- String 不可变不等于变量不可变，变量仍可以指向另一个 String。\n- 不要用 == 比较字符串内容，除非你明确是在比较引用身份。\n- StringBuilder 不是线程安全的；StringBuffer 是同步的，但大多数局部拼接不需要它。\n- JDK 9 以后 String 内部是 byte[] 加编码标记，不再是早期的 char[]，但不可变语义不变。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-003",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "equals()、hashCode()、== 在集合和业务实体中如何正确使用？",
+    "answer": "### 三者分别比较什么\n\n| 写法 | 比较含义 | 常见位置 |\n| --- | --- | --- |\n| == | 基本类型比值，引用类型比地址 | 判断是否同一个对象、枚举比较 |\n| equals | 对象定义的“内容相等”或“业务相等” | String、包装类型、业务值对象 |\n| hashCode | 哈希容器定位桶位 | HashMap、HashSet、ConcurrentHashMap |\n\nequals 和 hashCode 是一组契约：如果 a.equals(b) 为 true，那么 a.hashCode() 必须等于 b.hashCode()。反过来不要求成立，hashCode 相同只能说明可能相等，还要再 equals 判断。\n\n### 在集合中的影响\n\nHashSet 去重、HashMap 查找 key 时，先用 hashCode 找桶，再用 equals 找具体元素。如果重写 equals 但不重写 hashCode，同一个业务对象可能在 HashSet 里出现多份，HashMap 也可能查不到之前放进去的 key。\n\n~~~java\nrecord UserKey(long tenantId, long userId) {}\n\nMap<UserKey, String> names = new HashMap<>();\nnames.put(new UserKey(1, 100), \"Alice\");\nSystem.out.println(names.get(new UserKey(1, 100))); // Alice\n~~~\n\nrecord 会按组件自动生成 equals 和 hashCode，适合表达稳定的值对象。\n\n### 业务实体要小心\n\n实体对象如果还没有持久化，id 可能为空；如果 equals 只按 id 比较，会出现多个新对象互相相等的问题。可变字段也不适合参与 hashCode，因为对象放入 HashSet 后字段变化，会导致桶位置不匹配。\n\n实践上，值对象按所有关键字段比较；持久化实体通常按稳定唯一标识比较，并避免在哈希集合中修改参与比较的字段。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-004",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "final、static、this、super 的语义边界和误用如何区分？",
+    "answer": "### final\n\nfinal 修饰变量表示引用不能重新赋值，不代表对象内容不可变。\n\n~~~java\nfinal List<String> names = new ArrayList<>();\nnames.add(\"a\");     // 可以，修改对象内容\n// names = List.of(); // 不可以，引用不能改\n~~~\n\nfinal 修饰方法表示子类不能重写；修饰类表示不能被继承。它常用于表达稳定边界，但不是线程安全的万能方案。\n\n### static\n\nstatic 属于类，不属于某个实例。静态字段被所有实例共享，适合常量、无状态工具方法、类级缓存等。静态可变状态要谨慎，因为它天然是全局共享状态，容易带来测试污染、并发问题和生命周期管理问题。\n\n### this 和 super\n\nthis 指当前对象，常用于区分成员变量和局部变量、调用当前类构造器。super 指父类视角，常用于调用父类构造器、被覆盖的方法或被隐藏的字段。\n\n~~~java\nclass Child extends Parent {\n  Child(String name) {\n    super(name); // 父类构造器必须先执行\n  }\n}\n~~~\n\n### 容易混淆的点\n\n- static 方法没有 this，因为它不依赖具体对象。\n- 子类 static 方法不是重写，而是隐藏，调用取决于引用类型。\n- final 引用加不可变类才更接近真正不可变。\n- 构造器中调用可被重写的方法有风险，子类状态可能还没初始化完成。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-005",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "异常体系如何划分，受检异常和运行时异常该如何选择？",
+    "answer": "### 异常体系\n\nJava 异常从 Throwable 开始分为 Error 和 Exception。Error 通常表示 JVM 或系统级严重问题，例如 OutOfMemoryError，一般不在业务代码里捕获后继续运行。Exception 是应用可以处理的异常，又分为受检异常和运行时异常。\n\n| 类型 | 编译器是否强制处理 | 适合表达 |\n| --- | --- | --- |\n| 受检异常 | 是 | 调用方有合理恢复动作的外部条件，如文件不存在、网络失败 |\n| RuntimeException | 否 | 参数错误、状态错误、业务规则失败、编程错误 |\n\n### 怎么选择\n\n如果调用方拿到异常后能做明确补救，例如重试、换路径、提示用户补充输入，可以考虑受检异常。如果异常表示代码 bug、非法参数、业务前置条件不满足，用运行时异常更自然。现代 Web 服务中，很多团队会统一用运行时异常配合全局异常处理，把错误码、HTTP 状态和日志上下文集中管理。\n\n### 写异常时要注意\n\n- 不要吞异常，至少保留日志和上下文。\n- 包装异常时保留 cause，否则排查时会丢根因。\n- 资源关闭优先使用 try-with-resources。\n- 不要用异常做正常流程控制，高频路径抛异常成本很高。\n\n~~~java\ntry (InputStream in = Files.newInputStream(path)) {\n  return parser.parse(in);\n} catch (IOException e) {\n  throw new ConfigLoadException(\"failed to load config: \" + path, e);\n}\n~~~\n\n面试里可以补一句：异常设计不是“受检好还是运行时好”，而是看调用方是否能恢复、边界是否清晰、日志是否能定位。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-006",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "泛型为什么要类型擦除，擦除会带来哪些限制和桥接方法问题？",
+    "answer": "### 为什么是类型擦除\n\nJava 泛型是后来加入的语言特性，为了兼容老版本字节码和已有集合 API，运行期没有保留完整的泛型实参。编译器在编译期做类型检查，之后把 T 擦除为上界；没有上界时通常擦除为 Object。\n\n~~~java\nList<String> a = new ArrayList<>();\nList<Integer> b = new ArrayList<>();\nSystem.out.println(a.getClass() == b.getClass()); // true\n~~~\n\n### 擦除带来的限制\n\n- 不能直接 new T()，因为运行期不知道 T 是什么类型。\n- 不能 new T[]，数组需要运行期组件类型。\n- 不能用 instanceof List<String> 判断具体泛型参数。\n- 静态字段属于类级别，不能引用类型参数 T。\n- List<String> 和 List<Integer> 在运行期是同一个原始类型。\n\n### 桥接方法\n\n泛型擦除后还要保持多态语义，编译器会生成 bridge method。\n\n~~~java\nclass StringBox implements Comparable<StringBox> {\n  public int compareTo(StringBox other) {\n    return 0;\n  }\n}\n~~~\n\n擦除后 Comparable 的方法签名接近 compareTo(Object)，编译器会补一个桥接方法，把 Object 转成 StringBox 再调用真实方法。\n\n### 实践建议\n\n泛型主要提供编译期类型安全。需要运行期类型时，显式传 Class<T>、TypeReference 或由框架保存泛型元数据。不要滥用原始类型 List，它会绕开编译期检查，把 ClassCastException 推迟到运行期。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-007",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "注解的元注解、保留策略和运行时读取机制是怎样的？",
+    "answer": "### 元注解看什么\n\n注解本身也是一种类型，元注解用来描述注解如何使用。\n\n| 元注解 | 作用 |\n| --- | --- |\n| @Target | 限制能标在哪里，如类、方法、字段、参数 |\n| @Retention | 决定保留到源码、class 文件还是运行期 |\n| @Documented | 是否进入 Javadoc |\n| @Inherited | 类级注解是否能被子类继承 |\n| @Repeatable | 同一位置是否允许重复标注 |\n\nRetention 最关键。SOURCE 只给编译器或静态工具看；CLASS 会进 class 文件但运行期反射通常读不到；RUNTIME 才能通过反射读取。\n\n### 运行时读取\n\n~~~java\nRetention retention = MyAnno.class.getAnnotation(Retention.class);\n\nMethod method = UserService.class.getDeclaredMethod(\"create\", User.class);\nMyAnno anno = method.getAnnotation(MyAnno.class);\n~~~\n\n框架通常在启动时扫描 classpath，读取类、方法、字段上的注解，再创建路由、BeanDefinition、代理或校验规则。Spring MVC 的 @RequestMapping、JUnit 的 @Test、Jackson 的 JSON 注解都是类似思路。\n\n### 注意边界\n\n- 注解本身不产生行为，行为来自编译器、框架扫描、AOP 或字节码处理。\n- 运行期大量反射读取注解有成本，框架一般会缓存解析结果。\n- @Inherited 只对类继承有效，不作用于方法、字段，也不作用于接口实现。\n- 注解属性只能使用有限类型，如基本类型、String、Class、枚举、注解和这些类型的数组。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-008",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "反射、MethodHandle 和动态代理分别适合什么场景？",
+    "answer": "### 三者解决的问题不同\n\n| 技术 | 主要能力 | 典型场景 | 代价 |\n| --- | --- | --- | --- |\n| 反射 | 运行期查看和调用类、字段、方法 | 框架扫描、序列化、依赖注入 | 可读性差，绕过封装，有性能和安全成本 |\n| MethodHandle | 更接近 JVM 调用指令的方法句柄 | 高性能动态调用、语言运行时 | API 更底层，使用门槛更高 |\n| 动态代理 | 在调用前后织入逻辑或替换实现 | AOP、RPC、事务、鉴权 | 受代理边界限制，调试链路更长 |\n\n### 动态代理要分清类型\n\nJDK 动态代理基于接口生成代理类；如果目标类没有接口，常见做法是使用 CGLIB 或 ByteBuddy 生成子类代理。Spring AOP 默认会在有接口时倾向 JDK 代理，也可以配置使用类代理。\n\n~~~java\nInvocationHandler handler = (proxy, method, args) -> {\n  long start = System.nanoTime();\n  try {\n    return method.invoke(target, args);\n  } finally {\n    log.info(\"{} cost {}\", method.getName(), System.nanoTime() - start);\n  }\n};\n~~~\n\n### 怎么回答取舍\n\n反射适合“我要知道这个类有什么，并偶尔调用”；MethodHandle 适合“我需要动态调用但想更贴近 JVM 优化”；代理适合“调用目标不变，但要统一加横切逻辑”。生产里要注意 final/private 方法、自调用、模块访问限制、异常包装和启动期扫描成本。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-009",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "枚举、record、sealed class 分别解决什么建模问题？",
+    "answer": "### enum：有限实例集合\n\n枚举适合表达固定、可穷举的状态或类型，例如订单状态、支付渠道。它比字符串常量安全，因为编译器能检查取值范围；也可以给每个枚举挂字段和行为。\n\n### record：透明的数据载体\n\nrecord 适合表达不可变的数据组合，例如坐标、请求参数、聚合 key。编译器会生成构造器、访问器、equals、hashCode、toString。\n\n~~~java\nrecord UserKey(long tenantId, long userId) {}\n~~~\n\nrecord 不是贫血模型专用语法，它可以写校验逻辑和方法；但它不适合需要复杂生命周期、可变状态或继承层次的实体。\n\n### sealed class：限制继承层次\n\nsealed class/interface 用来限制谁可以继承，适合表达封闭领域模型。\n\n~~~java\nsealed interface PaymentResult permits Success, Failed {}\nrecord Success(String tradeNo) implements PaymentResult {}\nrecord Failed(String reason) implements PaymentResult {}\n~~~\n\n它常和 switch 模式匹配配合，让编译器帮助检查分支是否覆盖完整。\n\n### 选型口径\n\n| 场景 | 更适合 |\n| --- | --- |\n| 固定取值，并且每个值可有行为 | enum |\n| 简单不可变数据载体 | record |\n| 一组受控子类型，要求穷尽处理 | sealed class/interface |\n\n面试里重点不是背语法，而是讲它们如何减少非法状态、样板代码和分支遗漏。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-010",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "模式匹配和 switch 表达式如何改善类型判断与分支逻辑？",
+    "answer": "### 它解决什么问题\n\n传统 Java 写类型分支时，经常需要 instanceof 后再强转，代码啰嗦且容易漏分支。模式匹配把“判断类型”和“绑定变量”放在一起，switch 表达式再提供更清晰的返回值语义。\n\n~~~java\nstatic String label(Object value) {\n  return switch (value) {\n    case String s when !s.isBlank() -> \"text:\" + s;\n    case Integer i -> \"number:\" + i;\n    case null -> \"null\";\n    default -> \"unknown\";\n  };\n}\n~~~\n\n### 改善点\n\n- 少写强制类型转换，变量作用域更小。\n- switch 可以作为表达式返回值，减少临时变量和 break。\n- 对 enum、sealed 层次更容易做穷尽检查。\n- 分支条件可以更接近业务语义，例如类型加 guard 条件。\n\n### 注意事项\n\n模式匹配不是为了把所有 if 都换成 switch。分支过多、每个分支副作用很强时，可能应该拆成多态、策略或表驱动。switch 表达式适合“根据类型或固定取值计算一个结果”，不适合隐藏复杂流程。\n\n### 面试可以补充\n\nsealed interface 配合 switch 是 Java 近几年建模能力增强的关键：类型层次封闭后，编译器能提醒你是否漏了某种子类型。这比运行期靠 default 兜底更安全。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-011",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Optional 应该如何使用，哪些场景不适合使用 Optional？",
+    "answer": "### Optional 适合表达返回值可能缺失\n\nOptional 的主要用途是让方法返回值显式表达“可能没有”，避免调用方忽略 null。\n\n~~~java\nOptional<User> user = userRepository.findById(id);\nreturn user.map(User::name).orElse(\"anonymous\");\n~~~\n\n它适合出现在查询方法返回值、链式转换、需要延迟默认值计算的场景。orElseGet 比 orElse 更适合默认值构造成本较高的情况，因为前者是懒执行。\n\n### 不适合的场景\n\n- 不建议作为实体字段。ORM、序列化框架、JSON 映射处理 Optional 字段会变复杂。\n- 不建议作为方法参数。参数是否可空应通过重载、校验或明确约定表达。\n- 集合不要返回 Optional<List<T>>，空集合通常已经能表达“没有元素”。\n- 不要对 Optional 调 get 前不判断，这相当于把 NullPointerException 换成 NoSuchElementException。\n\n### 常用写法\n\n~~~java\nreturn findUser(id)\n  .filter(User::isActive)\n  .map(User::email)\n  .orElseThrow(() -> new UserNotFoundException(id));\n~~~\n\nOptional 的价值在于让缺失分支留在类型和调用链里，而不是在业务深处突然 NPE。简单本地变量、DTO 字段、性能敏感循环里没有必要强行使用。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-012",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "BigDecimal、浮点数和时间日期 API 为什么容易出错？",
+    "answer": "### 浮点数为什么不适合金额\n\nfloat 和 double 使用二进制浮点表示，很多十进制小数无法精确表达。\n\n~~~java\nSystem.out.println(0.1 + 0.2); // 0.30000000000000004\n~~~\n\n金额、费率结算、库存重量等要求十进制精度的场景应使用 BigDecimal，并优先用字符串或 valueOf 创建。\n\n~~~java\nnew BigDecimal(\"0.1\");      // 推荐\nBigDecimal.valueOf(0.1);    // 可接受，内部用 Double.toString\nnew BigDecimal(0.1);        // 不推荐，带入二进制误差\n~~~\n\nBigDecimal 还要注意 scale 和 roundingMode。除法可能除不尽，必须指定精度和舍入规则。\n\n### 时间日期 API 的坑\n\nDate 表示时间点但 API 设计老旧；Calendar 可变且复杂；SimpleDateFormat 不是线程安全的。新代码优先使用 java.time。\n\n| 类型 | 适合表达 |\n| --- | --- |\n| Instant | 机器时间点，适合存储和日志 |\n| LocalDate | 不带时间的日期，如生日 |\n| LocalDateTime | 不带时区的本地日期时间 |\n| ZonedDateTime | 带时区规则的日期时间 |\n| Duration / Period | 时间间隔 / 日期间隔 |\n\n### 项目实践\n\n数据库和接口要明确时区策略。跨系统传输通常用 UTC 时间戳或 ISO-8601 字符串；展示层再按用户时区格式化。不要用 LocalDateTime 表示全球唯一时间点，否则跨时区会歧义。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-013",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "Java 集合框架的 List、Set、Queue、Map 如何选择？",
+    "answer": "### 先按访问语义选\n\n| 接口 | 语义 | 常见实现 | 典型用途 |\n| --- | --- | --- | --- |\n| List | 有序、可重复、按下标访问 | ArrayList | 列表、分页结果、批量处理 |\n| Set | 不重复，关注成员是否存在 | HashSet、TreeSet | 去重、权限集合、标签集合 |\n| Queue / Deque | 按顺序消费或双端操作 | ArrayDeque、PriorityQueue | BFS、任务缓冲、优先级队列 |\n| Map | key 到 value 的映射 | HashMap、TreeMap、ConcurrentHashMap | 缓存、索引、聚合结果 |\n\n### 再看顺序、并发和复杂度\n\nHashMap、HashSet 关注平均 O(1) 查找；TreeMap、TreeSet 关注排序和范围查询，复杂度 O(log n)；LinkedHashMap 关注插入顺序或访问顺序；ConcurrentHashMap 关注并发读写。\n\n### 常见选择\n\n- 只需要按顺序保存并遍历：ArrayList。\n- 高频判断是否存在：HashSet。\n- key-value 查找：HashMap。\n- 需要按 key 排序或做区间查询：TreeMap。\n- 要做 LRU：LinkedHashMap accessOrder。\n- 单线程栈/队列：ArrayDeque。\n- 多线程共享映射：ConcurrentHashMap。\n\n### 易错点\n\n集合接口表达的是能力，不是性能保证。List 不一定随机访问快，Set 不一定有序，Map 的 key 必须满足稳定的 equals/hashCode。选型时要把数据规模、读写比例、是否并发、是否需要排序一起说。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-014",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "ArrayList、LinkedList、ArrayDeque 如何选型？",
+    "answer": "### ArrayList\n\nArrayList 底层是连续数组。随机访问快，按尾部追加也快；中间插入和删除需要移动元素。大多数普通列表场景优先选 ArrayList。\n\n### LinkedList\n\nLinkedList 是双向链表，理论上节点插入删除不需要移动数组，但前提是你已经拿到节点位置。Java 的 LinkedList 按下标访问需要从头或尾遍历，节点对象还带来额外内存和缓存不友好问题，所以实际项目中很少因为“插入删除多”就选它。\n\n### ArrayDeque\n\nArrayDeque 是循环数组实现的双端队列，适合做栈、队列、BFS、滑动窗口等。它通常比 Stack 和 LinkedList 更适合单线程队列/栈场景。\n\n| 场景 | 推荐 |\n| --- | --- |\n| 普通列表、分页结果、随机访问 | ArrayList |\n| 栈、队列、双端队列 | ArrayDeque |\n| 频繁在已知节点附近插入删除 | LinkedList 可考虑，但很少见 |\n\n### 注意点\n\n- ArrayList 扩容会复制数组，已知规模时可指定初始容量。\n- ArrayDeque 不允许 null，因为 null 常用来表示队列为空。\n- 多线程场景不要直接共享这些非线程安全集合，应使用并发集合、外部锁或不可变快照。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-015",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "HashMap 的 put/get、扩容、树化和哈希扰动机制是怎样的？",
+    "answer": "### put / get 大致流程\n\nHashMap 用数组加链表/红黑树存储。put 时先计算 key 的 hash，再通过数组长度定位桶位；桶为空就直接放入，不为空则比较 hash 和 equals，找到相同 key 就覆盖，否则追加到链表或树中。get 也是同样先定位桶，再在桶内查找。\n\n### 扩容\n\n元素数量超过 threshold = capacity * loadFactor 时会扩容，默认负载因子是 0.75。扩容会把数组变为原来的 2 倍，并迁移节点。JDK 8 中节点迁移可以利用旧容量的高位判断留在原位置还是移动到 oldIndex + oldCapacity，不需要完整重新计算。\n\n### 树化\n\n同一个桶链表太长时会树化，常见阈值是链表长度超过 8，且数组容量至少 64；否则优先扩容。树化后桶内查找从链表退化时的 O(n) 改善到 O(log n)，主要用于抵抗严重哈希碰撞。\n\n### 哈希扰动\n\nHashMap 数组长度是 2 的幂，定位桶位时只看低位。扰动函数会把 hash 高位信息混到低位，降低低位分布差导致的碰撞。\n\n### 常见坑\n\n- HashMap 不是线程安全的，并发写应使用 ConcurrentHashMap 或外部同步。\n- key 的 equals/hashCode 必须稳定，放入 Map 后不要修改参与计算的字段。\n- 容量估算不当会频繁扩容；大批量导入前应设置合理初始容量。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-016",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "ConcurrentHashMap 的并发模型和 HashMap 有何不同？",
+    "answer": "### HashMap 的问题\n\nHashMap 适合单线程或外部同步场景。并发写入 HashMap 可能出现数据覆盖、结构不一致、可见性问题。即使 JDK 8 以后避免了早期扩容死循环的典型问题，也不能把 HashMap 当并发容器用。\n\n### ConcurrentHashMap 的并发模型\n\nJDK 8 的 ConcurrentHashMap 不再使用旧版 Segment 数组作为主要分段锁模型，而是以数组桶为粒度，结合 volatile、CAS 和 synchronized 控制并发。\n\n- 读操作大多不加锁，通过 volatile 保证可见性。\n- 插入空桶时常用 CAS。\n- 桶内发生冲突时，对桶头节点加 synchronized。\n- 扩容时多个线程可以协助迁移，降低单线程扩容停顿。\n\n### 使用差异\n\n| 点 | HashMap | ConcurrentHashMap |\n| --- | --- | --- |\n| 并发安全 | 否 | 是，适合并发读写 |\n| null key/value | 允许一个 null key 和多个 null value | 不允许 null |\n| 迭代器 | fail-fast | 弱一致性 |\n| 复合操作 | 需要自己同步 | 提供 compute、merge、putIfAbsent 等原子方法 |\n\n### 实践建议\n\n并发计数用 LongAdder 或 compute 相关方法；缓存初始化用 computeIfAbsent，但 mapping function 不要做长时间阻塞操作，避免锁住桶。需要强一致多步骤事务时，ConcurrentHashMap 也不够，需要更高层锁或数据库约束。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-017",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "LinkedHashMap、TreeMap、EnumMap 分别适合哪些业务场景？",
+    "answer": "### LinkedHashMap\n\nLinkedHashMap 在 HashMap 基础上维护双向链表，可以保持插入顺序，也可以按访问顺序移动节点。它最经典的用途是实现简单 LRU。\n\n~~~java\nnew LinkedHashMap<String, String>(16, 0.75f, true) {\n  protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {\n    return size() > 1000;\n  }\n};\n~~~\n\n### TreeMap\n\nTreeMap 基于红黑树，按 key 的自然顺序或 Comparator 排序，适合范围查询、排序遍历、找大于/小于某个 key 的相邻元素。代价是查找、插入、删除通常是 O(log n)，不如 HashMap 的平均 O(1)。\n\n### EnumMap\n\nEnumMap 的 key 必须是同一种枚举。它内部可以用枚举 ordinal 做数组下标，内存紧凑、速度快，非常适合状态到处理器、枚举到配置的映射。\n\n| 场景 | 推荐 |\n| --- | --- |\n| 保持插入顺序、访问顺序、简单 LRU | LinkedHashMap |\n| 按 key 排序、范围查询 | TreeMap |\n| key 是枚举 | EnumMap |\n\n### 注意点\n\nTreeMap 的比较器要和 equals 语义协调，否则 compare 返回 0 的两个 key 会被认为是同一个 key。LinkedHashMap 和 TreeMap 都不是线程安全的，多线程共享要加同步或使用并发方案。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-018",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "fail-fast、fail-safe 和弱一致性迭代器分别意味着什么？",
+    "answer": "### fail-fast\n\nfail-fast 迭代器会记录集合的修改次数，遍历期间如果发现结构性修改，尽快抛 ConcurrentModificationException。ArrayList、HashMap 的普通迭代器属于这类。\n\n它只是 bug 提醒，不是并发安全保证。因为并发下检测不一定及时，也不能靠捕获这个异常来做业务控制。\n\n### fail-safe\n\n很多人把“遍历时不抛并发修改异常”叫 fail-safe，典型例子是 CopyOnWriteArrayList。它迭代的是快照，遍历期间的修改不会影响当前迭代器。\n\n优点是读多写少场景很简单；缺点是每次写都会复制数组，写多或数据大时成本很高。\n\n### 弱一致性\n\nConcurrentHashMap 的迭代器通常称为弱一致性：遍历时允许并发修改，不抛 ConcurrentModificationException，可能看到部分新数据，也可能看不到。它反映的是并发容器的工程折中。\n\n| 类型 | 是否抛异常 | 是否看到修改 | 适合场景 |\n| --- | --- | --- | --- |\n| fail-fast | 可能抛 | 不保证 | 单线程集合误修改提醒 |\n| 快照迭代 | 不抛 | 看不到当前修改 | 读多写少 |\n| 弱一致性 | 不抛 | 可能看到部分修改 | 并发读写 |\n\n回答时要强调：遍历一致性和线程安全不是一回事，选择集合要看读写比例和一致性要求。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-019",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Comparable 与 Comparator 如何配合排序集合使用？",
+    "answer": "### Comparable 和 Comparator\n\nComparable 写在类内部，表示这个类的自然顺序；Comparator 写在类外部，表示某个使用场景下的排序策略。\n\n~~~java\nrecord User(String name, int age) {}\n\nComparator<User> byAgeThenName =\n  Comparator.comparingInt(User::age).thenComparing(User::name);\n~~~\n\n如果一个类型只有一种稳定、通用的排序方式，可以实现 Comparable。例如 Integer、String。如果同一个类型在不同页面、报表、业务规则里排序不同，更适合用 Comparator。\n\n### 和排序集合的关系\n\nTreeSet、TreeMap 依赖 compareTo 或 Comparator 判断顺序，也会用“比较结果是否为 0”判断元素或 key 是否重复。这一点非常重要：compare 返回 0 的两个对象，在 TreeSet 中会被当成同一个元素。\n\n### 常见坑\n\n- compareTo 与 equals 不一致时，HashSet 和 TreeSet 的去重结果可能不同。\n- 不要用 o1.age - o2.age 写比较，可能整数溢出；用 Integer.compare。\n- Comparator 要处理 null 时显式使用 nullsFirst/nullsLast。\n- 排序字段如果可变，对 TreeSet/TreeMap 是灾难，修改后树结构不会自动调整。\n\n### 总结口径\n\n可以说：Comparable 是类型自己的默认顺序，Comparator 是外部策略；在排序集合中，比较器不仅决定顺序，还决定“是否同一个元素”。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-020",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Stream API 的中间操作、终止操作和惰性求值如何工作？",
+    "answer": "### Stream 的执行模型\n\nStream 表达的是一条数据处理流水线。中间操作只描述转换，不立即执行；终止操作触发真正遍历。\n\n~~~java\nList<String> names = users.stream()\n  .filter(User::active)     // 中间操作\n  .map(User::name)          // 中间操作\n  .limit(10)                // 中间操作\n  .toList();                // 终止操作\n~~~\n\nfilter、map、peek、sorted、distinct、limit 都是中间操作；collect、toList、forEach、reduce、count、anyMatch 是终止操作。没有终止操作，前面的流水线不会执行。\n\n### 惰性求值的价值\n\n惰性让 Stream 可以融合多个操作，并在短路操作时提前结束。例如 anyMatch 找到一个满足条件的元素后就可以停止遍历；limit 可以减少后续处理数量。\n\n### 有状态和无状态操作\n\nmap、filter 通常是无状态操作，容易流水线化。sorted、distinct、limit 在某些情况下需要保存状态或影响数据顺序，成本更高，并行时也更复杂。\n\n### 使用边界\n\nStream 适合表达集合转换，不适合隐藏复杂副作用。不要在 map/filter 里修改外部集合、发网络请求或写数据库。遇到异常处理复杂、流程分支很多、调试困难时，普通 for 循环往往更清晰。\n\n另外，来自 IO 的 Stream 要注意关闭，例如 Files.lines 应放在 try-with-resources 中。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-021",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "parallelStream 的执行模型、收益和风险是什么？",
+    "answer": "### parallelStream 怎么跑\n\nparallelStream 基于 ForkJoinPool，把数据拆分成多个子任务并行处理，默认使用公共 commonPool。它能不能快，取决于数据是否容易拆分、每个元素处理是否足够重、是否没有共享可变状态。\n\n### 适合的场景\n\n- CPU 密集型计算。\n- 数据量足够大，拆分成本相对处理成本很低。\n- 操作无副作用，不依赖顺序。\n- 数据源易拆分，例如 ArrayList、数组、范围流。\n\n### 不适合的场景\n\n- 阻塞 IO、数据库访问、远程调用。\n- 小集合或每个元素处理很轻。\n- 需要写共享 List、Map、计数器等可变状态。\n- Web 服务中随手 parallelStream，和其他业务共用 commonPool，容易互相影响。\n\n~~~java\n// 不推荐：并发修改外部集合\nList<String> result = new ArrayList<>();\nusers.parallelStream().forEach(u -> result.add(u.name()));\n~~~\n\n应使用 collect、toList 或线程安全聚合方式。\n\n### 怎么判断收益\n\n不要凭感觉改 parallelStream。要用 JMH 或接近真实数据量的压测比较吞吐、延迟、CPU、GC 和线程池影响。需要隔离线程资源时，应显式设计自己的并发任务和线程池，而不是依赖公共池的隐式行为。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-022",
+    "module": "Java基础",
+    "difficulty": 3,
+    "question": "Java 不可变集合、只读视图和 List.of 有什么区别？",
+    "answer": "### 三个概念先分开\n\n不可变集合表示集合结构不能再变；只读视图表示你不能通过这个视图修改，但底层集合可能还会变；List.of 创建的是 JDK 提供的不可修改集合实例。\n\n| 写法 | 能否通过它修改 | 是否受原集合变化影响 | 额外限制 |\n| --- | --- | --- | --- |\n| Collections.unmodifiableList(list) | 不能 | 会 | 原 list 改了，视图跟着变 |\n| List.of(a, b) | 不能 | 不依赖外部集合 | 不允许 null |\n| List.copyOf(list) | 不能 | 通常是快照语义 | 不允许 null |\n\n~~~java\nList<String> raw = new ArrayList<>();\nList<String> view = Collections.unmodifiableList(raw);\nraw.add(\"a\");\nSystem.out.println(view); // [a]\n~~~\n\n### 不可变不等于深不可变\n\n集合不能增删元素，不代表元素对象本身不能变。如果 List.of 里放的是可变 User，对 User 字段的修改仍会被观察到。真正深不可变需要元素本身也是不可变对象，或者做防御性拷贝。\n\n### 项目实践\n\n对外返回集合时，不想暴露内部可变状态，可以返回 List.copyOf。配置项、白名单、固定枚举映射可以用 List.of、Set.of、Map.of。高并发读场景中，不可变快照也能减少锁竞争。\n\n常见误区是把 unmodifiableList 当成快照，它只是包装视图。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-023",
+    "module": "Java基础",
+    "difficulty": 3,
+    "question": "Java 序列化、JSON、Protobuf 在对象传输上如何取舍？",
+    "answer": "### 三种方式的定位\n\n| 方式 | 优点 | 缺点 | 适合场景 |\n| --- | --- | --- | --- |\n| Java 原生序列化 | 使用门槛低，保留对象图 | 安全风险高，强耦合类结构，跨语言差 | 不推荐做外部协议 |\n| JSON | 可读性好，生态广，调试方便 | 体积较大，类型约束弱 | HTTP API、配置、日志、前后端交互 |\n| Protobuf | 体积小，速度快，schema 明确，跨语言好 | 可读性差，需要维护 proto | RPC、消息、移动端/高性能链路 |\n\n### 为什么不推荐 Java 原生序列化做协议\n\n它和 Java 类结构强绑定，serialVersionUID、字段变化、类名包名变化都会影响兼容性。更重要的是，反序列化历史上有大量安全问题，处理不可信输入时尤其危险。\n\n### JSON 的取舍\n\nJSON 适合对人友好和迭代快的场景。它的问题是缺少强 schema，数字精度、日期格式、多态类型、字段兼容都要约定清楚。对外 API 中，新增字段通常兼容，删除或改语义要谨慎。\n\n### Protobuf 的取舍\n\nProtobuf 通过字段编号保证演进能力。新增字段通常安全；不要复用已删除字段编号；字段含义不要随意改变。它适合服务间通信和消息队列，但排查时需要配套工具解码。\n\n选型时优先看边界：给人调试还是给机器高效传输，是否跨语言，是否需要长期兼容，输入是否可信。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-024",
+    "module": "Java基础",
+    "difficulty": 3,
+    "question": "如何根据数据规模、访问模式和并发需求选择集合实现？",
+    "answer": "### 先问四个问题\n\n集合选型不要从类名开始，而要从访问模式开始：\n\n1. 是否需要按下标访问、保持顺序、去重、排序或范围查询？\n2. 读多还是写多，数据量大概多少？\n3. 是否多线程共享，对一致性要求是什么？\n4. key 或元素的 equals/hashCode/Comparator 是否稳定？\n\n### 常见决策\n\n| 需求 | 更合适的选择 |\n| --- | --- |\n| 顺序列表、随机访问 | ArrayList |\n| 去重和快速存在性判断 | HashSet |\n| 有序去重或范围查询 | TreeSet |\n| key-value 快速查找 | HashMap |\n| 按 key 排序或区间扫描 | TreeMap |\n| 保留访问顺序、实现 LRU | LinkedHashMap |\n| 单线程队列/栈/双端队列 | ArrayDeque |\n| 并发 key-value | ConcurrentHashMap |\n| 读多写少快照遍历 | CopyOnWriteArrayList |\n\n### 数据规模会改变答案\n\n几十个元素时，可读性通常比极致性能重要；百万级元素时，内存布局、扩容、装箱、对象头、缓存局部性都会明显影响性能。比如大量 int 放进 List<Integer> 会产生装箱对象，可能不如 int[] 或专门的 primitive collection。\n\n### 并发场景别只换容器\n\nConcurrentHashMap 能保证单次操作线程安全，但不能自动保证跨多个 key、多个步骤的业务原子性。需要事务语义时，应使用数据库约束、锁、消息串行化或更高层的并发控制。\n\n面试里可以按“语义 -> 复杂度 -> 并发 -> 内存 -> 维护性”这个顺序回答，而不是背所有集合实现。",
+    "tags": ["Java 核心", "Java基础"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-025",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "封装、继承、多态在 Java 中如何落地，过度继承有什么问题？",
+    "answer": "### 三个特性怎么落到代码\n\n封装不是简单把字段 private，而是把对象内部状态和规则收在对象边界里，让外部只能通过稳定方法使用它。继承表达稳定的 is-a 关系，子类应该能替代父类。多态让调用方依赖抽象，运行期按实际对象执行不同实现。\n\n~~~java\ninterface PayChannel {\n  PayResult pay(PayRequest request);\n}\n\nfinal class WechatPay implements PayChannel {\n  public PayResult pay(PayRequest request) {\n    return doWechatPay(request);\n  }\n}\n~~~\n\n调用方只依赖 PayChannel，不关心具体支付渠道，这就是多态带来的扩展能力。\n\n### 过度继承的问题\n\n继承会把子类绑定到父类实现细节上。父类新增字段、修改模板流程、改变 protected 方法语义，都可能影响所有子类。层级太深时，读代码要沿着多层父类跳转，测试也更难隔离。\n\n典型坏味道包括：为了复用两行代码建立父类；子类大量覆盖父类方法；父类暴露很多 protected 状态；新增一个变化点要改整条继承链。\n\n### 更好的口径\n\n稳定的类型层次可以继承，例如 InputStream、抽象语法树节点；功能拼装、策略变化、外部依赖更适合组合和接口。回答时要强调：OOP 的目标不是多用继承，而是把变化限制在清晰边界里。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-026",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "重载、重写、隐藏和动态绑定有什么区别？",
+    "answer": "### 重载和重写\n\n重载发生在同一个类中，方法名相同、参数列表不同，编译期根据静态类型和参数选择目标方法。返回值不同不能单独构成重载。\n\n重写发生在父子类之间，子类提供和父类同签名的实例方法实现，运行期根据对象真实类型动态分派。\n\n~~~java\nclass Parent {\n  void call(Number n) { System.out.println(\"parent number\"); }\n  void run() { System.out.println(\"parent\"); }\n}\n\nclass Child extends Parent {\n  void call(Integer n) { System.out.println(\"child integer\"); } // 重载，不是重写\n  @Override void run() { System.out.println(\"child\"); }         // 重写\n}\n~~~\n\n### 隐藏\n\n字段和 static 方法没有真正的运行期多态。子类定义同名字段或 static 方法，属于隐藏，访问结果取决于引用的静态类型，而不是对象真实类型。\n\n### 动态绑定\n\nJava 的实例方法默认是虚方法，调用时会动态绑定到实际对象的方法实现。private、static、final 方法以及构造器不参与普通重写多态。\n\n### 容易答错的点\n\n- @Override 能让编译器帮你发现“以为重写，其实只是重载”的问题。\n- 重写方法不能缩小可见性，抛出的受检异常也不能比父类更宽。\n- 多态看的是实例方法；字段访问、static 方法调用不要套用多态结论。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-027",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "接口、抽象类、默认方法和密封接口如何取舍？",
+    "answer": "### 接口\n\n接口表达能力契约，适合定义“能做什么”。它可以多实现，适合作为服务边界、策略、插件扩展点。Java 8 之后接口可以有 default 方法，用来兼容接口演进，但默认方法不应该塞太多状态相关逻辑。\n\n### 抽象类\n\n抽象类可以保存状态、构造器和部分通用流程，适合表达一组实现共享骨架。比如模板方法中，父类固定流程，子类填充某些步骤。\n\n### 密封接口\n\nsealed interface 限制允许哪些类型实现，适合封闭领域模型。例如支付结果只允许 Success、Failed、Pending 三种。它和 switch 配合时，编译器更容易检查分支是否覆盖完整。\n\n### 怎么取舍\n\n| 场景 | 更适合 |\n| --- | --- |\n| 只定义能力，多种类型都能实现 | 接口 |\n| 需要复用状态、构造逻辑、模板流程 | 抽象类 |\n| 接口要平滑新增方法 | default 方法，但保持简单 |\n| 子类型集合封闭，需要穷尽处理 | sealed interface |\n\n### 实践边界\n\n业务服务边界通常先用接口；只有当共享流程和状态足够稳定时再引入抽象类。default 方法适合给接口增加兼容能力，不适合把业务流程塞进接口里。sealed interface 适合领域状态封闭的场景，不适合插件系统，因为插件系统通常希望第三方继续扩展。\n\n不要为了“看起来面向对象”把每个类都配一个无意义接口。只有一个实现、没有替换需求、没有测试隔离需求时，直接写类往往更清楚。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-028",
+    "module": "Java基础",
+    "difficulty": 1,
+    "question": "组合优于继承的原因是什么，在 Java 代码中如何实践？",
+    "answer": "### 为什么组合更稳\n\n继承复用的是父类实现，组合复用的是另一个对象的能力。继承会暴露父类生命周期、protected 方法、内部状态和调用顺序；组合只暴露你主动委托出去的接口，因此影响范围更小。\n\n~~~java\nfinal class OrderService {\n  private final PriceCalculator calculator;\n  private final InventoryClient inventory;\n\n  OrderService(PriceCalculator calculator, InventoryClient inventory) {\n    this.calculator = calculator;\n    this.inventory = inventory;\n  }\n}\n~~~\n\nOrderService 不需要继承 PriceCalculator，只要持有它并调用它。这样计算规则可以替换，测试时也可以注入假实现。\n\n### 什么时候继承仍然合理\n\n如果子类和父类存在稳定的 is-a 关系，并且父类专门为扩展设计，继承可以使用。例如框架中的抽象基类、模板方法、受控的领域类型层次。\n\n### 实践方式\n\n- 把变化点抽成接口或策略对象。\n- 用构造器注入依赖，避免子类去访问父类 protected 状态。\n- 用装饰器叠加功能，而不是在父类里塞越来越多开关。\n- 通过测试替身验证组合边界是否清晰。\n\n回答这题可以举反例：Stack 继承 Vector 就暴露了大量不符合栈语义的方法，这类继承会破坏封装。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-029",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "SOLID 原则分别解决哪些可维护性问题？",
+    "answer": "### SOLID 不是背缩写，而是看变化怎么隔离\n\n| 原则 | 解决的问题 | 代码里的表现 |\n| --- | --- | --- |\n| 单一职责 SRP | 一个类承担太多变化原因 | 拆分业务规则、持久化、通知、格式化等职责 |\n| 开闭原则 OCP | 每次新增类型都改老代码 | 通过接口、策略、注册表扩展 |\n| 里氏替换 LSP | 子类不能安全替代父类 | 子类不破坏父类承诺，不收窄前置条件 |\n| 接口隔离 ISP | 调用方被迫依赖不用的方法 | 拆成更小、更贴近使用方的接口 |\n| 依赖倒置 DIP | 高层业务依赖低层细节 | 高层依赖抽象，细节通过注入提供 |\n\n### 例子\n\n支付系统新增一种渠道，如果每次都在 OrderService 里加 if/else，就违反开闭原则。更好的方式是定义 PayChannel 接口，让不同渠道实现接口，再通过配置或注册表选择。\n\n### 注意不要过度设计\n\nSOLID 是判断工具，不是拆类指标。只有当变化点真实存在，抽象才有价值。为了原则而把简单逻辑拆成十几个类，会让调用链更长、调试更难、理解成本更高。\n\n### 落地判断\n\n如果一个需求频繁新增类型，比如支付渠道、导出格式、通知渠道，就优先考虑 OCP 和 DIP；如果只是简单一次性逻辑，直接代码可能更好。LSP 常被忽略，例如子类覆盖父类方法后抛出父类从不抛的异常，或者父类允许的输入子类不允许，这都会让调用方无法安全替换。\n\n面试里可以说：好设计不是没有 if，也不是到处都是接口；好设计是高频变化能局部修改，低频稳定部分保持简单。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-030",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "单例模式有哪些实现方式，如何处理线程安全和反射破坏？",
+    "answer": "### 常见实现\n\n饿汉式简单，类加载时创建实例；懒汉式延迟创建，但要处理并发；静态内部类利用类加载保证线程安全和延迟初始化；枚举单例最简洁，也天然处理序列化和反射的大部分问题。\n\n~~~java\npublic enum ConfigRegistry {\n  INSTANCE;\n\n  public String get(String key) {\n    return load(key);\n  }\n}\n~~~\n\n双重检查锁也常见，但 instance 必须是 volatile，否则可能因为指令重排序看到未完全初始化的对象。\n\n~~~java\nclass Singleton {\n  private static volatile Singleton instance;\n\n  static Singleton getInstance() {\n    if (instance == null) {\n      synchronized (Singleton.class) {\n        if (instance == null) instance = new Singleton();\n      }\n    }\n    return instance;\n  }\n}\n~~~\n\n### 反射和序列化\n\n普通私有构造器可以被反射强行调用；序列化反序列化也可能创建新实例，需要 readResolve 兜底。枚举单例由 JVM 特殊处理，更抗这些问题。\n\n### 项目中的取舍\n\n单例适合无状态服务、全局配置、注册表这类“进程内唯一”的对象。但它也会带来全局状态、测试困难和隐藏依赖。Spring 项目里很多对象默认就是容器单例，不需要再手写单例模式。",
+    "tags": ["Java 核心", "Java面向对象", "安全"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-031",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "工厂、策略、模板方法、观察者模式分别适合什么业务场景？",
+    "answer": "### 工厂模式\n\n工厂封装对象创建，适合创建逻辑复杂、实现类选择受配置或参数影响的场景。比如根据支付渠道创建 WechatPay、AliPay、StripePay。\n\n### 策略模式\n\n策略封装可替换算法。它适合“流程相同，但某一步规则不同”的场景，例如优惠计算、风控规则、路由选择。\n\n~~~java\ninterface DiscountPolicy {\n  Money discount(Order order);\n}\n~~~\n\n调用方依赖 DiscountPolicy，不需要写一长串 if/else。\n\n### 模板方法\n\n模板方法固定流程骨架，把部分步骤留给子类实现。它适合流程非常稳定、步骤扩展点清晰的场景，比如导入文件：校验、解析、转换、落库、通知。\n\n### 观察者模式\n\n观察者用于事件通知，一方状态变化后通知多个订阅者。它适合订单创建后发积分、通知、埋点等旁路逻辑。同步观察者要注意异常隔离；异步事件要考虑可靠投递、重试和幂等。\n\n### 选择口径\n\n- 创建复杂：工厂。\n- 算法可替换：策略。\n- 流程骨架稳定：模板方法。\n- 一对多事件扩展：观察者。\n\n### 项目里的组合用法\n\n这些模式经常一起出现。比如导入系统可以用工厂选择不同文件解析器，用模板方法固定“上传、解析、校验、入库”的流程，用策略处理不同字段映射，用观察者在导入完成后发通知。关键是先找到变化点，再选模式承载变化。\n\n不要为了套模式而套模式。一个 Map<type, Handler> 有时就是比复杂类层次更清楚的策略实现。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-032",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "代理模式、装饰器模式和适配器模式如何区分？",
+    "answer": "### 三者的目标不同\n\n| 模式 | 主要目的 | 例子 |\n| --- | --- | --- |\n| 代理 | 控制访问或在调用前后加逻辑 | AOP、RPC、权限、事务 |\n| 装饰器 | 在保持同一接口的前提下叠加能力 | IO 流包装、缓存包装、压缩包装 |\n| 适配器 | 把不兼容接口转换成调用方需要的接口 | 接老系统 SDK、第三方支付接口 |\n\n### 代理\n\n代理对象和真实对象通常实现同一接口。调用方以为在调用目标对象，实际先经过代理。Spring 事务、权限校验、远程 RPC stub 都是典型代理。\n\n### 装饰器\n\n装饰器强调能力叠加，而且可以多层组合。Java IO 是经典例子：InputStream 外面套 BufferedInputStream，再套其他增强。\n\n### 适配器\n\n适配器解决接口不匹配问题。比如系统内部希望统一 PayClient，但第三方 SDK 的方法名、参数、异常都不同，就写一个 Adapter 把它翻译成内部接口。\n\n### 快速区分\n\n### 常见误判\n\n给第三方 SDK 包一层内部接口，通常是适配器，不是代理；给服务方法加事务、鉴权、日志，通常是代理；给原有 Reader 增加缓冲、解密、统计字节数，通常是装饰器。代理关注“谁能访问以及访问前后做什么”，装饰器关注“能力叠加”，适配器关注“接口翻译”。\n\n问自己一句：我是要“拦截访问”，还是“增强能力”，还是“转换接口”？拦截访问是代理，增强能力是装饰器，转换接口是适配器。真实项目里三者可能组合使用，但意图要分清。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-033",
+    "module": "Java基础",
+    "difficulty": 2,
+    "question": "Builder 模式如何解决复杂对象构造问题？",
+    "answer": "### Builder 解决什么\n\n当对象构造参数很多、可选项很多、参数之间有校验关系时，长构造器会很难读，也容易传错位置。Builder 把构造过程拆成有名字的方法，让调用方更清晰。\n\n~~~java\nOrderQuery query = OrderQuery.builder()\n  .tenantId(tenantId)\n  .status(PAID)\n  .createdAfter(start)\n  .pageSize(50)\n  .build();\n~~~\n\n### 适合场景\n\n- 参数多，尤其是多个同类型参数。\n- 可选参数多，不想写大量重载构造器。\n- 构造时需要统一校验。\n- 想创建不可变对象，字段 final，但构造过程仍然可读。\n\n### build 阶段要做校验\n\nBuilder 不应该只是 setter 换皮。build 方法应检查必填字段、参数范围和字段组合关系。例如 startTime 不能晚于 endTime，pageSize 不能超过上限。\n\n### 不要滥用\n\n只有两三个字段的简单对象没必要 Builder。DTO 如果只是框架反序列化，也未必适合 Builder。面试里可以强调：Builder 的价值是提升复杂构造的可读性和正确性，不是替代所有构造器。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-034",
+    "module": "Java基础",
+    "difficulty": 3,
+    "question": "领域对象、DTO、VO、Entity 的边界应该如何划分？",
+    "answer": "### 先按边界划分\n\n| 类型 | 关注点 | 是否有身份 | 常见位置 |\n| --- | --- | --- | --- |\n| Entity | 生命周期和身份 | 有 | 领域层、持久化映射 |\n| VO | 值语义 | 无 | 金额、坐标、时间范围 |\n| DTO | 跨边界传输 | 不强调 | 接口入参出参、RPC 消息 |\n| 领域对象 | 业务规则和行为 | 看模型 | 领域层 |\n\n### Entity\n\nEntity 重点是身份一致。两个订单对象即使字段不同，只要订单号相同，可能表示同一个业务实体。Entity 会经历创建、支付、取消、完成等生命周期。\n\n### VO\n\nVO 按值相等，通常不可变。例如 Money、Address、DateRange。VO 适合把校验和小规则收进去，减少到处传散字段。\n\n### DTO\n\nDTO 是边界对象，服务于接口兼容和传输，不应承载复杂业务规则。外部 API 的 DTO 变化要考虑版本兼容、字段默认值和脱敏。\n\n### 常见问题\n\n把数据库表对象一路传到 Controller，会让持久化细节泄漏到接口；把所有规则都写在 Service，又会变成贫血模型。比较好的做法是：DTO 负责边界，Entity/VO 承载领域规则，Repository 负责持久化转换。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-035",
+    "module": "Java基础",
+    "difficulty": 3,
+    "question": "如何识别贫血模型、过度抽象和循环依赖等设计坏味道？",
+    "answer": "### 贫血模型\n\n贫血模型的典型表现是对象只有 getter/setter，所有业务规则都堆在 Service 里。短期看简单，长期会让规则散落、重复校验、对象状态随便被改。\n\n一个判断方法：如果修改订单状态时，任何地方都能 setStatus，而不是通过 order.pay、order.cancel 这类业务方法控制，就可能是贫血模型。\n\n### 过度抽象\n\n过度抽象通常表现为类很多、命名很虚、只有一个实现、为了未来可能变化引入复杂层级。它的问题不是“抽象多”，而是抽象没有承载真实变化，反而增加阅读和调试成本。\n\n### 循环依赖\n\nA 依赖 B，B 又依赖 A，通常说明职责边界不清。解决方式可能是提取第三个协作对象、引入领域事件、把查询和命令拆开，或者重新划分模块。\n\n### 其他坏味道\n\n- 一个类同时处理校验、计算、持久化、通知。\n- 方法参数列表很长，说明缺少值对象。\n- 到处复制相同 if/else，说明变化点没有收敛。\n- 单元测试很难写，必须启动大量外部依赖，说明边界过重。\n\n### 怎么改\n\n优化时不要一上来大重构。先用测试固定行为，再围绕最高频变化点小步调整。贫血模型可以先把一条最核心的业务规则搬回领域对象；循环依赖可以先抽出双方都依赖的协作接口；过度抽象则可以删除只有一个实现、没有业务语义的中间层。\n\n判断重构是否有效，看新增需求是否减少了修改点，测试是否更容易写，调用方是否更容易理解，而不是类数量是否变多或设计图是否更复杂。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  },
+  {
+    "id": "java-basics-036",
+    "module": "Java基础",
+    "difficulty": 3,
+    "question": "面向对象代码如何用测试反推接口边界和依赖设计？",
+    "answer": "### 测试能暴露设计问题\n\n如果一个类很难测试，通常不是测试工具的问题，而是设计边界不清。需要 mock 很多无关依赖，说明职责太多；为了验证一个规则要启动数据库、缓存、消息队列，说明业务逻辑和基础设施耦合过深。\n\n### 从使用方视角写测试\n\n先写调用方希望看到的行为，再反推接口。\n\n~~~java\n@Test\nvoid should_reject_order_when_inventory_is_not_enough() {\n  inventory.givenStock(\"sku-1\", 0);\n\n  assertThatThrownBy(() -> orderService.create(command))\n    .isInstanceOf(OutOfStockException.class);\n}\n~~~\n\n这个测试会逼你思考：库存查询是不是接口？下单命令对象是否清晰？异常是业务异常还是系统异常？订单创建是否依赖具体数据库实现？\n\n### 好接口的信号\n\n- 测试只关心业务行为，不关心内部步骤。\n- 依赖可以用 fake 或 stub 替换。\n- 输入输出对象表达业务语义，而不是一堆散参数。\n- 失败场景容易构造，边界条件能单独验证。\n\n### 注意\n\n测试不是为了把私有方法都测一遍，而是固定外部可观察行为。通过测试反推设计，本质上是在问：这个对象对外承诺什么、依赖什么、变化时影响谁。",
+    "tags": ["Java 核心", "Java面向对象"],
+    "source": "精选"
+  }
+]

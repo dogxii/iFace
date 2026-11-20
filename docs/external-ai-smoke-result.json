@@ -1,0 +1,31 @@
+{
+  "generatedAt": "2026-06-17T06:32:12.183Z",
+  "packageVersion": "1.4.2",
+  "targets": {
+    "ai": true,
+    "gist": false
+  },
+  "ok": true,
+  "evidence": [
+    {
+      "check": "ai.chat",
+      "details": {
+        "model": "deepseek-chat",
+        "baseUrlHost": "api.deepseek.com",
+        "responseChars": 5,
+        "streamedChars": 5
+      }
+    },
+    {
+      "check": "ai.feedback",
+      "details": {
+        "model": "deepseek-chat",
+        "baseUrlHost": "api.deepseek.com",
+        "feedbackChars": 600,
+        "streamedChars": 600,
+        "noteChars": 725
+      }
+    }
+  ],
+  "failures": []
+}

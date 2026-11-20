@@ -1,0 +1,10 @@
+[
+  {
+    "id": "smoke-react-key-001",
+    "module": "Smoke Test",
+    "difficulty": 1,
+    "question": "Smoke Test：React key 的作用是什么？",
+    "answer": "key 用于帮助 React 在列表 diff 时识别稳定节点。稳定的 key 可以让 React 判断哪些元素只是移动、哪些元素需要新增或删除，从而避免不必要的卸载、重建和状态错位。实际面试里要强调不要用随机值作为 key，列表会重新渲染时也尽量避免直接使用数组下标。",
+    "tags": ["React", "diff", "列表渲染"]
+  }
+]

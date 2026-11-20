@@ -1,0 +1,4999 @@
+[
+  {
+    "questionId": "ts-001",
+    "checks": [
+      {
+        "id": "ts-001-check-01",
+        "kind": "single",
+        "prompt": "从接口或 `JSON.parse` 得到一个外部输入，想在使用前强制做类型收窄，更适合先标成什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`any`，这样可以直接调用任何属性和方法。"
+          },
+          {
+            "id": "b",
+            "text": "`unknown`，使用前必须通过类型守卫或断言函数收窄。"
+          },
+          {
+            "id": "c",
+            "text": "`never`，因为外部输入不可能存在。"
+          },
+          {
+            "id": "d",
+            "text": "`void`，因为接口没有返回值。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`unknown` 是安全版 `any`。它能接收任意值，但不允许直接使用，逼迫你在边界做校验。",
+        "focus": "unknown 与 any"
+      },
+      {
+        "id": "ts-001-check-02",
+        "kind": "multiple",
+        "prompt": "关于数组和元组，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`number[]` 表示同质数字集合。"
+          },
+          {
+            "id": "b",
+            "text": "`[number, number]` 更适合表达固定位置和固定长度的数据，例如二维坐标。"
+          },
+          {
+            "id": "c",
+            "text": "`readonly [id: string, score: number]` 可以表达只读且带标签的元组。"
+          },
+          {
+            "id": "d",
+            "text": "元组和普通数组完全一样，不能限制长度或位置类型。"
+          },
+          {
+            "id": "e",
+            "text": "`[string, ...number[]]` 是非法类型，元组不能带 rest。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "元组用于位置有语义的数据，普通数组用于同质集合。TS 也支持只读元组、标签元组和 rest 元组。",
+        "focus": "元组与数组"
+      },
+      {
+        "id": "ts-001-check-03",
+        "kind": "multiple",
+        "prompt": "关于 TypeScript 基础类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`void` 常用于函数没有有意义返回值。"
+          },
+          {
+            "id": "b",
+            "text": "`never` 表示不可能出现的值，常用于抛错函数和穷尽检查。"
+          },
+          {
+            "id": "c",
+            "text": "`object` 表示非原始值，通常不适合精确描述业务对象。"
+          },
+          {
+            "id": "d",
+            "text": "`strictNullChecks` 开启后，`null` 可以随意赋给 `string`。"
+          },
+          {
+            "id": "e",
+            "text": "`bigint` 不需要运行环境或编译目标支持。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "生产项目推荐开启 strict。业务对象优先写明确字段或 `Record<K, V>`，不要用宽泛 `object` 糊住结构。",
+        "focus": "特殊类型语义"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-002",
+    "checks": [
+      {
+        "id": "ts-002-check-01",
+        "kind": "single",
+        "prompt": "下面哪种场景更适合使用 `interface` 的声明合并能力？",
+        "options": [
+          {
+            "id": "a",
+            "text": "扩展全局 `Window` 或第三方库声明。"
+          },
+          {
+            "id": "b",
+            "text": "表达 `'success' | 'error'` 这类联合类型。"
+          },
+          {
+            "id": "c",
+            "text": "表达 `[number, number]` 元组。"
+          },
+          {
+            "id": "d",
+            "text": "实现条件类型工具。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`interface` 支持同名声明合并，适合库声明扩展。联合、元组、条件类型、映射类型需要 `type`。",
+        "focus": "interface 声明合并"
+      },
+      {
+        "id": "ts-002-check-02",
+        "kind": "single",
+        "prompt": "为什么 `interface extends` 和 `type A & B` 遇到冲突字段时体验不同？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`interface extends` 会静默把冲突字段变成 `any`。"
+          },
+          {
+            "id": "b",
+            "text": "`interface extends` 通常更早报错，交叉类型可能把冲突字段合成 `never`。"
+          },
+          {
+            "id": "c",
+            "text": "交叉类型不允许组合对象。"
+          },
+          {
+            "id": "d",
+            "text": "两者在所有冲突场景下完全一致。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "交叉类型是类型层面的合并运算，冲突字段可能变成不可用的 `never`，错误出现得更晚。",
+        "focus": "冲突扩展差异"
+      },
+      {
+        "id": "ts-002-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "公开对象 API、可扩展库声明可优先 `interface`。"
+          },
+          {
+            "id": "b",
+            "text": "联合类型、元组、复杂工具类型应使用 `type`。"
+          },
+          {
+            "id": "c",
+            "text": "React Props 用 `type` 或 `interface` 都可以，团队统一更重要。"
+          },
+          {
+            "id": "d",
+            "text": "`type` 可以重复声明同名别名并自动合并。"
+          },
+          {
+            "id": "e",
+            "text": "类只能 `implements interface`，不能 `implements type` 描述的对象形状。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类可以 implements 对象形状的 type 或 interface。真正关键是表达能力和团队一致性。",
+        "focus": "type 与 interface 选择"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-003",
+    "checks": [
+      {
+        "id": "ts-003-check-01",
+        "kind": "single",
+        "prompt": "为什么下面泛型版本比 `any` 版本更安全？\n\n```ts\nfunction identity<T>(value: T): T {\n  return value\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "泛型会在运行时自动校验类型。"
+          },
+          {
+            "id": "b",
+            "text": "泛型保留输入和输出的类型关系，调用后仍能得到具体类型。"
+          },
+          {
+            "id": "c",
+            "text": "泛型会把所有输入都转成字符串。"
+          },
+          {
+            "id": "d",
+            "text": "泛型只适用于 class，不能用于函数。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "泛型是类型层面的参数化，不做运行时校验。它保留类型关系，而 `any` 会丢失检查。",
+        "focus": "泛型保留关系"
+      },
+      {
+        "id": "ts-003-check-02",
+        "kind": "multiple",
+        "prompt": "关于下面函数，哪些说法正确？\n\n```ts\nfunction getProperty<T, K extends keyof T>(obj: T, key: K): T[K] {\n  return obj[key]\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`K extends keyof T` 约束 key 必须是对象已有 key。"
+          },
+          {
+            "id": "b",
+            "text": "返回值类型 `T[K]` 会跟随具体 key 变化。"
+          },
+          {
+            "id": "c",
+            "text": "`getProperty(user, 'missing')` 会在编译期报错。"
+          },
+          {
+            "id": "d",
+            "text": "`extends` 在这里表示运行时类继承。"
+          },
+          {
+            "id": "e",
+            "text": "返回值一定是 `unknown`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "泛型里的 `extends` 是类型约束。`keyof` 和索引访问类型能保留 key 与 value 的对应关系。",
+        "focus": "泛型约束"
+      },
+      {
+        "id": "ts-003-check-03",
+        "kind": "multiple",
+        "prompt": "哪些泛型设计判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "类型参数应表达真实关系，例如输入输出、key/value、data/error。"
+          },
+          {
+            "id": "b",
+            "text": "类型参数只出现一次时，通常没有必要写泛型。"
+          },
+          {
+            "id": "c",
+            "text": "默认类型参数可以让公共 API 简单场景少写类型。"
+          },
+          {
+            "id": "d",
+            "text": "所有函数都应该显式写泛型参数。"
+          },
+          {
+            "id": "e",
+            "text": "泛型会让运行时代码自动变快。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "泛型是类型建模工具，不是性能工具。优先让 TS 推断，只有表达关系和约束时再写。",
+        "focus": "泛型设计"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-004",
+    "checks": [
+      {
+        "id": "ts-004-check-01",
+        "kind": "single",
+        "prompt": "关于 TypeScript `enum`，哪项说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`enum` 只存在于类型层面，永远不会生成 JS。"
+          },
+          {
+            "id": "b",
+            "text": "普通 `enum` 会生成运行时代码，既是类型也是运行时对象。"
+          },
+          {
+            "id": "c",
+            "text": "字符串 enum 一定有反向映射。"
+          },
+          {
+            "id": "d",
+            "text": "数字 enum 不能自动递增。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`enum` 是 TS 少数会影响运行时代码的类型特性。数字 enum 有反向映射，字符串 enum 没有。",
+        "focus": "enum 运行时代码"
+      },
+      {
+        "id": "ts-004-check-02",
+        "kind": "multiple",
+        "prompt": "为什么公共库通常避免导出 `const enum`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它会在编译时内联，对消费方构建链有要求。"
+          },
+          {
+            "id": "b",
+            "text": "在 `isolatedModules`、Babel/SWC/esbuild 单文件转译等场景容易出问题。"
+          },
+          {
+            "id": "c",
+            "text": "跨包引用时可能出现编译产物和类型声明不一致的风险。"
+          },
+          {
+            "id": "d",
+            "text": "`const enum` 一定比普通 enum 生成更多运行时代码。"
+          },
+          {
+            "id": "e",
+            "text": "`const enum` 不能包含数字成员。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`const enum` 的优势是内联减少运行时代码，但代价是构建链约束。库导出要尤其谨慎。",
+        "focus": "const enum 风险"
+      },
+      {
+        "id": "ts-004-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合用联合字面量或 `as const` 对象替代 enum？",
+        "options": [
+          {
+            "id": "a",
+            "text": "API 字符串取值，例如 `'admin' | 'user' | 'guest'`。"
+          },
+          {
+            "id": "b",
+            "text": "前端配置表，希望 JS 互操作和 tree-shaking 更直接。"
+          },
+          {
+            "id": "c",
+            "text": "只需要类型约束，不需要特殊 TS enum 运行时语义。"
+          },
+          {
+            "id": "d",
+            "text": "必须依赖数字 enum 的反向映射。"
+          },
+          {
+            "id": "e",
+            "text": "需要和旧代码里的 enum 对象互操作。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "如果只表达一组字符串取值，联合字面量或 `as const` 对象通常更轻、更直接。",
+        "focus": "enum 替代方案"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-005",
+    "checks": [
+      {
+        "id": "ts-005-check-01",
+        "kind": "single",
+        "prompt": "下面代码运行时 `typeof n` 是什么？\n\n```ts\nconst n = '123' as unknown as number\nconsole.log(typeof n)\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`'number'`"
+          },
+          {
+            "id": "b",
+            "text": "`'string'`"
+          },
+          {
+            "id": "c",
+            "text": "`'bigint'`"
+          },
+          {
+            "id": "d",
+            "text": "代码会自动调用 `Number('123')`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "类型断言只影响编译期，不做运行时转换。真正转换要用 `Number()` 等运行时代码。",
+        "focus": "as 不做转换"
+      },
+      {
+        "id": "ts-005-check-02",
+        "kind": "multiple",
+        "prompt": "关于非空断言 `!`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它会从类型中移除 `null | undefined`。"
+          },
+          {
+            "id": "b",
+            "text": "如果运行时值真的为空，仍可能报错。"
+          },
+          {
+            "id": "c",
+            "text": "优先用显式判断，只在框架或初始化顺序能保证非空时谨慎使用。"
+          },
+          {
+            "id": "d",
+            "text": "它会在运行时自动创建缺失元素。"
+          },
+          {
+            "id": "e",
+            "text": "它等价于可选链 `?.`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`!` 是告诉编译器“相信我”，不会改变运行时值。滥用会隐藏真实空值风险。",
+        "focus": "非空断言"
+      },
+      {
+        "id": "ts-005-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`as const` 会尽量把数组和对象收窄为只读字面量类型。"
+          },
+          {
+            "id": "b",
+            "text": "`satisfies` 会检查表达式符合目标类型，同时保留更精确的推断。"
+          },
+          {
+            "id": "c",
+            "text": "`satisfies` 不像 `as` 那样强行把表达式改成目标类型。"
+          },
+          {
+            "id": "d",
+            "text": "`as const` 会深冻结运行时对象。"
+          },
+          {
+            "id": "e",
+            "text": "`satisfies` 会执行运行时校验。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "两者都是类型层工具。运行时验证外部数据仍应使用类型守卫或 schema 库。",
+        "focus": "as const 与 satisfies"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-006",
+    "checks": [
+      {
+        "id": "ts-006-check-01",
+        "kind": "single",
+        "prompt": "`Partial<User>` 做了什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把 `User` 的所有属性变成可选。"
+          },
+          {
+            "id": "b",
+            "text": "把 `User` 的所有属性变成只读。"
+          },
+          {
+            "id": "c",
+            "text": "只保留 `User` 中的 string 属性。"
+          },
+          {
+            "id": "d",
+            "text": "删除 `User` 的所有可选属性。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`Partial<T>` 的核心实现是映射类型 `{ [K in keyof T]?: T[K] }`。",
+        "focus": "Partial 的语义"
+      },
+      {
+        "id": "ts-006-check-02",
+        "kind": "multiple",
+        "prompt": "哪些工具类型和用途匹配？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Pick<User, 'id' | 'name'>` 只选择部分属性。"
+          },
+          {
+            "id": "b",
+            "text": "`Omit<User, 'password'>` 排除指定属性。"
+          },
+          {
+            "id": "c",
+            "text": "`Record<'admin' | 'user', string[]>` 创建固定 key 的映射。"
+          },
+          {
+            "id": "d",
+            "text": "`NonNullable<T>` 去掉 `null | undefined`。"
+          },
+          {
+            "id": "e",
+            "text": "`Readonly<T>` 会让运行时对象无法被修改。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "工具类型只影响类型系统，不会自动冻结运行时对象。运行时不可变需要 `Object.freeze` 等机制。",
+        "focus": "工具类型选择"
+      },
+      {
+        "id": "ts-006-check-03",
+        "kind": "multiple",
+        "prompt": "关于函数和 Promise 相关工具类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Parameters<typeof fn>` 提取函数参数元组。"
+          },
+          {
+            "id": "b",
+            "text": "`ReturnType<typeof fn>` 提取函数返回值类型。"
+          },
+          {
+            "id": "c",
+            "text": "`ConstructorParameters<typeof C>` 提取构造函数参数。"
+          },
+          {
+            "id": "d",
+            "text": "`Awaited<Promise<Promise<User>>>` 可得到 `User`。"
+          },
+          {
+            "id": "e",
+            "text": "`ReturnType` 会在运行时调用函数。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "这些都是类型层提取工具，不执行运行时代码。`Awaited` 比简单 `Promise<infer T>` 更贴近 thenable 行为。",
+        "focus": "函数与 Promise 工具类型"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-007",
+    "checks": [
+      {
+        "id": "ts-007-check-01",
+        "kind": "single",
+        "prompt": "下面返回类型 `value is User` 的作用是什么？\n\n```ts\nfunction isUser(value: unknown): value is User {\n  return isRecord(value) && typeof value.id === 'string'\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "把 `value` 在运行时转换成 `User`。"
+          },
+          {
+            "id": "b",
+            "text": "告诉 TypeScript：当函数返回 true 时，`value` 可以缩窄为 `User`。"
+          },
+          {
+            "id": "c",
+            "text": "让函数只能返回 `User`。"
+          },
+          {
+            "id": "d",
+            "text": "跳过函数体执行。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "类型谓词连接运行时检查和类型缩窄。它必须和真实检查逻辑一致，否则就是骗类型系统。",
+        "focus": "类型谓词"
+      },
+      {
+        "id": "ts-007-check-02",
+        "kind": "multiple",
+        "prompt": "关于常见类型守卫，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`typeof` 适合判断原始类型，但 `typeof null === 'object'`。"
+          },
+          {
+            "id": "b",
+            "text": "`instanceof` 依赖原型链，跨 iframe 或反序列化数据不一定可靠。"
+          },
+          {
+            "id": "c",
+            "text": "`in` 只能说明属性存在，不代表属性类型正确。"
+          },
+          {
+            "id": "d",
+            "text": "`in` 可以完整校验接口返回数据的所有字段类型。"
+          },
+          {
+            "id": "e",
+            "text": "类型守卫不需要任何运行时逻辑。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类型守卫本质是运行时检查。外部输入复杂时，应逐字段校验或使用 schema 库。",
+        "focus": "类型守卫边界"
+      },
+      {
+        "id": "ts-007-check-03",
+        "kind": "multiple",
+        "prompt": "为什么可辨识联合适合表达状态机或接口响应？",
+        "options": [
+          {
+            "id": "a",
+            "text": "稳定的判别字段能让 TS 在分支中准确缩窄类型。"
+          },
+          {
+            "id": "b",
+            "text": "`never` 可用于 default 分支做穷尽检查。"
+          },
+          {
+            "id": "c",
+            "text": "它能把状态和对应字段绑定在一起，减少非法组合。"
+          },
+          {
+            "id": "d",
+            "text": "它会自动做接口运行时校验。"
+          },
+          {
+            "id": "e",
+            "text": "它要求所有成员拥有完全相同字段。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "可辨识联合是类型层建模。运行时接口数据仍要校验，但在代码内部能显著提升分支安全性。",
+        "focus": "可辨识联合"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-008",
+    "checks": [
+      {
+        "id": "ts-008-check-01",
+        "kind": "single",
+        "prompt": "条件类型 `T extends U ? X : Y` 里的 `extends` 表示什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只能表示 class 继承关系。"
+          },
+          {
+            "id": "b",
+            "text": "表示类型可赋值关系。"
+          },
+          {
+            "id": "c",
+            "text": "表示运行时原型链判断。"
+          },
+          {
+            "id": "d",
+            "text": "表示模块导入关系。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "条件类型发生在类型层面。这里的 `extends` 不是运行时继承，而是“能否赋值给”。",
+        "focus": "条件类型 extends"
+      },
+      {
+        "id": "ts-008-check-02",
+        "kind": "multiple",
+        "prompt": "关于分布式条件类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "当条件左侧是裸类型参数时，传入联合类型会逐成员分发。"
+          },
+          {
+            "id": "b",
+            "text": "`T extends unknown ? T[] : never` 传入 `string | number` 得到 `string[] | number[]`。"
+          },
+          {
+            "id": "c",
+            "text": "用 `[T] extends [unknown]` 可以阻止分发。"
+          },
+          {
+            "id": "d",
+            "text": "所有条件类型都会对联合类型分发。"
+          },
+          {
+            "id": "e",
+            "text": "分布式条件类型只对 class 有效。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "是否分发取决于左侧是否为裸类型参数。元组包裹是常见的非分发技巧。",
+        "focus": "分布式条件类型"
+      },
+      {
+        "id": "ts-008-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `infer`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`infer` 只能在条件类型中使用。"
+          },
+          {
+            "id": "b",
+            "text": "它可以从函数返回值、数组元素、Promise 值等结构中提取类型。"
+          },
+          {
+            "id": "c",
+            "text": "`T extends (...args: never[]) => infer R ? R : never` 可提取返回值。"
+          },
+          {
+            "id": "d",
+            "text": "`infer` 会在运行时读取变量值。"
+          },
+          {
+            "id": "e",
+            "text": "`infer` 可以写在普通函数参数列表里。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`infer` 是类型模式匹配中的“声明待推断变量”。它完全发生在编译期。",
+        "focus": "infer 使用"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-009",
+    "checks": [
+      {
+        "id": "ts-009-check-01",
+        "kind": "single",
+        "prompt": "`keyof User` 对下面类型得到什么？\n\n```ts\ntype User = {\n  id: string\n  name: string\n  age: number\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`'id' | 'name' | 'age'`"
+          },
+          {
+            "id": "b",
+            "text": "`string`"
+          },
+          {
+            "id": "c",
+            "text": "`User[]`"
+          },
+          {
+            "id": "d",
+            "text": "`id | name | age` 三个运行时变量"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`keyof` 从对象类型中提取 key 的联合。它是类型操作，不产生运行时变量。",
+        "focus": "keyof"
+      },
+      {
+        "id": "ts-009-check-02",
+        "kind": "multiple",
+        "prompt": "关于类型位置的 `typeof`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以从运行时值提取静态类型。"
+          },
+          {
+            "id": "b",
+            "text": "常和 `as const`、`keyof` 结合，从配置对象生成类型。"
+          },
+          {
+            "id": "c",
+            "text": "`typeof config.theme` 在 `as const` 后可能得到字面量类型。"
+          },
+          {
+            "id": "d",
+            "text": "类型位置的 `typeof` 会在运行时执行表达式。"
+          },
+          {
+            "id": "e",
+            "text": "它和 JS 运行时 `typeof value` 完全是一回事。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "TS 中的类型查询 `typeof` 只在类型层使用，不执行代码；JS 的 `typeof` 是运行时操作。",
+        "focus": "typeof 类型查询"
+      },
+      {
+        "id": "ts-009-check-03",
+        "kind": "multiple",
+        "prompt": "关于映射类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`[K in keyof T]` 可以遍历对象 key 生成新对象类型。"
+          },
+          {
+            "id": "b",
+            "text": "`-readonly`、`-?` 可以移除只读和可选修饰符。"
+          },
+          {
+            "id": "c",
+            "text": "`as` 键名重映射可生成 `getName` 这类新 key。"
+          },
+          {
+            "id": "d",
+            "text": "把 key 映射到 `never` 可以过滤字段。"
+          },
+          {
+            "id": "e",
+            "text": "映射类型会遍历运行时对象并修改它。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "映射类型是类型层转换工具，常与 `keyof`、模板字面量类型和条件类型组合。",
+        "focus": "映射类型"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-010",
+    "checks": [
+      {
+        "id": "ts-010-check-01",
+        "kind": "single",
+        "prompt": "TypeScript 5+ 标准装饰器中，方法装饰器通常接收什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`target, propertyKey, descriptor`。"
+          },
+          {
+            "id": "b",
+            "text": "被装饰的原始方法和一个 context 对象。"
+          },
+          {
+            "id": "c",
+            "text": "只有方法名字符串。"
+          },
+          {
+            "id": "d",
+            "text": "只有类实例。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "标准装饰器和 legacy decorators 签名不同。旧版方法装饰器才是 `target, propertyKey, descriptor`。",
+        "focus": "标准装饰器签名"
+      },
+      {
+        "id": "ts-010-check-02",
+        "kind": "multiple",
+        "prompt": "关于标准装饰器和 legacy decorators，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "两套语义的签名、执行模型和元数据支持不同。"
+          },
+          {
+            "id": "b",
+            "text": "旧版常见于 NestJS、Angular 等生态。"
+          },
+          {
+            "id": "c",
+            "text": "旧版常配合 `experimentalDecorators` 和 `emitDecoratorMetadata`。"
+          },
+          {
+            "id": "d",
+            "text": "新标准装饰器完全兼容旧版参数装饰器。"
+          },
+          {
+            "id": "e",
+            "text": "`emitDecoratorMetadata` 是新标准装饰器的自动类型元数据机制。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "装饰器最容易混背。新标准不等于旧版加语法糖，特别是参数装饰器和 metadata 行为差异很大。",
+        "focus": "标准与旧版装饰器"
+      },
+      {
+        "id": "ts-010-check-03",
+        "kind": "multiple",
+        "prompt": "使用装饰器时，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "装饰器适合横切逻辑或框架元编程，但会增加隐式行为。"
+          },
+          {
+            "id": "b",
+            "text": "装饰器工厂可以接收配置并返回真正的装饰器。"
+          },
+          {
+            "id": "c",
+            "text": "不同装饰位置对应不同 context 类型。"
+          },
+          {
+            "id": "d",
+            "text": "所有业务逻辑都应该藏进装饰器，越隐式越好。"
+          },
+          {
+            "id": "e",
+            "text": "装饰器只影响类型系统，不可能影响运行时行为。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "装饰器会改造类或成员的运行时行为。使用范围要克制，避免普通业务逻辑难以追踪。",
+        "focus": "装饰器使用边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-011",
+    "checks": [
+      {
+        "id": "ts-011-check-01",
+        "kind": "single",
+        "prompt": "Vite 前端应用里常见 `tsconfig` 配置 `noEmit: true` 的主要原因是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "禁止 TypeScript 做类型检查。"
+          },
+          {
+            "id": "b",
+            "text": "应用由 Vite/esbuild/Rollup 负责输出，TypeScript 只做类型检查。"
+          },
+          {
+            "id": "c",
+            "text": "让所有 `.ts` 文件在浏览器中直接运行。"
+          },
+          {
+            "id": "d",
+            "text": "自动生成 `.d.ts` 声明文件。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "应用项目通常不让 `tsc` 产物参与打包。库项目才更关注 declaration、outDir、rootDir 等输出配置。",
+        "focus": "前端应用 noEmit"
+      },
+      {
+        "id": "ts-011-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 `tsconfig` 配置能提升类型检查严格度？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`strict`"
+          },
+          {
+            "id": "b",
+            "text": "`noUncheckedIndexedAccess`"
+          },
+          {
+            "id": "c",
+            "text": "`exactOptionalPropertyTypes`"
+          },
+          {
+            "id": "d",
+            "text": "`noImplicitOverride`"
+          },
+          {
+            "id": "e",
+            "text": "`skipLibCheck`"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`skipLibCheck` 是跳过声明文件检查以换取速度，不是严格性增强。`strict` 是底线，其他选项能进一步贴近运行时风险。",
+        "focus": "严格检查配置"
+      },
+      {
+        "id": "ts-011-check-03",
+        "kind": "multiple",
+        "prompt": "关于常见 `tsconfig` 配置，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`lib` 决定可用标准 API 声明，例如 DOM、ES2022。"
+          },
+          {
+            "id": "b",
+            "text": "`moduleResolution: 'bundler'` 更贴近 Vite/Webpack/Rollup 的解析方式。"
+          },
+          {
+            "id": "c",
+            "text": "`types` 配置后会限制自动注入的全局 `@types/*` 包。"
+          },
+          {
+            "id": "d",
+            "text": "`target` 只影响类型检查，不影响输出语法假设。"
+          },
+          {
+            "id": "e",
+            "text": "`jsx: 'react-jsx'` 表示必须手写 `React.createElement`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`target/lib/moduleResolution/jsx/types` 分别影响输出、标准库声明、模块解析、JSX transform 和全局类型注入。",
+        "focus": "配置语义"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-012",
+    "checks": [
+      {
+        "id": "ts-012-check-01",
+        "kind": "single",
+        "prompt": "普通布局组件允许 children 是文本、数字、元素、fragment、数组或 null，最常用的 children 类型是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`React.ReactNode`"
+          },
+          {
+            "id": "b",
+            "text": "`React.ReactElement`"
+          },
+          {
+            "id": "c",
+            "text": "`HTMLDivElement`"
+          },
+          {
+            "id": "d",
+            "text": "`MouseEvent`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`ReactNode` 覆盖 children 常见可渲染值。`ReactElement` 更窄，只表示一个 React 元素对象。",
+        "focus": "React children 类型"
+      },
+      {
+        "id": "ts-012-check-02",
+        "kind": "multiple",
+        "prompt": "关于 React + TS 事件类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`React.MouseEventHandler<HTMLButtonElement>` 可描述 button 点击处理器。"
+          },
+          {
+            "id": "b",
+            "text": "表单提交可用 `React.FormEventHandler<HTMLFormElement>`。"
+          },
+          {
+            "id": "c",
+            "text": "输入变化可用 `React.ChangeEventHandler<HTMLInputElement>`。"
+          },
+          {
+            "id": "d",
+            "text": "事件中优先读 `currentTarget`，它和泛型参数绑定更准确。"
+          },
+          {
+            "id": "e",
+            "text": "`event.target` 一定就是绑定 handler 的元素。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`target` 是真实触发事件的元素，可能是内部子元素；`currentTarget` 是当前绑定 handler 的元素。",
+        "focus": "React 事件类型"
+      },
+      {
+        "id": "ts-012-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 React 类型实践合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "透传原生 button props 可用 `React.ComponentPropsWithoutRef<'button'>`。"
+          },
+          {
+            "id": "b",
+            "text": "`useState(null)` 但后续存 User 时，应写 `useState<User | null>(null)`。"
+          },
+          {
+            "id": "c",
+            "text": "`useReducer` action 适合用可辨识联合并做 `never` 穷尽检查。"
+          },
+          {
+            "id": "d",
+            "text": "所有函数组件都必须使用 `React.FC`。"
+          },
+          {
+            "id": "e",
+            "text": "`useRef<HTMLInputElement>(null)` 后可以无条件访问 `inputRef.current.focus()`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`ref.current` 初始可能是 null，应使用可选链或判断。`React.FC` 不是必须，团队统一即可。",
+        "focus": "React 类型实践"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-013",
+    "checks": [
+      {
+        "id": "ts-013-check-01",
+        "kind": "single",
+        "prompt": "TypeScript 函数重载中，哪项说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "实现签名对调用者可见，调用者可以按实现签名任意传参。"
+          },
+          {
+            "id": "b",
+            "text": "前面的重载签名对调用者可见，最后的实现签名只负责兼容所有重载。"
+          },
+          {
+            "id": "c",
+            "text": "每个重载签名都会生成一个 JS 函数。"
+          },
+          {
+            "id": "d",
+            "text": "重载只能用于 class 方法，不能用于普通函数。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "TS 重载是类型层能力。运行时只有一个实现函数，因此实现逻辑必须覆盖所有重载分支。",
+        "focus": "重载实现签名"
+      },
+      {
+        "id": "ts-013-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景适合使用函数重载？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不同参数组合对应不同返回类型。"
+          },
+          {
+            "id": "b",
+            "text": "需要对外暴露更精确的调用签名。"
+          },
+          {
+            "id": "c",
+            "text": "返回类型不随参数变化，只是接受 `string | number` 并打印。"
+          },
+          {
+            "id": "d",
+            "text": "为了避免写任何运行时分支。"
+          },
+          {
+            "id": "e",
+            "text": "所有联合类型都应该改成重载。"
+          }
+        ],
+        "answerIds": ["a", "b"],
+        "explanation": "返回类型不随参数组合变化时，联合类型通常更简单。重载不能替代运行时判断。",
+        "focus": "何时使用重载"
+      },
+      {
+        "id": "ts-013-check-03",
+        "kind": "multiple",
+        "prompt": "关于重载设计，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "更具体的重载签名应放在更宽泛签名前面。"
+          },
+          {
+            "id": "b",
+            "text": "实现签名必须能覆盖所有重载。"
+          },
+          {
+            "id": "c",
+            "text": "箭头函数要重载，可先声明带多个 call signature 的类型。"
+          },
+          {
+            "id": "d",
+            "text": "重载签名可以和实现逻辑完全脱节，类型系统会自动修复运行时。"
+          },
+          {
+            "id": "e",
+            "text": "重载越多越好，越能表达清晰 API。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "重载过多会难维护。能用泛型映射关系表达时，泛型通常更可扩展。",
+        "focus": "重载设计细节"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-014",
+    "checks": [
+      {
+        "id": "ts-014-check-01",
+        "kind": "single",
+        "prompt": "现代 TypeScript 应用源码组织模块时，通常首选什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "ES Module 的 `import/export`。"
+          },
+          {
+            "id": "b",
+            "text": "非 `declare` 的 `namespace`。"
+          },
+          {
+            "id": "c",
+            "text": "把所有内容挂到 `window`。"
+          },
+          {
+            "id": "d",
+            "text": "三斜线引用所有文件。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "ES Module 符合 JS 标准，配合现代构建工具、tree-shaking 和文件作用域。namespace 主要是早期组织全局代码的方式。",
+        "focus": "现代模块首选"
+      },
+      {
+        "id": "ts-014-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景中仍可能合理使用 namespace？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`.d.ts` 中描述全局变量或 UMD 库形状。"
+          },
+          {
+            "id": "b",
+            "text": "用 `declare namespace` 描述函数对象上挂静态成员的老库。"
+          },
+          {
+            "id": "c",
+            "text": "第三方库声明扩展中的全局命名空间。"
+          },
+          {
+            "id": "d",
+            "text": "新业务源码中替代所有 ES Module。"
+          },
+          {
+            "id": "e",
+            "text": "提升 tree-shaking 效果。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`declare namespace` 只描述类型，不生成运行时代码；非 declare namespace 在源码中会生成运行时代码，现代业务通常避免。",
+        "focus": "namespace 仍适用的地方"
+      },
+      {
+        "id": "ts-014-check-03",
+        "kind": "multiple",
+        "prompt": "关于 ES Module 和 namespace，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "有顶层 `import/export` 的文件就是模块，有自己的文件作用域。"
+          },
+          {
+            "id": "b",
+            "text": "ES Module 更利于静态分析和构建优化。"
+          },
+          {
+            "id": "c",
+            "text": "非 `declare` namespace 通常会生成运行时代码。"
+          },
+          {
+            "id": "d",
+            "text": "namespace 是 ECMAScript 标准模块系统。"
+          },
+          {
+            "id": "e",
+            "text": "ES Module 会污染全局作用域。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "namespace 是 TS 早期组织代码的机制；ES Module 是现代标准模块系统。",
+        "focus": "module 与 namespace 对比"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-015",
+    "checks": [
+      {
+        "id": "ts-015-check-01",
+        "kind": "single",
+        "prompt": "`.d.ts` 文件的主要作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "编写会直接运行的业务逻辑。"
+          },
+          {
+            "id": "b",
+            "text": "描述类型形状，让 TS 理解 JS 模块、全局变量、资源文件或库 API。"
+          },
+          {
+            "id": "c",
+            "text": "替代所有单元测试。"
+          },
+          {
+            "id": "d",
+            "text": "让浏览器识别 TypeScript 语法。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "声明文件只描述类型，不包含运行时代码。声明必须和真实运行时 API 保持一致。",
+        "focus": ".d.ts 本质"
+      },
+      {
+        "id": "ts-015-check-02",
+        "kind": "multiple",
+        "prompt": "在模块文件中写 `declare global` 时，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "加上 `export {}` 让该 `.d.ts` 成为模块。"
+          },
+          {
+            "id": "b",
+            "text": "可以扩展 `Window` 接口。"
+          },
+          {
+            "id": "c",
+            "text": "可以声明全局常量类型，例如 `__APP_VERSION__`。"
+          },
+          {
+            "id": "d",
+            "text": "`declare global` 会自动创建运行时全局变量。"
+          },
+          {
+            "id": "e",
+            "text": "声明文件无需被 `include` 或 `types` 覆盖也一定生效。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`.d.ts` 只告诉 TS 类型，不创建运行时值。声明文件也必须进入 tsconfig 的编译上下文。",
+        "focus": "全局声明"
+      },
+      {
+        "id": "ts-015-check-03",
+        "kind": "multiple",
+        "prompt": "编写第三方模块或资源声明时，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不确定外部输入输出时优先用 `unknown` 或泛型，而不是到处 `any`。"
+          },
+          {
+            "id": "b",
+            "text": "SVG/CSS 模块声明要和真实构建插件行为一致。"
+          },
+          {
+            "id": "c",
+            "text": "库项目可用 `declaration: true` 生成 `.d.ts`。"
+          },
+          {
+            "id": "d",
+            "text": "`package.json` 的 `types` 或 `exports.types` 应指向正确声明入口。"
+          },
+          {
+            "id": "e",
+            "text": "`.d.ts` 写错也不会影响使用者类型安全。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "声明文件是库 API 的类型契约。错声明会让类型系统给出错误保证。",
+        "focus": "声明质量"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-016",
+    "checks": [
+      {
+        "id": "ts-016-check-01",
+        "kind": "single",
+        "prompt": "下面类型会生成什么？\n\n```ts\ntype Direction = 'top' | 'bottom'\ntype Prop = `margin-${Direction}` | `padding-${Direction}`\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`'margin-top' | 'margin-bottom' | 'padding-top' | 'padding-bottom'`"
+          },
+          {
+            "id": "b",
+            "text": "`string`"
+          },
+          {
+            "id": "c",
+            "text": "`Direction[]`"
+          },
+          {
+            "id": "d",
+            "text": "运行时数组 `['margin-top', ...]`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "模板字面量类型在类型层组合字符串字面量联合。它不会生成运行时代码。",
+        "focus": "模板字面量笛卡尔积"
+      },
+      {
+        "id": "ts-016-check-02",
+        "kind": "multiple",
+        "prompt": "哪些适合用模板字面量类型建模？",
+        "options": [
+          {
+            "id": "a",
+            "text": "事件名推导，例如 `nameChanged`。"
+          },
+          {
+            "id": "b",
+            "text": "路由参数名解析，例如 `'/users/:id'`。"
+          },
+          {
+            "id": "c",
+            "text": "CSS token 或长度格式，例如 `${number}px`。"
+          },
+          {
+            "id": "d",
+            "text": "配置 key / i18n key 约束。"
+          },
+          {
+            "id": "e",
+            "text": "任意复杂字符串的运行时解析和校验。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "模板字面量类型是编译期约束，不是运行时 parser。外部字符串仍要运行时验证。",
+        "focus": "模板字面量类型用途"
+      },
+      {
+        "id": "ts-016-check-03",
+        "kind": "multiple",
+        "prompt": "关于模板字面量类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "联合成员组合过多会拖慢类型检查。"
+          },
+          {
+            "id": "b",
+            "text": "可结合 `Capitalize`、`Uppercase` 等字符串工具类型。"
+          },
+          {
+            "id": "c",
+            "text": "可结合键名重映射生成新对象 key。"
+          },
+          {
+            "id": "d",
+            "text": "它适合解析无限复杂的语法语言。"
+          },
+          {
+            "id": "e",
+            "text": "它会让运行时代码自动更安全，无需任何校验。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "模板字面量类型适合有限模式的类型约束。复杂语言解析交给运行时代码和专用解析器。",
+        "focus": "性能与限制"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-017",
+    "checks": [
+      {
+        "id": "ts-017-check-01",
+        "kind": "single",
+        "prompt": "已知 `Dog extends Animal`，为什么 `(animal: Animal) => void` 可以赋给 `(dog: Dog) => void`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为函数参数是协变的。"
+          },
+          {
+            "id": "b",
+            "text": "因为能处理所有 Animal 的函数也一定能处理 Dog，这是参数逆变。"
+          },
+          {
+            "id": "c",
+            "text": "因为 TypeScript 完全不检查函数参数。"
+          },
+          {
+            "id": "d",
+            "text": "因为 Dog 和 Animal 运行时完全相同。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "在 `strictFunctionTypes` 下，函数参数按逆变检查。接收更宽类型的函数可以放到需要接收更窄类型的位置。",
+        "focus": "逆变判断"
+      },
+      {
+        "id": "ts-017-check-02",
+        "kind": "multiple",
+        "prompt": "关于型变，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只作为返回值出现的类型参数通常是协变的。"
+          },
+          {
+            "id": "b",
+            "text": "只作为函数参数出现的类型参数在严格函数类型下通常是逆变的。"
+          },
+          {
+            "id": "c",
+            "text": "同时出现在输入和输出位置时，整体往往接近不变。"
+          },
+          {
+            "id": "d",
+            "text": "所有泛型类型在 TS 中都完全协变。"
+          },
+          {
+            "id": "e",
+            "text": "型变描述运行时对象属性枚举顺序。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "型变描述泛型类型之间的可赋值关系，与运行时枚举无关。",
+        "focus": "型变位置"
+      },
+      {
+        "id": "ts-017-check-03",
+        "kind": "multiple",
+        "prompt": "关于 TypeScript 中的型变边界，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "方法参数为了历史兼容可能有双变特性。"
+          },
+          {
+            "id": "b",
+            "text": "回调类型设计优先使用函数属性写法，通常更严格。"
+          },
+          {
+            "id": "c",
+            "text": "`readonly Animal[]` 比可写 `Animal[]` 更安全。"
+          },
+          {
+            "id": "d",
+            "text": "把 `Dog[]` 赋给 `Animal[]` 后随便 push Animal 不会带来风险。"
+          },
+          {
+            "id": "e",
+            "text": "`strictFunctionTypes` 会让所有方法参数都严格逆变。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "数组可写会有经典不安全写入问题；只读数组消除了写入风险，更接近安全协变。",
+        "focus": "TS 中的安全边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-018",
+    "checks": [
+      {
+        "id": "ts-018-check-01",
+        "kind": "single",
+        "prompt": "写 `DeepPartial<T>` 时为什么要把 `Date`、`Function`、`RegExp` 等作为 Builtin 终止？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为这些类型不能出现在对象中。"
+          },
+          {
+            "id": "b",
+            "text": "避免把内建对象展开成一堆内部方法，破坏语义并拖慢类型检查。"
+          },
+          {
+            "id": "c",
+            "text": "因为递归类型不能处理数组。"
+          },
+          {
+            "id": "d",
+            "text": "因为 `Date` 在 TS 中是原始类型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "递归类型要有终止条件，并按业务语义决定哪些类型不再深入。",
+        "focus": "递归类型终止"
+      },
+      {
+        "id": "ts-018-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `DeepReadonly<T>`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以递归把对象属性变成 readonly。"
+          },
+          {
+            "id": "b",
+            "text": "数组应变成只读数组或只读元组。"
+          },
+          {
+            "id": "c",
+            "text": "它只影响类型系统，不会冻结运行时对象。"
+          },
+          {
+            "id": "d",
+            "text": "它会自动调用 `Object.freeze`。"
+          },
+          {
+            "id": "e",
+            "text": "它永远不会影响 `tsc` 或编辑器性能。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "深层递归类型可能拖慢类型检查。运行时不可变需要额外代码。",
+        "focus": "DeepReadonly"
+      },
+      {
+        "id": "ts-018-check-03",
+        "kind": "multiple",
+        "prompt": "使用递归类型时，哪些风险或边界需要考虑？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可能触发 `Type instantiation is excessively deep`。"
+          },
+          {
+            "id": "b",
+            "text": "对 Map、Set、Promise、类实例是否递归要按语义处理。"
+          },
+          {
+            "id": "c",
+            "text": "过深类型会影响编辑器和 `tsc` 性能。"
+          },
+          {
+            "id": "d",
+            "text": "递归类型可以替代所有运行时数据校验。"
+          },
+          {
+            "id": "e",
+            "text": "递归类型不能表达 JSONValue 这类结构。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "递归类型适合边界建模，但不是运行时验证工具。复杂对象要控制递归深度和范围。",
+        "focus": "递归类型风险"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-019",
+    "checks": [
+      {
+        "id": "ts-019-check-01",
+        "kind": "single",
+        "prompt": "TypeScript 的 `private` 和 JavaScript 的 `#private` 最大区别是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`private` 是运行时强私有，`#private` 只是命名约定。"
+          },
+          {
+            "id": "b",
+            "text": "`private` 主要是 TS 编译期限制，`#private` 是 JavaScript 运行时私有。"
+          },
+          {
+            "id": "c",
+            "text": "两者都会被 `Object.keys` 枚举。"
+          },
+          {
+            "id": "d",
+            "text": "两者都只能用于 interface。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "TS `private` 可被编译擦除，主要靠类型检查；`#field` 是 JS 语言级私有字段。",
+        "focus": "private 与 #private"
+      },
+      {
+        "id": "ts-019-check-02",
+        "kind": "multiple",
+        "prompt": "关于类修饰符，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`protected` 可在类内部和子类中访问。"
+          },
+          {
+            "id": "b",
+            "text": "`readonly` 属性初始化后不能再次赋值。"
+          },
+          {
+            "id": "c",
+            "text": "构造函数参数属性如 `private readonly secret: string` 会声明并赋值属性。"
+          },
+          {
+            "id": "d",
+            "text": "`override` 配合 `noImplicitOverride` 可防止误覆写。"
+          },
+          {
+            "id": "e",
+            "text": "`public` 只能在类内部访问。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`public` 是默认公开访问。参数属性是 TS class 中常见的简写能力。",
+        "focus": "类修饰符"
+      },
+      {
+        "id": "ts-019-check-03",
+        "kind": "multiple",
+        "prompt": "关于抽象类和接口，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "抽象类会生成运行时代码，可以包含已实现方法和构造逻辑。"
+          },
+          {
+            "id": "b",
+            "text": "interface 只存在于类型系统，运行时擦除。"
+          },
+          {
+            "id": "c",
+            "text": "类只能继承一个抽象类，但可以实现多个接口。"
+          },
+          {
+            "id": "d",
+            "text": "抽象类适合“共享实现 + 强制子类补齐协议”。"
+          },
+          {
+            "id": "e",
+            "text": "`implements` 会自动生成缺失方法。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`implements` 只做结构检查，不生成运行时代码。抽象类和接口解决的问题不同。",
+        "focus": "abstract class vs interface"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-020",
+    "checks": [
+      {
+        "id": "ts-020-check-01",
+        "kind": "single",
+        "prompt": "为什么下面类型会报错？\n\n```ts\ntype Bad = {\n  [key: string]: string\n  count: number\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "TypeScript 不支持索引签名。"
+          },
+          {
+            "id": "b",
+            "text": "有字符串索引签名时，显式属性的值类型也必须兼容索引签名的 value 类型。"
+          },
+          {
+            "id": "c",
+            "text": "`count` 不能作为属性名。"
+          },
+          {
+            "id": "d",
+            "text": "`number` 不能出现在对象类型中。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`obj['count']` 也是 string key 访问，因此 `count` 的类型必须能赋给索引签名的 value 类型。",
+        "focus": "字符串索引签名"
+      },
+      {
+        "id": "ts-020-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "key 集合固定时，`Record<'zh' | 'en', string>` 比开放索引签名更精确。"
+          },
+          {
+            "id": "b",
+            "text": "开放字典可用索引签名或 `Record<string, V>`。"
+          },
+          {
+            "id": "c",
+            "text": "同时声明 string 和 number 索引时，number 索引 value 类型必须是 string 索引 value 类型的子类型。"
+          },
+          {
+            "id": "d",
+            "text": "`Record<string, V>` 会限制对象只能有一个 key。"
+          },
+          {
+            "id": "e",
+            "text": "索引签名会在运行时自动校验 value 类型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "索引签名和 Record 都是类型约束，不做运行时校验。固定 key 用 Record 联合更清楚。",
+        "focus": "Record 与索引签名"
+      },
+      {
+        "id": "ts-020-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `T[K]` 索引访问类型，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`User['profile']['name']` 可提取嵌套属性类型。"
+          },
+          {
+            "id": "b",
+            "text": "`User[keyof User]` 会得到所有属性值类型的联合。"
+          },
+          {
+            "id": "c",
+            "text": "`(typeof colors)[number]` 可从 `as const` 数组中提取元素联合。"
+          },
+          {
+            "id": "d",
+            "text": "开启 `noUncheckedIndexedAccess` 后，动态索引读取会包含 `undefined`。"
+          },
+          {
+            "id": "e",
+            "text": "`T[K]` 会在运行时读取对象属性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "索引访问类型是类型层操作。`noUncheckedIndexedAccess` 让类型更贴近运行时“可能取不到”的事实。",
+        "focus": "索引访问类型"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-021",
+    "checks": [
+      {
+        "id": "ts-021-check-01",
+        "kind": "single",
+        "prompt": "对于下面联合类型，在未收窄前能直接安全访问哪个字段？\n\n```ts\ntype Result<T> =\n  | { status: 'success'; data: T }\n  | { status: 'error'; message: string }\n  | { status: 'loading' }\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`status`"
+          },
+          {
+            "id": "b",
+            "text": "`data`"
+          },
+          {
+            "id": "c",
+            "text": "`message`"
+          },
+          {
+            "id": "d",
+            "text": "`data.name`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "对象联合未收窄前只能访问共有属性。特有字段要通过判别字段、`in`、`typeof` 等方式收窄后访问。",
+        "focus": "对象联合访问"
+      },
+      {
+        "id": "ts-021-check-02",
+        "kind": "single",
+        "prompt": "下面类型中 `value` 的类型是什么？\n\n```ts\ntype Conflict = { value: string } & { value: number }\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`string`"
+          },
+          {
+            "id": "b",
+            "text": "`number`"
+          },
+          {
+            "id": "c",
+            "text": "`never`"
+          },
+          {
+            "id": "d",
+            "text": "`string | number`"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "交叉类型不是“后者覆盖前者”。字段冲突会取交集，`string & number` 得到 `never`。",
+        "focus": "交叉冲突"
+      },
+      {
+        "id": "ts-021-check-03",
+        "kind": "multiple",
+        "prompt": "哪些使用建议合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "状态、接口响应和错误处理优先使用可辨识联合。"
+          },
+          {
+            "id": "b",
+            "text": "对象同时拥有多组能力时可使用交叉类型。"
+          },
+          {
+            "id": "c",
+            "text": "想覆盖字段类型时，用 `Omit<T, K> & { ... }` 明确表达。"
+          },
+          {
+            "id": "d",
+            "text": "交叉类型适合模拟“后面字段覆盖前面字段”。"
+          },
+          {
+            "id": "e",
+            "text": "联合类型使用前永远不需要收窄。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "联合表达“其中一种”，交叉表达“同时满足”。字段覆盖要显式移除再添加，避免冲突成 never。",
+        "focus": "联合与交叉选择"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-022",
+    "checks": [
+      {
+        "id": "ts-022-check-01",
+        "kind": "single",
+        "prompt": "`type TupleToUnion<T extends readonly unknown[]> = T[number]` 对 `['a', 'b', 1]` 得到什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`'a' | 'b' | 1`"
+          },
+          {
+            "id": "b",
+            "text": "`['a', 'b', 1]`"
+          },
+          {
+            "id": "c",
+            "text": "`string | number[]`"
+          },
+          {
+            "id": "d",
+            "text": "`never`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "元组也是数组类型，`T[number]` 表示用数字索引访问所有元素类型，结果是元素类型联合。",
+        "focus": "TupleToUnion"
+      },
+      {
+        "id": "ts-022-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `Flatten<T>`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`T extends readonly (infer Item)[] ? Item : T` 可以展开一层数组或元组元素类型。"
+          },
+          {
+            "id": "b",
+            "text": "递归版本可以处理 `number[][][]` 得到 `number`。"
+          },
+          {
+            "id": "c",
+            "text": "支持 `readonly` 元组能兼容 `as const` 场景。"
+          },
+          {
+            "id": "d",
+            "text": "`infer` 可以在运行时解构数组。"
+          },
+          {
+            "id": "e",
+            "text": "Flatten 会改变运行时数组结构。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Flatten 是类型层工具。是否递归、是否支持 readonly，要看题目要求和实际输入。",
+        "focus": "Flatten 实现"
+      },
+      {
+        "id": "ts-022-check-03",
+        "kind": "multiple",
+        "prompt": "`UnionToIntersection` 的常见实现依赖哪些机制？",
+        "options": [
+          {
+            "id": "a",
+            "text": "裸类型参数触发分布式条件类型。"
+          },
+          {
+            "id": "b",
+            "text": "把联合成员转换成多个函数参数类型。"
+          },
+          {
+            "id": "c",
+            "text": "函数参数位置的逆变推断。"
+          },
+          {
+            "id": "d",
+            "text": "运行时遍历联合类型。"
+          },
+          {
+            "id": "e",
+            "text": "对象展开语法。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`UnionToIntersection` 是类型体操经典题，核心是分发 + 函数参数逆变推断。生产代码要封装并谨慎使用。",
+        "focus": "UnionToIntersection"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-023",
+    "checks": [
+      {
+        "id": "ts-023-check-01",
+        "kind": "single",
+        "prompt": "为什么下面赋值通常是允许的？\n\n```ts\ntype Handler = (event: Event, index: number) => void\n\nconst simple: Handler = (event) => {\n  console.log(event.type)\n}\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "TS 不检查函数参数。"
+          },
+          {
+            "id": "b",
+            "text": "参数更少的函数可以忽略调用方传入的额外参数。"
+          },
+          {
+            "id": "c",
+            "text": "`index` 会自动变成全局变量。"
+          },
+          {
+            "id": "d",
+            "text": "`event` 会被推断成 `any`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "JS 允许多传参数，回调可以忽略不用的参数。数组回调等场景常依赖这一兼容性。",
+        "focus": "参数更少的函数"
+      },
+      {
+        "id": "ts-023-check-02",
+        "kind": "multiple",
+        "prompt": "关于函数类型兼容性，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "返回值通常是协变的，返回 Dog 可用于需要返回 Animal 的位置。"
+          },
+          {
+            "id": "b",
+            "text": "`strictFunctionTypes` 下，函数参数更接近逆变检查。"
+          },
+          {
+            "id": "c",
+            "text": "需要处理 Animal 的地方，不能安全传入只处理 Dog 的函数。"
+          },
+          {
+            "id": "d",
+            "text": "返回值更宽的函数一定能赋给返回值更窄的位置。"
+          },
+          {
+            "id": "e",
+            "text": "函数兼容性只看函数名是否相同。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "TS 是结构类型系统，函数兼容性看参数和返回值。返回值可以更具体，参数要能安全接收调用方会传的值。",
+        "focus": "函数兼容性"
+      },
+      {
+        "id": "ts-023-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`() => void` 表示调用方忽略返回值，不代表实现不能返回值。"
+          },
+          {
+            "id": "b",
+            "text": "`this` 参数只存在于类型层面，必须写在第一个参数位置。"
+          },
+          {
+            "id": "c",
+            "text": "call signature 可以表达带属性或重载的函数对象。"
+          },
+          {
+            "id": "d",
+            "text": "`void` 返回类型意味着函数运行时一定返回 `undefined`。"
+          },
+          {
+            "id": "e",
+            "text": "`this` 参数会成为函数实际第一个运行时参数。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`void` 在回调类型里更多表达“返回值不被使用”。TS 的 `this` 参数不会出现在运行时参数列表。",
+        "focus": "void 与 this 参数"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-024",
+    "checks": [
+      {
+        "id": "ts-024-check-01",
+        "kind": "single",
+        "prompt": "下面两个变量分别会被推断为什么？\n\n```ts\nlet count = 1\nconst status = 'ok'\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`count: number`，`status: 'ok'`"
+          },
+          {
+            "id": "b",
+            "text": "`count: 1`，`status: string`"
+          },
+          {
+            "id": "c",
+            "text": "二者都是字面量类型。"
+          },
+          {
+            "id": "d",
+            "text": "二者都是 `any`。"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`let` 可重新赋值，所以字面量会拓宽；`const` 原始值不可重新赋值，会保留字面量类型。",
+        "focus": "字面量拓宽"
+      },
+      {
+        "id": "ts-024-check-02",
+        "kind": "multiple",
+        "prompt": "TypeScript 类型推断来自哪些信息？",
+        "options": [
+          {
+            "id": "a",
+            "text": "初始化表达式。"
+          },
+          {
+            "id": "b",
+            "text": "上下文类型，例如事件回调或 `map` 回调。"
+          },
+          {
+            "id": "c",
+            "text": "控制流分支和返回语句。"
+          },
+          {
+            "id": "d",
+            "text": "泛型函数实参。"
+          },
+          {
+            "id": "e",
+            "text": "运行时接口实际返回内容。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "TS 静态分析源码和类型声明，不会知道真实接口数据。外部数据要运行时校验。",
+        "focus": "类型推断来源"
+      },
+      {
+        "id": "ts-024-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "空数组可能需要显式标注，避免推断过窄或依赖上下文。"
+          },
+          {
+            "id": "b",
+            "text": "`JSON.parse` 返回 `any`，更安全做法是转为 `unknown` 后验证。"
+          },
+          {
+            "id": "c",
+            "text": "`satisfies` 可检查结构，同时保留表达式自身推断。"
+          },
+          {
+            "id": "d",
+            "text": "`as const satisfies ...` 可同时保留字面量并检查结构。"
+          },
+          {
+            "id": "e",
+            "text": "公共 API 永远不应该显式标注返回类型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂公共 API、递归函数和对外导出函数常建议显式返回类型，避免意外推断泄漏。",
+        "focus": "推断失效与控制"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-025",
+    "checks": [
+      {
+        "id": "ts-025-check-01",
+        "kind": "single",
+        "prompt": "扩展 Express Request 类型时，为什么常扩展 `'express-serve-static-core'` 而不是随便写 `'express'`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 TS 不支持扩展 `'express'` 字符串。"
+          },
+          {
+            "id": "b",
+            "text": "模块扩展必须命中第三方库实际声明所在的模块名。"
+          },
+          {
+            "id": "c",
+            "text": "因为 `express` 没有运行时代码。"
+          },
+          {
+            "id": "d",
+            "text": "因为 Request 只能放在 global 里。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模块扩展是合并已有模块声明。模块名写错，扩展不会落到真正的类型上。",
+        "focus": "模块扩展模块名"
+      },
+      {
+        "id": "ts-025-check-02",
+        "kind": "multiple",
+        "prompt": "关于 module augmentation，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "可以在不改第三方源码的情况下补充已有模块类型。"
+          },
+          {
+            "id": "b",
+            "text": "声明文件必须被 tsconfig 覆盖到。"
+          },
+          {
+            "id": "c",
+            "text": "扩展类型要和运行时行为一致。"
+          },
+          {
+            "id": "d",
+            "text": "只写类型声明会自动给运行时对象添加属性或方法。"
+          },
+          {
+            "id": "e",
+            "text": "可以随意给 default export 做 augmentation。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "模块扩展只补类型，不改运行时。default export augmentation 有限制，不能随便扩。",
+        "focus": "模块扩展规则"
+      },
+      {
+        "id": "ts-025-check-03",
+        "kind": "multiple",
+        "prompt": "哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`declare global` 所在模块文件通常需要 `export {}`。"
+          },
+          {
+            "id": "b",
+            "text": "扩展 `Window` 后，运行时仍需确保对应属性真的存在。"
+          },
+          {
+            "id": "c",
+            "text": "给 `Array<T>` 声明 `first()` 后，还必须实现 `Array.prototype.first` 才能运行。"
+          },
+          {
+            "id": "d",
+            "text": "修改内建原型是所有项目推荐的通用实践。"
+          },
+          {
+            "id": "e",
+            "text": "类型扩展可以替代所有运行时初始化。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类型扩展不能创造运行时行为。修改内建原型风险高，除非在受控环境中明确约定。",
+        "focus": "全局扩展与原型扩展"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-026",
+    "checks": [
+      {
+        "id": "ts-026-check-01",
+        "kind": "single",
+        "prompt": "类型安全 EventEmitter 的核心类型设计是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "所有事件 payload 都使用 `any`。"
+          },
+          {
+            "id": "b",
+            "text": "用事件名到 payload 的映射表约束 `on/off/emit`。"
+          },
+          {
+            "id": "c",
+            "text": "只允许一个固定事件名。"
+          },
+          {
+            "id": "d",
+            "text": "完全依赖运行时字符串拼接。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`Events[K]` 把事件名和 payload 关联起来，调用方传错事件名或 payload 会在编译期报错。",
+        "focus": "EventMap 约束"
+      },
+      {
+        "id": "ts-026-check-02",
+        "kind": "multiple",
+        "prompt": "哪些设计是合理的？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`on<K extends keyof Events>(event: K, listener: Listener<Events[K]>)` 保留事件名和 payload 对应关系。"
+          },
+          {
+            "id": "b",
+            "text": "`on` 返回 unsubscribe，减少忘记解绑。"
+          },
+          {
+            "id": "c",
+            "text": "`ready: void` 这类事件可以通过条件类型让 `emit('ready')` 不需要 payload。"
+          },
+          {
+            "id": "d",
+            "text": "内部异构 listener 存储永远不需要任何断言。"
+          },
+          {
+            "id": "e",
+            "text": "只要类型安全，就不需要处理 listener 抛错或执行顺序。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "公共 API 可以强类型，内部实现可能需要封装少量断言。生产版本仍要考虑错误隔离、once、顺序和异步 listener。",
+        "focus": "TypedEventEmitter 设计"
+      },
+      {
+        "id": "ts-026-check-03",
+        "kind": "multiple",
+        "prompt": "对于：\n\n```ts\ntype AppEvents = {\n  login: { userId: string }\n  ready: void\n}\n```\n\n哪些调用应当被类型系统接受？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`emitter.emit('login', { userId: 'u1' })`"
+          },
+          {
+            "id": "b",
+            "text": "`emitter.emit('ready')`"
+          },
+          {
+            "id": "c",
+            "text": "`emitter.emit('login', { userId: 1 })`"
+          },
+          {
+            "id": "d",
+            "text": "`emitter.emit('missing')`"
+          },
+          {
+            "id": "e",
+            "text": "`emitter.on('login', (payload: Error) => {})`"
+          }
+        ],
+        "answerIds": ["a", "b"],
+        "explanation": "事件名和 payload 是绑定关系。不存在的事件名、错误 payload、错误 listener 参数都应被拒绝。",
+        "focus": "调用效果"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-027",
+    "checks": [
+      {
+        "id": "ts-027-check-01",
+        "kind": "single",
+        "prompt": "下面 Builder 链式调用后，类型系统为什么能知道 `value.name` 和 `value.age`？\n\n```ts\nnew ObjectBuilder().set('name', 'Alice').set('age', 30).build()\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "TypeScript 会运行代码并检查 data 对象。"
+          },
+          {
+            "id": "b",
+            "text": "每次 `set` 返回携带 `T & Record<K, V>` 的新 Builder 类型。"
+          },
+          {
+            "id": "c",
+            "text": "因为所有字段都被推成 `any`。"
+          },
+          {
+            "id": "d",
+            "text": "因为 `build` 总是返回 `Record<string, string>`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Builder 类型安全依赖链式调用累积泛型信息，运行时仍是普通对象赋值。",
+        "focus": "Builder 累积类型"
+      },
+      {
+        "id": "ts-027-check-02",
+        "kind": "multiple",
+        "prompt": "哪些方式可以让缺少必填字段时不能调用 `build`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用泛型状态记录已设置字段。"
+          },
+          {
+            "id": "b",
+            "text": "给 `build` 添加 `this: UserBuilder<HasRequired>` 约束。"
+          },
+          {
+            "id": "c",
+            "text": "每个 setter 返回更新后的 Builder 泛型状态。"
+          },
+          {
+            "id": "d",
+            "text": "在 `build` 内部返回 `any` 就能保证安全。"
+          },
+          {
+            "id": "e",
+            "text": "只靠类私有字段就能让 TS 推断必填字段都存在。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`this` 参数约束能让方法只在特定泛型状态下可调用。运行时仍应做必要校验。",
+        "focus": "限制 build 调用"
+      },
+      {
+        "id": "ts-027-check-03",
+        "kind": "multiple",
+        "prompt": "关于泛型 Builder，哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "类型越精细，内部断言和维护成本可能越高。"
+          },
+          {
+            "id": "b",
+            "text": "应优先覆盖必填字段、合法状态迁移和返回类型。"
+          },
+          {
+            "id": "c",
+            "text": "不必追求把所有运行时细节都模拟到类型层。"
+          },
+          {
+            "id": "d",
+            "text": "泛型 Builder 可以替代所有运行时校验。"
+          },
+          {
+            "id": "e",
+            "text": "Builder 类型越复杂，`tsc` 一定越快。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类型安全 Builder 是 API 体验优化，但复杂泛型会带来实现和性能成本。",
+        "focus": "Builder 取舍"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-028",
+    "checks": [
+      {
+        "id": "ts-028-check-01",
+        "kind": "single",
+        "prompt": "`Result<T, E>` 最适合解决什么问题？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让所有错误都在运行时自动消失。"
+          },
+          {
+            "id": "b",
+            "text": "把成功值和失败原因放进返回类型，要求调用方处理失败分支。"
+          },
+          {
+            "id": "c",
+            "text": "替代 JSON schema 校验。"
+          },
+          {
+            "id": "d",
+            "text": "让异步请求变成同步请求。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "Result 适合可预期业务失败，不适合掩盖错误，也不能证明服务端响应真实类型。",
+        "focus": "Result 的价值"
+      },
+      {
+        "id": "ts-028-check-02",
+        "kind": "multiple",
+        "prompt": "对于：\n\n```ts\ntype Result<T, E> = { ok: true; value: T } | { ok: false; error: E }\n```\n\n哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`if (result.ok)` 分支里可以访问 `result.value`。"
+          },
+          {
+            "id": "b",
+            "text": "`else` 分支里可以访问 `result.error`。"
+          },
+          {
+            "id": "c",
+            "text": "error 也可以设计成可辨识联合，便于 switch 处理。"
+          },
+          {
+            "id": "d",
+            "text": "未判断 `ok` 前可以同时安全访问 `value` 和 `error`。"
+          },
+          {
+            "id": "e",
+            "text": "Result 会自动捕获所有异常。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "Result 是可辨识联合。异常需要手动 catch 后转换成 Err，或者让异常继续抛出。",
+        "focus": "Result 消费"
+      },
+      {
+        "id": "ts-028-check-03",
+        "kind": "multiple",
+        "prompt": "哪些判断合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "表单校验、接口状态、解析失败等可预期失败适合 Result。"
+          },
+          {
+            "id": "b",
+            "text": "程序 bug、不可恢复资源错误可能仍适合异常。"
+          },
+          {
+            "id": "c",
+            "text": "`catch (error)` 中的 error 应视为 `unknown` 并先收窄。"
+          },
+          {
+            "id": "d",
+            "text": "API 响应仍需要 Zod/Valibot 等运行时 schema 校验。"
+          },
+          {
+            "id": "e",
+            "text": "泛型 `Result<User, Error>` 能证明服务器一定返回 User。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "泛型约束调用方代码，不验证外部世界。外部数据进入系统时仍要运行时校验。",
+        "focus": "Result 取舍"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-029",
+    "checks": [
+      {
+        "id": "ts-029-check-01",
+        "kind": "single",
+        "prompt": "想先量化 TypeScript 类型检查耗时和类型实例化情况，哪个命令更合适？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`tsc --noEmit --extendedDiagnostics`"
+          },
+          {
+            "id": "b",
+            "text": "`node --inspect index.js`"
+          },
+          {
+            "id": "c",
+            "text": "`npm view typescript`"
+          },
+          {
+            "id": "d",
+            "text": "`curl tsconfig.json`"
+          }
+        ],
+        "answerIds": ["a"],
+        "explanation": "`extendedDiagnostics` 会显示类型检查耗时、实例化数量和内存等信息。复杂问题可进一步 `--generateTrace`。",
+        "focus": "性能诊断"
+      },
+      {
+        "id": "ts-029-check-02",
+        "kind": "multiple",
+        "prompt": "哪些可能导致 TS 类型检查变慢？",
+        "options": [
+          {
+            "id": "a",
+            "text": "巨大联合类型和模板字面量笛卡尔积。"
+          },
+          {
+            "id": "b",
+            "text": "深层递归条件类型。"
+          },
+          {
+            "id": "c",
+            "text": "大量交叉类型叠加。"
+          },
+          {
+            "id": "d",
+            "text": "自动生成的超大 `.d.ts`。"
+          },
+          {
+            "id": "e",
+            "text": "删除所有类型标注一定会让项目更安全更快。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "慢通常来自复杂类型计算和项目组织。优化前要测量，不要盲目删除类型。",
+        "focus": "常见慢类型来源"
+      },
+      {
+        "id": "ts-029-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是合理的类型检查性能优化？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不需要分发时用 `[T] extends [unknown]` 阻止分布式条件类型。"
+          },
+          {
+            "id": "b",
+            "text": "Monorepo 用 project references + `composite` 拆分检查边界。"
+          },
+          {
+            "id": "c",
+            "text": "检查 `include` 是否误包含 `dist`、`coverage`、生成目录。"
+          },
+          {
+            "id": "d",
+            "text": "应用项目通常可以开启 `skipLibCheck`，库项目更谨慎。"
+          },
+          {
+            "id": "e",
+            "text": "把所有类型都改成 `any` 是最佳长期方案。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "性能优化应保留类型价值，减少不必要的复杂计算和重复分析。",
+        "focus": "优化策略"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-030",
+    "checks": [
+      {
+        "id": "ts-030-check-01",
+        "kind": "single",
+        "prompt": "类型安全 API 封装中，`ApiRoutes` 映射表的核心价值是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "自动让后端接口存在。"
+          },
+          {
+            "id": "b",
+            "text": "建立路由与 params/body/query/response 的类型关系。"
+          },
+          {
+            "id": "c",
+            "text": "替代 fetch 运行时错误处理。"
+          },
+          {
+            "id": "d",
+            "text": "让所有响应无需 JSON 解析。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`ApiRoutes` 是调用方的类型契约。真实 URL 拼接、请求发送和响应校验仍在运行时完成。",
+        "focus": "API 路由映射"
+      },
+      {
+        "id": "ts-030-check-02",
+        "kind": "multiple",
+        "prompt": "下面哪些调用规则应该被类型系统约束？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`'GET /users/:id'` 必须传 `params: { id: string }`。"
+          },
+          {
+            "id": "b",
+            "text": "`'POST /users'` 必须传 `body: CreateUserDto`。"
+          },
+          {
+            "id": "c",
+            "text": "`'GET /users'` 的 `query` 可以是可选的。"
+          },
+          {
+            "id": "d",
+            "text": "`'POST /users'` 可以随意传 `params`。"
+          },
+          {
+            "id": "e",
+            "text": "缺少必填 options 时仍应通过类型检查。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "条件类型和元组 rest 参数可以让 options 是否必填随路由定义变化。",
+        "focus": "RequestArgs 条件类型"
+      },
+      {
+        "id": "ts-030-check-03",
+        "kind": "multiple",
+        "prompt": "哪些工程注意点正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "泛型只能约束调用方，不会验证服务端响应。"
+          },
+          {
+            "id": "b",
+            "text": "响应体应使用 Zod/Valibot 等 schema 做运行时校验。"
+          },
+          {
+            "id": "c",
+            "text": "路径参数替换、query 拼接、204 空响应、错误体解析都要运行时处理。"
+          },
+          {
+            "id": "d",
+            "text": "大型项目可从 OpenAPI 生成路由类型，减少前后端漂移。"
+          },
+          {
+            "id": "e",
+            "text": "`return response.json() as Promise<ResponseOf<R>>` 就能保证服务端数据正确。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "类型断言只是相信响应类型，不是验证。类型安全 API 封装要和运行时校验配合。",
+        "focus": "API 封装工程边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-031",
+    "checks": [
+      {
+        "id": "ts-031-check-01",
+        "kind": "single",
+        "prompt": "在类型安全的依赖注入容器里，为什么不建议把 token 设计成普通 `string`，再让调用方写 `resolve<T>('logger')`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 `string` 不能作为 `Map` 的 key。"
+          },
+          {
+            "id": "b",
+            "text": "因为 `T` 完全由调用方声明，可能把同一个 key 解析成错误类型。"
+          },
+          {
+            "id": "c",
+            "text": "因为 TypeScript 不能给字符串字面量做类型推断。"
+          },
+          {
+            "id": "d",
+            "text": "因为 `resolve<T>()` 会在运行时自动校验 `T`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "裸字符串 token 和调用方泛型没有绑定关系。`Token<T>` 把“这个 token 对应什么类型”固化到 token 本身，外部解析时才有类型依据。",
+        "focus": "typed token"
+      },
+      {
+        "id": "ts-031-check-02",
+        "kind": "multiple",
+        "prompt": "下面哪些设计能让依赖注入容器的类型边界更可靠？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用 `createToken<T>()` 创建携带类型信息的 token。"
+          },
+          {
+            "id": "b",
+            "text": "把 `unknown -> T` 的断言集中在容器内部边界。"
+          },
+          {
+            "id": "c",
+            "text": "`bind<T>(token: Token<T>, factory: (...) => T)` 让工厂返回值和 token 类型一致。"
+          },
+          {
+            "id": "d",
+            "text": "每次解析时都重新写 `Symbol('Logger')`，避免 token 被复用。"
+          },
+          {
+            "id": "e",
+            "text": "使用 `any` 存储所有实例后，就不需要 token 类型了。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "容器内部通常需要集中断言，但外部 API 要由 token 和 factory 的泛型关系约束。到处创建同名 Symbol 会得到不同 key，反而解析不到依赖。",
+        "focus": "容器边界"
+      },
+      {
+        "id": "ts-031-check-03",
+        "kind": "multiple",
+        "prompt": "关于 TypeScript DI 里的装饰器和运行时元数据，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`reflect-metadata` 读取到的是运行时构造函数信息，不等于完整 TS 类型系统。"
+          },
+          {
+            "id": "b",
+            "text": "接口、泛型、联合类型这类信息编译后通常无法靠元数据表达。"
+          },
+          {
+            "id": "c",
+            "text": "复杂依赖经常仍需要显式 `@Inject(Token)` 或类似机制。"
+          },
+          {
+            "id": "d",
+            "text": "容器还需要处理 singleton、transient、request scoped 等生命周期问题。"
+          },
+          {
+            "id": "e",
+            "text": "使用装饰器后，循环依赖和作用域问题会被 TypeScript 自动解决。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "装饰器能减少样板代码，但不能把接口和泛型变成运行时事实。类型安全 DI 仍要显式 token、作用域建模和运行时错误处理。",
+        "focus": "装饰器与工程约束"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-032",
+    "checks": [
+      {
+        "id": "ts-032-check-01",
+        "kind": "single",
+        "prompt": "从 `fetch('/api/user')` 拿到 JSON 后，最符合类型安全实践的处理方式是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`return await response.json() as User`，因为 API 文档已经说明了结构。"
+          },
+          {
+            "id": "b",
+            "text": "把响应先当作 `unknown`，用 schema 或类型守卫验证后再返回 `User`。"
+          },
+          {
+            "id": "c",
+            "text": "写成 `fetch<User>()`，这样浏览器会校验响应字段。"
+          },
+          {
+            "id": "d",
+            "text": "在接口类型里把所有字段写成可选，避免运行时报错。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "TypeScript 类型在运行时被擦除，外部数据必须在边界校验。`as User` 只是断言，不会检查真实 payload。",
+        "focus": "边界数据"
+      },
+      {
+        "id": "ts-032-check-02",
+        "kind": "multiple",
+        "prompt": "哪些场景更适合使用 Zod、Valibot 这类 schema-first 校验库，而不是只写简单类型守卫？",
+        "options": [
+          {
+            "id": "a",
+            "text": "API 响应有多层嵌套、枚举、数组和字段格式约束。"
+          },
+          {
+            "id": "b",
+            "text": "需要把校验错误展示给用户或记录详细错误路径。"
+          },
+          {
+            "id": "c",
+            "text": "同一份 schema 需要同时导出运行时校验和静态类型。"
+          },
+          {
+            "id": "d",
+            "text": "只需要判断 `value !== null && typeof value === 'object'` 的极小对象。"
+          },
+          {
+            "id": "e",
+            "text": "想让 TypeScript 在编译后保留所有接口定义。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "复杂数据边界需要可复用、可组合、可报告错误的 schema。简单守卫适合很小的结构，但接口本身不会在运行时存在。",
+        "focus": "schema 与类型守卫"
+      },
+      {
+        "id": "ts-032-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `parse`、`safeParse` 和断言函数，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`safeParse` 返回成功/失败的可辨识联合，适合显式分支处理。"
+          },
+          {
+            "id": "b",
+            "text": "`parse` 校验失败会抛异常，适合希望直接中断流程的入口。"
+          },
+          {
+            "id": "c",
+            "text": "`asserts value is User` 成功返回后，后续代码能获得收窄类型。"
+          },
+          {
+            "id": "d",
+            "text": "`safeParse` 成功后仍然只能得到 `unknown`。"
+          },
+          {
+            "id": "e",
+            "text": "泛型请求函数的 `Promise<User>` 能替代运行时校验。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`safeParse` 和断言函数都能把 `unknown` 安全收窄。泛型只约束调用方代码，不能证明服务端返回值正确。",
+        "focus": "safeParse 与错误处理"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-033",
+    "checks": [
+      {
+        "id": "ts-033-check-01",
+        "kind": "single",
+        "prompt": "下面代码中，如果 `user` 是 `undefined`，`ratio` 最可能是什么结果？\n\n```ts\nconst ratio = user?.score / 100\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "表达式整体短路为 `undefined`，不会继续计算。"
+          },
+          {
+            "id": "b",
+            "text": "自动得到 `0`。"
+          },
+          {
+            "id": "c",
+            "text": "等价于 `undefined / 100`，运行结果是 `NaN`。"
+          },
+          {
+            "id": "d",
+            "text": "TypeScript 会把这段代码改写成 `(user?.score ?? 0) / 100`。"
+          }
+        ],
+        "answerIds": ["c"],
+        "explanation": "可选链只短路当前链，外层除法仍会执行。需要默认值时应写 `(user?.score ?? 0) / 100`。",
+        "focus": "`?.` 短路边界"
+      },
+      {
+        "id": "ts-033-check-02",
+        "kind": "multiple",
+        "prompt": "哪些表达式结果判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`0 ?? 10` 的结果是 `0`。"
+          },
+          {
+            "id": "b",
+            "text": "`0 || 10` 的结果是 `10`。"
+          },
+          {
+            "id": "c",
+            "text": "`'' ?? 'default'` 的结果是 `''`。"
+          },
+          {
+            "id": "d",
+            "text": "`false ?? true` 的结果是 `false`。"
+          },
+          {
+            "id": "e",
+            "text": "`NaN ?? 1` 的结果是 `1`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`??` 只处理 `null` 和 `undefined`，不会把 `0`、空字符串、`false`、`NaN` 当作缺失值。`||` 会按 falsy 规则处理。",
+        "focus": "`??` 与 `||`"
+      },
+      {
+        "id": "ts-033-check-03",
+        "kind": "multiple",
+        "prompt": "关于可选链和空值合并，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`callback?.('hi')` 在 `callback` 为空时返回 `undefined`。"
+          },
+          {
+            "id": "b",
+            "text": "`list?.[0]` 可以安全访问可能为空的数组引用。"
+          },
+          {
+            "id": "c",
+            "text": "`??` 不能不加括号直接和 `||`、`&&` 混用。"
+          },
+          {
+            "id": "d",
+            "text": "`value ??= fallback` 只会在当前值是 `null | undefined` 时赋值。"
+          },
+          {
+            "id": "e",
+            "text": "`user?.name = 'Ada'` 是给可选对象赋值的推荐写法。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "可选链能读属性、索引和调用，但不能作为赋值目标。`??` 与逻辑运算符混用时要显式括号避免语义歧义。",
+        "focus": "语法与赋值限制"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-034",
+    "checks": [
+      {
+        "id": "ts-034-check-01",
+        "kind": "single",
+        "prompt": "在 `save<T>(value: T, serializer: Serializer<T>)` 这种设计里，多态主要体现在哪里？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`save` 必须知道每个 serializer 的具体 class 名称。"
+          },
+          {
+            "id": "b",
+            "text": "调用方依赖 `Serializer<T>` 协议，不依赖具体实现。"
+          },
+          {
+            "id": "c",
+            "text": "TypeScript 会强制所有实现类写 `extends Serializer`。"
+          },
+          {
+            "id": "d",
+            "text": "接口会在运行时检查 `serialize` 方法存在。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "接口表达稳定结构，具体实现只要满足结构即可替换。TypeScript 是结构类型系统，接口本身不会出现在运行时。",
+        "focus": "接口多态"
+      },
+      {
+        "id": "ts-034-check-02",
+        "kind": "multiple",
+        "prompt": "什么时候更适合选择抽象类而不是纯接口？",
+        "options": [
+          {
+            "id": "a",
+            "text": "需要复用模板方法流程，比如 `export -> normalize -> serialize -> afterExport`。"
+          },
+          {
+            "id": "b",
+            "text": "需要共享部分运行时代码或状态。"
+          },
+          {
+            "id": "c",
+            "text": "希望父类提供默认实现，子类只补齐关键步骤。"
+          },
+          {
+            "id": "d",
+            "text": "只想描述一个插件必须实现哪些方法，且不需要运行时代码。"
+          },
+          {
+            "id": "e",
+            "text": "希望一个类同时继承多个父类实现。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "抽象类有运行时代码，适合共享流程和状态；接口更适合边界协议。类只能继承一个父类，但可以实现多个接口。",
+        "focus": "interface vs abstract class"
+      },
+      {
+        "id": "ts-034-check-03",
+        "kind": "multiple",
+        "prompt": "关于 TypeScript 多态设计，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "优先让调用方依赖稳定协议，可以降低替换实现的成本。"
+          },
+          {
+            "id": "b",
+            "text": "接口适合端口适配、插件协议、策略对象等边界抽象。"
+          },
+          {
+            "id": "c",
+            "text": "只有确实需要共享流程或状态时，再引入抽象类更稳妥。"
+          },
+          {
+            "id": "d",
+            "text": "抽象类总是比接口更类型安全，因为它有运行时代码。"
+          },
+          {
+            "id": "e",
+            "text": "只要用了接口，就能避免所有运行时方法缺失问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "接口和抽象类解决的问题不同。接口不做运行时验证；抽象类能复用实现，但也会带来继承耦合。",
+        "focus": "多态设计风险"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-035",
+    "checks": [
+      {
+        "id": "ts-035-check-01",
+        "kind": "single",
+        "prompt": "下面哪种状态建模最符合可辨识联合的最佳实践？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`{ isLoading: boolean; data?: User; error?: Error }`"
+          },
+          {
+            "id": "b",
+            "text": "`{ status: 'idle' } | { status: 'loading' } | { status: 'success'; data: User } | { status: 'error'; error: Error }`"
+          },
+          {
+            "id": "c",
+            "text": "`{ status?: string; payload?: unknown }`"
+          },
+          {
+            "id": "d",
+            "text": "`{ loading?: true; success?: true; error?: true; data?: User }`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "稳定、必填、字面量的判别字段能让每个分支只携带自己合法的数据，避免多个 boolean 组合出非法状态。",
+        "focus": "判别字段"
+      },
+      {
+        "id": "ts-035-check-02",
+        "kind": "multiple",
+        "prompt": "在 `switch (action.type)` 后使用 `assertNever(action)` 的价值是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "新增 action 分支但忘记处理时，编译期能暴露问题。"
+          },
+          {
+            "id": "b",
+            "text": "default 分支里参数如果不是 `never`，说明还有未覆盖分支。"
+          },
+          {
+            "id": "c",
+            "text": "让重构 action union 时更容易找到遗漏位置。"
+          },
+          {
+            "id": "d",
+            "text": "让所有运行时异常自动变成类型错误。"
+          },
+          {
+            "id": "e",
+            "text": "可以替代外部数据的运行时校验。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`never` 穷尽检查针对已知联合类型的分支覆盖，不负责验证外部输入，也不能消除所有运行时异常。",
+        "focus": "穷尽检查"
+      },
+      {
+        "id": "ts-035-check-03",
+        "kind": "multiple",
+        "prompt": "关于可辨识联合在 reducer 或消息处理里的应用，哪些做法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "action creator 返回对象时用 `as const` 保留字面量 `type`。"
+          },
+          {
+            "id": "b",
+            "text": "避免把所有 action 写成 `{ type: string; payload?: unknown }`。"
+          },
+          {
+            "id": "c",
+            "text": "从网络、localStorage 或 postMessage 来的数据应先校验，再转为联合类型。"
+          },
+          {
+            "id": "d",
+            "text": "每个分支只放该分支真实存在的数据。"
+          },
+          {
+            "id": "e",
+            "text": "判别字段设成可选更灵活，也更利于类型收窄。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "判别字段越稳定，收窄越可靠。外部数据要先经过运行时校验，否则只是把未知数据“宣称”为联合类型。",
+        "focus": "action 与外部输入"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-036",
+    "checks": [
+      {
+        "id": "ts-036-check-01",
+        "kind": "single",
+        "prompt": "`Permutation<T>` 中为什么常写 `[T] extends [never] ? [] : ...`，而不是 `T extends never ? [] : ...`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为元组写法能把 `never` 自动转成 `unknown`。"
+          },
+          {
+            "id": "b",
+            "text": "因为要阻止条件类型分发，正确判断当前联合是否已经为空。"
+          },
+          {
+            "id": "c",
+            "text": "因为 `T extends never` 在 TypeScript 中语法非法。"
+          },
+          {
+            "id": "d",
+            "text": "因为元组写法会让排列结果按字母顺序稳定输出。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "裸类型参数会触发分布式条件类型，`never` 分发后得不到期望分支。用元组包住可以把它当整体判断。",
+        "focus": "递归终止"
+      },
+      {
+        "id": "ts-036-check-02",
+        "kind": "multiple",
+        "prompt": "下面哪些说法能解释 `Permutation<T, K = T>` 的核心机制？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`K extends K` 用来让当前联合成员逐个作为本轮首元素。"
+          },
+          {
+            "id": "b",
+            "text": "`Exclude<T, K>` 表示递归时移除已经选择的成员。"
+          },
+          {
+            "id": "c",
+            "text": "`[K, ...Permutation<Exclude<T, K>>]` 把当前选择拼到剩余排列前面。"
+          },
+          {
+            "id": "d",
+            "text": "辅助参数 `K = T` 保留当前层要分发的候选集合。"
+          },
+          {
+            "id": "e",
+            "text": "`Exclude<T, K>` 会修改原始联合类型 `T` 的声明。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Permutation 利用分布式条件类型枚举当前选择，再递归处理剩余成员。类型运算不会修改原始类型声明。",
+        "focus": "分发与剩余集合"
+      },
+      {
+        "id": "ts-036-check-03",
+        "kind": "multiple",
+        "prompt": "关于排列类型和 `UnionToTuple`，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "排列数量按阶乘增长，联合成员稍多就可能拖慢类型检查。"
+          },
+          {
+            "id": "b",
+            "text": "`UnionToTuple` 生成的顺序不应作为业务语义依赖。"
+          },
+          {
+            "id": "c",
+            "text": "这类类型适合面试、类型挑战或很小范围的类型约束。"
+          },
+          {
+            "id": "d",
+            "text": "`Permutation` 可以安全用于任何大型 union，性能不会受影响。"
+          },
+          {
+            "id": "e",
+            "text": "联合类型在 TypeScript 中天然有稳定声明顺序。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "复杂类型编程要考虑编译性能和可维护性。联合类型本身没有可依赖的业务顺序，排列类型也容易指数级膨胀。",
+        "focus": "生产使用风险"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-037",
+    "checks": [
+      {
+        "id": "ts-037-check-01",
+        "kind": "single",
+        "prompt": "一参一参柯里化的类型 `Curry<Args, Return>` 中，`Args extends [infer First, ...infer Rest]` 的作用是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "把返回值拆成多个函数。"
+          },
+          {
+            "id": "b",
+            "text": "取出当前第一个参数类型，并递归处理剩余参数。"
+          },
+          {
+            "id": "c",
+            "text": "把所有参数都变成可选参数。"
+          },
+          {
+            "id": "d",
+            "text": "保证运行时 `fn.length` 一定准确。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "柯里化类型的核心是递归拆参数元组：有参数就返回接收首参的函数，没有参数就返回最终结果类型。",
+        "focus": "参数元组递归"
+      },
+      {
+        "id": "ts-037-check-02",
+        "kind": "multiple",
+        "prompt": "关于示例中的通用 `curry` 实现，哪些注意点正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "类型只描述一参一参调用，不自动支持 `sum(1, 2)(3)`。"
+          },
+          {
+            "id": "b",
+            "text": "运行时用 `fn.length` 判断参数数量时，会受默认参数影响。"
+          },
+          {
+            "id": "c",
+            "text": "rest 参数函数的 `length` 可能不能表达真实需要的参数个数。"
+          },
+          {
+            "id": "d",
+            "text": "TypeScript 的类型递归会自动实现运行时柯里化逻辑。"
+          },
+          {
+            "id": "e",
+            "text": "对重载函数柯里化时，类型会天然保留所有重载签名。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类型和运行时实现要分别处理。默认参数、rest 参数、重载都会让柯里化的类型和运行时边界更复杂。",
+        "focus": "运行时与类型边界"
+      },
+      {
+        "id": "ts-037-check-03",
+        "kind": "multiple",
+        "prompt": "`PartialApply<F, Prefix>` 这种类型主要想约束什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "已经传入的 `Prefix` 必须匹配原函数参数元组的前缀。"
+          },
+          {
+            "id": "b",
+            "text": "返回函数只接收剩余参数。"
+          },
+          {
+            "id": "c",
+            "text": "返回值类型仍然来自原函数返回值。"
+          },
+          {
+            "id": "d",
+            "text": "可以从中间任意跳过参数，剩余参数会自动重排。"
+          },
+          {
+            "id": "e",
+            "text": "会在运行时检查每个参数的类型。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "partial application 是前缀绑定，不是任意占位重排。TypeScript 只做静态约束，运行时仍是普通函数调用。",
+        "focus": "partial application"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-038",
+    "checks": [
+      {
+        "id": "ts-038-check-01",
+        "kind": "single",
+        "prompt": "`type R = Awaited<Promise<Promise<number>> | string>` 的结果更接近哪一个？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Promise<number> | string`"
+          },
+          {
+            "id": "b",
+            "text": "`number | string`"
+          },
+          {
+            "id": "c",
+            "text": "`Promise<Promise<number | string>>`"
+          },
+          {
+            "id": "d",
+            "text": "`never`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`Awaited` 会模拟 `await` 行为，递归展开 Promise/thenable，并对联合类型分发。",
+        "focus": "Awaited"
+      },
+      {
+        "id": "ts-038-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `NoInfer<T>`，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它能阻止某个参数位置参与泛型推断。"
+          },
+          {
+            "id": "b",
+            "text": "它常用于让泛型先从主参数确定，再检查默认值或候选值是否合法。"
+          },
+          {
+            "id": "c",
+            "text": "在 `createStreetLight(colors, defaultColor)` 中可防止 `'blue'` 把颜色联合推宽。"
+          },
+          {
+            "id": "d",
+            "text": "它会在运行时冻结传入对象。"
+          },
+          {
+            "id": "e",
+            "text": "它能让任意字符串自动收窄成数组里的字面量成员。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`NoInfer` 是类型层工具，不影响运行时。它限制推断来源，让第二个参数按已经推断出的 `C` 被检查。",
+        "focus": "NoInfer"
+      },
+      {
+        "id": "ts-038-check-03",
+        "kind": "multiple",
+        "prompt": "哪些工具类型用途匹配正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`ThisParameterType<typeof fn>` 提取函数显式 `this` 参数类型。"
+          },
+          {
+            "id": "b",
+            "text": "`OmitThisParameter<typeof fn>` 得到去掉 `this` 参数后的函数类型。"
+          },
+          {
+            "id": "c",
+            "text": "`ConstructorParameters<typeof Class>` 提取构造函数参数元组。"
+          },
+          {
+            "id": "d",
+            "text": "`InstanceType<typeof Class>` 得到构造函数创建出的实例类型。"
+          },
+          {
+            "id": "e",
+            "text": "`ReturnType<typeof Class>` 是提取 class 实例类型的推荐方式。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "class 的实例类型应使用 `InstanceType` 或类名本身；`ReturnType` 面向普通函数返回值，不用于构造函数实例提取。",
+        "focus": "this 与构造工具类型"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-039",
+    "checks": [
+      {
+        "id": "ts-039-check-01",
+        "kind": "single",
+        "prompt": "为什么下面赋值在 TypeScript 中通常可以通过？\n\n```ts\ninterface Point2D { x: number; y: number }\ninterface Coordinate { x: number; y: number }\nconst point: Point2D = { x: 1, y: 2 }\nconst coordinate: Coordinate = point\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 `Point2D` 自动继承了 `Coordinate`。"
+          },
+          {
+            "id": "b",
+            "text": "因为 TypeScript 主要按成员结构判断兼容性。"
+          },
+          {
+            "id": "c",
+            "text": "因为 interface 名称会在运行时合并。"
+          },
+          {
+            "id": "d",
+            "text": "因为所有 interface 都等价于 `any`。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "TypeScript 是结构类型系统，只要成员结构兼容，不要求两个类型来自同一个声明名。",
+        "focus": "结构兼容"
+      },
+      {
+        "id": "ts-039-check-02",
+        "kind": "multiple",
+        "prompt": "关于下面代码，哪些判断正确？\n\n```ts\ntype Config = { host: string; port: number }\nconst a: Config = { host: 'localhost', port: 3000, debug: true }\nconst raw = { host: 'localhost', port: 3000, debug: true }\nconst b: Config = raw\n```",
+        "options": [
+          {
+            "id": "a",
+            "text": "`a` 会触发对象字面量的额外属性检查。"
+          },
+          {
+            "id": "b",
+            "text": "`b` 通常可以通过，因为 `raw` 结构上至少满足 `Config`。"
+          },
+          {
+            "id": "c",
+            "text": "额外属性检查不是名义类型，而是一层实用校验。"
+          },
+          {
+            "id": "d",
+            "text": "`raw` 一旦有额外字段，就永远不能赋给 `Config`。"
+          },
+          {
+            "id": "e",
+            "text": "额外属性检查会在运行时删除 `debug` 字段。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "对象字面量直接赋值会更严格，避免拼写错误。赋值给变量后再传递，兼容性回到结构检查，不会删除运行时字段。",
+        "focus": "额外属性检查"
+      },
+      {
+        "id": "ts-039-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景或做法能在 TypeScript 中形成类似名义类型的约束？",
+        "options": [
+          {
+            "id": "a",
+            "text": "带有 `private` 或 `protected` 成员的类兼容性受声明来源限制。"
+          },
+          {
+            "id": "b",
+            "text": "用 `unique symbol` 作为品牌字段构造 `UserId`、`OrderId`。"
+          },
+          {
+            "id": "c",
+            "text": "对 id、金额、单位等原始值使用 branded type 降低误传风险。"
+          },
+          {
+            "id": "d",
+            "text": "两个 interface 名称不同就天然互不兼容。"
+          },
+          {
+            "id": "e",
+            "text": "`type UserId = string` 就能阻止传入普通字符串。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "TS 默认结构兼容，想表达领域身份需要品牌类型或 class 私有成员这类技巧。类型别名本身不会创造新身份。",
+        "focus": "nominal-like 边界与品牌类型"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-040",
+    "checks": [
+      {
+        "id": "ts-040-check-01",
+        "kind": "single",
+        "prompt": "Node 运行时项目想让 TypeScript 按 Node 的 ESM/CJS 规则理解文件和 `package.json`，更合理的配置是哪组？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`\"module\": \"ESNext\", \"moduleResolution\": \"classic\"`"
+          },
+          {
+            "id": "b",
+            "text": "`\"module\": \"NodeNext\", \"moduleResolution\": \"NodeNext\"`"
+          },
+          {
+            "id": "c",
+            "text": "`\"module\": \"CommonJS\", \"moduleResolution\": \"bundler\"`"
+          },
+          {
+            "id": "d",
+            "text": "`\"module\": \"AMD\", \"moduleResolution\": \"node\"`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "NodeNext 会结合 `package.json` 的 `type` 字段和 `.ts/.mts/.cts` 等扩展名判断模块系统。Bundler 项目则常用 ESNext + bundler。",
+        "focus": "NodeNext 配置"
+      },
+      {
+        "id": "ts-040-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `esModuleInterop` 和 CommonJS 包互操作，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它让 default import 更符合 Babel/打包器处理 CJS default 的习惯。"
+          },
+          {
+            "id": "b",
+            "text": "它不保证所有 CJS 包都能可靠使用具名导入。"
+          },
+          {
+            "id": "c",
+            "text": "老式 `export =` 声明常可用 `import foo = require('foo')` 匹配。"
+          },
+          {
+            "id": "d",
+            "text": "开启后 TypeScript 会把任意 CJS 包转换成真正的 ESM 源码。"
+          },
+          {
+            "id": "e",
+            "text": "开启后库作者的 `.d.ts` 和运行时输出不一致也不会出问题。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "互操作选项改善类型和 emit 行为，但不改变包本身的真实导出形态。具名导入仍依赖运行时和工具链分析能力。",
+        "focus": "CJS 互操作"
+      },
+      {
+        "id": "ts-040-check-03",
+        "kind": "multiple",
+        "prompt": "处理 ESM/CJS 互操作时，哪些工程实践正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Node ESM 相对导入通常写编译后的 `.js` 扩展名。"
+          },
+          {
+            "id": "b",
+            "text": "库发布时 `exports` 中的 `types`、`import`、`require` 指向要保持一致。"
+          },
+          {
+            "id": "c",
+            "text": "双包发布要注意同一包被 ESM/CJS 两份实例加载的问题。"
+          },
+          {
+            "id": "d",
+            "text": "配合 `verbatimModuleSyntax` 使用 `import type` 区分类型导入和值导入。"
+          },
+          {
+            "id": "e",
+            "text": "在 Node ESM 下，源码是 `.ts` 就必须写 `import './foo.ts'`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Node 运行时加载编译后的 JS，路径和扩展名要面向输出结果。类型导入和值导入分清楚可以减少运行时导入错误。",
+        "focus": "发布与 import type"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-041",
+    "checks": [
+      {
+        "id": "ts-041-check-01",
+        "kind": "single",
+        "prompt": "类型安全状态机最基础的约束目标是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "让所有事件都能在任意状态下发送成功。"
+          },
+          {
+            "id": "b",
+            "text": "状态名、事件名和 transition 目标都来自同一份配置约束。"
+          },
+          {
+            "id": "c",
+            "text": "让状态机只在编译期存在，运行时不需要 transition 表。"
+          },
+          {
+            "id": "d",
+            "text": "用 boolean 字段替代所有状态名。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "状态机的类型安全来自“配置即来源”：initial、states、on 里的事件和目标状态必须互相对齐。",
+        "focus": "状态与事件来源"
+      },
+      {
+        "id": "ts-041-check-02",
+        "kind": "multiple",
+        "prompt": "为什么状态机配置里常用 `satisfies MachineConfig<State, Event>`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "校验配置是否满足状态机结构。"
+          },
+          {
+            "id": "b",
+            "text": "避免对象字面量被粗暴拓宽后丢失具体状态名信息。"
+          },
+          {
+            "id": "c",
+            "text": "检查 transition 的目标状态是否存在于状态集合中。"
+          },
+          {
+            "id": "d",
+            "text": "在运行时自动阻止非法事件。"
+          },
+          {
+            "id": "e",
+            "text": "自动推导当前运行时状态下唯一允许的事件。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`satisfies` 是编译期结构校验和字面量保留工具。运行时仍要由 `send` 逻辑处理事件；state-specific event 需要更复杂的 typestate 设计。",
+        "focus": "`satisfies` 与字面量"
+      },
+      {
+        "id": "ts-041-check-03",
+        "kind": "multiple",
+        "prompt": "关于示例状态机的能力边界，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`send(event: Event)` 能限制事件必须来自事件全集。"
+          },
+          {
+            "id": "b",
+            "text": "它不能静态证明“当前 red 状态只能发 next”，因为当前状态是运行时值。"
+          },
+          {
+            "id": "c",
+            "text": "要做 state-specific event，可让 transition 返回携带新状态泛型的对象。"
+          },
+          {
+            "id": "d",
+            "text": "复杂生产场景可考虑 XState 等成熟库。"
+          },
+          {
+            "id": "e",
+            "text": "只要用泛型参数 `State`，TypeScript 就能知道任意时刻的当前状态。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "泛型能描述配置关系，但无法自动追踪运行时变量随事件变化后的精确状态。typestate 要把状态变化编码进类型返回值。",
+        "focus": "typestate 边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-042",
+    "checks": [
+      {
+        "id": "ts-042-check-01",
+        "kind": "single",
+        "prompt": "为什么很多前端项目会用 `as const` 对象替代普通数字 `enum`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 `enum` 在 TypeScript 中完全没有运行时代码。"
+          },
+          {
+            "id": "b",
+            "text": "因为 const 对象是普通 JS，构建行为更直观，且适合 API 字符串值。"
+          },
+          {
+            "id": "c",
+            "text": "因为 const 对象会在运行时自动冻结。"
+          },
+          {
+            "id": "d",
+            "text": "因为联合字面量不能表达字符串取值集合。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "普通 enum 会生成运行时对象，数字 enum 还有反向映射。const 对象更贴近 JS，值和类型可从同一份对象推导。",
+        "focus": "enum 成本"
+      },
+      {
+        "id": "ts-042-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是公共库导出 `const enum` 时需要谨慎的原因？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`const enum` 依赖编译期内联，跨包消费可能和构建链不匹配。"
+          },
+          {
+            "id": "b",
+            "text": "Babel/SWC/esbuild 这类单文件转译场景可能无法按预期处理。"
+          },
+          {
+            "id": "c",
+            "text": "`isolatedModules` 等配置下容易踩坑。"
+          },
+          {
+            "id": "d",
+            "text": "`const enum` 一定比普通对象更适合 JSON API。"
+          },
+          {
+            "id": "e",
+            "text": "`const enum` 会在运行时自动校验所有枚举值。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`const enum` 的优势是内联，但代价是构建链耦合。公共库要优先考虑消费者的编译环境。",
+        "focus": "const enum 风险"
+      },
+      {
+        "id": "ts-042-check-03",
+        "kind": "multiple",
+        "prompt": "关于 enum、const 对象和联合字面量，哪些选择合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只需要类型集合时，可直接写 `'active' | 'inactive'`。"
+          },
+          {
+            "id": "b",
+            "text": "需要运行时枚举值和类型同步时，可用 `as const` 对象。"
+          },
+          {
+            "id": "c",
+            "text": "维护已有 enum API 或位运算 flag 时，仍可考虑 enum 或 number 对象。"
+          },
+          {
+            "id": "d",
+            "text": "`Object.values(Status)` 可用于 const 对象的运行时枚举。"
+          },
+          {
+            "id": "e",
+            "text": "`as const` 对象没有任何运行时对象成本。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "const 对象只要被运行时引用，就会存在对象成本。是否使用取决于是否需要运行时值。",
+        "focus": "替代方案选择"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-043",
+    "checks": [
+      {
+        "id": "ts-043-check-01",
+        "kind": "single",
+        "prompt": "`DeepPickOne<T, 'address.country.code'>` 的核心递归思路是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "先把对象完整深拷贝，再删除不需要的字段。"
+          },
+          {
+            "id": "b",
+            "text": "用模板字面量拆出当前 key 和剩余路径，逐层构造嵌套对象。"
+          },
+          {
+            "id": "c",
+            "text": "把点路径转换成数组后在运行时遍历。"
+          },
+          {
+            "id": "d",
+            "text": "直接用 `Pick<T, P>`，因为 `Pick` 支持点路径。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "类型层实现靠 `P extends \\`${infer K}.${infer Rest}\\`` 拆路径，再用 `{ [Key in K]: ... }` 递归构造。",
+        "focus": "单路径递归"
+      },
+      {
+        "id": "ts-043-check-02",
+        "kind": "multiple",
+        "prompt": "为什么 `DeepPick<T, 'id' | 'address.city' | 'address.country.code'>` 需要“联合转交叉”？",
+        "options": [
+          {
+            "id": "a",
+            "text": "每条路径先生成一个局部对象结果。"
+          },
+          {
+            "id": "b",
+            "text": "多条路径共享父级时，需要合并到同一个嵌套对象上。"
+          },
+          {
+            "id": "c",
+            "text": "`UnionToIntersection` 可把 `{ id: string } | { address: ... }` 合并成同时拥有这些字段的类型。"
+          },
+          {
+            "id": "d",
+            "text": "联合转交叉会按运行时顺序遍历对象属性。"
+          },
+          {
+            "id": "e",
+            "text": "不合并也能自然得到完整对象结构。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "单路径 pick 得到的是多个对象类型的联合。要让结果同时包含所有路径，就要把这些片段合并成交叉并展开。",
+        "focus": "多路径合并"
+      },
+      {
+        "id": "ts-043-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `DotPaths`、`PathValue` 和 `DeepPick`，哪些注意点正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "数组、函数、Date 等也属于广义 object，通常要按业务语义特殊处理。"
+          },
+          {
+            "id": "b",
+            "text": "路径过深或对象过大会增加类型检查成本。"
+          },
+          {
+            "id": "c",
+            "text": "`PathValue<User, 'address.city'>` 适合只取路径对应的值类型。"
+          },
+          {
+            "id": "d",
+            "text": "类型层点路径能自动验证运行时用户输入的字符串。"
+          },
+          {
+            "id": "e",
+            "text": "`DeepPick` 会改变原始对象的运行时结构。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "这些工具都是静态类型计算，不处理运行时数据。复杂对象类型还要考虑特殊对象和性能。",
+        "focus": "实现限制"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-044",
+    "checks": [
+      {
+        "id": "ts-044-check-01",
+        "kind": "single",
+        "prompt": "为什么生产项目里常推荐 React Hook Form + Zod/Valibot 这类 schema-first 方案？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 TypeScript 接口会在浏览器里自动校验输入值。"
+          },
+          {
+            "id": "b",
+            "text": "因为 schema 同时提供运行时校验和静态类型推断，表单状态/错误/性能也更成熟。"
+          },
+          {
+            "id": "c",
+            "text": "因为所有 DOM input 的值都会自动按字段类型转换。"
+          },
+          {
+            "id": "d",
+            "text": "因为不再需要处理服务端错误。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "表单是运行时输入边界，schema 能避免“TS 类型和校验规则分离”。成熟表单库还能处理状态、性能和错误展示。",
+        "focus": "schema-first 表单"
+      },
+      {
+        "id": "ts-044-check-02",
+        "kind": "multiple",
+        "prompt": "在手写 `useForm<TForm>` 时，哪些类型关系值得保留？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`setField<K extends keyof TForm>(key: K, value: TForm[K])` 保证字段和值匹配。"
+          },
+          {
+            "id": "b",
+            "text": "`validate?: (value: TForm[K], values: TForm) => string | undefined` 让校验器拿到精确字段类型。"
+          },
+          {
+            "id": "c",
+            "text": "`FormErrors<TForm>` 的 key 应来自表单字段名。"
+          },
+          {
+            "id": "d",
+            "text": "所有字段值都可以统一建模成 `string`，提交时再相信后端。"
+          },
+          {
+            "id": "e",
+            "text": "字段名应该用普通 `string`，这样更灵活也更安全。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "表单系统的关键是字段名、字段值、错误和提交值都来自同一个类型源。字段和值一旦脱钩，类型安全很快失效。",
+        "focus": "字段配置类型"
+      },
+      {
+        "id": "ts-044-check-03",
+        "kind": "multiple",
+        "prompt": "关于类型安全表单的工程边界，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "DOM input 原始值通常是 string，number/boolean/date 需要 parse。"
+          },
+          {
+            "id": "b",
+            "text": "表单内部值和提交 DTO 可能不同，需要显式 transform。"
+          },
+          {
+            "id": "c",
+            "text": "服务端错误既可能映射到字段，也可能是表单级错误。"
+          },
+          {
+            "id": "d",
+            "text": "大表单要考虑渲染性能，避免每次输入牵动整页。"
+          },
+          {
+            "id": "e",
+            "text": "只要泛型写对，就不需要运行时校验。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "泛型只能保证代码内部 API 的类型关系；用户输入、服务端错误和 DOM 转换都必须在运行时处理。",
+        "focus": "工程边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-045",
+    "checks": [
+      {
+        "id": "ts-045-check-01",
+        "kind": "single",
+        "prompt": "为什么 TypeScript monorepo 不能只靠 `compilerOptions.paths` 做类型共享？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`paths` 会自动生成每个包的 `.d.ts`。"
+          },
+          {
+            "id": "b",
+            "text": "`paths` 只影响 TS 解析，不会自动解决运行时打包、包边界和发布入口。"
+          },
+          {
+            "id": "c",
+            "text": "`paths` 只能用于 JavaScript，不能用于 TypeScript。"
+          },
+          {
+            "id": "d",
+            "text": "`paths` 会禁止 IDE 跳转定义。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`paths` 是编译器解析别名，不是包发布契约。Monorepo 还需要 workspace 依赖、project references 和 package exports。",
+        "focus": "paths 的边界"
+      },
+      {
+        "id": "ts-045-check-02",
+        "kind": "multiple",
+        "prompt": "关于 Project References，哪些配置或行为正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "根 `tsconfig.json` 可作为 solution config，使用 `files: []` 和 `references`。"
+          },
+          {
+            "id": "b",
+            "text": "被引用的库包通常需要 `composite: true`。"
+          },
+          {
+            "id": "c",
+            "text": "`tsc -b` 会按 references 依赖图进行构建。"
+          },
+          {
+            "id": "d",
+            "text": "库包常开启 `declaration` 和 `declarationMap` 输出类型声明。"
+          },
+          {
+            "id": "e",
+            "text": "开启 references 后，所有包都必须从别的包的 `src` 目录直接 import。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "Project References 的价值是建立清晰类型构建边界。跨包应该走包入口和 exports，避免绕过边界直接引用源码。",
+        "focus": "Project References"
+      },
+      {
+        "id": "ts-045-check-03",
+        "kind": "multiple",
+        "prompt": "哪些 monorepo 实践更稳妥？",
+        "options": [
+          {
+            "id": "a",
+            "text": "包的 `package.json` 配置 `exports.types` 和 `exports.import`。"
+          },
+          {
+            "id": "b",
+            "text": "应用包通过 `workspace:*` 依赖引用内部包。"
+          },
+          {
+            "id": "c",
+            "text": "CI 中可先跑 `tsc -b --pretty false` 检查类型边界。"
+          },
+          {
+            "id": "d",
+            "text": "生成目录和 dist 不应被其他包随意直接引用。"
+          },
+          {
+            "id": "e",
+            "text": "配置 `paths` 后，发布到 npm 时消费者会自动知道这些别名。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "发布和消费依赖 package.json 契约，不依赖你本地 tsconfig paths。CI 要验证类型构建图和包边界。",
+        "focus": "发布与 CI"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-046",
+    "checks": [
+      {
+        "id": "ts-046-check-01",
+        "kind": "single",
+        "prompt": "TypeScript 类型测试主要验证什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "浏览器点击流程是否正确。"
+          },
+          {
+            "id": "b",
+            "text": "编译期 API 类型行为是否符合预期，错误用法是否会报错。"
+          },
+          {
+            "id": "c",
+            "text": "生产 bundle 的 gzip 体积。"
+          },
+          {
+            "id": "d",
+            "text": "Node 运行时是否能连接数据库。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "类型测试是编译期测试，适合保护库的公开 API、工具类型和负向约束。",
+        "focus": "类型测试对象"
+      },
+      {
+        "id": "ts-046-check-02",
+        "kind": "multiple",
+        "prompt": "关于 `tsd`、`expect-type`、`expectTypeOf`，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`tsd` 适合测试发布包的 `.d.ts` 或公共 API。"
+          },
+          {
+            "id": "b",
+            "text": "`expectTypeOf` 可和 Vitest 项目放在同一测试生态里。"
+          },
+          {
+            "id": "c",
+            "text": "手写 `Expect<Equal<A, B>>` 很适合测试工具类型。"
+          },
+          {
+            "id": "d",
+            "text": "类型断言会在运行时比较两个对象是否相等。"
+          },
+          {
+            "id": "e",
+            "text": "只要运行时测试通过，就不需要测试公共 API 的类型约束。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类型测试和运行时测试覆盖面不同。类型断言在类型检查阶段生效，不能替代业务运行时断言。",
+        "focus": "工具选择"
+      },
+      {
+        "id": "ts-046-check-03",
+        "kind": "multiple",
+        "prompt": "为什么负向类型测试里更推荐 `@ts-expect-error` 而不是 `@ts-ignore`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "如果下一行不再报错，`@ts-expect-error` 自己会报错。"
+          },
+          {
+            "id": "b",
+            "text": "它能防止类型约束意外变松却没人发现。"
+          },
+          {
+            "id": "c",
+            "text": "它适合为 bug 修复补“错误用法必须继续报错”的测试。"
+          },
+          {
+            "id": "d",
+            "text": "它会把运行时异常转换为编译错误。"
+          },
+          {
+            "id": "e",
+            "text": "它会让下一行永远跳过 emit。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`@ts-expect-error` 是带期望的抑制。错误消失时测试失败，比无条件忽略更适合守住类型约束。",
+        "focus": "负向测试"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-047",
+    "checks": [
+      {
+        "id": "ts-047-check-01",
+        "kind": "single",
+        "prompt": "`ParamNames<'/users/:id/posts/:postId'>` 应该提取出什么类型？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`string`"
+          },
+          {
+            "id": "b",
+            "text": "`'id' | 'postId'`"
+          },
+          {
+            "id": "c",
+            "text": "`{ id: string; postId: string }`"
+          },
+          {
+            "id": "d",
+            "text": "`['id', 'postId']`"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`ParamNames` 只提取参数名联合；再由 `ParamsOf<Path>` 映射成 `{ id: string; postId: string }`。",
+        "focus": "路径参数提取"
+      },
+      {
+        "id": "ts-047-check-02",
+        "kind": "multiple",
+        "prompt": "类型安全路由的 `Link` 组件应约束哪些事情？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`to` 必须是路由表中存在的路径。"
+          },
+          {
+            "id": "b",
+            "text": "含 `:id` 的路径必须传入对应 `params`。"
+          },
+          {
+            "id": "c",
+            "text": "多个路径参数都要在 `params` 中提供。"
+          },
+          {
+            "id": "d",
+            "text": "search 参数类型应跟该路由定义绑定。"
+          },
+          {
+            "id": "e",
+            "text": "任意字符串路径都应允许，避免影响灵活性。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "路由类型系统的价值就是把路径、params、search 绑定到同一张路由表，减少拼错和漏传。",
+        "focus": "Link props 约束"
+      },
+      {
+        "id": "ts-047-check-03",
+        "kind": "multiple",
+        "prompt": "关于类型安全路由的运行时边界，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`buildPath` 仍要检查缺失参数并做 `encodeURIComponent`。"
+          },
+          {
+            "id": "b",
+            "text": "search 的 parse/stringify 最好配合 schema。"
+          },
+          {
+            "id": "c",
+            "text": "嵌套路由、loader、权限、预加载和 code splitting 会让系统复杂很多。"
+          },
+          {
+            "id": "d",
+            "text": "模板字面量类型能自动编码 URL。"
+          },
+          {
+            "id": "e",
+            "text": "编译期 params 类型能保证服务端一定存在对应页面。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "类型约束能防止调用方漏参数，但 URL 拼接、编码、查询解析和路由实际存在都要由运行时和框架处理。",
+        "focus": "运行时边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-048",
+    "checks": [
+      {
+        "id": "ts-048-check-01",
+        "kind": "single",
+        "prompt": "为什么解析外部 JSON 时更推荐先返回 `unknown` 而不是 `any`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`unknown` 会自动推断 JSON 的真实字段。"
+          },
+          {
+            "id": "b",
+            "text": "`unknown` 能接收任意值，但使用前必须收窄，能逼迫边界校验。"
+          },
+          {
+            "id": "c",
+            "text": "`unknown` 可以直接调用任意方法。"
+          },
+          {
+            "id": "d",
+            "text": "`unknown` 在运行时比 `any` 更快。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`unknown` 是安全的“我还不知道”。它不允许直接属性访问或调用，必须先通过守卫或 schema 收窄。",
+        "focus": "unknown 的使用"
+      },
+      {
+        "id": "ts-048-check-02",
+        "kind": "multiple",
+        "prompt": "哪些类型代数结果判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`string | never` 等价于 `string`。"
+          },
+          {
+            "id": "b",
+            "text": "`string & never` 等价于 `never`。"
+          },
+          {
+            "id": "c",
+            "text": "`unknown | string` 等价于 `unknown`。"
+          },
+          {
+            "id": "d",
+            "text": "`unknown & string` 等价于 `string`。"
+          },
+          {
+            "id": "e",
+            "text": "`any & string` 会安全收窄成 `string`。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "`never` 是空集合，`unknown` 是安全顶层类型；`any` 会污染运算，`any & string` 仍表现为 `any`。",
+        "focus": "类型代数"
+      },
+      {
+        "id": "ts-048-check-03",
+        "kind": "multiple",
+        "prompt": "哪些是 `never` 的典型用途？",
+        "options": [
+          {
+            "id": "a",
+            "text": "表示永不正常返回的函数返回值。"
+          },
+          {
+            "id": "b",
+            "text": "在 `assertNever` 中做可辨识联合穷尽检查。"
+          },
+          {
+            "id": "c",
+            "text": "在条件类型中把联合成员过滤掉。"
+          },
+          {
+            "id": "d",
+            "text": "表示任意外部输入。"
+          },
+          {
+            "id": "e",
+            "text": "跳过所有类型检查。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "`never` 表示不可能存在的值。外部输入用 `unknown`，跳过检查的是 `any`。",
+        "focus": "never 场景"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-049",
+    "checks": [
+      {
+        "id": "ts-049-check-01",
+        "kind": "single",
+        "prompt": "`withAuth<P extends InjectedAuthProps>` 返回组件时，为什么外部 props 通常写成 `Omit<P, keyof InjectedAuthProps>`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 HOC 不会给子组件传任何 props。"
+          },
+          {
+            "id": "b",
+            "text": "因为 `user`、`isAuthenticated` 由 HOC 注入，调用方不应再传。"
+          },
+          {
+            "id": "c",
+            "text": "因为 `Omit` 会在运行时删除 DOM 属性。"
+          },
+          {
+            "id": "d",
+            "text": "因为 React 组件不能接收布尔类型 prop。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "注入型 HOC 要隐藏被注入的 props，只让外部传剩余 props。内部组合 props 时可能需要一次受控断言。",
+        "focus": "注入 props"
+      },
+      {
+        "id": "ts-049-check-02",
+        "kind": "multiple",
+        "prompt": "哪些是 React HOC 的 TypeScript 实践要点？",
+        "options": [
+          {
+            "id": "a",
+            "text": "不改变 props 的 HOC 可用 `P extends object` 保留原 props。"
+          },
+          {
+            "id": "b",
+            "text": "设置 `displayName` 有助于调试组件树。"
+          },
+          {
+            "id": "c",
+            "text": "HOC 默认不会自动复制静态属性，库场景可用 hoist 工具。"
+          },
+          {
+            "id": "d",
+            "text": "HOC 组合顺序会影响输入输出 props 类型。"
+          },
+          {
+            "id": "e",
+            "text": "`React.FC` 是编写 HOC 泛型的唯一正确方式。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "HOC 的难点是 props 输入输出关系、调试名、静态属性和组合顺序。普通函数组件类型通常已经足够。",
+        "focus": "HOC 类型实践"
+      },
+      {
+        "id": "ts-049-check-03",
+        "kind": "multiple",
+        "prompt": "关于 HOC 中的 ref，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "React 18 兼容库通常仍使用 `forwardRef` 保留 ref。"
+          },
+          {
+            "id": "b",
+            "text": "React 19 支持把 `ref` 当普通 prop 传给函数组件，但生态兼容仍要考虑。"
+          },
+          {
+            "id": "c",
+            "text": "HOC 如果不转发 ref，外部拿到的可能是包装组件而不是内部组件实例或 DOM。"
+          },
+          {
+            "id": "d",
+            "text": "ref 会像普通 props 一样自动穿透所有 HOC。"
+          },
+          {
+            "id": "e",
+            "text": "TypeScript 类型能让未转发的 ref 在运行时自动生效。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "ref 不是普通 props 的简单自动传递。是否转发要在 HOC API 中明确设计并用类型表达。",
+        "focus": "ref 与 React 版本"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-050",
+    "checks": [
+      {
+        "id": "ts-050-check-01",
+        "kind": "single",
+        "prompt": "类型系统解析 URL 查询字符串这类工具，最关键的限制是什么？",
+        "options": [
+          {
+            "id": "a",
+            "text": "只能解析运行时从地址栏读到的任意字符串。"
+          },
+          {
+            "id": "b",
+            "text": "主要对静态字面量字符串有效，运行时字符串通常只能得到宽泛 `string`。"
+          },
+          {
+            "id": "c",
+            "text": "只能解析数字，不能解析 key。"
+          },
+          {
+            "id": "d",
+            "text": "会自动进行 URL decode。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "模板字面量类型在编译期工作。真实用户输入、地址栏查询和 URL 解码都属于运行时问题。",
+        "focus": "静态字符串边界"
+      },
+      {
+        "id": "ts-050-check-02",
+        "kind": "multiple",
+        "prompt": "`ParseQuery<'name=Alice&age=30'>` 的实现通常会用到哪些类型技巧？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用模板字面量类型按 `&` 拆分 Head 和 Tail。"
+          },
+          {
+            "id": "b",
+            "text": "用 `PairToObject<'name=Alice'>` 生成 `{ name: 'Alice' }`。"
+          },
+          {
+            "id": "c",
+            "text": "用联合转交叉把多个键值片段合并成对象。"
+          },
+          {
+            "id": "d",
+            "text": "用 `Expand` 展开交叉结果，提升可读性。"
+          },
+          {
+            "id": "e",
+            "text": "用运行时 `URLSearchParams` 修改类型系统中的字符串。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "类型层解析靠字符串模式匹配和类型合并；`URLSearchParams` 是运行时工具，不能直接改变编译期字面量类型。",
+        "focus": "ParseQuery 机制"
+      },
+      {
+        "id": "ts-050-check-03",
+        "kind": "multiple",
+        "prompt": "哪些场景不应该只依赖类型层字符串解析？",
+        "options": [
+          {
+            "id": "a",
+            "text": "重复 query key，例如 `tag=a&tag=b`。"
+          },
+          {
+            "id": "b",
+            "text": "URL 编码和解码。"
+          },
+          {
+            "id": "c",
+            "text": "数组参数、空值、布尔值和数字转换。"
+          },
+          {
+            "id": "d",
+            "text": "任意长度用户输入字符串。"
+          },
+          {
+            "id": "e",
+            "text": "静态路由参数名推导。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "复杂查询语义需要运行时代码和 schema 处理。静态路由参数名推导才是模板字面量类型的适合场景。",
+        "focus": "复杂语义"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-051",
+    "checks": [
+      {
+        "id": "ts-051-check-01",
+        "kind": "single",
+        "prompt": "为什么配置对象常写成 `as const satisfies Record<string, \\`/${string}\\`>`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`as const` 会跳过结构检查，`satisfies` 会把值拓宽为 `string`。"
+          },
+          {
+            "id": "b",
+            "text": "`as const` 保留字面量，`satisfies` 检查结构但不强行丢掉具体类型。"
+          },
+          {
+            "id": "c",
+            "text": "两者都会在运行时冻结对象。"
+          },
+          {
+            "id": "d",
+            "text": "这样可以自动生成路由文件。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "这是配置类型建模的常用组合：既保留具体值用于推导，又检查整体形状符合约束。",
+        "focus": "`as const` + `satisfies`"
+      },
+      {
+        "id": "ts-051-check-02",
+        "kind": "multiple",
+        "prompt": "哪些 TypeScript 配置或习惯能提升实战安全性？",
+        "options": [
+          {
+            "id": "a",
+            "text": "开启 `strict` 作为基本线。"
+          },
+          {
+            "id": "b",
+            "text": "视项目情况启用 `noUncheckedIndexedAccess`。"
+          },
+          {
+            "id": "c",
+            "text": "使用 `exactOptionalPropertyTypes` 更精确地区分缺失和 `undefined`。"
+          },
+          {
+            "id": "d",
+            "text": "使用 `noImplicitOverride` 让 class override 更明确。"
+          },
+          {
+            "id": "e",
+            "text": "关闭所有严格选项，用更多单元测试弥补类型约束。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "严格配置能把很多边界问题提前暴露。测试很重要，但不应替代基础类型约束。",
+        "focus": "strict 配置"
+      },
+      {
+        "id": "ts-051-check-03",
+        "kind": "multiple",
+        "prompt": "关于 TypeScript 实战技巧，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "外部输入用 `unknown`，验证后进入业务类型。"
+          },
+          {
+            "id": "b",
+            "text": "公共 API 和导出函数适合显式标注返回类型。"
+          },
+          {
+            "id": "c",
+            "text": "品牌类型适合区分语义不同但结构相同的 ID、金额或单位。"
+          },
+          {
+            "id": "d",
+            "text": "封装 `objectKeys<T>()` 本质仍是断言，要谨慎用于外部对象。"
+          },
+          {
+            "id": "e",
+            "text": "内部局部变量全部显式标注类型一定更好。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "TS 最好服务于边界和公共契约。内部局部变量通常让推断工作即可，过度标注反而增加噪音。",
+        "focus": "实战边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-052",
+    "checks": [
+      {
+        "id": "ts-052-check-01",
+        "kind": "single",
+        "prompt": "为什么 `catch (error)` 在严格配置下应按 `unknown` 处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 JavaScript 只能 throw `Error` 对象。"
+          },
+          {
+            "id": "b",
+            "text": "因为 JavaScript 可以 throw 任意值，不能假设一定有 `message`。"
+          },
+          {
+            "id": "c",
+            "text": "因为 `unknown` 会自动记录错误堆栈。"
+          },
+          {
+            "id": "d",
+            "text": "因为 TypeScript 会阻止所有 throw。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`throw 'oops'`、`throw 123`、`throw { message: 'x' }` 都合法。使用前必须先收窄。",
+        "focus": "catch unknown"
+      },
+      {
+        "id": "ts-052-check-02",
+        "kind": "multiple",
+        "prompt": "一个健壮的 `getErrorMessage(error: unknown)` 可以包含哪些处理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`error instanceof Error` 时返回 `error.message`。"
+          },
+          {
+            "id": "b",
+            "text": "`typeof error === 'string'` 时直接返回字符串。"
+          },
+          {
+            "id": "c",
+            "text": "对带 `message` 字段的对象做结构检查，并确认 message 是 string。"
+          },
+          {
+            "id": "d",
+            "text": "兜底使用 `String(error)`。"
+          },
+          {
+            "id": "e",
+            "text": "直接 `(error as Error).message`，如果没有就让它崩。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "unknown 的意义是先验证再使用。结构化 message 检查还能覆盖部分跨 realm 或反序列化错误。",
+        "focus": "错误消息提取"
+      },
+      {
+        "id": "ts-052-check-03",
+        "kind": "multiple",
+        "prompt": "关于业务错误和 catch 策略，哪些做法合理？",
+        "options": [
+          {
+            "id": "a",
+            "text": "用 `AppError.is(error)` 这类守卫识别业务错误。"
+          },
+          {
+            "id": "b",
+            "text": "无法识别的错误通常记录后重新抛出，避免吞掉程序错误。"
+          },
+          {
+            "id": "c",
+            "text": "可预期业务失败也可以用 `Result<T, E>` 建模，而不是抛异常。"
+          },
+          {
+            "id": "d",
+            "text": "所有 catch 块都应该把错误转换成空字符串并继续。"
+          },
+          {
+            "id": "e",
+            "text": "只要继承 `Error`，跨 realm 判断就永远可靠。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "错误处理要区分业务失败和未知异常。`instanceof` 有边界，吞掉未知错误会让真正的问题隐藏起来。",
+        "focus": "业务错误处理"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-053",
+    "checks": [
+      {
+        "id": "ts-053-check-01",
+        "kind": "single",
+        "prompt": "`StringToUnion<'hello'>` 的结果里为什么只有一个 `'l'`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为递归会跳过重复字符。"
+          },
+          {
+            "id": "b",
+            "text": "因为联合类型会天然去重。"
+          },
+          {
+            "id": "c",
+            "text": "因为 `infer` 不能识别连续字符。"
+          },
+          {
+            "id": "d",
+            "text": "因为 TypeScript 字符串类型只保留前三个字符。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "`'h' | 'e' | 'l' | 'l' | 'o'` 会归并成 `'h' | 'e' | 'l' | 'o'`，联合不表达重复次数。",
+        "focus": "StringToUnion"
+      },
+      {
+        "id": "ts-053-check-02",
+        "kind": "multiple",
+        "prompt": "实现 `ReplaceAll<S, From, To>` 时，哪些细节正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "需要先处理 `From extends ''`，避免空字符串导致无限递归。"
+          },
+          {
+            "id": "b",
+            "text": "可用 `S extends \\`${infer Head}${From}${infer Tail}\\`` 找到下一处匹配。"
+          },
+          {
+            "id": "c",
+            "text": "替换后递归处理 `Tail`，直到没有匹配。"
+          },
+          {
+            "id": "d",
+            "text": "类型层 ReplaceAll 会修改运行时字符串值。"
+          },
+          {
+            "id": "e",
+            "text": "`From` 为空时应该继续递归，这样能替换所有空位。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "空字符串能匹配任意位置，如果不保护会递归不止。类型工具只生成类型，不改变运行时值。",
+        "focus": "ReplaceAll"
+      },
+      {
+        "id": "ts-053-check-03",
+        "kind": "multiple",
+        "prompt": "关于 `CamelToSnake`，哪些边界需要考虑？",
+        "options": [
+          {
+            "id": "a",
+            "text": "PascalCase 开头不应生成前导下划线。"
+          },
+          {
+            "id": "b",
+            "text": "连续大写缩写如 `URLParser` 需要额外规则定义期望结果。"
+          },
+          {
+            "id": "c",
+            "text": "`Uppercase`/`Lowercase` 可辅助判断字符是否为大写字母。"
+          },
+          {
+            "id": "d",
+            "text": "它能准确处理所有 Unicode 命名规则且没有性能成本。"
+          },
+          {
+            "id": "e",
+            "text": "字符串类型递归不会影响大型项目的类型检查速度。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "字符串类型体操适合有限静态 key 转换。缩写、Unicode 和递归深度都可能成为边界问题。",
+        "focus": "CamelToSnake 边界"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-054",
+    "checks": [
+      {
+        "id": "ts-054-check-01",
+        "kind": "single",
+        "prompt": "为什么给 JavaScript `Proxy` 封装类型时，不能说 TypeScript 自动证明 trap 行为一定正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "因为 Proxy 不能在 TypeScript 项目里使用。"
+          },
+          {
+            "id": "b",
+            "text": "因为 Proxy 是运行时拦截机制，类型只能描述对外 API，trap 逻辑仍要自己保证。"
+          },
+          {
+            "id": "c",
+            "text": "因为 `Proxy` 的 key 一定只可能是 `keyof T`。"
+          },
+          {
+            "id": "d",
+            "text": "因为所有代理对象都会丢失原型。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "类型描述和运行时行为是两层。trap 里返回什么、是否校验、是否缓存，都需要实现保证。",
+        "focus": "Proxy 类型边界"
+      },
+      {
+        "id": "ts-054-check-02",
+        "kind": "multiple",
+        "prompt": "关于深只读代理示例，哪些说法正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "返回类型可声明为 `DeepReadonly<T>`，表达外部不可写。"
+          },
+          {
+            "id": "b",
+            "text": "`set` 和 `deleteProperty` trap 应在运行时阻止写入和删除。"
+          },
+          {
+            "id": "c",
+            "text": "`get` 中遇到对象可递归包一层 readonly proxy。"
+          },
+          {
+            "id": "d",
+            "text": "只写 `DeepReadonly<T>` 类型就能阻止所有运行时写入。"
+          },
+          {
+            "id": "e",
+            "text": "`Function`、`Date`、`RegExp` 等一般应像普通对象一样继续深展开。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "只读类型是静态约束，真正阻止写入要靠 trap。特殊对象通常不应按普通 plain object 深展开。",
+        "focus": "readonlyProxy"
+      },
+      {
+        "id": "ts-054-check-03",
+        "kind": "multiple",
+        "prompt": "封装校验代理时，哪些细节值得注意？",
+        "options": [
+          {
+            "id": "a",
+            "text": "Proxy trap 的 key 是 `PropertyKey`，可能是 string、number 或 symbol。"
+          },
+          {
+            "id": "b",
+            "text": "访问 validators 时通常需要把 key 收窄或断言为 `keyof T`。"
+          },
+          {
+            "id": "c",
+            "text": "TypeScript 类型不能阻止反射或外部 JS 在运行时写入非法值，所以 trap 里要校验。"
+          },
+          {
+            "id": "d",
+            "text": "代理返回值如果改变语义，如 readonly 或 lazy loading，应在返回类型中表达。"
+          },
+          {
+            "id": "e",
+            "text": "使用 `value is T[K]` 后，运行时就不需要调用 validator。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "类型守卫函数本身是运行时代码，必须实际调用才有校验效果。Proxy 的 key 和返回语义都要显式处理。",
+        "focus": "PropertyKey 与验证"
+      }
+    ]
+  },
+  {
+    "questionId": "ts-055",
+    "checks": [
+      {
+        "id": "ts-055-check-01",
+        "kind": "single",
+        "prompt": "`BuildTuple<N>` 中为什么常写 `number extends N ? unknown[] : ...`？",
+        "options": [
+          {
+            "id": "a",
+            "text": "为了让所有数字都变成 `never`。"
+          },
+          {
+            "id": "b",
+            "text": "为了避免传入宽泛 `number` 时无限递归或过深实例化。"
+          },
+          {
+            "id": "c",
+            "text": "为了把负数转换成正数。"
+          },
+          {
+            "id": "d",
+            "text": "为了让元组长度在运行时同步更新。"
+          }
+        ],
+        "answerIds": ["b"],
+        "explanation": "类型级加法只适合数字字面量。宽泛 `number` 没有固定终点，递归构造元组会失控。",
+        "focus": "BuildTuple 保护"
+      },
+      {
+        "id": "ts-055-check-02",
+        "kind": "multiple",
+        "prompt": "哪些说法正确描述了类型级四则运算的基本思路？",
+        "options": [
+          {
+            "id": "a",
+            "text": "`Add<A, B>` 可用 `[...BuildTuple<A>, ...BuildTuple<B>]['length']`。"
+          },
+          {
+            "id": "b",
+            "text": "`Subtract<A, B>` 可通过匹配 `BuildTuple<A>` 的前缀 `BuildTuple<B>` 得到剩余长度。"
+          },
+          {
+            "id": "c",
+            "text": "`Multiply<A, B>` 可以重复把 `BuildTuple<A>` 拼到累积元组里。"
+          },
+          {
+            "id": "d",
+            "text": "这套方法天然支持负数、小数和任意大整数。"
+          },
+          {
+            "id": "e",
+            "text": "元组长度类型会在运行时创建同样大小的数组。"
+          }
+        ],
+        "answerIds": ["a", "b", "c"],
+        "explanation": "这些都是编译期类型计算，不创建运行时数组。它适合小的非负整数数字字面量。",
+        "focus": "元组长度运算"
+      },
+      {
+        "id": "ts-055-check-03",
+        "kind": "multiple",
+        "prompt": "关于类型级加法和图灵完备性，哪些判断正确？",
+        "options": [
+          {
+            "id": "a",
+            "text": "它展示了 TS 类型系统表达能力很强。"
+          },
+          {
+            "id": "b",
+            "text": "大数和深递归会让编辑器变慢或触发类型实例化深度限制。"
+          },
+          {
+            "id": "c",
+            "text": "固定长度数组是相对实际的应用场景之一。"
+          },
+          {
+            "id": "d",
+            "text": "生产代码应优先考虑可读性和编译性能。"
+          },
+          {
+            "id": "e",
+            "text": "因为类型系统图灵完备，所以业务计算都应该搬到类型层完成。"
+          }
+        ],
+        "answerIds": ["a", "b", "c", "d"],
+        "explanation": "类型级计算是工具，不是目标。能表达不代表适合大量用于业务逻辑。生产代码要克制。",
+        "focus": "生产限制"
+      }
+    ]
+  }
+]
