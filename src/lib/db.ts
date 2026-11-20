@@ -222,6 +222,16 @@ export async function deleteQuestionById(id: string): Promise<void> {
 
 // ─── Study Records ────────────────────────────────────────────────────────────
 
+/**
+ * Fires after study records are replaced in bulk (backup import, Gist pull, migrations),
+ * so in-memory stores can reload instead of showing stale data.
+ */
+export const studyRecordEvents = new EventTarget()
+
+function notifyStudyRecordsReplaced(): void {
+  studyRecordEvents.dispatchEvent(new Event('replaced'))
+}
+
 export async function getAllStudyRecords(): Promise<StudyRecord[]> {
   const db = await getDB()
   return db.getAll(STORES.STUDY_RECORDS)
@@ -236,6 +246,7 @@ export async function bulkPutStudyRecords(records: StudyRecord[]): Promise<void>
   const db = await getDB()
   const tx = db.transaction(STORES.STUDY_RECORDS, 'readwrite')
   await Promise.all([...records.map((r) => tx.store.put(r)), tx.done])
+  notifyStudyRecordsReplaced()
 }
 
 export async function getStudyRecord(questionId: string): Promise<StudyRecord | undefined> {
