@@ -88,6 +88,8 @@ export interface SheetContentProps extends Omit<D.DialogContentProps, 'title'> {
   width?: number
   headerAction?: ReactNode
   footer?: ReactNode
+  /** Classes for the scrollable body wrapper. */
+  bodyClassName?: string
 }
 
 /** Side panel (settings, AI assistant, notes). Bottom sheet on small screens. */
@@ -98,6 +100,7 @@ export function SheetContent({
   width = 420,
   headerAction,
   footer,
+  bodyClassName,
   className,
   children,
   style,
@@ -137,7 +140,7 @@ export function SheetContent({
             </Button>
           </D.Close>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+        <div className={cn('min-h-0 flex-1 overflow-y-auto', bodyClassName)}>{children}</div>
         {footer ? <div className="shrink-0 border-t border-line p-3">{footer}</div> : null}
       </D.Content>
     </D.Portal>

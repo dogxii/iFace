@@ -1,5 +1,15 @@
+import {
+  Check,
+  CircleAlert,
+  NotebookPen,
+  PenLine,
+  RotateCcw,
+  Save,
+  Send,
+  Settings2,
+  Sparkles,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Spinner } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
@@ -10,6 +20,7 @@ import {
   buildAnswerFeedbackSystemSuffix,
   useAIStore,
 } from '@/store/useAIStore'
+import { Button, Callout, Composer, cn } from '@/ui'
 
 // ─── My Answer Input ("我的作答") ─────────────────────────────────────────────
 // Design principle: 先作答，再看答案 — shown ABOVE the answer card.
@@ -138,85 +149,36 @@ export function splitFeedbackScore(markdown: string): {
 
 export function FeedbackScorePanel({ score }: { score: FeedbackScoreSummary }) {
   return (
-    <div
-      style={{
-        marginTop: 12,
-        paddingTop: 10,
-        borderTop: '1px dashed var(--border)',
-        color: 'var(--text-3)',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          marginBottom: 8,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, minWidth: 0 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>参考评分</span>
-        </div>
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: 'var(--text-2)',
-            fontVariantNumeric: 'tabular-nums',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {score.total}/100
-        </span>
+    <div className="not-prose mt-3 border-t border-dashed border-line-strong pt-3 text-fg-muted">
+      <div className="mb-2 flex items-center gap-2 text-xs">
+        <span className="font-semibold text-fg">参考评分</span>
+        <span className="font-semibold text-fg tabular-nums">{score.total}/100</span>
       </div>
-
-      {score.dimensions.length > 0 && (
-        <div style={{ display: 'grid', gap: 7 }}>
+      {score.dimensions.length > 0 ? (
+        <div className="grid gap-1.5">
           {score.dimensions.map((dimension) => {
             const percent = dimension.max > 0 ? (dimension.score / dimension.max) * 100 : 0
-
             return (
               <div
                 key={dimension.label}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '48px minmax(56px, 112px) 42px',
-                  alignItems: 'center',
-                  gap: 8,
-                  justifyContent: 'start',
-                  fontSize: 11,
-                }}
+                className="grid grid-cols-[48px_minmax(56px,112px)_42px] items-center gap-2 text-2xs"
               >
                 <span>{dimension.label}</span>
-                <span
-                  style={{
-                    height: 4,
-                    width: '100%',
-                    borderRadius: 999,
-                    background: 'var(--surface-3)',
-                    overflow: 'hidden',
-                  }}
-                >
+                <span className="h-1 w-full overflow-hidden rounded-full bg-muted">
                   <span
-                    style={{
-                      display: 'block',
-                      width: `${percent}%`,
-                      height: '100%',
-                      borderRadius: 999,
-                      background: 'var(--text-3)',
-                    }}
+                    className="block h-full rounded-full bg-accent"
+                    style={{ width: `${percent}%` }}
                   />
                 </span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>
+                <span className="tabular-nums">
                   {dimension.score}/{dimension.max}
                 </span>
               </div>
             )
           })}
         </div>
-      )}
-
-      <p style={{ marginTop: 8, fontSize: 11, lineHeight: 1.55 }}>{score.note}</p>
+      ) : null}
+      <p className="mt-2 text-2xs leading-relaxed">{score.note}</p>
     </div>
   )
 }
@@ -382,61 +344,22 @@ export function MyAnswerInput({
   const feedbackContent = parsedFeedback?.content || displayFeedback
   const feedbackScore = parsedFeedback?.score ?? null
 
-  const wrapperStyle: React.CSSProperties = compact
-    ? { borderTop: '1px solid var(--border-subtle)', marginTop: 4, paddingTop: 14 }
-    : {
-        background: 'var(--surface)',
-        border: '1px solid var(--border-subtle)',
-        borderRadius: 14,
-        boxShadow: 'var(--shadow-sm)',
-        overflow: 'hidden',
-      }
+  const wrapperClass = compact
+    ? 'mt-1 border-t border-line pt-3.5'
+    : 'overflow-hidden rounded-2xl border border-line bg-canvas'
 
   if (collapsed) {
     return (
-      <div style={wrapperStyle}>
+      <div className={wrapperClass}>
         <button
           type="button"
           onClick={() => setCollapsed(false)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            width: '100%',
-            padding: compact ? '9px 12px' : '12px 16px',
-            background: 'transparent',
-            border: compact ? '1px dashed var(--border)' : 'none',
-            borderRadius: compact ? 10 : 0,
-            color: 'var(--text-3)',
-            fontSize: 'var(--control-font-size)',
-            cursor: 'pointer',
-            transition: 'all 0.15s',
-            textAlign: 'left',
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget
-            el.style.color = 'var(--primary)'
-            el.style.background = 'var(--primary-light)'
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget
-            el.style.color = 'var(--text-3)'
-            el.style.background = 'transparent'
-          }}
+          className={cn(
+            'flex w-full items-center gap-2 text-left text-sm text-fg-subtle transition-colors hover:bg-accent-subtle hover:text-accent',
+            compact ? 'rounded-lg border border-dashed border-line-strong px-3 py-2' : 'px-4 py-3',
+          )}
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 20h9" />
-            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-          </svg>
+          <PenLine className="size-3.5" />
           我的作答已收起，点击展开…
         </button>
       </div>
@@ -444,543 +367,157 @@ export function MyAnswerInput({
   }
 
   return (
-    <div style={wrapperStyle}>
-      {/* ── Header ── */}
+    <div className={wrapperClass}>
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: compact ? '0 0 10px 0' : '14px 16px 10px',
-          borderBottom: compact ? 'none' : '1px solid var(--border-subtle)',
-        }}
+        className={cn(
+          'flex items-center justify-between',
+          compact ? 'pb-2.5' : 'border-b border-line px-4 py-2.5',
+        )}
       >
-        <span
-          style={{
-            fontSize: 'var(--control-font-size)',
-            fontWeight: 600,
-            color: 'var(--text)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <span
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 6,
-              background: 'var(--primary-light)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="var(--primary)"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
-          </span>
+        <span className="flex items-center gap-2 text-sm font-semibold text-fg">
+          <PenLine className="size-3.5 text-accent" />
           我的作答
+          <span className="text-xs font-normal text-fg-subtle max-sm:hidden">
+            先写再看，记得更牢
+          </span>
         </span>
-        <button
-          type="button"
-          onClick={handleCollapse}
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--text-3)',
-            cursor: 'pointer',
-            fontSize: 11,
-            padding: '3px 6px',
-            borderRadius: 5,
-            transition: 'all 0.15s',
-          }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLElement).style.background = 'none'
-          }}
-          title="收起作答区"
-        >
+        <Button variant="ghost" size="sm" className="h-7 text-fg-subtle" onClick={handleCollapse}>
           收起
-        </button>
+        </Button>
       </div>
 
-      <div
-        style={{
-          padding: compact ? '10px 0 0' : '12px 16px 16px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-        }}
-      >
-        {/* Input area — only show when no feedback yet */}
-        {!displayFeedback && (
-          <div
-            style={{
-              borderRadius: 10,
-              border: '1px solid var(--border)',
-              background: 'var(--surface-2)',
-              overflow: 'hidden',
-              transition: 'border-color 0.15s, box-shadow 0.15s',
-            }}
-            onFocusCapture={(e) => {
-              ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'
-              ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px var(--primary-light)'
-            }}
-            onBlurCapture={(e) => {
-              ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'
-              ;(e.currentTarget as HTMLElement).style.boxShadow = 'none'
-            }}
-          >
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="用自己的话说说你对这道题的理解……不用完整，写核心思路就行"
-              rows={3}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                background: 'none',
-                border: 'none',
-                outline: 'none',
-                color: 'var(--text)',
-                fontSize: 'var(--control-font-size)',
-                lineHeight: 1.6,
-                resize: 'vertical',
-                minHeight: 72,
-                fontFamily: 'var(--font-sans)',
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                padding: '6px 10px',
-                borderTop: '1px solid var(--border-subtle)',
-                background: 'var(--surface-2)',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  minWidth: 0,
-                  flex: 1,
-                  flexWrap: 'wrap',
-                }}
-              >
+      <div className={cn('flex flex-col gap-2.5', compact ? 'pt-2.5' : 'p-3')}>
+        {!displayFeedback ? (
+          <Composer
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="用自己的话说说你对这道题的理解……不用完整，写核心思路就行"
+            aria-label="我的作答"
+            rows={3}
+            textareaClassName="min-h-20 resize-y text-base max-sm:text-[16px]"
+            toolbar={
+              <>
                 <SpeechInputButton
                   supported={speech.supported}
                   listening={speech.listening}
                   disabled={isStreaming}
                   onToggle={speech.toggle}
                 />
-                {speech.interimTranscript ? (
-                  <span
-                    title={speech.interimTranscript}
-                    style={{
-                      minWidth: 0,
-                      maxWidth: compact ? 160 : 260,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      fontSize: 11,
-                      color: 'var(--primary)',
-                    }}
-                  >
-                    正在识别：{speech.interimTranscript}
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                    {isAiEnabled ? (
-                      <>⌘+Enter 提交作答</>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={onOpenAIPanel}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          color: 'var(--primary)',
-                          cursor: 'pointer',
-                          fontSize: 11,
-                          padding: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 4,
-                        }}
-                      >
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="3" />
-                          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                        </svg>
-                        配置 AI 才能获得反馈
-                      </button>
-                    )}
-                  </span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={!text.trim() || !isAiEnabled || isStreaming}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: '4px 12px',
-                  borderRadius: 7,
-                  border: 'none',
-                  background: text.trim() && isAiEnabled ? 'var(--primary)' : 'var(--surface-3)',
-                  color: text.trim() && isAiEnabled ? 'white' : 'var(--text-3)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: text.trim() && isAiEnabled ? 'pointer' : 'default',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <svg
-                  width="11"
-                  height="11"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <line x1="22" y1="2" x2="11" y2="13" />
-                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                </svg>
-                提交作答
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Streaming / feedback result */}
-        {(displayFeedback || isStreaming) && (
-          <div
-            style={{
-              borderRadius: 10,
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--surface-2)',
-              overflow: 'hidden',
-              animation: 'scale-in 0.2s var(--ease-spring) both',
-            }}
-          >
-            {/* User's answer preview */}
-            <div
-              style={{
-                padding: '10px 14px',
-                borderBottom: '1px solid var(--border-subtle)',
-                background: 'var(--surface-3)',
-              }}
-            >
-              <p style={{ fontSize: 11, color: 'var(--text-3)', marginBottom: 4 }}>我的作答</p>
-              <p
-                style={{
-                  fontSize: 12,
-                  color: 'var(--text-2)',
-                  lineHeight: 1.55,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {text}
-              </p>
-            </div>
-
-            {/* AI feedback */}
-            <div style={{ padding: '12px 14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <div
-                  style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 5,
-                    background: 'var(--primary-light)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <svg
-                    width="10"
-                    height="10"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="var(--primary)"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-                    <circle cx="7.5" cy="14.5" r="1.5" />
-                    <circle cx="16.5" cy="14.5" r="1.5" />
-                  </svg>
+                <div className="flex min-w-0 flex-1 items-center text-xs">
+                  {speech.interimTranscript ? (
+                    <span
+                      title={speech.interimTranscript}
+                      className={cn('truncate text-accent', compact ? 'max-w-40' : 'max-w-64')}
+                    >
+                      正在识别：{speech.interimTranscript}
+                    </span>
+                  ) : isAiEnabled ? (
+                    <span className="text-fg-subtle max-sm:hidden">提交后由 AI 点评</span>
+                  ) : (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-6 px-1 text-xs"
+                      onClick={onOpenAIPanel}
+                    >
+                      <Settings2 />
+                      配置 AI 才能获得反馈
+                    </Button>
+                  )}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>
-                  AI 点评
-                </span>
-                {isStreaming && (
-                  <span style={{ display: 'inline-flex', gap: 3, marginLeft: 4 }}>
+                <Button
+                  size="sm"
+                  variant={text.trim() && isAiEnabled ? 'accent' : 'secondary'}
+                  onClick={handleSubmit}
+                  disabled={!text.trim() || !isAiEnabled || isStreaming}
+                  shortcut="⌘↵"
+                >
+                  <Send />
+                  提交作答
+                </Button>
+              </>
+            }
+          />
+        ) : null}
+
+        {displayFeedback || isStreaming ? (
+          <div className="animate-scale-in overflow-hidden rounded-xl border border-line bg-subtle/60">
+            <div className="border-b border-line px-3.5 py-2.5">
+              <p className="mb-1 text-2xs font-medium text-fg-subtle">我的作答</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap text-fg-muted">{text}</p>
+            </div>
+
+            <div className="px-3.5 py-3">
+              <div className="mb-2 flex items-center gap-2 text-xs font-medium text-fg">
+                <Sparkles className="size-3.5 text-accent" />
+                AI 点评
+                {isStreaming ? (
+                  <span className="ml-1 inline-flex gap-[3px]">
                     {[0, 1, 2].map((i) => (
                       <span
                         key={i}
-                        style={{
-                          width: 4,
-                          height: 4,
-                          borderRadius: '50%',
-                          background: 'var(--primary)',
-                          display: 'inline-block',
-                          animation: `ai-dot-bounce 1.2s ease-in-out ${i * 0.2}s infinite`,
-                        }}
+                        className="inline-block size-1 rounded-full bg-accent"
+                        style={{ animation: `ai-dot-bounce 1.2s ease-in-out ${i * 0.2}s infinite` }}
                       />
                     ))}
                   </span>
-                )}
+                ) : null}
               </div>
-              {feedbackContent && (
-                <div className="prose" style={{ fontSize: 13 }}>
+              {feedbackContent ? (
+                <div className="prose text-sm">
                   <MarkdownRenderer content={feedbackContent} />
-                  {feedbackScore && <FeedbackScorePanel score={feedbackScore} />}
+                  {feedbackScore ? <FeedbackScorePanel score={feedbackScore} /> : null}
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Actions after feedback */}
-            {feedback && !isStreaming && (
-              <div
-                style={{
-                  padding: '8px 14px',
-                  borderTop: '1px solid var(--border-subtle)',
-                  display: 'flex',
-                  gap: 8,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <button
-                  type="button"
+            {feedback && !isStreaming ? (
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-3 py-2">
+                <Button
+                  size="sm"
+                  variant={noteSaved ? 'ghost' : 'secondary'}
                   onClick={handleSaveFeedbackToNote}
                   disabled={savingNote || noteSaved}
-                  style={{
-                    fontSize: 12,
-                    color: noteSaved ? 'var(--success)' : 'var(--primary)',
-                    background: noteSaved ? 'var(--success-light)' : 'var(--primary-light)',
-                    border: '1px solid',
-                    borderColor: noteSaved
-                      ? 'rgba(16,185,129,0.2)'
-                      : 'rgba(var(--primary-rgb),0.2)',
-                    cursor: savingNote || noteSaved ? 'default' : 'pointer',
-                    padding: '3px 8px',
-                    borderRadius: 6,
-                    transition: 'all 0.15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                    opacity: savingNote ? 0.65 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!savingNote && !noteSaved) {
-                      ;(e.currentTarget as HTMLElement).style.borderColor =
-                        'rgba(var(--primary-rgb),0.35)'
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.borderColor = noteSaved
-                      ? 'rgba(16,185,129,0.2)'
-                      : 'rgba(var(--primary-rgb),0.2)'
-                  }}
+                  loading={savingNote}
+                  className={cn(noteSaved && 'text-success disabled:opacity-100')}
                 >
-                  {savingNote ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                  )}
+                  {savingNote ? null : noteSaved ? <Check /> : <Save />}
                   {savingNote ? '保存中…' : noteSaved ? '已保存到笔记' : '保存为复盘笔记'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--text-3)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '3px 6px',
-                    borderRadius: 6,
-                    transition: 'all 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-3)'
-                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.background = 'none'
-                    ;(e.currentTarget as HTMLElement).style.color = 'var(--text-3)'
-                  }}
-                >
-                  重新作答
-                </button>
-                {noteSaved && onOpenNote && (
-                  <button
-                    type="button"
-                    onClick={onOpenNote}
-                    style={{
-                      fontSize: 12,
-                      color: 'var(--text-2)',
-                      background: 'var(--surface-2)',
-                      border: '1px solid var(--border-subtle)',
-                      cursor: 'pointer',
-                      padding: '3px 8px',
-                      borderRadius: 6,
-                      transition: 'all 0.15s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                    onMouseEnter={(e) => {
-                      ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-                      ;(e.currentTarget as HTMLElement).style.borderColor =
-                        'rgba(var(--primary-rgb),0.25)'
-                    }}
-                    onMouseLeave={(e) => {
-                      ;(e.currentTarget as HTMLElement).style.color = 'var(--text-2)'
-                      ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)'
-                    }}
-                  >
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z" />
-                      <path d="M8 7h6" />
-                      <path d="M8 11h8" />
-                    </svg>
+                </Button>
+                {noteSaved && onOpenNote ? (
+                  <Button size="sm" variant="ghost" onClick={onOpenNote}>
+                    <NotebookPen />
                     打开笔记
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={onOpenAIPanel}
-                  style={{
-                    fontSize: 12,
-                    color: 'var(--primary)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '3px 6px',
-                    borderRadius: 6,
-                    transition: 'all 0.15s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
-                  }}
-                  onMouseEnter={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.background = 'var(--primary-light)'
-                  }}
-                  onMouseLeave={(e) => {
-                    ;(e.currentTarget as HTMLElement).style.background = 'none'
-                  }}
-                >
-                  <svg
-                    width="11"
-                    height="11"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-                    <circle cx="7.5" cy="14.5" r="1.5" />
-                    <circle cx="16.5" cy="14.5" r="1.5" />
-                  </svg>
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="ghost" onClick={onOpenAIPanel}>
+                  <Sparkles />
                   深入讨论
-                </button>
+                </Button>
+                <Button size="sm" variant="ghost" className="ml-auto" onClick={handleReset}>
+                  <RotateCcw />
+                  重新作答
+                </Button>
               </div>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
-        {error && (
-          <div
-            style={{
-              padding: '9px 12px',
-              borderRadius: 9,
-              background: 'rgba(239,68,68,0.08)',
-              border: '1px solid rgba(239,68,68,0.2)',
-              fontSize: 12,
-              color: '#ef4444',
-            }}
-          >
-            {error}
-            <button
-              type="button"
+        {error ? (
+          <Callout tone="danger" icon={<CircleAlert />}>
+            <span className="text-danger">{error}</span>
+            <Button
+              variant="link"
+              size="sm"
+              className="ml-2 h-auto p-0 text-xs text-danger"
               onClick={() => setError(null)}
-              style={{
-                marginLeft: 8,
-                background: 'none',
-                border: 'none',
-                color: '#ef4444',
-                cursor: 'pointer',
-                fontSize: 12,
-                textDecoration: 'underline',
-                padding: 0,
-              }}
             >
               关闭
-            </button>
-          </div>
-        )}
+            </Button>
+          </Callout>
+        ) : null}
       </div>
     </div>
   )

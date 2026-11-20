@@ -1,5 +1,20 @@
+import {
+  Bold,
+  Check,
+  Code,
+  Eye,
+  Heading2,
+  ImagePlus,
+  Link2,
+  List,
+  ListTodo,
+  type LucideIcon,
+  NotebookPen,
+  PenLine,
+  Quote,
+  Table,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Kbd } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
@@ -12,6 +27,17 @@ import {
 } from '@/lib/db'
 import { formatReviewNoteTime } from '@/lib/feedbackNote'
 import type { Question, QuestionNote, QuestionNoteImage } from '@/types'
+import {
+  Button,
+  cn,
+  EmptyState,
+  Kbd,
+  SegmentedControl,
+  Sheet,
+  SheetContent,
+  Spinner,
+  Tooltip,
+} from '@/ui'
 import { appendSpeechTranscript } from './answerInput'
 
 // ─── Question Notes ──────────────────────────────────────────────────────────
@@ -19,7 +45,6 @@ import { appendSpeechTranscript } from './answerInput'
 export interface QuestionNotesProps {
   questionId: string
   refreshKey: number
-  embedded?: boolean
   autoFocus?: boolean
   onContentStateChange?: (hasContent: boolean) => void
 }
@@ -172,59 +197,47 @@ export function applyNoteFormat(
   }
 }
 
+const NOTE_ACTION_ICONS: Record<NoteFormatActionId, LucideIcon> = {
+  bold: Bold,
+  heading: Heading2,
+  bullet: List,
+  todo: ListTodo,
+  quote: Quote,
+  code: Code,
+  link: Link2,
+  table: Table,
+}
+
 export function NoteToolbarButton({
-  label,
+  icon: Icon,
   title,
   onClick,
   disabled,
 }: {
-  label: string
+  icon: LucideIcon
   title: string
   onClick: () => void
   disabled?: boolean
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      style={{
-        minWidth: 28,
-        height: 26,
-        padding: '0 7px',
-        borderRadius: 7,
-        border: '1px solid transparent',
-        background: 'transparent',
-        color: 'var(--text-3)',
-        fontSize: 11,
-        fontWeight: 600,
-        fontFamily: label === 'B' || label === 'H2' ? 'var(--font-sans)' : 'var(--font-mono)',
-        cursor: disabled ? 'default' : 'pointer',
-        opacity: disabled ? 0.5 : 1,
-        transition: 'border-color 0.15s, color 0.15s, background 0.15s',
-      }}
-      onMouseEnter={(event) => {
-        if (disabled) return
-        event.currentTarget.style.borderColor = 'rgba(var(--primary-rgb),0.28)'
-        event.currentTarget.style.color = 'var(--primary)'
-        event.currentTarget.style.background = 'var(--primary-light)'
-      }}
-      onMouseLeave={(event) => {
-        event.currentTarget.style.borderColor = 'transparent'
-        event.currentTarget.style.color = 'var(--text-3)'
-        event.currentTarget.style.background = 'transparent'
-      }}
-    >
-      {label}
-    </button>
+    <Tooltip content={title}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        className="size-7 text-fg-subtle"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={title}
+      >
+        <Icon />
+      </Button>
+    </Tooltip>
   )
 }
 
 export function QuestionNotes({
   questionId,
   refreshKey,
-  embedded = false,
   autoFocus = false,
   onContentStateChange,
 }: QuestionNotesProps) {
@@ -235,7 +248,6 @@ export function QuestionNotes({
   const [loading, setLoading] = useState(true)
   const [saveStatus, setSaveStatus] = useState<NoteSaveStatus>('idle')
   const [mode, setMode] = useState<'edit' | 'preview'>('preview')
-  const [editorFocused, setEditorFocused] = useState(false)
   const [speechError, setSpeechError] = useState<string | null>(null)
   const [imageImportError, setImageImportError] = useState<string | null>(null)
 
@@ -474,181 +486,72 @@ export function QuestionNotes({
             : '自动保存'
 
   return (
-    <div
-      className={embedded ? 'animate-fade-in' : 'card animate-fade-in'}
-      style={{
-        padding: embedded ? 0 : 18,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        height: embedded ? '100%' : undefined,
-        minHeight: embedded ? '100%' : undefined,
-        minWidth: 0,
-        overflow: embedded ? (mode === 'preview' ? 'hidden' : 'auto') : undefined,
-      }}
-    >
-      <div
-        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-          <span
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 7,
-              background: 'var(--primary-light)',
-              color: 'var(--primary)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z" />
-              <path d="M8 7h6" />
-              <path d="M8 11h8" />
-            </svg>
-          </span>
-          <div style={{ minWidth: 0 }}>
-            <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>题目笔记</h2>
-            <p
-              style={{
-                fontSize: 11,
-                color: saveStatus === 'error' ? 'var(--danger)' : 'var(--text-3)',
-                marginTop: 1,
-              }}
-            >
-              {loading ? '加载中…' : statusText}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => handleModeChange(mode === 'edit' ? 'preview' : 'edit')}
-          disabled={loading}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: '5px 10px',
-            borderRadius: 8,
-            border: '1px solid var(--border-subtle)',
-            background: mode === 'edit' ? 'var(--primary)' : 'var(--surface-2)',
-            color: mode === 'edit' ? 'white' : 'var(--text-2)',
-            fontSize: 12,
-            fontWeight: 500,
-            cursor: loading ? 'default' : 'pointer',
-            opacity: loading ? 0.55 : 1,
-            flexShrink: 0,
-          }}
-          title={mode === 'edit' ? '完成编辑' : '编辑题目笔记'}
+    <div className="flex h-full min-h-0 min-w-0 flex-col">
+      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-3 pb-2">
+        <SegmentedControl
+          size="sm"
+          label="笔记模式"
+          value={mode}
+          onValueChange={handleModeChange}
+          options={[
+            { value: 'preview', label: '预览', icon: <Eye /> },
+            { value: 'edit', label: '编辑', icon: <PenLine /> },
+          ]}
+        />
+        <span
+          className={cn(
+            'inline-flex items-center gap-1.5 text-xs',
+            saveStatus === 'error' ? 'text-danger' : 'text-fg-subtle',
+          )}
         >
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            {mode === 'edit' ? (
-              <polyline points="20 6 9 17 4 12" />
-            ) : (
-              <>
-                <path d="M12 20h9" />
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-              </>
-            )}
-          </svg>
-          {mode === 'edit' ? '完成' : '编辑'}
-        </button>
+          {saveStatus === 'saved' ? <Check className="size-3.5 text-success" /> : null}
+          {saveStatus === 'saving' ? <Spinner className="size-3" /> : null}
+          {loading ? '加载中…' : statusText}
+        </span>
       </div>
 
       {mode === 'edit' ? (
-        <>
-          <div
-            onFocusCapture={() => setEditorFocused(true)}
-            onBlurCapture={(event) => {
-              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                setEditorFocused(false)
-              }
-            }}
-            style={{
-              width: '100%',
-              overflow: 'hidden',
-              borderRadius: 10,
-              border: `1px solid ${editorFocused ? 'var(--primary)' : 'var(--border-subtle)'}`,
-              background: 'var(--surface-2)',
-              boxShadow: editorFocused ? '0 0 0 3px var(--primary-light)' : 'none',
-              transition: 'border-color 0.15s, box-shadow 0.15s',
-            }}
-          >
+        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">
+          <div className="overflow-hidden rounded-xl border border-line-strong bg-canvas transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-ring/40">
             <input
               ref={imageInputRef}
               type="file"
               accept="image/*"
               onChange={handleImageFileChange}
-              style={{ display: 'none' }}
+              className="hidden"
             />
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-                flexWrap: 'wrap',
-                padding: '7px 8px',
-                borderBottom: '1px solid var(--border-subtle)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+            <div className="flex flex-wrap items-center justify-between gap-1 border-b border-line px-1.5 py-1">
+              <div className="flex flex-wrap items-center">
                 {NOTE_FORMAT_ACTIONS.map((action) => (
                   <NoteToolbarButton
                     key={action.id}
-                    label={action.label}
-                    title={action.title}
+                    icon={NOTE_ACTION_ICONS[action.id]}
+                    title={action.id === 'bold' ? `${action.title} ⌘B` : action.title}
                     disabled={loading}
                     onClick={() => handleApplyFormat(action.id)}
                   />
                 ))}
                 <NoteToolbarButton
-                  label="img"
+                  icon={ImagePlus}
                   title="导入本地图片"
                   disabled={loading}
                   onClick={handlePickImage}
                 />
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                {(speech.interimTranscript || speechError || imageImportError) && (
+              <div className="flex min-w-0 items-center gap-1.5">
+                {speech.interimTranscript || speechError || imageImportError ? (
                   <span
                     title={speech.interimTranscript || speechError || imageImportError || undefined}
-                    style={{
-                      maxWidth: 180,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      fontSize: 11,
-                      color: speechError || imageImportError ? 'var(--danger)' : 'var(--primary)',
-                    }}
+                    className={cn(
+                      'max-w-[180px] truncate text-xs',
+                      speechError || imageImportError ? 'text-danger' : 'text-accent',
+                    )}
                   >
                     {speech.interimTranscript
                       ? `正在识别：${speech.interimTranscript}`
                       : speechError || imageImportError}
                   </span>
-                )}
+                ) : null}
                 <SpeechInputButton
                   supported={speech.supported}
                   listening={speech.listening}
@@ -664,91 +567,47 @@ export function QuestionNotes({
               onKeyDown={handleNoteKeyDown}
               disabled={loading}
               placeholder="记录自己的理解、易错点、面试表达、下次要追问的问题…"
+              aria-label="题目笔记"
               rows={6}
-              style={{
-                width: '100%',
-                minHeight: embedded ? 'min(34dvh, 340px)' : 160,
-                resize: 'vertical',
-                padding: '12px 13px',
-                border: 'none',
-                background: 'transparent',
-                color: 'var(--text)',
-                outline: 'none',
-                fontSize: 16,
-                lineHeight: 1.65,
-                fontFamily: 'var(--font-sans)',
-                flex: embedded ? '0 0 auto' : undefined,
-                display: 'block',
-              }}
+              className="block min-h-[min(34dvh,340px)] w-full resize-y bg-transparent px-3.5 py-3 text-base leading-relaxed text-fg outline-none placeholder:text-fg-subtle max-sm:text-[16px]"
             />
           </div>
-          {content.trim() && (
-            <div
-              className="prose"
-              style={{
-                maxHeight: embedded ? 'min(24dvh, 260px)' : 220,
-                overflowY: 'auto',
-                padding: '8px 1px 2px',
-                fontSize: 13,
-                minWidth: 0,
-              }}
-            >
-              <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
+          {content.trim() ? (
+            <div className="min-w-0">
+              <p className="mb-1.5 text-2xs font-medium tracking-wide text-fg-subtle uppercase">
+                预览
+              </p>
+              <div className="prose min-w-0 text-sm">
+                <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
+              </div>
             </div>
-          )}
-        </>
+          ) : null}
+        </div>
       ) : content.trim() ? (
-        <div
-          className="prose"
-          style={{
-            flex: embedded ? '1 1 auto' : undefined,
-            minHeight: embedded ? 0 : 160,
-            overflowY: embedded ? 'auto' : undefined,
-            padding: embedded ? '6px 8px 0 1px' : '6px 1px 0',
-            fontSize: 13,
-            minWidth: 0,
-          }}
-        >
+        <div className="prose min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-3 text-sm">
           <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
         </div>
       ) : (
-        <div
-          style={{
-            flex: embedded ? '1 1 auto' : undefined,
-            minHeight: embedded ? 0 : 160,
-            padding: '6px 1px 0',
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--text-3)',
-            fontSize: 13,
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'flex-start',
-            lineHeight: 1.65,
-          }}
-        >
-          暂无笔记
+        <div className="flex min-h-0 flex-1 px-4 pb-3">
+          <EmptyState
+            className="w-full border-0 pb-24"
+            icon={<NotebookPen />}
+            title="还没有笔记"
+            description="记录自己的理解、易错点和面试表达，复习时一眼就能看到。"
+            action={
+              <Button size="sm" variant="secondary" onClick={() => handleModeChange('edit')}>
+                <PenLine />
+                开始记录
+              </Button>
+            }
+          />
         </div>
       )}
 
-      {embedded && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            fontSize: 11,
-            color: 'var(--text-3)',
-            flexShrink: 0,
-          }}
-        >
-          <span>{saveStatus === 'saving' ? '正在自动保存' : 'Markdown'}</span>
-          <span style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-            {noteLength.toLocaleString()} 字
-          </span>
-        </div>
-      )}
+      <div className="flex shrink-0 items-center justify-between gap-2.5 border-t border-line px-4 py-2 text-xs text-fg-subtle">
+        <span>支持 Markdown</span>
+        <span className="tabular-nums">{noteLength.toLocaleString()} 字</span>
+      </div>
     </div>
   )
 }
@@ -768,168 +627,24 @@ export function NoteDrawer({
   refreshKey,
   onContentStateChange,
 }: NoteDrawerProps) {
-  const panelRef = useRef<HTMLElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const t = window.setTimeout(() => panelRef.current?.focus(), 0)
-    return () => window.clearTimeout(t)
-  }, [open])
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [open, onClose])
-
-  if (!open) return null
-
   return (
-    <>
-      <button
-        type="button"
-        aria-label="关闭题目笔记"
-        onClick={onClose}
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 169,
-          background: 'rgba(0,0,0,0.28)',
-          backdropFilter: 'blur(2px)',
-          WebkitBackdropFilter: 'blur(2px)',
-          border: 'none',
-          padding: 0,
-          margin: 0,
-          cursor: 'pointer',
-          animation: 'fade-in 0.16s var(--ease-out) both',
-        }}
-      />
-      <aside
-        ref={panelRef}
-        className="note-drawer-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-label="题目笔记"
-        tabIndex={-1}
-        style={{
-          position: 'fixed',
-          top: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 170,
-          width: 'min(420px, 100vw)',
-          background: 'var(--surface)',
-          borderLeft: '1px solid var(--border-subtle)',
-          boxShadow: 'var(--shadow-xl)',
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'drawer-slide-in 0.2s var(--ease-out) both',
-          outline: 'none',
-        }}
-      >
-        <div
-          style={{
-            padding: '14px 16px',
-            borderBottom: '1px solid var(--border-subtle)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 12,
-            flexShrink: 0,
-          }}
-        >
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>题目笔记</p>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <Kbd>N</Kbd>
-                <Kbd>Esc</Kbd>
-              </span>
-            </div>
-            <p
-              style={{
-                fontSize: 12,
-                color: 'var(--text-3)',
-                marginTop: 3,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {question.question}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="关闭题目笔记"
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              border: 'none',
-              background: 'transparent',
-              color: 'var(--text-3)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text-3)'
-            }}
-          >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-              strokeLinecap="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
-          </button>
-        </div>
-
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'hidden',
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-          }}
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      {open ? (
+        <SheetContent
+          title="题目笔记"
+          description={question.question}
+          headerAction={<Kbd className="max-sm:hidden">N</Kbd>}
+          bodyClassName="flex flex-col overflow-hidden"
+          onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <QuestionNotes
             questionId={question.id}
             refreshKey={refreshKey}
-            embedded
             autoFocus
             onContentStateChange={onContentStateChange}
           />
-        </div>
-      </aside>
-    </>
+        </SheetContent>
+      ) : null}
+    </Sheet>
   )
 }

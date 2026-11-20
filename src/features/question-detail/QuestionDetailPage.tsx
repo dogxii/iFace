@@ -39,7 +39,7 @@ import {
   type QuestionAnswerOverride,
   type StudyStatus,
 } from '@/types'
-import { PageHeader, Tag, Tooltip, Button as UIButton } from '@/ui'
+import { cn, PageHeader, Tag, Tooltip, Button as UIButton } from '@/ui'
 import { AIDrawer } from './aiDrawer'
 import {
   AnswerAnnotationToolbar,
@@ -1683,14 +1683,8 @@ export default function QuestionDetail() {
 					80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 					100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
 				}
-				@media (max-width: 1023px) {
-					.ai-fab { display: flex !important; }
-				}
 				.mobile-question-nav {
 					display: none;
-				}
-				@media (min-width: 1024px) {
-					.ai-drawer-backdrop { display: none !important; }
 				}
 				::highlight(iface-answer-annotation-yellow) {
 					background: rgba(245, 158, 11, 0.32);
@@ -1711,17 +1705,6 @@ export default function QuestionDetail() {
 						right: 0 !important;
 						width: 100% !important;
 						height: min(82dvh, 640px) !important;
-						border-left: none !important;
-						border-top: 1px solid var(--border-subtle) !important;
-						border-radius: 18px 18px 0 0 !important;
-						animation: slide-up 0.2s var(--ease-out) both !important;
-					}
-					.module-question-drawer-panel {
-						top: auto !important;
-						left: 0 !important;
-						right: 0 !important;
-						width: 100% !important;
-						height: min(86dvh, 720px) !important;
 						border-left: none !important;
 						border-top: 1px solid var(--border-subtle) !important;
 						border-radius: 18px 18px 0 0 !important;
@@ -1757,67 +1740,25 @@ export default function QuestionDetail() {
 						box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.07);
 						backdrop-filter: blur(16px);
 					}
-					.ai-fab.ai-fab-with-mobile-nav {
-						bottom: calc(60px + env(safe-area-inset-bottom)) !important;
-						right: 16px !important;
-						width: 48px !important;
-						height: 48px !important;
-					}
-					.ai-fab:not(.ai-fab-with-mobile-nav) {
-						bottom: 16px !important;
-						right: 16px !important;
-						width: 48px !important;
-						height: 48px !important;
-					}
 				}
 			`}</style>
       {/* ── Mobile FAB: AI Assistant ── */}
       {showMobileAiFab && (
-        <button
-          type="button"
-          onClick={() => setAiDrawerOpen(true)}
-          className={`ai-fab${showMobileQuestionNav ? ' ai-fab-with-mobile-nav' : ''}`}
-          style={{
-            position: 'fixed',
-            bottom: 24,
-            right: 20,
-            zIndex: 140,
-            width: 52,
-            height: 52,
-            borderRadius: '50%',
-            border: 'none',
-            background: 'var(--surface-3)',
-            color: 'var(--text-3)',
-            boxShadow: 'var(--shadow-md)',
-            cursor: 'pointer',
-            display: 'none',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.18s var(--ease-spring), box-shadow 0.18s',
-          }}
-          onMouseEnter={(e) => {
-            ;(e.currentTarget as HTMLElement).style.transform = 'scale(1.08)'
-          }}
-          onMouseLeave={(e) => {
-            ;(e.currentTarget as HTMLElement).style.transform = 'scale(1)'
-          }}
-          title={isAiEnabled ? '打开 AI 助手（A）' : 'AI 助手（请先配置，快捷键 A）'}
-        >
-          <svg
-            width="22"
-            height="22"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <Tooltip content={isAiEnabled ? 'AI 助手' : 'AI 助手（请先配置）'} shortcut="A">
+          <button
+            type="button"
+            onClick={() => setAiDrawerOpen(true)}
+            aria-label="打开 AI 助手"
+            className={cn(
+              'fixed right-4 z-[140] grid size-12 place-items-center rounded-full border border-line bg-elevated text-accent shadow-raised transition-transform hover:scale-105 active:scale-95 lg:hidden',
+              showMobileQuestionNav
+                ? 'bottom-[calc(64px+env(safe-area-inset-bottom))]'
+                : 'bottom-[calc(16px+env(safe-area-inset-bottom))]',
+            )}
           >
-            <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-            <circle cx="7.5" cy="14.5" r="1.5" />
-            <circle cx="16.5" cy="14.5" r="1.5" />
-          </svg>
-        </button>
+            <Sparkles className="size-5" />
+          </button>
+        </Tooltip>
       )}
     </>
   )
