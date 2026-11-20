@@ -70,7 +70,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        'sticky top-0 z-30 flex h-13 shrink-0 items-center gap-2 border-b border-line bg-canvas/85 px-6 backdrop-blur-md',
+        'sticky top-[var(--navbar-h,0px)] z-30 flex h-13 shrink-0 items-center gap-2 border-b border-line bg-canvas/85 px-6 backdrop-blur-md',
         className,
       )}
     >

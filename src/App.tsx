@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/react'
-import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
-import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { lazy, type ReactNode, Suspense, useEffect, useLayoutEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { AppShell } from '@/app/AppShell'
 import { OnboardingGuide } from '@/components/layout/OnboardingGuide'
 import { Spinner } from '@/components/ui'
@@ -8,7 +8,7 @@ import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
-import { Toaster, TooltipProvider } from '@/ui'
+import { Breadcrumb, PageHeader, Toaster, TooltipProvider } from '@/ui'
 
 const Dashboard = lazy(routeLoaders.dashboard)
 const QuestionList = lazy(routeLoaders.questionList)
@@ -54,6 +54,26 @@ function ApiAuthFallback() {
   }, [location])
 
   return <PageLoader />
+}
+
+/** Pages not yet rebuilt on the v1.5 design system: give them the shared page header. */
+function LegacyPage({ crumbs, page }: { crumbs: string[]; page: ReactNode }) {
+  const navigate = useNavigate()
+  return (
+    <>
+      <PageHeader
+        title={
+          <Breadcrumb
+            items={crumbs.map((label, index) => ({
+              label,
+              onClick: index === 0 && crumbs.length > 1 ? () => navigate('/tools') : undefined,
+            }))}
+          />
+        }
+      />
+      {page}
+    </>
+  )
 }
 
 function AppRecoveryHandlers() {
@@ -103,13 +123,25 @@ function AppRoutes() {
           <Route path="/questions" element={<QuestionList />} />
           <Route path="/questions/:id" element={<QuestionDetailRoute />} />
           <Route path="/practice" element={<Practice />} />
-          <Route path="/mock-interview" element={<MockInterview />} />
-          <Route path="/weak" element={<WeakPoints />} />
-          <Route path="/tools" element={<Tools />} />
-          <Route path="/tools/jd-match" element={<JdMatch />} />
-          <Route path="/tools/:toolId" element={<AITool />} />
-          <Route path="/import" element={<ImportPage />} />
-          <Route path="/prompt" element={<PromptPage />} />
+          <Route
+            path="/mock-interview"
+            element={<LegacyPage crumbs={['模拟面试']} page={<MockInterview />} />}
+          />
+          <Route path="/weak" element={<LegacyPage crumbs={['薄弱点']} page={<WeakPoints />} />} />
+          <Route path="/tools" element={<LegacyPage crumbs={['AI 工具箱']} page={<Tools />} />} />
+          <Route
+            path="/tools/jd-match"
+            element={<LegacyPage crumbs={['AI 工具箱', '简历 JD 诊断']} page={<JdMatch />} />}
+          />
+          <Route
+            path="/tools/:toolId"
+            element={<LegacyPage crumbs={['AI 工具箱']} page={<AITool />} />}
+          />
+          <Route
+            path="/import"
+            element={<LegacyPage crumbs={['导入题库']} page={<ImportPage />} />}
+          />
+          <Route path="/prompt" element={<LegacyPage crumbs={['出题']} page={<PromptPage />} />} />
         </Routes>
       </Suspense>
     </AppErrorBoundary>

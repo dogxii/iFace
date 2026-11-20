@@ -32,7 +32,7 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     if (!this.state.error) return this.props.children
 
     return (
-      <div className="page-container" style={{ paddingTop: 'calc(var(--navbar-h) + 56px)' }}>
+      <div className="page-container" style={{ paddingTop: 56 }}>
         <div
           className="card"
           style={{

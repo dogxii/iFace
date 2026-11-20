@@ -135,7 +135,7 @@ function MobileTopBar() {
   const setMobileNavOpen = useUIState((s) => s.setMobileNavOpen)
   const openSettings = useUIState((s) => s.openSettings)
   return (
-    <header className="fixed inset-x-0 top-0 z-40 flex h-13 items-center gap-1 border-b border-line bg-canvas/85 px-3 backdrop-blur-md lg:hidden">
+    <header className="sticky top-0 z-40 flex h-13 items-center gap-1 border-b border-line bg-canvas/85 px-3 backdrop-blur-md lg:hidden">
       <Brand />
       <div className="ml-auto flex items-center gap-0.5">
         <ThemeButton />
@@ -157,7 +157,8 @@ function MobileTopBar() {
 
 /**
  * Application frame: sidebar on desktop, top bar + slide-out menu on mobile.
- * Pages render inside `children`; legacy pages still offset themselves by `--navbar-h`.
+ * Pages render inside `children`. `--navbar-h` is the height of the sticky mobile top bar
+ * (0 on desktop) so page headers and legacy sticky elements can sit just below it.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   const settingsOpen = useUIState((s) => s.settingsOpen)
