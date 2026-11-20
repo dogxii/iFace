@@ -1279,7 +1279,7 @@ export default function QuestionDetail() {
 
         {/* ── My Answer Input — shown ABOVE answer card in "answer-first" mode ── */}
         {showAnswerInputAbove && !hideAnswerInput && (
-          <div className="animate-fade-in stagger-1">
+          <div className="animate-fade-in">
             <MyAnswerInput
               key={`answer-above-${id ?? ''}`}
               questionId={id ?? ''}
@@ -1514,7 +1514,7 @@ export default function QuestionDetail() {
         )}
 
         {/* Keyboard shortcuts */}
-        <div className="animate-fade-in stagger-3">
+        <div className="animate-fade-in">
           <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
         </div>
 
