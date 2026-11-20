@@ -1,6 +1,16 @@
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Flame,
+  NotebookPen,
+  RotateCcw,
+  Sparkles,
+  Star,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Button, Kbd, Skeleton, Spinner } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { LearningCheckPanel } from '@/components/ui/LearningCheckPanel'
@@ -20,14 +30,15 @@ import { type LearningCheckQuestion, loadLearningChecksForQuestion } from '@/lib
 import { createPracticeSessionPath, readPracticeSession } from '@/lib/practiceSession'
 import { useAIStore } from '@/store/useAIStore'
 import { clearSessionReview, useStudyStore } from '@/store/useStudyStore'
+import { useUIState } from '@/store/useUIStore'
 import {
   type AnswerAnnotationColor,
   DIFFICULTY_LABELS,
-  DIFFICULTY_STYLES,
   type QuestionAnswerAnnotation,
   type QuestionAnswerOverride,
   type StudyStatus,
 } from '@/types'
+import { PageHeader, Tag, Tooltip, Button as UIButton } from '@/ui'
 import { AIDrawer } from './aiDrawer'
 import {
   AnswerAnnotationToolbar,
@@ -119,7 +130,8 @@ export default function QuestionDetail() {
   const [activeAnswerCommentId, setActiveAnswerCommentId] = useState<string | null>(null)
   const [answerAnnotationSaving, setAnswerAnnotationSaving] = useState(false)
   const [starred, setStarred] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsOpen = useUIState((state) => state.settingsOpen)
+  const openSettings = useUIState((state) => state.openSettings)
   const [celebrationStreak, setCelebrationStreak] = useState(0)
   const [sessionFinished, setSessionFinished] = useState(false)
   const [noteRefreshKey, setNoteRefreshKey] = useState(0)
@@ -1075,7 +1087,6 @@ export default function QuestionDetail() {
     )
   }
 
-  const diffStyle = DIFFICULTY_STYLES[question.difficulty]
   const isAiEnabled = aiConfig.enabled && aiConfig.apiKey.trim().length > 0
   const answerHeading = hasCustomAnswer
     ? showOriginalAnswer
@@ -1098,441 +1109,160 @@ export default function QuestionDetail() {
 
   return (
     <>
-      {/* ── Main content — always max-width 760, never changes ── */}
-      <div
-        className={`page-container question-detail-page${showMobileQuestionNav ? ' has-mobile-question-nav' : ''}`}
-        style={{ maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 16 }}
-      >
-        {/* Breadcrumb / Session progress */}
-        <div className="animate-fade-in">
-          {isInSession ? (
-            <SessionProgress
-              current={sessionCurrent}
-              total={sessionTotal}
-              onExit={() => navigate('/practice')}
-            />
-          ) : (
-            <nav
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 13,
-                color: 'var(--text-3)',
+      <PageHeader
+        title={
+          <nav aria-label="面包屑" className="flex min-w-0 items-center gap-1.5">
+            <Link to="/questions" className="shrink-0 hover:text-fg">
+              题库
+            </Link>
+            <ChevronRight className="size-3.5 shrink-0 text-line-strong" />
+            <button
+              type="button"
+              onClick={() => {
+                setNoteDrawerOpen(false)
+                setModuleDrawerOpen(true)
               }}
+              aria-label={`展开${question.module}题目列表`}
+              aria-expanded={moduleDrawerOpen}
+              title="展开本模块题目列表（L）"
+              className="inline-flex min-w-0 items-center gap-0.5 rounded-md px-1 hover:bg-muted hover:text-fg"
             >
-              <Link
-                to="/questions"
-                style={{
-                  color: 'var(--text-3)',
-                  textDecoration: 'none',
-                  transition: 'color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text-3)'
-                }}
-              >
-                题库
-              </Link>
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ opacity: 0.4 }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <button
-                type="button"
-                onClick={() => {
-                  setNoteDrawerOpen(false)
-                  setModuleDrawerOpen(true)
-                }}
-                aria-label={`展开${question.module}题目列表`}
-                aria-expanded={moduleDrawerOpen}
-                title={`展开本模块题目列表${currentModuleQuestions.length > 0 ? `（${currentModuleQuestions.length} 题）` : ''}（L）`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 2,
-                  maxWidth: 160,
-                  height: 20,
-                  padding: '0 3px',
-                  borderRadius: 6,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--text-3)',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  transition: 'background 0.15s, color 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.background = 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--text-3)'
-                }}
-              >
-                <span
-                  style={{
-                    minWidth: 0,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {question.module}
-                </span>
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{ flexShrink: 0 }}
-                >
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
-              </button>
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ opacity: 0.4 }}
-              >
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
-              <span
-                style={{
-                  color: 'var(--text-2)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: 200,
-                }}
-              >
-                {question.question.slice(0, 30)}…
-              </span>
-            </nav>
-          )}
-        </div>
-
-        {/* Question Card */}
-        <div
-          className="card animate-fade-in stagger-1"
-          style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}
-        >
-          {/* Meta row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 500,
-                color: 'var(--text-2)',
-                padding: '3px 10px',
-                borderRadius: 6,
-                background: 'var(--surface-3)',
-                border: '1px solid var(--border-subtle)',
-              }}
-            >
-              {question.module}
+              <span className="truncate">{question.module}</span>
+              <ChevronDown className="size-3.5 shrink-0" />
+            </button>
+            <ChevronRight className="size-3.5 shrink-0 text-line-strong" />
+            <span className="shrink-0 font-medium tabular-nums text-fg">
+              {isInSession
+                ? `${sessionCurrent} / ${sessionTotal}`
+                : `${Math.max(1, currentModuleQuestions.findIndex((item) => item.id === question.id) + 1)} / ${currentModuleQuestions.length}`}
             </span>
+          </nav>
+        }
+        actions={
+          <>
+            <Tooltip content="上一题" shortcut="←">
+              <UIButton
+                variant="secondary"
+                size="icon"
+                aria-label="上一题"
+                disabled={!prevId}
+                onClick={() => navigateTo(prevId)}
+              >
+                <ChevronLeft />
+              </UIButton>
+            </Tooltip>
+            <Tooltip content="下一题" shortcut="→">
+              <UIButton
+                variant="secondary"
+                size="icon"
+                aria-label="下一题"
+                disabled={!nextId}
+                onClick={() => navigateTo(nextId)}
+              >
+                <ChevronRight />
+              </UIButton>
+            </Tooltip>
+            <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
+            <UIButton
+              className="hidden sm:inline-flex"
+              shortcut="A"
+              onClick={() => setAiDrawerOpen(true)}
+            >
+              <Sparkles />问 AI
+            </UIButton>
+          </>
+        }
+      />
+      <div
+        className={`question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-28 sm:px-6 lg:pt-10${showMobileQuestionNav ? ' has-mobile-question-nav' : ''}`}
+      >
+        {isInSession ? (
+          <SessionProgress
+            current={sessionCurrent}
+            total={sessionTotal}
+            onExit={() => navigate('/practice')}
+          />
+        ) : null}
 
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 500,
-                padding: '3px 10px',
-                borderRadius: 6,
-                border: '1px solid',
-                color: diffStyle.color,
-                background: diffStyle.background,
-                borderColor: diffStyle.borderColor,
-              }}
+        {/* Question */}
+        <header className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Tag>{question.module}</Tag>
+            <Tag
+              dot={
+                question.difficulty === 1
+                  ? 'success'
+                  : question.difficulty === 2
+                    ? 'warning'
+                    : 'danger'
+              }
             >
               {DIFFICULTY_LABELS[question.difficulty]}
-            </span>
-
+            </Tag>
             {currentStatus !== 'unlearned' && (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 500,
-                  padding: '2px 8px',
-                  borderRadius: 5,
-                  background:
-                    currentStatus === 'mastered' ? 'var(--success-light)' : 'var(--warning-light)',
-                  color: currentStatus === 'mastered' ? 'var(--success)' : 'var(--warning)',
-                  border: `1px solid ${currentStatus === 'mastered' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`,
-                }}
-              >
+              <Tag variant={currentStatus === 'mastered' ? 'success' : 'warning'}>
                 {currentStatus === 'mastered' ? '已掌握' : '待复习'}
-              </span>
+              </Tag>
             )}
-
-            <div
-              style={{
-                marginLeft: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                flexWrap: 'wrap',
-                justifyContent: 'flex-end',
-              }}
-            >
-              <button
-                type="button"
-                onClick={handleToggleStarred}
-                aria-pressed={starred}
-                aria-label={starred ? '取消重点题' : '标记为重点题'}
-                title={starred ? '取消重点题' : '标记为重点题'}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 28,
-                  height: 28,
-                  padding: 0,
-                  borderRadius: 8,
-                  border: '1px solid',
-                  borderColor: starred ? 'rgba(245,158,11,0.28)' : 'transparent',
-                  background: starred ? 'rgba(245,158,11,0.08)' : 'transparent',
-                  color: starred ? '#b45309' : 'var(--text-3)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  opacity: starred ? 1 : 0.7,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(245,158,11,0.32)'
-                  ;(e.currentTarget as HTMLElement).style.background = 'rgba(245,158,11,0.1)'
-                  ;(e.currentTarget as HTMLElement).style.color = '#b45309'
-                  ;(e.currentTarget as HTMLElement).style.opacity = '1'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor = starred
-                    ? 'rgba(245,158,11,0.28)'
-                    : 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.background = starred
-                    ? 'rgba(245,158,11,0.08)'
-                    : 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = starred
-                    ? '#b45309'
-                    : 'var(--text-3)'
-                  ;(e.currentTarget as HTMLElement).style.opacity = starred ? '1' : '0.7'
-                }}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill={starred ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  strokeWidth="2.1"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+            <div className="ml-auto flex items-center gap-0.5">
+              <Tooltip content={starred ? '取消重点题' : '标记为重点题'}>
+                <UIButton
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleToggleStarred}
+                  aria-pressed={starred}
+                  aria-label={starred ? '取消重点题' : '标记为重点题'}
                 >
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={() => setNoteDrawerOpen(true)}
-                aria-label={hasNote ? '打开题目笔记' : '添加题目笔记'}
-                title={`${hasNote ? '打开题目笔记' : '添加题目笔记'}（N）`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 28,
-                  height: 28,
-                  padding: 0,
-                  borderRadius: 8,
-                  border: '1px solid',
-                  borderColor: hasNote ? 'rgba(var(--primary-rgb),0.22)' : 'transparent',
-                  background: hasNote ? 'rgba(var(--primary-rgb),0.07)' : 'transparent',
-                  color: hasNote ? 'var(--primary)' : 'var(--text-3)',
-                  fontSize: 12,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  opacity: hasNote ? 1 : 0.7,
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor =
-                    'rgba(var(--primary-rgb),0.28)'
-                  ;(e.currentTarget as HTMLElement).style.background =
-                    'rgba(var(--primary-rgb),0.08)'
-                  ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-                  ;(e.currentTarget as HTMLElement).style.opacity = '1'
-                }}
-                onMouseLeave={(e) => {
-                  ;(e.currentTarget as HTMLElement).style.borderColor = hasNote
-                    ? 'rgba(var(--primary-rgb),0.22)'
-                    : 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.background = hasNote
-                    ? 'rgba(var(--primary-rgb),0.07)'
-                    : 'transparent'
-                  ;(e.currentTarget as HTMLElement).style.color = hasNote
-                    ? 'var(--primary)'
-                    : 'var(--text-3)'
-                  ;(e.currentTarget as HTMLElement).style.opacity = hasNote ? '1' : '0.7'
-                }}
-              >
-                <span style={{ position: 'relative', display: 'inline-flex' }}>
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M4 19.5V5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-1.5z" />
-                    <path d="M8 7h6" />
-                    <path d="M8 11h8" />
-                  </svg>
-                  {hasNote && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        right: -3,
-                        top: -3,
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: 'var(--primary)',
-                        border: '1px solid var(--surface)',
-                      }}
-                    />
-                  )}
-                </span>
-              </button>
+                  <Star className={starred ? 'fill-amber-400 text-amber-500' : undefined} />
+                </UIButton>
+              </Tooltip>
+              <Tooltip content={hasNote ? '打开题目笔记' : '添加题目笔记'} shortcut="N">
+                <UIButton
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setNoteDrawerOpen(true)}
+                  aria-label={hasNote ? '打开题目笔记' : '添加题目笔记'}
+                  className="relative"
+                >
+                  <NotebookPen className={hasNote ? 'text-accent' : undefined} />
+                  {hasNote ? (
+                    <span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-accent" />
+                  ) : null}
+                </UIButton>
+              </Tooltip>
             </div>
           </div>
 
-          {/* Question text */}
-          <h1
-            style={{
-              fontSize: 17,
-              fontWeight: 600,
-              color: 'var(--text)',
-              lineHeight: 1.65,
-              letterSpacing: '-0.005em',
-            }}
-          >
+          <h1 className="text-2xl leading-[1.45] font-semibold tracking-tight text-fg sm:text-3xl sm:leading-[1.45]">
             {question.question}
           </h1>
 
-          {/* Tags */}
           {(question.tags.length > 0 || reviewCount > 0) && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {question.tags.map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    fontSize: 11,
-                    padding: '2px 8px',
-                    borderRadius: 5,
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-3)',
-                  }}
-                >
-                  #{tag}
-                </span>
-              ))}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-fg-subtle">
               {reviewCount > 0 && (
-                <span
-                  title={`已复习 ${reviewCount} 次`}
-                  style={{
-                    fontSize: 11,
-                    padding: '2px 3px',
-                    color: 'var(--text-3)',
-                    opacity: 0.72,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
+                <span className="inline-flex items-center gap-1">
+                  <RotateCcw className="size-3.5" />
                   复习 {reviewCount} 次
                 </span>
               )}
+              {question.tags.map((tag) => (
+                <span key={tag}>#{tag}</span>
+              ))}
             </div>
           )}
 
-          {/* Reveal button */}
           {!answerVisible && (
             <button
               type="button"
               onClick={handleRevealAnswer}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                width: '100%',
-                padding: '14px',
-                borderRadius: 12,
-                border: '2px dashed var(--border)',
-                background: 'transparent',
-                color: 'var(--text-2)',
-                cursor: 'pointer',
-                fontSize: 14,
-                fontWeight: 500,
-                transition: 'all 0.18s',
-                marginTop: 4,
-              }}
-              onMouseEnter={(e) => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'rgba(var(--primary-rgb),0.5)'
-                el.style.color = 'var(--primary)'
-                el.style.background = 'var(--primary-light)'
-              }}
-              onMouseLeave={(e) => {
-                const el = e.currentTarget as HTMLElement
-                el.style.borderColor = 'var(--border)'
-                el.style.color = 'var(--text-2)'
-                el.style.background = 'transparent'
-              }}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-line-strong py-5 text-sm font-medium text-fg-muted transition-colors hover:border-accent hover:bg-accent-subtle hover:text-accent"
             >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
+              <Eye className="size-4" />
               查看参考答案
               <Kbd>Space</Kbd>
             </button>
           )}
-        </div>
+        </header>
 
         {/* ── My Answer Input — shown ABOVE answer card in "answer-first" mode ── */}
         {showAnswerInputAbove && !hideAnswerInput && (
@@ -1758,17 +1488,12 @@ export default function QuestionDetail() {
             )}
 
             {/* Status actions */}
-            <div
-              style={{
-                paddingTop: 16,
-                borderTop: '1px solid var(--border-subtle)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-              }}
-            >
-              <p style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-2)' }}>你掌握了吗？</p>
-              <div style={{ display: 'flex', gap: 8 }}>
+            <div className="sticky bottom-3 z-20 -mx-2 flex flex-col gap-2 rounded-2xl border border-line-strong bg-elevated/95 p-2 shadow-popover backdrop-blur-md sm:flex-row sm:items-center">
+              <p className="flex shrink-0 items-center gap-1.5 px-2 text-xs text-fg-muted">
+                {marking ? <Spinner size="sm" /> : null}
+                {marking ? '保存中…' : '你掌握了吗？'}
+              </p>
+              <div className="flex flex-1 gap-2">
                 <StatusButton
                   onClick={() => handleSetStatus('review', '1')}
                   label="没掌握"
@@ -1802,22 +1527,6 @@ export default function QuestionDetail() {
                   disabled={marking}
                 />
               </div>
-
-              {marking && (
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    fontSize: 12,
-                    color: 'var(--text-3)',
-                  }}
-                >
-                  <Spinner size="sm" />
-                  <span>保存中…</span>
-                </div>
-              )}
             </div>
 
             {/* ── My Answer Input — "answer-alongside" mode: compact inside answer card ── */}
@@ -1850,39 +1559,16 @@ export default function QuestionDetail() {
           />
         )}
 
-        {/* ── Streak counter pill (always visible when streak > 0) ── */}
         {streak.currentStreak >= 2 && (
-          <div
-            className="animate-fade-in"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '5px 12px',
-              borderRadius: 99,
-              background: 'var(--surface-2)',
-              border: '1px solid var(--border-subtle)',
-              width: 'fit-content',
-              fontSize: 12,
-              color: 'var(--text-2)',
-            }}
-          >
-            <span style={{ fontSize: 16 }}>🔥</span>
-            <span
-              style={{ fontWeight: 600, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}
-            >
-              {streak.currentStreak}
-            </span>
-            <span>连击</span>
+          <p className="flex w-fit items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 text-xs text-fg-muted">
+            <Flame className="size-3.5 text-warning" />
+            <span className="font-semibold tabular-nums text-fg">{streak.currentStreak}</span>
+            连击
             {streak.bestStreak > streak.currentStreak && (
-              <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 2 }}>
-                最高 {streak.bestStreak}
-              </span>
+              <span className="text-fg-subtle">· 最高 {streak.bestStreak}</span>
             )}
-            <span style={{ fontSize: 11, color: 'var(--text-3)', marginLeft: 2 }}>
-              · 今日 {streak.todayCount} 题
-            </span>
-          </div>
+            <span className="text-fg-subtle">· 今日 {streak.todayCount} 题</span>
+          </p>
         )}
 
         {/* Keyboard shortcuts */}
@@ -1891,127 +1577,44 @@ export default function QuestionDetail() {
         </div>
 
         {/* Navigation */}
-        <div
-          className="animate-fade-in stagger-4"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingTop: 8,
-          }}
+        <nav
+          aria-label="题目导航"
+          className="flex items-center justify-between border-t border-line pt-4"
         >
-          <button
-            type="button"
+          <UIButton
+            variant="ghost"
+            disabled={!prevId}
             onClick={() => {
               blurActiveControl()
               navigateTo(prevId)
             }}
-            disabled={!prevId}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '7px 12px',
-              borderRadius: 8,
-              fontSize: 13,
-              color: 'var(--text-2)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.15s, color 0.15s',
-              opacity: !prevId ? 0.3 : 1,
-              pointerEvents: !prevId ? 'none' : 'auto',
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLElement).style.background = 'none'
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text-2)'
-            }}
           >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
+            <ChevronLeft />
             上一题
-          </button>
-
-          <Link
-            to="/questions"
-            style={{
-              fontSize: 12,
-              color: 'var(--text-3)',
-              textDecoration: 'none',
-              transition: 'color 0.15s',
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text-3)'
-            }}
-          >
-            返回列表
-          </Link>
-
-          <button
-            type="button"
+          </UIButton>
+          <UIButton variant="ghost" asChild>
+            <Link
+              to={
+                isInSession
+                  ? '/practice'
+                  : `/questions?module=${encodeURIComponent(question.module)}`
+              }
+            >
+              返回列表
+            </Link>
+          </UIButton>
+          <UIButton
+            variant="ghost"
+            disabled={!nextId}
             onClick={() => {
               blurActiveControl()
               navigateTo(nextId)
             }}
-            disabled={!nextId}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '7px 12px',
-              borderRadius: 8,
-              fontSize: 13,
-              color: 'var(--text-2)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              transition: 'background 0.15s, color 0.15s',
-              opacity: !nextId ? 0.3 : 1,
-              pointerEvents: !nextId ? 'none' : 'auto',
-            }}
-            onMouseEnter={(e) => {
-              ;(e.currentTarget as HTMLElement).style.background = 'var(--surface-2)'
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text)'
-            }}
-            onMouseLeave={(e) => {
-              ;(e.currentTarget as HTMLElement).style.background = 'none'
-              ;(e.currentTarget as HTMLElement).style.color = 'var(--text-2)'
-            }}
           >
             下一题
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </button>
-        </div>
+            <ChevronRight />
+          </UIButton>
+        </nav>
       </div>
 
       <ModuleQuestionDrawer
@@ -2033,7 +1636,7 @@ export default function QuestionDetail() {
         onInitialPromptConsumed={handleAIInitialPromptConsumed}
         onOpenSettings={() => {
           setAiDrawerOpen(false)
-          setSettingsOpen(true)
+          openSettings()
         }}
       />
 
@@ -2044,9 +1647,6 @@ export default function QuestionDetail() {
         refreshKey={noteRefreshKey}
         onContentStateChange={setHasNote}
       />
-
-      {/* Settings Drawer */}
-      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       {/* ── Streak Celebration overlay ── */}
       {celebrationStreak > 0 && (

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
-import { Button, Kbd } from '@/components/ui'
+import { Button } from '@/components/ui'
+import { cn, Kbd } from '@/ui'
 import type { AnswerPanelView } from './answerPanel'
 
 // ─── Status Action Button ─────────────────────────────────────────────────────
@@ -23,82 +24,29 @@ export function StatusButton({
   active,
   disabled,
 }: StatusButtonProps) {
-  const colorMap = {
-    danger: {
-      idle: { color: '#ef4444', bg: 'rgba(239,68,68,0.06)', border: 'rgba(239,68,68,0.2)' },
-      active: { color: 'white', bg: '#ef4444', border: '#ef4444' },
-      hover: { color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.3)' },
-    },
-    warning: {
-      idle: { color: '#f59e0b', bg: 'rgba(245,158,11,0.06)', border: 'rgba(245,158,11,0.2)' },
-      active: { color: 'white', bg: '#f59e0b', border: '#f59e0b' },
-      hover: { color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.3)' },
-    },
-    success: {
-      idle: { color: '#10b981', bg: 'rgba(16,185,129,0.06)', border: 'rgba(16,185,129,0.2)' },
-      active: { color: 'white', bg: '#10b981', border: '#10b981' },
-      hover: { color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.3)' },
-    },
-  }
-
-  const c = colorMap[variant]
-  const cur = active ? c.active : c.idle
+  const tone = {
+    danger: { dot: 'bg-danger', active: 'border-danger/60 bg-danger-subtle text-danger' },
+    warning: { dot: 'bg-warning', active: 'border-warning/60 bg-warning-subtle text-warning' },
+    success: { dot: 'bg-success', active: 'border-success/60 bg-success-subtle text-success' },
+  }[variant]
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 3,
-        padding: '10px 8px',
-        borderRadius: 12,
-        border: `1px solid ${cur.border}`,
-        background: cur.bg,
-        color: cur.color,
-        cursor: 'pointer',
-        transition: 'all 0.18s',
-        opacity: disabled ? 0.4 : 1,
-        pointerEvents: disabled ? 'none' : 'auto',
-      }}
-      onMouseEnter={(e) => {
-        if (!active) {
-          const el = e.currentTarget
-          el.style.background = c.hover.bg
-          el.style.borderColor = c.hover.border
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!active) {
-          const el = e.currentTarget
-          el.style.background = cur.bg
-          el.style.borderColor = cur.border
-        }
-      }}
+      aria-pressed={active}
+      className={cn(
+        'grid flex-1 grid-cols-[auto_1fr_auto] items-center gap-x-2.5 rounded-xl border border-line-strong bg-canvas px-3 py-2 text-left transition-colors outline-none hover:bg-subtle focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50',
+        active && tone.active,
+      )}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-        <span style={{ fontSize: 13, fontWeight: 600 }}>{label}</span>
-        <span
-          style={{
-            fontSize: 10,
-            fontFamily: 'var(--font-mono)',
-            padding: '1px 4px',
-            borderRadius: 4,
-            border: '1px solid',
-            borderColor: active ? 'rgba(255,255,255,0.35)' : 'var(--border)',
-            background: active ? 'rgba(255,255,255,0.2)' : 'var(--surface-2)',
-            color: active ? 'rgba(255,255,255,0.9)' : 'var(--text-3)',
-          }}
-        >
-          {kbdKey}
-        </span>
-      </div>
-      <span style={{ fontSize: 11, opacity: active ? 0.85 : 0.55 }}>{sublabel}</span>
+      <span className={cn('row-span-2 size-2 rounded-full', tone.dot)} aria-hidden />
+      <span className="text-sm font-medium">{label}</span>
+      <Kbd className="row-span-2">{kbdKey}</Kbd>
+      <span className={cn('col-start-2 text-xs', active ? 'opacity-80' : 'text-fg-subtle')}>
+        {sublabel}
+      </span>
     </button>
   )
 }

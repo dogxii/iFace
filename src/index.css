@@ -10,50 +10,55 @@
   --font-mono: "SF Mono", ui-monospace, "Cascadia Code", "Fira Code", Menlo, Courier, monospace;
   --control-font-size: 13px;
 
+  /*
+   * Legacy variables now point at the v1.5 design tokens (src/styles/tokens.css), so pages
+   * that still use them pick up the new palette and dark mode automatically.
+   */
+
   /* Brand */
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --primary-rgb: 99, 102, 241;
-  --primary-light: rgba(99, 102, 241, 0.08);
-  --primary-light-hover: rgba(99, 102, 241, 0.14);
+  --primary: var(--ds-accent);
+  --primary-hover: var(--ds-accent-hover);
+  --primary-rgb: 94, 92, 230;
+  --primary-light: var(--ds-accent-subtle);
+  --primary-light-hover: color-mix(in srgb, var(--ds-accent) 16%, transparent);
 
   /* Surface */
-  --surface: #ffffff;
-  --surface-2: #f8f8fa;
-  --surface-3: #f1f1f5;
-  --surface-glass: rgba(255, 255, 255, 0.82);
+  --surface: var(--ds-canvas);
+  --surface-2: var(--ds-subtle);
+  --surface-3: var(--ds-muted);
+  --surface-glass: color-mix(in srgb, var(--ds-canvas) 85%, transparent);
 
   /* Border */
-  --border: #e4e4e9;
-  --border-subtle: #ededf2;
+  --border: var(--ds-border-strong);
+  --border-subtle: var(--ds-border);
 
   /* Text */
-  --text: #111118;
-  --text-2: #52525e;
-  --text-3: #8b8b99;
+  --text: var(--ds-fg);
+  --text-2: var(--ds-fg-muted);
+  --text-3: var(--ds-fg-subtle);
 
   /* Status */
-  --success: #10b981;
-  --success-light: rgba(16, 185, 129, 0.1);
-  --warning: #f59e0b;
-  --warning-light: rgba(245, 158, 11, 0.1);
-  --danger: #ef4444;
-  --danger-light: rgba(239, 68, 68, 0.1);
+  --success: var(--ds-success);
+  --success-light: var(--ds-success-subtle);
+  --warning: var(--ds-warning);
+  --warning-light: var(--ds-warning-subtle);
+  --danger: var(--ds-danger);
+  --danger-light: var(--ds-danger-subtle);
 
-  /* Shadow */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04);
-  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.05);
+  /* Shadow — flatter, closer to the hairline style */
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.08);
+  --shadow-lg: var(--ds-shadow-popover);
+  --shadow-xl: var(--ds-shadow-popover);
 
   /* Radius */
   --r-xs: 6px;
   --r-sm: 8px;
   --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 18px;
-  --r-2xl: 22px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-2xl: 16px;
 
   /* Ease */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -67,29 +72,8 @@
 /* ─── Dark Mode ─────────────────────────────────────────────────────────────── */
 
 .dark {
-  --primary: #818cf8;
-  --primary-hover: #6366f1;
-  --primary-rgb: 129, 140, 248;
-  --primary-light: rgba(129, 140, 248, 0.1);
-  --primary-light-hover: rgba(129, 140, 248, 0.16);
-
-  --surface: #0f0f13;
-  --surface-2: #16161d;
-  --surface-3: #1e1e27;
-  --surface-glass: rgba(15, 15, 19, 0.82);
-
-  --border: #2a2a36;
-  --border-subtle: #222230;
-
-  --text: #f0f0f5;
-  --text-2: #9191a4;
-  --text-3: #5a5a6e;
-
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 12px 28px rgba(0, 0, 0, 0.5), 0 4px 8px rgba(0, 0, 0, 0.3);
-  --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4);
+  --primary-rgb: 124, 122, 255;
+  --shadow-md: 0 4px 16px -4px rgba(0, 0, 0, 0.5);
 }
 
 /* Element-level defaults live in the base layer so Tailwind utilities can override them. */
