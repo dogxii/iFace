@@ -1,5 +1,5 @@
 import { cva, type VariantProps } from 'class-variance-authority'
-import type { HTMLAttributes } from 'react'
+import type { ComponentProps, HTMLAttributes } from 'react'
 import { cn } from './cn'
 
 const boxVariants = cva('rounded-xl border border-line bg-canvas', {
@@ -14,9 +14,7 @@ const boxVariants = cva('rounded-xl border border-line bg-canvas', {
   defaultVariants: { padding: 'none', elevation: 'flat', interactive: false },
 })
 
-export interface BoxProps
-  extends HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof boxVariants> {}
+export interface BoxProps extends ComponentProps<'div'>, VariantProps<typeof boxVariants> {}
 
 /** Bordered container — the base surface for cards, tables and panels. */
 export function Box({ className, padding, elevation, interactive, ...props }: BoxProps) {

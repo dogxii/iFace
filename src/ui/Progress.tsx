@@ -108,12 +108,15 @@ export function ProgressRing({
   size = 14,
   stroke = 3,
   className,
+  indicatorClassName = 'stroke-accent',
 }: {
   value: number
   max?: number
   size?: number
   stroke?: number
   className?: string
+  /** Stroke colour of the filled arc, e.g. `stroke-success`. */
+  indicatorClassName?: string
 }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
@@ -143,7 +146,7 @@ export function ProgressRing({
         strokeDasharray={c}
         strokeDashoffset={c * (1 - pct)}
         strokeLinecap="round"
-        className="stroke-accent transition-[stroke-dashoffset] duration-500"
+        className={cn('transition-[stroke-dashoffset] duration-500', indicatorClassName)}
       />
     </svg>
   )

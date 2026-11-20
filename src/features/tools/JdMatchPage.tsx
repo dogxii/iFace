@@ -1,0 +1,587 @@
+import {
+  CircleAlert,
+  Copy,
+  FileSearch,
+  FileText,
+  FileUp,
+  History,
+  Plus,
+  Settings2,
+  Sparkles,
+  Square,
+  Trash2,
+  X,
+} from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
+import { useBufferedText } from '@/hooks/useBufferedText'
+import { requestChatCompletionStream } from '@/lib/aiClient'
+import { deleteJdMatchReport, getAllJdMatchReports, putJdMatchReport } from '@/lib/db'
+import { parseResumeFile } from '@/lib/resumeParser'
+import { useAIStore } from '@/store/useAIStore'
+import { useUIState } from '@/store/useUIStore'
+import type { JdMatchReport } from '@/types'
+import {
+  Box,
+  Breadcrumb,
+  Button,
+  Callout,
+  cn,
+  EmptyState,
+  Field,
+  Input,
+  PageHeader,
+  PageTitle,
+  ProgressRing,
+  Spinner,
+  Tag,
+  Textarea,
+  toast,
+} from '@/ui'
+import {
+  buildJdMatchMessages,
+  DEFAULT_ROLE,
+  extractGeneratedTitle,
+  extractMatchScore,
+  formatReportTime,
+  RESUME_ACCEPT,
+  stripGeneratedTitle,
+} from './jdMatch'
+
+function sortReports(reports: JdMatchReport[]) {
+  return [...reports].sort((a, b) => b.updatedAt - a.updatedAt)
+}
+
+type ScoreTone = 'success' | 'warning' | 'danger'
+
+function scoreTone(score: number): ScoreTone {
+  if (score >= 75) return 'success'
+  if (score >= 55) return 'warning'
+  return 'danger'
+}
+
+const SCORE_TEXT: Record<ScoreTone, string> = {
+  success: 'text-success',
+  warning: 'text-warning',
+  danger: 'text-danger',
+}
+
+const SCORE_STROKE: Record<ScoreTone, string> = {
+  success: 'stroke-success',
+  warning: 'stroke-warning',
+  danger: 'stroke-danger',
+}
+
+/** On stacked (mobile) layouts the report sits below the form, so bring it into view. */
+function revealOnStackedLayout(el: HTMLElement | null) {
+  if (!el || window.matchMedia('(min-width: 1024px)').matches) return
+  requestAnimationFrame(() => el.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+}
+
+export default function JdMatchPage() {
+  const navigate = useNavigate()
+  const { config } = useAIStore()
+  const openSettings = useUIState((s) => s.openSettings)
+  const aiReady = config.enabled && config.apiKey.trim().length > 0
+
+  const fileRef = useRef<HTMLInputElement>(null)
+  const reportRef = useRef<HTMLDivElement>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const [roleTitle, setRoleTitle] = useState(DEFAULT_ROLE)
+  const [jdText, setJdText] = useState('')
+  const [resumeText, setResumeText] = useState('')
+  const [resumeFileName, setResumeFileName] = useState<string | null>(null)
+  const [resumeMessage, setResumeMessage] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
+  const [report, setReport] = useState('')
+  const [savedReports, setSavedReports] = useState<JdMatchReport[]>([])
+  const [activeReportId, setActiveReportId] = useState<string | null>(null)
+  const { text: streamingText, appendText, resetText } = useBufferedText()
+  const [error, setError] = useState<string | null>(null)
+  const [parsingResume, setParsingResume] = useState(false)
+  const [analyzing, setAnalyzing] = useState(false)
+
+  const displayReport = streamingText || report
+  const activeReport = savedReports.find((item) => item.id === activeReportId) ?? null
+  const score = useMemo(() => (report ? extractMatchScore(report) : null), [report])
+
+  useEffect(() => {
+    getAllJdMatchReports().then((loaded) => setSavedReports(sortReports(loaded)))
+  }, [])
+
+  useEffect(() => () => abortRef.current?.abort(), [])
+
+  const handleResumeFile = useCallback(async (file: File) => {
+    setParsingResume(true)
+    setResumeMessage(null)
+    setError(null)
+    try {
+      const parsed = await parseResumeFile(file)
+      setResumeText(parsed.text)
+      setResumeFileName(parsed.fileName)
+      setResumeMessage(parsed.warning ?? null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '简历解析失败')
+    } finally {
+      setParsingResume(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }, [])
+
+  const clearResume = () => {
+    setResumeText('')
+    setResumeFileName(null)
+    setResumeMessage(null)
+  }
+
+  const handleAnalyze = useCallback(async () => {
+    if (!aiReady) return setError('请先在设置中启用 AI 并配置 API Key')
+    if (!jdText.trim()) return setError('请粘贴岗位 JD')
+    if (!resumeText.trim()) return setError('请上传或粘贴简历文本')
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    const role = roleTitle.trim() || DEFAULT_ROLE
+    setAnalyzing(true)
+    setError(null)
+    setReport('')
+    setActiveReportId(null)
+    resetText('')
+    revealOnStackedLayout(reportRef.current)
+
+    try {
+      const result = await requestChatCompletionStream({
+        config: {
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          model: config.model,
+          temperature: Math.min(0.7, Math.max(0.2, config.temperature)),
+          maxTokens: 2400,
+          provider: config.provider,
+        },
+        messages: buildJdMatchMessages({
+          roleTitle: role,
+          jdText: jdText.trim(),
+          resumeText: resumeText.trim(),
+        }),
+        signal: controller.signal,
+        onDelta: appendText,
+      })
+      const markdown = stripGeneratedTitle(result)
+      const now = Date.now()
+      const next: JdMatchReport = {
+        id: crypto.randomUUID(),
+        title: extractGeneratedTitle(result, role),
+        roleTitle: role,
+        jdText: jdText.trim(),
+        resumeText: resumeText.trim(),
+        resumeFileName: resumeFileName ?? undefined,
+        markdown,
+        model: config.model,
+        createdAt: now,
+        updatedAt: now,
+      }
+      await putJdMatchReport(next)
+      setSavedReports((prev) => sortReports([next, ...prev]))
+      setActiveReportId(next.id)
+      setReport(markdown)
+      resetText('')
+    } catch (err) {
+      if (controller.signal.aborted) return
+      setError(err instanceof Error ? err.message : '生成诊断失败')
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null
+      setAnalyzing(false)
+    }
+  }, [aiReady, appendText, config, jdText, resumeFileName, resumeText, roleTitle, resetText])
+
+  const handleStop = () => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setAnalyzing(false)
+  }
+
+  const handleSelectReport = (item: JdMatchReport) => {
+    setRoleTitle(item.roleTitle)
+    setJdText(item.jdText)
+    setResumeText(item.resumeText)
+    setResumeFileName(item.resumeFileName ?? null)
+    setResumeMessage(null)
+    setReport(item.markdown)
+    resetText('')
+    setError(null)
+    setActiveReportId(item.id)
+    revealOnStackedLayout(reportRef.current)
+  }
+
+  const handleDeleteReport = async (item: JdMatchReport) => {
+    await deleteJdMatchReport(item.id)
+    setSavedReports((prev) => prev.filter((r) => r.id !== item.id))
+    if (activeReportId === item.id) {
+      setActiveReportId(null)
+      setReport('')
+    }
+    toast('已删除诊断记录', {
+      description: item.title,
+      action: {
+        label: '撤销',
+        onClick: async () => {
+          await putJdMatchReport(item)
+          setSavedReports((prev) => sortReports([item, ...prev]))
+        },
+      },
+    })
+  }
+
+  const handleNewDiagnosis = () => {
+    handleStop()
+    setRoleTitle(DEFAULT_ROLE)
+    setJdText('')
+    clearResume()
+    setReport('')
+    resetText('')
+    setError(null)
+    setActiveReportId(null)
+  }
+
+  const handleCopy = async () => {
+    if (!displayReport) return
+    await navigator.clipboard.writeText(displayReport)
+    toast.success('已复制 Markdown')
+  }
+
+  return (
+    <>
+      <PageHeader
+        title={
+          <Breadcrumb
+            items={[
+              { label: 'AI 工具箱', onClick: () => navigate('/tools') },
+              { label: '简历 JD 诊断' },
+            ]}
+          />
+        }
+        actions={
+          <Button variant="secondary" size="sm" onClick={handleNewDiagnosis}>
+            <Plus />
+            新诊断
+          </Button>
+        }
+      />
+      <div className="mx-auto max-w-[1240px] px-4 py-8 sm:px-8 lg:px-12 lg:py-10">
+        <PageTitle
+          title="简历 JD 诊断"
+          description="对照目标岗位，找出简历里的匹配点、风险点和面试官可能的追问。"
+        />
+
+        {!aiReady ? (
+          <Callout tone="warning" icon={<Settings2 />} className="mt-6" title="还没有配置 AI">
+            在设置中填入 API Key 并启用 AI 后才能生成诊断。
+            <Button
+              variant="link"
+              size="sm"
+              className="ml-1 h-auto p-0"
+              onClick={() => openSettings('ai')}
+            >
+              去设置
+            </Button>
+          </Callout>
+        ) : null}
+
+        <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col gap-5">
+            <Box className="flex flex-col">
+              <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <h2 className="text-sm font-semibold text-fg">诊断材料</h2>
+                {aiReady ? (
+                  <Tag variant="soft" className="max-w-40 truncate font-mono text-2xs">
+                    {config.model}
+                  </Tag>
+                ) : (
+                  <Tag variant="warning">AI 未配置</Tag>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-4 p-4">
+                <Field label="目标岗位" htmlFor="jd-role">
+                  <Input
+                    id="jd-role"
+                    value={roleTitle}
+                    onChange={(e) => setRoleTitle(e.target.value)}
+                    placeholder="例如：前端工程师"
+                    className="text-sm"
+                  />
+                </Field>
+
+                <Field
+                  label="岗位 JD"
+                  htmlFor="jd-text"
+                  hint={jdText ? `${jdText.trim().length} 字` : '岗位职责、任职要求、技术栈关键词'}
+                >
+                  <Textarea
+                    id="jd-text"
+                    value={jdText}
+                    onChange={(e) => setJdText(e.target.value)}
+                    placeholder="粘贴岗位 JD…"
+                    rows={7}
+                    className="text-sm"
+                  />
+                </Field>
+
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <label htmlFor="jd-resume" className="text-sm font-medium text-fg">
+                      简历
+                    </label>
+                    {resumeText ? (
+                      <span className="text-xs text-fg-subtle">{resumeText.trim().length} 字</span>
+                    ) : null}
+                  </div>
+
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={RESUME_ACCEPT}
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleResumeFile(file)
+                    }}
+                  />
+
+                  {resumeFileName ? (
+                    <div className="flex items-center gap-2.5 rounded-lg border border-line bg-subtle px-3 py-2">
+                      <FileText className="size-4 shrink-0 text-accent" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm text-fg">{resumeFileName}</p>
+                        <p className="truncate text-xs text-fg-subtle">
+                          {resumeMessage ?? '已解析，可在下方修改文本'}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        aria-label="移除简历"
+                        onClick={clearResume}
+                      >
+                        <X />
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={parsingResume}
+                      onClick={() => fileRef.current?.click()}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDragging(true)
+                      }}
+                      onDragLeave={() => setDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        setDragging(false)
+                        const file = e.dataTransfer.files?.[0]
+                        if (file) handleResumeFile(file)
+                      }}
+                      className={cn(
+                        'flex flex-col items-center gap-1 rounded-lg border border-dashed px-3 py-4 text-center transition-colors',
+                        dragging
+                          ? 'border-accent bg-accent-subtle'
+                          : 'border-line-strong hover:border-accent hover:bg-subtle',
+                      )}
+                    >
+                      {parsingResume ? (
+                        <Spinner size="sm" className="text-accent" />
+                      ) : (
+                        <FileUp className="size-4 text-fg-subtle" />
+                      )}
+                      <span className="text-sm text-fg">
+                        {parsingResume ? '正在解析简历…' : '上传或拖入简历文件'}
+                      </span>
+                      <span className="text-xs text-fg-subtle">支持 PDF、DOCX、TXT、MD</span>
+                    </button>
+                  )}
+
+                  <Textarea
+                    id="jd-resume"
+                    value={resumeText}
+                    onChange={(e) => setResumeText(e.target.value)}
+                    placeholder="也可以直接粘贴简历文本…"
+                    rows={resumeText ? 8 : 4}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 border-t border-line p-4">
+                {analyzing ? (
+                  <Button variant="secondary" className="flex-1" onClick={handleStop}>
+                    <Square />
+                    停止生成
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    className="flex-1"
+                    onClick={handleAnalyze}
+                    disabled={!aiReady || !jdText.trim() || !resumeText.trim()}
+                  >
+                    <Sparkles />
+                    生成诊断
+                  </Button>
+                )}
+              </div>
+            </Box>
+
+            <Box>
+              <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+                <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+                  <History className="size-4 text-fg-subtle" />
+                  历史记录
+                </h2>
+                <span className="text-xs text-fg-subtle tabular-nums">{savedReports.length}</span>
+              </div>
+              {savedReports.length === 0 ? (
+                <p className="px-4 py-6 text-center text-sm text-fg-subtle">暂无诊断记录</p>
+              ) : (
+                <ul className="flex max-h-[360px] flex-col gap-0.5 overflow-y-auto p-1.5">
+                  {savedReports.map((item) => {
+                    const active = item.id === activeReportId
+                    const itemScore = extractMatchScore(item.markdown)
+                    return (
+                      <li
+                        key={item.id}
+                        className={cn(
+                          'group flex items-center gap-1 rounded-lg transition-colors',
+                          active ? 'bg-accent-subtle' : 'hover:bg-subtle',
+                        )}
+                      >
+                        <button
+                          type="button"
+                          disabled={analyzing}
+                          aria-current={active || undefined}
+                          onClick={() => handleSelectReport(item)}
+                          className="flex min-w-0 flex-1 items-center gap-2.5 py-2 pl-2.5 text-left disabled:opacity-60"
+                        >
+                          <span
+                            className={cn(
+                              'flex size-8 shrink-0 items-center justify-center rounded-md border border-line bg-canvas text-xs font-semibold tabular-nums',
+                              itemScore === null
+                                ? 'text-fg-subtle'
+                                : SCORE_TEXT[scoreTone(itemScore)],
+                            )}
+                          >
+                            {itemScore ?? '—'}
+                          </span>
+                          <span className="min-w-0">
+                            <span
+                              className={cn(
+                                'block truncate text-sm',
+                                active ? 'font-medium text-fg' : 'text-fg',
+                              )}
+                            >
+                              {item.title}
+                            </span>
+                            <span className="block truncate text-xs text-fg-subtle">
+                              {item.roleTitle} · {formatReportTime(item.updatedAt)}
+                            </span>
+                          </span>
+                        </button>
+                        <Button
+                          variant="danger-ghost"
+                          size="icon-sm"
+                          aria-label={`删除 ${item.title}`}
+                          disabled={analyzing}
+                          onClick={() => handleDeleteReport(item)}
+                          className="mr-1 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100"
+                        >
+                          <Trash2 />
+                        </Button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </Box>
+          </div>
+
+          <Box ref={reportRef} className="min-h-[320px] scroll-mt-28 lg:min-h-[560px]">
+            <div className="flex items-center justify-between gap-2 border-b border-line px-5 py-3">
+              <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-fg">
+                <span className="truncate">{activeReport?.title ?? '诊断结果'}</span>
+                {analyzing ? <Spinner size="sm" className="text-accent" /> : null}
+              </h2>
+              {displayReport && !analyzing ? (
+                <Button variant="ghost" size="sm" onClick={handleCopy}>
+                  <Copy />
+                  复制
+                </Button>
+              ) : null}
+            </div>
+
+            {score !== null && !analyzing ? (
+              <div className="flex items-center gap-4 border-b border-line px-5 py-4">
+                <div className="relative">
+                  <ProgressRing
+                    value={score}
+                    max={100}
+                    size={52}
+                    stroke={5}
+                    indicatorClassName={SCORE_STROKE[scoreTone(score)]}
+                  />
+                  <span
+                    className={cn(
+                      'absolute inset-0 flex items-center justify-center text-sm font-semibold tabular-nums',
+                      SCORE_TEXT[scoreTone(score)],
+                    )}
+                  >
+                    {score}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-fg">匹配分 {score} / 100</p>
+                  <p className="truncate text-xs text-fg-subtle">
+                    {activeReport
+                      ? `${activeReport.roleTitle} · ${formatReportTime(activeReport.updatedAt)}${activeReport.model ? ` · ${activeReport.model}` : ''}`
+                      : roleTitle}
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="px-5 py-5">
+              {error ? (
+                <Callout tone="danger" icon={<CircleAlert />} className="mb-4">
+                  {error}
+                </Callout>
+              ) : null}
+              {displayReport ? (
+                <MarkdownRenderer
+                  content={displayReport}
+                  className="prose text-sm [&>:first-child]:mt-0!"
+                />
+              ) : analyzing ? (
+                <p
+                  className="flex items-center gap-2 py-16 text-sm text-fg-muted"
+                  aria-live="polite"
+                >
+                  <Spinner size="sm" />
+                  正在分析简历与 JD…
+                </p>
+              ) : (
+                <EmptyState
+                  className="border-0 py-20"
+                  icon={<FileSearch />}
+                  title="等待诊断"
+                  description="填入 JD 和简历后生成匹配报告，结果会自动保存到历史记录。"
+                />
+              )}
+            </div>
+          </Box>
+        </div>
+      </div>
+    </>
+  )
+}

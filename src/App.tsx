@@ -129,10 +129,7 @@ function AppRoutes() {
           />
           <Route path="/weak" element={<LegacyPage crumbs={['薄弱点']} page={<WeakPoints />} />} />
           <Route path="/tools" element={<Tools />} />
-          <Route
-            path="/tools/jd-match"
-            element={<LegacyPage crumbs={['AI 工具箱', '简历 JD 诊断']} page={<JdMatch />} />}
-          />
+          <Route path="/tools/jd-match" element={<JdMatch />} />
           <Route path="/tools/:toolId" element={<AITool />} />
           <Route
             path="/import"
