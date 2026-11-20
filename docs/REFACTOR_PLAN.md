@@ -50,17 +50,18 @@
 ## 四、分阶段计划
 
 ### 阶段 0：基线与安全网（约 1–2 天）
-- [ ] 修掉现有 2 个 Biome 格式错误
-- [ ] 接入 **Vitest**（加 `bun run test`），先给纯逻辑补测试：`data/schema`、`questionLoader`（合并/去重）、`gistSync`（合并冲突）、`localBackup`（导入导出往返）、`feedbackNote`
-- [ ] 用 **Playwright** 写一条 E2E 主流程：加载内置题库 → 刷题标记 → 详情页写笔记 → 设置页导出备份
-- [ ] 加 GitHub Actions：`check / test / build`
+- [x] 修掉现有 2 个 Biome 格式错误
+- [x] 接入 **Vitest**（`bun run test`），已覆盖 `data/schema`、`gistSync`（序列化与合并）、`localBackup`、`feedbackNote`、`practiceSession`、`questionVisibility`、`learningCheck`；`questionLoader` 依赖 IndexedDB，留到阶段 2 抽出纯函数后再测
+- [x] 用 **Playwright** 写 E2E 冒烟测试（`bun run test:e2e`）：加载内置题库 → 打开题目 → 标记掌握并刷新后保留；写笔记、导出备份在页面重建时补上
+- [x] 加 GitHub Actions：`check / test / build`
 
 ### 阶段 1：设计系统与组件库（约 3–4 天）
-- [ ] 设计 token：颜色、字号、间距、圆角、阴影、动效，写进 Tailwind v4 `@theme`，亮色 / 暗色各一套
-- [ ] 基础组件：Button、IconButton、Tag、Kbd、Input、Textarea、Select、Switch、SegmentedControl、Progress、Box/Card、EmptyState、Skeleton、Spinner
-- [ ] 交互组件（Radix）：Dialog、Sheet（抽屉）、DropdownMenu、Popover、Tooltip、Tabs、Toast、CommandPalette（⌘K）
-- [ ] 应用外壳：Sidebar、页面 Header、PageContainer
-- [ ] 开发环境 `/design` 展示页，覆盖全部组件和状态，亮色 / 暗色对照
+- [x] 设计 token：颜色、字号、间距、圆角、阴影、动效，写进 Tailwind v4 `@theme`，亮色 / 暗色各一套
+- [x] 基础组件：Button、IconButton、Tag、Kbd、Input、Textarea、Select、Switch、SegmentedControl、Progress、Box/Card、EmptyState、Skeleton、Spinner
+- [x] 交互组件（Radix）：Dialog、Sheet（抽屉）、DropdownMenu、Popover、Tooltip、Tabs、Select、Toast
+- [ ] CommandPalette（⌘K）：页面重建时随全局搜索一起做
+- [x] 应用外壳组件：Sidebar、SidebarItem、PageHeader、Breadcrumb、PageTitle（接入路由在阶段 3）
+- [x] 开发环境 `/design` 展示页，覆盖全部组件和状态，亮色 / 暗色对照
 - 验收：组件全部有类型和变体，`/design` 页截图对齐设计稿
 
 ### 阶段 2：状态层重写（约 2–3 天）
