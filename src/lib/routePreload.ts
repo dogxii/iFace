@@ -5,9 +5,9 @@ export const routeLoaders = {
   practice: () => import('@/features/practice/PracticePage'),
   mockInterview: () => import('@/pages/MockInterview'),
   weakPoints: () => import('@/pages/WeakPoints'),
-  tools: () => import('@/pages/Tools'),
+  tools: () => import('@/features/tools/ToolsPage'),
   jdMatch: () => import('@/pages/JdMatch'),
-  aiTool: () => import('@/pages/AITool'),
+  aiTool: () => import('@/features/tools/AIToolPage'),
   importPage: () => import('@/pages/ImportPage'),
   promptPage: () => import('@/pages/PromptPage'),
 }

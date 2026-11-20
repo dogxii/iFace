@@ -128,15 +128,12 @@ function AppRoutes() {
             element={<LegacyPage crumbs={['模拟面试']} page={<MockInterview />} />}
           />
           <Route path="/weak" element={<LegacyPage crumbs={['薄弱点']} page={<WeakPoints />} />} />
-          <Route path="/tools" element={<LegacyPage crumbs={['AI 工具箱']} page={<Tools />} />} />
+          <Route path="/tools" element={<Tools />} />
           <Route
             path="/tools/jd-match"
             element={<LegacyPage crumbs={['AI 工具箱', '简历 JD 诊断']} page={<JdMatch />} />}
           />
-          <Route
-            path="/tools/:toolId"
-            element={<LegacyPage crumbs={['AI 工具箱']} page={<AITool />} />}
-          />
+          <Route path="/tools/:toolId" element={<AITool />} />
           <Route
             path="/import"
             element={<LegacyPage crumbs={['导入题库']} page={<ImportPage />} />}
