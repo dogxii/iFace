@@ -145,8 +145,7 @@ export function StreakCelebration({ streak, onDone }: StreakCelebrationProps) {
   const { emoji, message, tone } = milestones[hit]
 
   return (
-    <div
-      role="status"
+    <output
       className="pointer-events-none fixed top-1/2 left-1/2 z-[9998] flex flex-col items-center gap-2"
       style={{ animation: 'streak-pop 2.2s var(--ease-spring) both' }}
     >
@@ -159,7 +158,7 @@ export function StreakCelebration({ streak, onDone }: StreakCelebrationProps) {
       >
         {message}
       </span>
-    </div>
+    </output>
   )
 }
 
