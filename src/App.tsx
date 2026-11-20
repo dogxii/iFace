@@ -20,6 +20,8 @@ const JdMatch = lazy(routeLoaders.jdMatch)
 const AITool = lazy(routeLoaders.aiTool)
 const ImportPage = lazy(routeLoaders.importPage)
 const PromptPage = lazy(routeLoaders.promptPage)
+// Component showcase — only bundled in development builds.
+const DesignSystem = import.meta.env.DEV ? lazy(() => import('@/pages/DesignSystem')) : null
 
 function PageLoader() {
   return (
@@ -113,20 +115,38 @@ function AppRoutes() {
   )
 }
 
+function AppLayout() {
+  return (
+    <div className="min-h-dvh bg-[var(--surface)]">
+      <AppRecoveryHandlers />
+      <ScrollToTop />
+      <Navbar />
+      <main>
+        <AppRoutes />
+      </main>
+      <OnboardingGuide />
+      <PWAUpdatePrompt />
+      <Analytics />
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-dvh bg-[var(--surface)]">
-        <AppRecoveryHandlers />
-        <ScrollToTop />
-        <Navbar />
-        <main>
-          <AppRoutes />
-        </main>
-        <OnboardingGuide />
-        <PWAUpdatePrompt />
-        <Analytics />
-      </div>
+      <Routes>
+        {DesignSystem ? (
+          <Route
+            path="/design"
+            element={
+              <Suspense fallback={<PageLoader />}>
+                <DesignSystem />
+              </Suspense>
+            }
+          />
+        ) : null}
+        <Route path="*" element={<AppLayout />} />
+      </Routes>
     </BrowserRouter>
   )
 }
