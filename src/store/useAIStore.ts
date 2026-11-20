@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { create } from 'zustand'
+import { useShallow } from 'zustand/react/shallow'
+import { readJSON, STORAGE_KEYS, writeJSON } from '@/lib/storage'
 import { buildChatCompletionsUrl, requestChatCompletionStream } from '../lib/aiClient'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -41,9 +43,7 @@ export interface AnswerFeedbackInput {
 
 // ─── Storage Keys ─────────────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'iface_ai_config'
-const SESSIONS_KEY = 'iface_ai_sessions'
-const CONFIG_SYNC_EVENT = 'iface_ai_config_updated'
+const MAX_STORED_SESSIONS = 50
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -278,153 +278,32 @@ function normalizeSystemPrompt(systemPrompt: unknown): string {
 // ─── Persistence Helpers ──────────────────────────────────────────────────────
 
 function loadConfig(): AIConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return { ...DEFAULT_AI_CONFIG }
-    const parsed = JSON.parse(raw)
-    return normalizeConfig(parsed)
-  } catch {
-    return { ...DEFAULT_AI_CONFIG }
-  }
+  return readJSON(
+    STORAGE_KEYS.aiConfig,
+    (value) =>
+      typeof value === 'object' && value !== null
+        ? normalizeConfig(value as Partial<AIConfig>)
+        : null,
+    { ...DEFAULT_AI_CONFIG },
+  )
 }
 
-function saveConfig(config: AIConfig): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
-  } catch {}
-}
-
-function emitConfigSync(config: AIConfig): void {
-  if (typeof window === 'undefined') return
-  window.dispatchEvent(new CustomEvent(CONFIG_SYNC_EVENT, { detail: config }))
-}
-
-function isSameConfig(a: AIConfig, b: AIConfig): boolean {
-  return JSON.stringify(a) === JSON.stringify(b)
+function isSessionMap(value: unknown): value is Record<string, AISession> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function loadSessions(): Record<string, AISession> {
-  try {
-    const raw = localStorage.getItem(SESSIONS_KEY)
-    if (!raw) return {}
-    return JSON.parse(raw)
-  } catch {
-    return {}
-  }
+  return readJSON(STORAGE_KEYS.aiSessions, (value) => (isSessionMap(value) ? value : null), {})
 }
 
-function saveSessions(sessions: Record<string, AISession>): void {
-  try {
-    // Keep only the 50 most recent sessions to avoid storage bloat
-    const entries = Object.entries(sessions).sort(([, a], [, b]) => b.updatedAt - a.updatedAt)
-    const trimmed = Object.fromEntries(entries.slice(0, 50))
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(trimmed))
-  } catch {}
+/** Keep only the most recent sessions to avoid localStorage bloat. */
+export function trimSessions(sessions: Record<string, AISession>): Record<string, AISession> {
+  const entries = Object.entries(sessions).sort(([, a], [, b]) => b.updatedAt - a.updatedAt)
+  return Object.fromEntries(entries.slice(0, MAX_STORED_SESSIONS))
 }
 
-// ─── State ────────────────────────────────────────────────────────────────────
-
-interface AIStoreState {
-  config: AIConfig
-  sessions: Record<string, AISession>
-  streaming: boolean
-  streamingQuestionId: string | null
-}
-
-// Module-level abort controller so sendMessage can be cancelled from outside
-let _activeAbortController: AbortController | null = null
-
-type AIAction =
-  | { type: 'SET_CONFIG'; config: Partial<AIConfig> }
-  | { type: 'RESET_CONFIG' }
-  | { type: 'ADD_MESSAGE'; questionId: string; message: AIMessage }
-  | { type: 'SET_MESSAGES'; questionId: string; messages: AIMessage[] }
-  | { type: 'UPSERT_SESSIONS'; sessions: AISession[] }
-  | { type: 'CLEAR_SESSION'; questionId: string }
-  | { type: 'CLEAR_ALL_SESSIONS' }
-  | { type: 'SET_STREAMING'; streaming: boolean; questionId: string | null }
-  | { type: 'INIT'; config: AIConfig; sessions: Record<string, AISession> }
-
-function reducer(state: AIStoreState, action: AIAction): AIStoreState {
-  switch (action.type) {
-    case 'INIT':
-      return { ...state, config: action.config, sessions: action.sessions }
-
-    case 'SET_CONFIG':
-      return { ...state, config: { ...state.config, ...action.config } }
-
-    case 'RESET_CONFIG':
-      return { ...state, config: { ...DEFAULT_AI_CONFIG } }
-
-    case 'ADD_MESSAGE': {
-      const existing = state.sessions[action.questionId]
-      const now = Date.now()
-      const session: AISession = existing
-        ? {
-            ...existing,
-            messages: [...existing.messages, action.message],
-            updatedAt: now,
-          }
-        : {
-            questionId: action.questionId,
-            messages: [action.message],
-            createdAt: now,
-            updatedAt: now,
-          }
-      return {
-        ...state,
-        sessions: { ...state.sessions, [action.questionId]: session },
-      }
-    }
-
-    case 'SET_MESSAGES': {
-      const next = { ...state.sessions }
-
-      if (action.messages.length === 0) {
-        delete next[action.questionId]
-        return { ...state, sessions: next }
-      }
-
-      const existing = state.sessions[action.questionId]
-      const now = Date.now()
-      next[action.questionId] = {
-        questionId: action.questionId,
-        messages: action.messages,
-        createdAt: existing?.createdAt ?? now,
-        updatedAt: now,
-      }
-
-      return { ...state, sessions: next }
-    }
-
-    case 'UPSERT_SESSIONS': {
-      const next = { ...state.sessions }
-      for (const session of action.sessions) {
-        next[session.questionId] = session
-      }
-      return { ...state, sessions: next }
-    }
-
-    case 'CLEAR_SESSION': {
-      const next = { ...state.sessions }
-      delete next[action.questionId]
-      return { ...state, sessions: next }
-    }
-
-    case 'CLEAR_ALL_SESSIONS':
-      return { ...state, sessions: {} }
-
-    case 'SET_STREAMING':
-      return {
-        ...state,
-        streaming: action.streaming,
-        streamingQuestionId: action.questionId,
-      }
-
-    default:
-      return state
-  }
-}
+// Module-level abort controller so sendMessage can be cancelled from anywhere.
+let activeAbortController: AbortController | null = null
 
 // ─── System Prompt Builder ────────────────────────────────────────────────────
 
@@ -580,214 +459,193 @@ export function getAIQuickActions(hasAnswer: boolean): AIQuickAction[] {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function useAIStore() {
-  const [state, dispatch] = useReducer(reducer, {
-    config: loadConfig(),
-    sessions: loadSessions(),
-    streaming: false,
-    streamingQuestionId: null,
-  })
+// ─── Store ────────────────────────────────────────────────────────────────────
 
-  const stateRef = useRef(state)
-  stateRef.current = state
+export interface AIState {
+  config: AIConfig
+  sessions: Record<string, AISession>
+  streaming: boolean
+  streamingQuestionId: string | null
+}
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined
+export interface AIActions {
+  updateConfig: (patch: Partial<AIConfig>) => void
+  resetConfig: () => void
+  getSession: (questionId: string) => AISession | undefined
+  getMessages: (questionId: string) => AIMessage[]
+  clearSession: (questionId: string) => void
+  replaceSessionMessages: (questionId: string, messages: AIMessage[]) => void
+  clearAllSessions: () => void
+  upsertSessions: (sessions: AISession[]) => void
+  abortStream: () => void
+  sendMessage: (
+    questionId: string,
+    userMessage: string,
+    contextMessages: AIMessage[],
+    systemSuffix: string,
+    onChunk: (chunk: string) => void,
+    onDone: (fullText: string) => void,
+    onError: (error: string) => void,
+  ) => Promise<void>
+  getQuickActions: typeof getAIQuickActions
+}
 
-    const syncConfig = (config: AIConfig) => {
-      if (isSameConfig(stateRef.current.config, config)) return
-      dispatch({ type: 'SET_CONFIG', config })
-    }
+/** Append a message to a question's session, creating the session if needed. */
+export function appendMessage(
+  sessions: Record<string, AISession>,
+  questionId: string,
+  message: AIMessage,
+  now: number,
+): Record<string, AISession> {
+  const existing = sessions[questionId]
+  const session: AISession = existing
+    ? { ...existing, messages: [...existing.messages, message], updatedAt: now }
+    : { questionId, messages: [message], createdAt: now, updatedAt: now }
+  return { ...sessions, [questionId]: session }
+}
 
-    const handleCustomSync = (event: Event) => {
-      const next = event instanceof CustomEvent ? normalizeConfig(event.detail) : loadConfig()
-      syncConfig(next)
-    }
-
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== STORAGE_KEY) return
-      syncConfig(loadConfig())
-    }
-
-    window.addEventListener(CONFIG_SYNC_EVENT, handleCustomSync)
-    window.addEventListener('storage', handleStorage)
-    return () => {
-      window.removeEventListener(CONFIG_SYNC_EVENT, handleCustomSync)
-      window.removeEventListener('storage', handleStorage)
-    }
-  }, [])
-
-  // Persist sessions on change
-  useEffect(() => {
-    saveSessions(state.sessions)
-  }, [state.sessions])
-
-  // ─── Config Actions ───────────────────────────────────────────────────────
-
-  const updateConfig = useCallback((patch: Partial<AIConfig>) => {
-    const next = normalizeConfig({ ...stateRef.current.config, ...patch })
-    saveConfig(next)
-    dispatch({ type: 'SET_CONFIG', config: next })
-    emitConfigSync(next)
-  }, [])
-
-  const resetConfig = useCallback(() => {
-    saveConfig(DEFAULT_AI_CONFIG)
-    dispatch({ type: 'RESET_CONFIG' })
-    emitConfigSync(DEFAULT_AI_CONFIG)
-  }, [])
-
-  // ─── Session Actions ──────────────────────────────────────────────────────
-
-  const getSession = useCallback(
-    (questionId: string): AISession | undefined => stateRef.current.sessions[questionId],
-    [],
-  )
-
-  // Reactive: reads directly from state so components re-render on session changes
-  const getMessages = useCallback(
-    (questionId: string): AIMessage[] => state.sessions[questionId]?.messages ?? [],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.sessions],
-  )
-
-  const clearSession = useCallback((questionId: string) => {
-    dispatch({ type: 'CLEAR_SESSION', questionId })
-  }, [])
-
-  const replaceSessionMessages = useCallback((questionId: string, messages: AIMessage[]) => {
-    dispatch({ type: 'SET_MESSAGES', questionId, messages })
-  }, [])
-
-  const clearAllSessions = useCallback(() => {
-    dispatch({ type: 'CLEAR_ALL_SESSIONS' })
-  }, [])
-
-  const upsertSessions = useCallback((sessions: AISession[]) => {
-    dispatch({ type: 'UPSERT_SESSIONS', sessions })
-  }, [])
-
-  // Abort any in-progress stream
-  const abortStream = useCallback(() => {
-    if (_activeAbortController) {
-      _activeAbortController.abort()
-      _activeAbortController = null
-    }
-    dispatch({ type: 'SET_STREAMING', streaming: false, questionId: null })
-  }, [])
-
-  // ─── AI Chat ──────────────────────────────────────────────────────────────
-
-  const sendMessage = useCallback(
-    async (
-      questionId: string,
-      userMessage: string,
-      contextMessages: AIMessage[],
-      systemSuffix: string,
-      onChunk: (chunk: string) => void,
-      onDone: (fullText: string) => void,
-      onError: (error: string) => void,
-    ): Promise<void> => {
-      const { config } = stateRef.current
-
-      if (!config.apiKey.trim()) {
-        onError('请先在设置中配置 API Key')
-        return
-      }
-
-      if (!config.enabled) {
-        onError('请先在设置中启用 AI 功能')
-        return
-      }
-
-      dispatch({ type: 'SET_STREAMING', streaming: true, questionId })
-
-      // Add user message to store
-      const userMsg: AIMessage = { role: 'user', content: userMessage }
-      dispatch({ type: 'ADD_MESSAGE', questionId, message: userMsg })
-
-      // Build system prompt: base prompt + question context suffix (always included
-      // so the model always knows the topic, but format rules only apply on first message)
-      const baseSystem = buildSystemPrompt(stateRef.current.config.systemPrompt)
-      const systemContent = systemSuffix ? baseSystem + systemSuffix : baseSystem
-
-      const messages: AIMessage[] = [
-        { role: 'system', content: systemContent },
-        ...contextMessages,
-        userMsg,
-      ]
-
-      // Create a fresh AbortController for this request
-      const controller = new AbortController()
-      _activeAbortController = controller
-
-      try {
-        const fullText = await requestChatCompletionStream({
-          config: {
-            apiKey: config.apiKey,
-            baseUrl: config.baseUrl,
-            model: config.model,
-            temperature: config.temperature,
-            maxTokens: config.maxTokens,
-            provider: config.provider,
-          },
-          messages,
-          signal: controller.signal,
-          onDelta: (delta) => {
-            onChunk(delta)
-          },
-        })
-
-        // Save assistant reply to store
-        const assistantMsg: AIMessage = {
-          role: 'assistant',
-          content: fullText,
-        }
-        dispatch({ type: 'ADD_MESSAGE', questionId, message: assistantMsg })
-        onDone(fullText)
-      } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') {
-          // User cancelled — not an error
-          onDone(/* partial text already flushed via onChunk */ '')
-        } else {
-          const errMsg = err instanceof Error ? err.message : '未知错误'
-          onError(errMsg)
-        }
-      } finally {
-        if (_activeAbortController === controller) {
-          _activeAbortController = null
-        }
-        dispatch({ type: 'SET_STREAMING', streaming: false, questionId: null })
-      }
-    },
-    [],
-  )
-
-  // ─── Quick Actions (preset prompts) ──────────────────────────────────────
-
-  const getQuickActions = useCallback(getAIQuickActions, [])
-
-  return {
-    config: state.config,
-    sessions: state.sessions,
-    streaming: state.streaming,
-    streamingQuestionId: state.streamingQuestionId,
-
-    // Config
-    updateConfig,
-    resetConfig,
-
-    // Sessions
-    getSession,
-    getMessages,
-    clearSession,
-    replaceSessionMessages,
-    clearAllSessions,
-    upsertSessions,
-
-    // AI
-    sendMessage,
-    abortStream,
-    getQuickActions,
+/** Replace a session's messages; an empty list removes the session. */
+export function replaceMessages(
+  sessions: Record<string, AISession>,
+  questionId: string,
+  messages: AIMessage[],
+  now: number,
+): Record<string, AISession> {
+  const next = { ...sessions }
+  if (messages.length === 0) {
+    delete next[questionId]
+    return next
   }
+  next[questionId] = {
+    questionId,
+    messages,
+    createdAt: sessions[questionId]?.createdAt ?? now,
+    updatedAt: now,
+  }
+  return next
+}
+
+export const useAIState = create<AIState & AIActions>()((set, get) => ({
+  config: loadConfig(),
+  sessions: loadSessions(),
+  streaming: false,
+  streamingQuestionId: null,
+
+  updateConfig: (patch) => set({ config: normalizeConfig({ ...get().config, ...patch }) }),
+  resetConfig: () => set({ config: { ...DEFAULT_AI_CONFIG } }),
+
+  getSession: (questionId) => get().sessions[questionId],
+  getMessages: (questionId) => get().sessions[questionId]?.messages ?? [],
+  clearSession: (questionId) =>
+    set({ sessions: replaceMessages(get().sessions, questionId, [], Date.now()) }),
+  replaceSessionMessages: (questionId, messages) =>
+    set({ sessions: replaceMessages(get().sessions, questionId, messages, Date.now()) }),
+  clearAllSessions: () => set({ sessions: {} }),
+  upsertSessions: (sessions) => {
+    const next = { ...get().sessions }
+    for (const session of sessions) next[session.questionId] = session
+    set({ sessions: next })
+  },
+
+  abortStream: () => {
+    activeAbortController?.abort()
+    activeAbortController = null
+    set({ streaming: false, streamingQuestionId: null })
+  },
+
+  async sendMessage(
+    questionId,
+    userMessage,
+    contextMessages,
+    systemSuffix,
+    onChunk,
+    onDone,
+    onError,
+  ) {
+    const { config } = get()
+
+    if (!config.apiKey.trim()) {
+      onError('请先在设置中配置 API Key')
+      return
+    }
+    if (!config.enabled) {
+      onError('请先在设置中启用 AI 功能')
+      return
+    }
+
+    const userMsg: AIMessage = { role: 'user', content: userMessage }
+    set({
+      streaming: true,
+      streamingQuestionId: questionId,
+      sessions: appendMessage(get().sessions, questionId, userMsg, Date.now()),
+    })
+
+    // Base prompt + question context suffix (always included so the model knows the topic).
+    const baseSystem = buildSystemPrompt(config.systemPrompt)
+    const systemContent = systemSuffix ? baseSystem + systemSuffix : baseSystem
+    const messages: AIMessage[] = [
+      { role: 'system', content: systemContent },
+      ...contextMessages,
+      userMsg,
+    ]
+
+    const controller = new AbortController()
+    activeAbortController = controller
+
+    try {
+      const fullText = await requestChatCompletionStream({
+        config: {
+          apiKey: config.apiKey,
+          baseUrl: config.baseUrl,
+          model: config.model,
+          temperature: config.temperature,
+          maxTokens: config.maxTokens,
+          provider: config.provider,
+        },
+        messages,
+        signal: controller.signal,
+        onDelta: onChunk,
+      })
+      const assistantMsg: AIMessage = { role: 'assistant', content: fullText }
+      set({ sessions: appendMessage(get().sessions, questionId, assistantMsg, Date.now()) })
+      onDone(fullText)
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        // User cancelled — not an error; partial text was already flushed via onChunk.
+        onDone('')
+      } else {
+        onError(err instanceof Error ? err.message : '未知错误')
+      }
+    } finally {
+      if (activeAbortController === controller) activeAbortController = null
+      set({ streaming: false, streamingQuestionId: null })
+    }
+  },
+
+  getQuickActions: getAIQuickActions,
+}))
+
+// Persist config and sessions whenever they change.
+useAIState.subscribe((state, prev) => {
+  if (state.config !== prev.config) writeJSON(STORAGE_KEYS.aiConfig, state.config)
+  if (state.sessions !== prev.sessions)
+    writeJSON(STORAGE_KEYS.aiSessions, trimSessions(state.sessions))
+})
+
+// Pick up config changes made in other tabs.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key !== STORAGE_KEYS.aiConfig) return
+    const next = loadConfig()
+    if (JSON.stringify(next) !== JSON.stringify(useAIState.getState().config)) {
+      useAIState.setState({ config: next })
+    }
+  })
+}
+
+/**
+ * Pre-v1.5 API: returns all AI state plus actions. Prefer `useAIState(selector)` in new code.
+ */
+export function useAIStore() {
+  return useAIState(useShallow((state) => state))
 }
