@@ -65,11 +65,14 @@
 - 验收：组件全部有类型和变体，`/design` 页截图对齐设计稿
 
 ### 阶段 2：状态层重写（约 2–3 天）
-- [ ] 每个 store 改成**模块级单例 + `useSyncExternalStore`**（或引入 `zustand`，约 1 KB），组件通过 selector 订阅，减少无关重渲染
-- [ ] reducer 改为纯函数，持久化放到 store 的 subscribe 里统一处理
-- [ ] 新建 `lib/storage.ts`：集中管理所有 `iface_*` key，带 schema 校验和版本迁移
-- [ ] 跨标签页同步保留 BroadcastChannel，但只在 store 层做一次
+- [x] 每个 store 改成**模块级单例 + `useSyncExternalStore`**（或引入 `zustand`，约 1 KB），组件通过 selector 订阅，减少无关重渲染
+- [x] reducer 改为纯函数，持久化放到 store 的 subscribe 里统一处理
+- [x] 新建 `lib/storage.ts`：集中管理所有 `iface_*` key，带 schema 校验和版本迁移
+- [x] 跨标签页同步保留 BroadcastChannel，但只在 store 层做一次
 - 验收：IndexedDB 学习记录全量读取从每页约 N 次降到 1 次；已有用户数据零迁移失败
+- 结果：切换 5 个页面时学习记录全量读取从 16 次降到 1 次；存储格式未变，无需迁移
+- [x] 新增 `src/data/source.ts` 数据源接口（本地 IndexedDB 实现），为接入 QFace 后端预留；新页面通过它读写数据
+- 顺带修复：多个 AI store 实例互相覆盖聊天记录；Gist 拉取 / 备份导入后已打开页面不刷新学习记录；离线启动时被自动登出 GitHub
 
 ### 阶段 3：页面重建（拆分大文件 + 新界面，约 6–8 天）
 拆文件的同时用新组件重建页面，结构重构和视觉改版一次完成。
@@ -119,6 +122,8 @@ src/
 
 ## 六、待确认的问题
 
-1. 状态管理：引入 `zustand`，还是用原生 `useSyncExternalStore` 自己写？（推荐 zustand，代码更少）
-2. 这次重构要不要为和 QFace 融合预留接口（比如后端 API 的数据源抽象），还是只聚焦前端质量？
-3. 练习评分后的「下次复习时间」需要新增间隔复习规则，是否纳入本次？
+已确认：
+
+1. 状态管理用 zustand。
+2. 为 QFace 预留数据源接口，只实现本地版本。
+3. 「下次复习时间」本次做，由现有记录字段（状态、复习次数、更新时间）计算，不改存储结构。
