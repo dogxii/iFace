@@ -1,9 +1,8 @@
 import { Menu, Moon, Search, Settings, Sun } from 'lucide-react'
-import { type ReactNode, useEffect } from 'react'
+import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { CommandPalette } from '@/features/command-palette/CommandPalette'
 import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
-import { SettingsDialog } from '@/features/settings/SettingsDialog'
 import { useGistAutoSync } from '@/features/settings/useGistSync'
 import { preloadPath } from '@/lib/routePreload'
 import { useAuthState } from '@/store/useAuthStore'
@@ -198,6 +197,28 @@ function usePaletteHotkey() {
   }, [])
 }
 
+const loadSettingsDialog = () => import('@/features/settings/SettingsDialog')
+const SettingsDialog = lazy(() => loadSettingsDialog().then((m) => ({ default: m.SettingsDialog })))
+
+/** Settings live in their own chunk: mounted on first open and preloaded once the app is idle. */
+function LazySettingsDialog() {
+  const open = useUIState((s) => s.settingsOpen)
+  const [mounted, setMounted] = useState(open)
+  if (open && !mounted) setMounted(true)
+
+  useEffect(() => {
+    const timer = window.setTimeout(loadSettingsDialog, 3000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (!mounted) return null
+  return (
+    <Suspense fallback={null}>
+      <SettingsDialog />
+    </Suspense>
+  )
+}
+
 /**
  * Application frame: sidebar on desktop, top bar + slide-out menu on mobile.
  * Pages render inside `children`. `--navbar-h` is the height of the sticky mobile top bar
@@ -229,7 +250,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 lg:pl-58">{children}</div>
 
-      <SettingsDialog />
+      <LazySettingsDialog />
       <CommandPalette />
     </div>
   )

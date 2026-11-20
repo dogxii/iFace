@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
 import { invalidateQuestionsCache } from '@/hooks/useQuestions'
-import { pullFromGist } from '@/lib/gistSync'
 import { useAIState } from '@/store/useAIStore'
 import { useAuthState } from '@/store/useAuthStore'
 import { formatSyncSummary } from './settingsData'
@@ -43,6 +42,8 @@ export function useGistAutoSync() {
     ;(async () => {
       try {
         const { sessions, upsertSessions } = useAIState.getState()
+        // Loaded on demand so the Gist sync code stays out of the entry chunk.
+        const { pullFromGist } = await import('@/lib/gistSync')
         const result = await pullFromGist(token, Object.values(sessions))
         if (result === null) return // no backup yet
         if (result.ok) {
