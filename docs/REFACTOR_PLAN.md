@@ -30,10 +30,22 @@
 
 ## 三、原则
 
-- **用户可见行为不变**：数据格式（IndexedDB、localStorage、备份 JSON、Gist 同步格式）向后兼容，必要时写迁移。
+- **数据兼容**：数据格式（IndexedDB、localStorage、备份 JSON、Gist 同步格式）向后兼容，必要时写迁移。
 - **小步提交，每步可验证**：每个 PR 都要通过 `check + test + build + 冒烟脚本`。
 - **先建安全网，再动结构**。
 - 为后续和 QFace（UGC）融合留好数据层接口，但不提前实现。
+- **界面整体改版**：视觉和布局按「设计方向」重做，功能和数据保持不变。
+
+## 设计方向（已确认）
+
+参考稿见 `docs/design/mockup.html`（静态 HTML，用浏览器直接打开）。
+
+- **风格**：现代简约，参考 Linear / Vercel。中性色为主，主色靛蓝（`#5e5ce6`）只用在主按钮、选中态、进度；状态（掌握 / 模糊 / 不会）只用小圆点和文字表达。
+- **层次**：1px 细边框 + 留白分组，基本不用阴影和渐变；圆角 8 / 12 / 16。
+- **字体**：西文与数字 Inter（等宽数字），中文用系统字体（苹方 / 微软雅黑）；不打包中文字体。
+- **布局**：左侧边栏导航；题目详情为文档式单栏 + 右侧目录；掌握程度放在底部悬浮条；练习为沉浸式（左侧本轮题目、中间题卡、右侧统计与提示，答案模糊预览）。
+- **暗色模式**：同一套 token 切换。
+- **组件库**：交互复杂的组件基于 Radix 无样式组件，外观自定义；简单组件自写，用 `cva` 管理变体；开发环境提供 `/design` 组件展示页。
 
 ## 四、分阶段计划
 
@@ -43,14 +55,23 @@
 - [ ] 用 **Playwright** 写一条 E2E 主流程：加载内置题库 → 刷题标记 → 详情页写笔记 → 设置页导出备份
 - [ ] 加 GitHub Actions：`check / test / build`
 
-### 阶段 1：状态层重写（约 2–3 天）
+### 阶段 1：设计系统与组件库（约 3–4 天）
+- [ ] 设计 token：颜色、字号、间距、圆角、阴影、动效，写进 Tailwind v4 `@theme`，亮色 / 暗色各一套
+- [ ] 基础组件：Button、IconButton、Tag、Kbd、Input、Textarea、Select、Switch、SegmentedControl、Progress、Box/Card、EmptyState、Skeleton、Spinner
+- [ ] 交互组件（Radix）：Dialog、Sheet（抽屉）、DropdownMenu、Popover、Tooltip、Tabs、Toast、CommandPalette（⌘K）
+- [ ] 应用外壳：Sidebar、页面 Header、PageContainer
+- [ ] 开发环境 `/design` 展示页，覆盖全部组件和状态，亮色 / 暗色对照
+- 验收：组件全部有类型和变体，`/design` 页截图对齐设计稿
+
+### 阶段 2：状态层重写（约 2–3 天）
 - [ ] 每个 store 改成**模块级单例 + `useSyncExternalStore`**（或引入 `zustand`，约 1 KB），组件通过 selector 订阅，减少无关重渲染
 - [ ] reducer 改为纯函数，持久化放到 store 的 subscribe 里统一处理
 - [ ] 新建 `lib/storage.ts`：集中管理所有 `iface_*` key，带 schema 校验和版本迁移
 - [ ] 跨标签页同步保留 BroadcastChannel，但只在 store 层做一次
 - 验收：IndexedDB 学习记录全量读取从每页约 N 次降到 1 次；已有用户数据零迁移失败
 
-### 阶段 2：拆分超大文件（约 4–6 天，可以并行）
+### 阶段 3：页面重建（拆分大文件 + 新界面，约 6–8 天）
+拆文件的同时用新组件重建页面，结构重构和视觉改版一次完成。
 改成按功能组织的目录结构：
 
 ```
@@ -74,13 +95,9 @@ src/
 - [ ] `QuestionDetail` → 页面壳不超过 400 行；划线/批注、笔记格式化、评分解析等**纯函数抽出来并补测试**
 - [ ] `SettingsDrawer` → 每个 tab 一个文件，抽出数据导入导出的 service
 - [ ] `PromptPage` / `QuestionList` / `Dashboard` / `MockInterview` / `ImportPage` 照同样方式拆
-- 验收：单文件原则上不超过 600 行；行为不变，E2E 通过
-
-### 阶段 3：样式统一（约 3–4 天，按页面渐进）
-- [ ] 把 CSS 变量映射成 Tailwind v4 的 `@theme` token
-- [ ] 抽基础组件：`Button / Card / Drawer / Tabs / Badge / Modal`，替换重复的内联样式
-- [ ] 内联样式按页面逐步迁到 class，目标是减少 80% 以上（只保留动态计算的值）
-- 验收：亮色/暗色模式截图对比无差异
+- [ ] 页面顺序：应用外壳 → 概览 → 题库 → 题目详情 → 练习 → 设置 → 其余页面
+- [ ] 内联样式全部改为 token / class（只保留动态计算的值）
+- 验收：单文件原则上不超过 600 行；功能不变，E2E 通过；亮色 / 暗色截图检查
 
 ### 阶段 4：数据与性能（约 2 天）
 - [ ] PWA：题库 JSON 不再预缓存，改为 `StaleWhileRevalidate` 运行时缓存（加载过的模块离线也能用），预缓存目标降到 1.5 MB 以下
@@ -103,4 +120,4 @@ src/
 
 1. 状态管理：引入 `zustand`，还是用原生 `useSyncExternalStore` 自己写？（推荐 zustand，代码更少）
 2. 这次重构要不要为和 QFace 融合预留接口（比如后端 API 的数据源抽象），还是只聚焦前端质量？
-3. 样式统一（阶段 3）工作量比较大，是这次全做，还是只抽基础组件、其余渐进迁移？
+3. 练习评分后的「下次复习时间」需要新增间隔复习规则，是否纳入本次？
