@@ -1,11 +1,10 @@
 @import "tailwindcss";
+@import "./styles/tokens.css";
 
 /* ─── CSS Custom Properties (:root) ─────────────────────────────────────────── */
 
 :root {
   /* Typography */
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-display:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
   --font-mono: "SF Mono", ui-monospace, "Cascadia Code", "Fira Code", Menlo, Courier, monospace;
@@ -63,32 +62,6 @@
 
   /* Navbar */
   --navbar-h: 52px;
-
-  /* ── Aliases for component compatibility ── */
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-rgb: var(--primary-rgb);
-  --color-primary-light: var(--primary-light);
-  --color-primary-light-hover: var(--primary-light-hover);
-
-  --color-surface: var(--surface);
-  --color-surface-secondary: var(--surface-2);
-  --color-surface-tertiary: var(--surface-3);
-  --color-surface-glass: var(--surface-glass);
-
-  --color-border: var(--border);
-  --color-border-subtle: var(--border-subtle);
-
-  --color-text: var(--text);
-  --color-text-secondary: var(--text-2);
-  --color-text-tertiary: var(--text-3);
-
-  --color-success: var(--success);
-  --color-success-light: var(--success-light);
-  --color-warning: var(--warning);
-  --color-warning-light: var(--warning-light);
-  --color-danger: var(--danger);
-  --color-danger-light: var(--danger-light);
 }
 
 /* ─── Dark Mode ─────────────────────────────────────────────────────────────── */
@@ -119,80 +92,83 @@
   --shadow-xl: 0 24px 48px rgba(0, 0, 0, 0.6), 0 8px 16px rgba(0, 0, 0, 0.4);
 }
 
-/* ─── Reset ─────────────────────────────────────────────────────────────────── */
+/* Element-level defaults live in the base layer so Tailwind utilities can override them. */
+@layer base {
+  /* ─── Reset ─────────────────────────────────────────────────────────────────── */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-html {
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  scroll-behavior: smooth;
-  scrollbar-gutter: stable;
-  text-size-adjust: 100%;
-}
-
-@media (min-width: 768px) {
-  html {
-    overflow-y: scroll;
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
   }
-}
 
-body {
-  font-family: var(--font-sans);
-  background: var(--surface);
-  color: var(--text);
-  line-height: 1.6;
-  min-height: 100dvh;
-  transition:
-    background-color 0.25s var(--ease-in-out),
-    color 0.25s var(--ease-in-out);
-}
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+    scrollbar-gutter: stable;
+    text-size-adjust: 100%;
+  }
 
-/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
+  @media (min-width: 768px) {
+    html {
+      overflow-y: scroll;
+    }
+  }
 
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 99px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-3);
-}
+  body {
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100dvh;
+    transition:
+      background-color 0.25s var(--ease-in-out),
+      color 0.25s var(--ease-in-out);
+  }
 
-.no-scrollbar {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+  /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
 
-/* ─── Selection ─────────────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-3);
+  }
 
-::selection {
-  background: var(--primary-light);
-  color: var(--primary);
-}
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 
-/* ─── Focus ──────────────────────────────────────────────────────────────────── */
+  /* ─── Selection ─────────────────────────────────────────────────────────────── */
 
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: var(--r-xs);
+  ::selection {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+
+  /* ─── Focus ──────────────────────────────────────────────────────────────────── */
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--r-xs);
+  }
 }
 
 /* ─── Surface utilities ─────────────────────────────────────────────────────── */
