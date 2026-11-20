@@ -128,3 +128,21 @@ test('a weak point can be marked mastered and the change undone', async ({ page 
     timeout: 20_000,
   })
 })
+
+test('pasted Markdown questions are imported into the bank', async ({ page }) => {
+  await page.goto('/import')
+  await page.getByRole('radio', { name: /粘贴内容/ }).click()
+  await page.getByLabel('来源名称').fill('e2e整理')
+  await page
+    .getByLabel('题目内容')
+    .fill('## Q: e2e 独有的闭包题\n**模块**: js\n**难度**: 中级\n\n闭包是函数和词法环境的组合。')
+  await expect(page.getByText('识别到 1 道题')).toBeVisible()
+  await page.getByRole('button', { name: '导入', exact: true }).click()
+  await expect(page.getByText('成功导入 1 道题')).toBeVisible({ timeout: 10_000 })
+
+  await page.goto('/')
+  await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
+  await page.keyboard.press('Control+k')
+  await page.getByRole('combobox', { name: '搜索题目或命令' }).fill('e2e 独有')
+  await expect(page.getByRole('option', { name: /e2e 独有的闭包题/ })).toBeVisible()
+})

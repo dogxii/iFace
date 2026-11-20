@@ -8,7 +8,7 @@ export const routeLoaders = {
   tools: () => import('@/features/tools/ToolsPage'),
   jdMatch: () => import('@/features/tools/JdMatchPage'),
   aiTool: () => import('@/features/tools/AIToolPage'),
-  importPage: () => import('@/pages/ImportPage'),
+  importPage: () => import('@/features/import/ImportPage'),
   promptPage: () => import('@/pages/PromptPage'),
 }
 

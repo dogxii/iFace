@@ -128,10 +128,7 @@ function AppRoutes() {
           <Route path="/tools" element={<Tools />} />
           <Route path="/tools/jd-match" element={<JdMatch />} />
           <Route path="/tools/:toolId" element={<AITool />} />
-          <Route
-            path="/import"
-            element={<LegacyPage crumbs={['导入题库']} page={<ImportPage />} />}
-          />
+          <Route path="/import" element={<ImportPage />} />
           <Route path="/prompt" element={<LegacyPage crumbs={['出题']} page={<PromptPage />} />} />
         </Routes>
       </Suspense>
