@@ -2,13 +2,12 @@ import { Analytics } from '@vercel/analytics/react'
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AppShell } from '@/app/AppShell'
-import { OnboardingGuide } from '@/components/layout/OnboardingGuide'
-import { Spinner } from '@/components/ui'
 import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
+import { OnboardingDialog } from '@/features/onboarding/OnboardingDialog'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
-import { Toaster, TooltipProvider } from '@/ui'
+import { Spinner, Toaster, TooltipProvider } from '@/ui'
 
 const Dashboard = lazy(routeLoaders.dashboard)
 const QuestionList = lazy(routeLoaders.questionList)
@@ -28,8 +27,8 @@ function PageLoader() {
   return (
     <div className="flex items-center justify-center min-h-[60dvh]">
       <div className="flex flex-col items-center gap-3">
-        <Spinner size="lg" className="text-[var(--primary)]" />
-        <p className="text-sm text-[var(--text-3)]">加载中…</p>
+        <Spinner size="lg" className="text-fg-subtle" />
+        <p className="text-sm text-fg-subtle">加载中…</p>
       </div>
     </div>
   )
@@ -124,7 +123,7 @@ function AppLayout() {
       <main>
         <AppRoutes />
       </main>
-      <OnboardingGuide />
+      <OnboardingDialog />
       <PWAUpdatePrompt />
       <Analytics />
     </AppShell>

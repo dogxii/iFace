@@ -146,3 +146,28 @@ test('pasted Markdown questions are imported into the bank', async ({ page }) =>
   await page.getByRole('combobox', { name: '搜索题目或命令' }).fill('e2e 独有')
   await expect(page.getByRole('option', { name: /e2e 独有的闭包题/ })).toBeVisible()
 })
+
+test('first visit shows the onboarding guide once', async ({ page }) => {
+  // Undo skipOnboarding for the first load only, so the reload checks persistence.
+  await page.addInitScript(() => {
+    if (sessionStorage.getItem('e2e_onboarding_seen')) return
+    sessionStorage.setItem('e2e_onboarding_seen', '1')
+    localStorage.removeItem('iface_onboarding_done_v1')
+  })
+  await page.goto('/')
+  const dialog = page.getByRole('dialog', { name: '欢迎来到 iFace！' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '下一步' }).click()
+  await expect(page.getByRole('dialog', { name: '题库设置' })).toBeVisible()
+  const golang = page.getByRole('switch', { name: /Golang/ })
+  await golang.click()
+  await expect(golang).not.toBeChecked()
+  await page.getByRole('button', { name: '全部显示' }).click()
+  await expect(golang).toBeChecked()
+  await page.getByRole('button', { name: '下一步' }).click()
+  await page.getByRole('button', { name: '完成引导' }).click()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.reload()
+  await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+})
