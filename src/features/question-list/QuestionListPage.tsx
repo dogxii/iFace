@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { DifficultyBars } from '@/components/DifficultyBars'
 import { dataSource } from '@/data/source'
 import { useQuestions } from '@/hooks/useQuestions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
@@ -110,20 +111,6 @@ function useQuestionMeta() {
   }, [])
 
   return { notes, starred, toggleStar }
-}
-
-function DifficultyBars({ value }: { value: Difficulty }) {
-  return (
-    <span className="mr-1.5 inline-flex h-3 items-end gap-0.5" aria-hidden>
-      {[5, 8, 12].map((h, i) => (
-        <span
-          key={h}
-          style={{ height: h }}
-          className={cn('w-[3px] rounded-[1px]', i < value ? 'bg-fg' : 'bg-line-strong')}
-        />
-      ))}
-    </span>
-  )
 }
 
 function Highlight({ text, keyword }: { text: string; keyword: string }) {

@@ -102,3 +102,29 @@ test('the command palette finds and opens a question', async ({ page }) => {
   await page.keyboard.press('Enter')
   await expect(page).toHaveURL(/\/questions\/[^/]+$/)
 })
+
+test('a weak point can be marked mastered and the change undone', async ({ page }) => {
+  await page.goto('/questions')
+  const first = page.locator('a[href^="/questions/"]').first()
+  await expect(first).toBeVisible({ timeout: 20_000 })
+  await first.click()
+
+  const reveal = page.getByRole('button', { name: /查看参考答案/ })
+  const notYet = page.getByRole('button', { name: /没掌握/ })
+  await expect(reveal.or(notYet).first()).toBeVisible({ timeout: 20_000 })
+  if (await reveal.isVisible()) await reveal.click()
+  await notYet.click()
+
+  await page.goto('/weak')
+  const row = page.getByRole('button', { name: /标为已掌握$/ })
+  await expect(row).toHaveCount(1, { timeout: 20_000 })
+  await row.click()
+  await expect(page.getByText('暂无待复习题目')).toBeVisible()
+
+  await page.getByRole('button', { name: '撤销' }).click()
+  await expect(page.getByRole('button', { name: /标为已掌握$/ })).toHaveCount(1)
+  await page.reload()
+  await expect(page.getByRole('button', { name: /标为已掌握$/ })).toHaveCount(1, {
+    timeout: 20_000,
+  })
+})

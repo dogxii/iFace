@@ -127,7 +127,7 @@ function AppRoutes() {
             path="/mock-interview"
             element={<LegacyPage crumbs={['模拟面试']} page={<MockInterview />} />}
           />
-          <Route path="/weak" element={<LegacyPage crumbs={['薄弱点']} page={<WeakPoints />} />} />
+          <Route path="/weak" element={<WeakPoints />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/tools/jd-match" element={<JdMatch />} />
           <Route path="/tools/:toolId" element={<AITool />} />

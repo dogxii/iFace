@@ -174,6 +174,8 @@ export interface StudyState extends Preferences {
 export interface StudyActions {
   setStatus: (questionId: string, status: StudyStatus) => Promise<void>
   clearRecord: (questionId: string) => Promise<void>
+  /** Put records back exactly as given (e.g. to undo a status change). */
+  restoreRecords: (records: StudyRecord[]) => Promise<void>
   resetAll: () => Promise<void>
   reloadRecords: () => Promise<void>
   setTheme: (theme: Theme) => void
@@ -230,6 +232,18 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
       set(withRecords({ ...get().records, [questionId]: record }))
       post({ type: 'record', record })
       await dataSource().records.put(record)
+      await invalidateDailyCache()
+    },
+
+    async restoreRecords(restored) {
+      if (restored.length === 0) return
+      const next = { ...get().records }
+      for (const record of restored) next[record.questionId] = record
+      set(withRecords(next))
+      for (const record of restored) {
+        post({ type: 'record', record })
+        await dataSource().records.put(record)
+      }
       await invalidateDailyCache()
     },
 
