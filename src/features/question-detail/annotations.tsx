@@ -478,7 +478,7 @@ export function AnswerAnnotationToolbar({
       role="toolbar"
       aria-label="批注工具"
       className={cn(
-        'fixed z-[160] flex flex-col gap-1 border border-line bg-elevated/95 shadow-popover backdrop-blur-md',
+        'fixed z-[46] flex flex-col gap-1 border border-line bg-elevated/95 shadow-popover backdrop-blur-md',
         isBottomToolbar
           ? 'inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-2xl p-1.5'
           : 'max-w-[min(360px,calc(100vw-24px))] rounded-xl p-1',
@@ -761,7 +761,7 @@ export function AnswerCommentMarkers({
             ref={layerRef}
             onMouseEnter={cancelClose}
             onMouseLeave={() => scheduleClose()}
-            className="fixed z-[155] w-[min(264px,calc(100vw-24px))] rounded-xl border border-line bg-elevated p-2.5 shadow-popover"
+            className="fixed z-[46] w-[min(264px,calc(100vw-24px))] rounded-xl border border-line bg-elevated p-2.5 shadow-popover"
             style={{
               left: activeTarget.popoverLeft,
               top: activeTarget.popoverTop,

@@ -157,7 +157,7 @@ export function MobileQuestionNav({
   return (
     <nav
       aria-label="题目切换"
-      className="fixed inset-x-0 bottom-0 z-[135] grid grid-cols-2 gap-2.5 border-t border-line bg-canvas/90 px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-[35] grid grid-cols-2 gap-2.5 border-t border-line bg-canvas/90 px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden"
     >
       <Button variant="secondary" onClick={onPrev} disabled={prevDisabled}>
         <ArrowLeft />

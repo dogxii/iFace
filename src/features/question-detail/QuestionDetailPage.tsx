@@ -1578,7 +1578,7 @@ export default function QuestionDetail() {
         onInitialPromptConsumed={handleAIInitialPromptConsumed}
         onOpenSettings={() => {
           setAiDrawerOpen(false)
-          openSettings()
+          openSettings('ai')
         }}
       />
 
@@ -1618,7 +1618,7 @@ export default function QuestionDetail() {
             onClick={() => setAiDrawerOpen(true)}
             aria-label="打开 AI 助手"
             className={cn(
-              'fixed right-4 z-[140] grid size-12 place-items-center rounded-full border border-line bg-elevated text-accent shadow-raised transition-transform hover:scale-105 active:scale-95 lg:hidden',
+              'fixed right-4 z-[36] grid size-12 place-items-center rounded-full border border-line bg-elevated text-accent shadow-raised transition-transform hover:scale-105 active:scale-95 lg:hidden',
               showMobileQuestionNav
                 ? 'bottom-[calc(64px+env(safe-area-inset-bottom))]'
                 : 'bottom-[calc(16px+env(safe-area-inset-bottom))]',

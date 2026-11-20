@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Spinner } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useBufferedText } from '@/hooks/useBufferedText'
@@ -7,6 +6,7 @@ import { type ChatCompletionMessage, requestChatCompletionStream } from '@/lib/a
 import { deleteJdMatchReport, getAllJdMatchReports, putJdMatchReport } from '@/lib/db'
 import { parseResumeFile } from '@/lib/resumeParser'
 import { useAIStore } from '@/store/useAIStore'
+import { useUIState } from '@/store/useUIStore'
 import type { JdMatchReport } from '@/types'
 
 const DEFAULT_ROLE = '前端工程师'
@@ -171,7 +171,7 @@ export default function JdMatch() {
     resetText: setStreamingText,
   } = useBufferedText()
   const [error, setError] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const openSettings = useUIState((state) => state.openSettings)
   const [parsingResume, setParsingResume] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
 
@@ -425,7 +425,7 @@ export default function JdMatch() {
                     新诊断
                   </Button>
                   {!aiReady && (
-                    <Button type="button" variant="secondary" onClick={() => setSettingsOpen(true)}>
+                    <Button type="button" variant="secondary" onClick={() => openSettings('ai')}>
                       配置 AI
                     </Button>
                   )}
@@ -511,8 +511,6 @@ export default function JdMatch() {
           </section>
         </div>
       </div>
-
-      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <style>{`
         .jd-match-page {

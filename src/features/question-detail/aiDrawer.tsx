@@ -55,7 +55,7 @@ export function AIDrawer({
           type="button"
           aria-label="关闭 AI 助手"
           onClick={onClose}
-          className="fixed inset-0 z-[149] animate-fade-in cursor-pointer bg-overlay/60 lg:hidden"
+          className="fixed inset-0 z-[44] animate-fade-in cursor-pointer bg-overlay/60 lg:hidden"
         />
       )}
 
@@ -63,7 +63,7 @@ export function AIDrawer({
         aria-hidden={!open}
         aria-label="AI 助手"
         className={cn(
-          'fixed top-[var(--navbar-h,0px)] right-0 bottom-0 z-[150] flex w-[min(420px,100vw)] flex-col overflow-hidden',
+          'fixed top-[var(--navbar-h,0px)] right-0 bottom-0 z-[45] flex w-[min(420px,100vw)] flex-col overflow-hidden',
           'border-l border-line bg-elevated transition-[transform,box-shadow] duration-300 ease-out',
           open
             ? 'visible translate-x-0 shadow-popover'

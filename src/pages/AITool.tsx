@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Spinner } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useBufferedText } from '@/hooks/useBufferedText'
 import { type ChatCompletionMessage, requestChatCompletionStream } from '@/lib/aiClient'
 import { useAIStore } from '@/store/useAIStore'
+import { useUIState } from '@/store/useUIStore'
 
 type FieldType = 'input' | 'textarea'
 
@@ -306,7 +306,7 @@ export default function AITool() {
   } = useBufferedText()
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const openSettings = useUIState((state) => state.openSettings)
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -476,12 +476,7 @@ export default function AITool() {
                   停止生成
                 </Button>
               ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  fullWidth
-                  onClick={() => setSettingsOpen(true)}
-                >
+                <Button type="button" variant="ghost" fullWidth onClick={() => openSettings('ai')}>
                   AI 设置
                 </Button>
               )}
@@ -516,8 +511,6 @@ export default function AITool() {
           </section>
         </div>
       </div>
-
-      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <style>{`
         .ai-tool-page {

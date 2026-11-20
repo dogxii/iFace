@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
 import { Badge, Button, Spinner } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
@@ -31,6 +30,7 @@ import {
 import { createPracticeSessionPath } from '@/lib/practiceSession'
 import { parseResumeFile } from '@/lib/resumeParser'
 import { useAIStore } from '@/store/useAIStore'
+import { useUIState } from '@/store/useUIStore'
 import type { MockInterviewLevel, MockInterviewSession, MockInterviewType, Question } from '@/types'
 
 type BusyState = 'idle' | 'planning' | 'interviewing' | 'reviewing'
@@ -222,7 +222,7 @@ export default function MockInterview() {
   } = useBufferedText()
   const [error, setError] = useState<string | null>(null)
   const [resumeMessage, setResumeMessage] = useState<string | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const openSettings = useUIState((state) => state.openSettings)
   const [parsingResume, setParsingResume] = useState(false)
   const [setupCollapsed, setSetupCollapsed] = useState(false)
   const [scrollToReportOnReady, setScrollToReportOnReady] = useState(false)
@@ -649,7 +649,7 @@ export default function MockInterview() {
             </p>
           </div>
           {!aiReady && (
-            <Button variant="primary" size="sm" onClick={() => setSettingsOpen(true)}>
+            <Button variant="primary" size="sm" onClick={() => openSettings('ai')}>
               配置 AI
             </Button>
           )}
@@ -1155,8 +1155,6 @@ export default function MockInterview() {
           </section>
         </div>
       </div>
-
-      <SettingsDrawer open={settingsOpen} onClose={() => setSettingsOpen(false)} />
 
       <style>{`
         .mock-page {

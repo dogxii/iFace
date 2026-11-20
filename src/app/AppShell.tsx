@@ -1,7 +1,8 @@
 import { Menu, Moon, Settings, Sun } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { SettingsDrawer } from '@/components/layout/SettingsDrawer'
+import { SettingsDialog } from '@/features/settings/SettingsDialog'
+import { useGistAutoSync } from '@/features/settings/useGistSync'
 import { preloadPath } from '@/lib/routePreload'
 import { useAuthState } from '@/store/useAuthStore'
 import { useStudyState } from '@/store/useStudyStore'
@@ -107,7 +108,7 @@ function UserRow() {
       </span>
       <ThemeButton />
       <Tooltip content="设置">
-        <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={openSettings}>
+        <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={() => openSettings()}>
           <Settings />
         </Button>
       </Tooltip>
@@ -139,7 +140,7 @@ function MobileTopBar() {
       <Brand />
       <div className="ml-auto flex items-center gap-0.5">
         <ThemeButton />
-        <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={openSettings}>
+        <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={() => openSettings()}>
           <Settings />
         </Button>
         <Button
@@ -161,8 +162,7 @@ function MobileTopBar() {
  * (0 on desktop) so page headers and legacy sticky elements can sit just below it.
  */
 export function AppShell({ children }: { children: ReactNode }) {
-  const settingsOpen = useUIState((s) => s.settingsOpen)
-  const closeSettings = useUIState((s) => s.closeSettings)
+  useGistAutoSync()
   const mobileNavOpen = useUIState((s) => s.mobileNavOpen)
   const setMobileNavOpen = useUIState((s) => s.setMobileNavOpen)
 
@@ -186,7 +186,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="min-w-0 lg:pl-58">{children}</div>
 
-      <SettingsDrawer open={settingsOpen} onClose={closeSettings} />
+      <SettingsDialog />
     </div>
   )
 }
