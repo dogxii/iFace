@@ -241,24 +241,35 @@ function normalizeQuestionText(value: string): string {
     .replace(/\s+/g, '')
 }
 
-function findBuiltinReplacementId(
+/**
+ * Find the built-in question a custom question duplicates (e.g. a built-in file that was
+ * once imported as a custom source), so its study data can be merged and the copy removed.
+ *
+ * An id-suffix match alone is not enough: Markdown imports auto-generate ids such as
+ * `js-001` that collide with built-in ids while holding completely different questions.
+ * A match therefore also needs the same module and the same question or answer text.
+ */
+export function findBuiltinReplacementId(
   question: Question,
   builtinQuestionsById: Map<string, Question>,
   builtinIdsByLength: string[],
   builtinIdsByModuleAndQuestion: Map<string, string>,
 ): string | null {
+  const questionText = normalizeQuestionText(question.question)
+  const answerText = normalizeQuestionText(question.answer ?? '')
   for (const builtinId of builtinIdsByLength) {
+    if (!question.id.endsWith(`_${builtinId}`)) continue
     const builtinQuestion = builtinQuestionsById.get(builtinId)
-    if (question.id.endsWith(`_${builtinId}`) && builtinQuestion?.module === question.module) {
+    if (!builtinQuestion || builtinQuestion.module !== question.module) continue
+    if (
+      normalizeQuestionText(builtinQuestion.question) === questionText ||
+      (answerText.length > 0 && normalizeQuestionText(builtinQuestion.answer ?? '') === answerText)
+    ) {
       return builtinId
     }
   }
 
-  return (
-    builtinIdsByModuleAndQuestion.get(
-      `${question.module}\u0000${normalizeQuestionText(question.question)}`,
-    ) ?? null
-  )
+  return builtinIdsByModuleAndQuestion.get(`${question.module}\u0000${questionText}`) ?? null
 }
 
 function mergeStudyRecord(
