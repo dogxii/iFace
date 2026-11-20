@@ -11,13 +11,8 @@
  */
 import { create } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
-import {
-  clearAllStudyRecords,
-  deleteStudyRecord,
-  getAllStudyRecords,
-  putStudyRecord,
-  studyRecordEvents,
-} from '@/lib/db'
+import { dataSource } from '@/data/source'
+import { studyRecordEvents } from '@/lib/db'
 import { invalidateDailyCache } from '@/lib/questionLoader'
 import {
   readBoolean,
@@ -234,7 +229,7 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
       if (status === 'review') sessionReviewed.add(questionId)
       set(withRecords({ ...get().records, [questionId]: record }))
       post({ type: 'record', record })
-      await putStudyRecord(record)
+      await dataSource().records.put(record)
       await invalidateDailyCache()
     },
 
@@ -243,18 +238,18 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
       delete next[questionId]
       set(withRecords(next))
       post({ type: 'delete-record', questionId })
-      await deleteStudyRecord(questionId)
+      await dataSource().records.remove(questionId)
     },
 
     async resetAll() {
       set(withRecords({}))
       post({ type: 'reset-records' })
-      await clearAllStudyRecords()
+      await dataSource().records.clear()
       await invalidateDailyCache()
     },
 
     async reloadRecords() {
-      const list = await getAllStudyRecords()
+      const list = await dataSource().records.list()
       const records: StudyRecordMap = {}
       for (const record of list) records[record.questionId] = record
       set({ ...withRecords(records), initialized: true })
