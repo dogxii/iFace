@@ -1,6 +1,8 @@
+import { Eraser, MessageSquarePlus, X } from 'lucide-react'
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { AnswerAnnotationColor, QuestionAnswerAnnotation } from '@/types'
+import { Button, cn } from '@/ui'
 
 // ─── Answer Annotations ──────────────────────────────────────────────────────
 
@@ -456,7 +458,6 @@ export function AnswerAnnotationToolbar({
 }) {
   const commentInputRef = useRef<HTMLInputElement>(null)
   const isBottomToolbar = selection.toolbar === 'bottom'
-  const toolbarButtonSize = isBottomToolbar ? 30 : 24
 
   useEffect(() => {
     if (!commentOpen) return
@@ -466,43 +467,37 @@ export function AnswerAnnotationToolbar({
 
   if (typeof document === 'undefined') return null
 
+  const btn = cn(
+    'inline-flex items-center justify-center rounded-md transition-colors hover:bg-muted disabled:opacity-60',
+    isBottomToolbar ? 'size-8' : 'size-6',
+  )
+
   return createPortal(
     <div
       ref={toolbarRef}
-      style={{
-        position: 'fixed',
-        top: isBottomToolbar ? 'auto' : selection.top,
-        right: isBottomToolbar ? 12 : 'auto',
-        bottom: isBottomToolbar ? 'max(12px, env(safe-area-inset-bottom))' : 'auto',
-        left: isBottomToolbar ? 12 : selection.left,
-        transform: isBottomToolbar
-          ? 'none'
-          : selection.placement === 'top'
-            ? 'translate(-50%, calc(-100% - 8px))'
-            : 'translate(-50%, 8px)',
-        zIndex: 160,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 4,
-        padding: isBottomToolbar ? 6 : 4,
-        borderRadius: isBottomToolbar ? 14 : 9,
-        border: '1px solid rgba(var(--primary-rgb),0.08)',
-        background: 'var(--surface-glass)',
-        boxShadow: isBottomToolbar
-          ? '0 12px 30px rgba(15,23,42,0.14)'
-          : '0 6px 18px rgba(15,23,42,0.08)',
-        backdropFilter: 'blur(14px)',
-        WebkitBackdropFilter: 'blur(14px)',
-        maxWidth: isBottomToolbar ? 'none' : 'min(360px, calc(100vw - 24px))',
-      }}
+      role="toolbar"
+      aria-label="批注工具"
+      className={cn(
+        'fixed z-[160] flex flex-col gap-1 border border-line bg-elevated/95 shadow-popover backdrop-blur-md',
+        isBottomToolbar
+          ? 'inset-x-3 bottom-[max(12px,env(safe-area-inset-bottom))] rounded-2xl p-1.5'
+          : 'max-w-[min(360px,calc(100vw-24px))] rounded-xl p-1',
+      )}
+      style={
+        isBottomToolbar
+          ? undefined
+          : {
+              top: selection.top,
+              left: selection.left,
+              transform:
+                selection.placement === 'top'
+                  ? 'translate(-50%, calc(-100% - 8px))'
+                  : 'translate(-50%, 8px)',
+            }
+      }
     >
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: isBottomToolbar ? 'center' : 'flex-start',
-          gap: isBottomToolbar ? 6 : 2,
-        }}
+        className={cn('flex items-center', isBottomToolbar ? 'justify-center gap-1.5' : 'gap-0.5')}
       >
         {ANSWER_ANNOTATION_COLORS.map((color) => {
           const colorStyle = getAnswerAnnotationColor(color)
@@ -515,24 +510,11 @@ export function AnswerAnnotationToolbar({
               disabled={saving}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => onHighlight(color)}
-              style={{
-                height: toolbarButtonSize,
-                width: toolbarButtonSize,
-                borderRadius: 7,
-                border: 'none',
-                background: 'transparent',
-                cursor: saving ? 'default' : 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                opacity: saving ? 0.6 : 1,
-              }}
+              className={btn}
             >
               <span
+                className="size-[11px] rounded-full"
                 style={{
-                  width: 11,
-                  height: 11,
-                  borderRadius: 99,
                   background: colorStyle.dot,
                   boxShadow: `0 0 0 3px ${colorStyle.background}`,
                 }}
@@ -547,58 +529,23 @@ export function AnswerAnnotationToolbar({
           disabled={saving}
           onMouseDown={(event) => event.preventDefault()}
           onClick={onClearHighlight}
-          style={{
-            height: toolbarButtonSize,
-            width: toolbarButtonSize,
-            borderRadius: 7,
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--text-3)',
-            cursor: saving ? 'default' : 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            opacity: saving ? 0.6 : 1,
-          }}
+          className={cn(btn, 'text-fg-subtle')}
         >
-          <svg
-            width={isBottomToolbar ? 16 : 14}
-            height={isBottomToolbar ? 16 : 14}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="12" cy="12" r="7" />
-            <path d="M5 19 19 5" />
-          </svg>
+          <Eraser className={isBottomToolbar ? 'size-4' : 'size-3.5'} />
         </button>
-        <span
-          style={{ width: 1, height: 16, background: 'var(--border-subtle)', margin: '0 3px' }}
-        />
+        <span className="mx-1 h-4 w-px bg-line" />
         <button
           type="button"
           onMouseDown={(event) => event.preventDefault()}
           onClick={onOpenComment}
           disabled={saving}
-          style={{
-            height: toolbarButtonSize,
-            padding: '0 8px',
-            borderRadius: 7,
-            border: 'none',
-            background: commentOpen ? 'rgba(var(--primary-rgb),0.08)' : 'transparent',
-            color: commentOpen ? 'var(--primary)' : 'var(--text-2)',
-            fontSize: 11,
-            fontWeight: 500,
-            cursor: saving ? 'default' : 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            lineHeight: 1,
-          }}
+          className={cn(
+            btn,
+            'w-auto gap-1 px-2 text-xs font-medium',
+            commentOpen ? 'bg-accent-subtle text-accent' : 'text-fg-muted',
+          )}
         >
+          <MessageSquarePlus className="size-3.5" />
           批注
         </button>
         <button
@@ -607,34 +554,14 @@ export function AnswerAnnotationToolbar({
           onClick={onCancel}
           title="关闭"
           aria-label="关闭"
-          style={{
-            width: toolbarButtonSize,
-            height: toolbarButtonSize,
-            borderRadius: 7,
-            border: 'none',
-            background: 'transparent',
-            color: 'var(--text-3)',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: isBottomToolbar ? 18 : 16,
-            lineHeight: 1,
-          }}
+          className={cn(btn, 'text-fg-subtle')}
         >
-          ×
+          <X className={isBottomToolbar ? 'size-4' : 'size-3.5'} />
         </button>
       </div>
 
-      {commentOpen && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            minWidth: isBottomToolbar ? 0 : 240,
-          }}
-        >
+      {commentOpen ? (
+        <div className={cn('flex items-center gap-1.5', !isBottomToolbar && 'min-w-60')}>
           <input
             ref={commentInputRef}
             value={commentDraft}
@@ -644,39 +571,23 @@ export function AnswerAnnotationToolbar({
               if (event.key === 'Escape') onCancel()
             }}
             placeholder="写批注…"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              height: isBottomToolbar ? 34 : 28,
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 7,
-              background: 'transparent',
-              color: 'var(--text)',
-              fontSize: isBottomToolbar ? 16 : 12,
-              outline: 'none',
-              padding: '0 9px',
-            }}
+            aria-label="批注内容"
+            className={cn(
+              'min-w-0 flex-1 rounded-md border border-line-strong bg-canvas px-2.5 text-fg outline-none placeholder:text-fg-subtle focus:border-accent',
+              isBottomToolbar ? 'h-9 text-[16px]' : 'h-7 text-xs',
+            )}
           />
-          <button
-            type="button"
+          <Button
+            size="sm"
+            variant="accent"
+            className="h-7"
             onClick={onSaveComment}
             disabled={saving || !commentDraft.trim()}
-            style={{
-              height: 28,
-              padding: '0 9px',
-              borderRadius: 7,
-              border: 'none',
-              background: commentDraft.trim() ? 'var(--primary)' : 'var(--surface-3)',
-              color: commentDraft.trim() ? 'white' : 'var(--text-3)',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: commentDraft.trim() && !saving ? 'pointer' : 'default',
-            }}
           >
             保存
-          </button>
+          </Button>
         </div>
-      )}
+      ) : null}
     </div>,
     document.body,
   )
@@ -828,30 +739,15 @@ export function AnswerCommentMarkers({
   return (
     <>
       {createPortal(
-        <span
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 1,
-            pointerEvents: 'none',
-          }}
-        >
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1]">
           {targets.flatMap((target) =>
             target.underlineRects.map((rect, index) => (
               <span
                 // biome-ignore lint/suspicious/noArrayIndexKey: rects are derived from transient layout boxes.
                 key={`${target.annotation.id}-${index}`}
                 aria-hidden="true"
-                style={{
-                  position: 'absolute',
-                  left: rect.left,
-                  top: rect.top,
-                  width: rect.width,
-                  height: 0,
-                  borderBottom: '1.5px dotted rgba(37, 99, 235, 0.82)',
-                  pointerEvents: 'none',
-                }}
+                className="pointer-events-none absolute h-0 border-b-[1.5px] border-dotted border-accent"
+                style={{ left: rect.left, top: rect.top, width: rect.width }}
               />
             )),
           )}
@@ -865,77 +761,40 @@ export function AnswerCommentMarkers({
             ref={layerRef}
             onMouseEnter={cancelClose}
             onMouseLeave={() => scheduleClose()}
+            className="fixed z-[155] w-[min(264px,calc(100vw-24px))] rounded-xl border border-line bg-elevated p-2.5 shadow-popover"
             style={{
-              position: 'fixed',
               left: activeTarget.popoverLeft,
               top: activeTarget.popoverTop,
               transform:
                 activeTarget.popoverPlacement === 'top'
                   ? 'translate(-50%, calc(-100% - 10px))'
                   : 'translate(-50%, 10px)',
-              zIndex: 155,
-              width: 'min(264px, calc(100vw - 24px))',
-              padding: 10,
-              borderRadius: 10,
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--surface)',
-              boxShadow: '0 10px 28px rgba(15,23,42,0.12)',
             }}
             role="dialog"
             aria-label="答案批注"
           >
-            <p
-              style={{
-                fontSize: 12,
-                lineHeight: 1.6,
-                color: 'var(--text)',
-                wordBreak: 'break-word',
-              }}
-            >
+            <p className="text-xs leading-relaxed break-words text-fg">
               {activeTarget.annotation.note}
             </p>
-            <div
-              style={{
-                marginTop: 8,
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 6,
-              }}
-            >
-              <button
-                type="button"
+            <div className="mt-2 flex justify-end gap-1">
+              <Button
+                variant="danger-ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => onDelete(activeTarget.annotation.id)}
-                style={{
-                  height: 24,
-                  padding: '0 8px',
-                  borderRadius: 7,
-                  border: 'none',
-                  background: 'transparent',
-                  color: 'var(--text-3)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                }}
               >
                 删除批注
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-6 px-2 text-xs"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => onActiveChange(null)}
-                style={{
-                  height: 24,
-                  padding: '0 8px',
-                  borderRadius: 7,
-                  border: 'none',
-                  background: 'var(--surface-2)',
-                  color: 'var(--text-2)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                }}
               >
                 收起
-              </button>
+              </Button>
             </div>
           </div>,
           document.body,

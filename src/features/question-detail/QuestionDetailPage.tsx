@@ -1,17 +1,21 @@
 import {
+  BookOpenCheck,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   Eye,
   Flame,
+  Lightbulb,
   NotebookPen,
+  PenLine,
   RotateCcw,
+  SearchX,
   Sparkles,
   Star,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Button, Kbd, Skeleton, Spinner } from '@/components/ui'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { LearningCheckPanel } from '@/components/ui/LearningCheckPanel'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
@@ -39,7 +43,18 @@ import {
   type QuestionAnswerOverride,
   type StudyStatus,
 } from '@/types'
-import { cn, PageHeader, Tag, Tooltip, Button as UIButton } from '@/ui'
+import {
+  cn,
+  EmptyState,
+  Kbd,
+  PageHeader,
+  Spinner,
+  Tag,
+  Tooltip,
+  Button as UIButton,
+  Skeleton as UISkeleton,
+} from '@/ui'
+import './questionDetail.css'
 import { AIDrawer } from './aiDrawer'
 import {
   AnswerAnnotationToolbar,
@@ -893,7 +908,8 @@ export default function QuestionDetail() {
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
   const showMobileQuestionNav = mobileQuestionNavEnabled
-  const showMobileAiFab = aiFabVisible && !aiDrawerOpen
+  // The answer card has its own AI button; hide the FAB then so it never covers the status dock.
+  const showMobileAiFab = aiFabVisible && !aiDrawerOpen && !answerVisible
   const currentModuleQuestions = useMemo(() => {
     if (!question) return []
     return allQuestions.filter((item) => item.module === question.module)
@@ -1051,39 +1067,32 @@ export default function QuestionDetail() {
 
   if (loading) {
     return (
-      <div
-        className="page-container animate-fade-in"
-        style={{ maxWidth: 760, display: 'flex', flexDirection: 'column', gap: 16 }}
-      >
-        <Skeleton width={180} height={13} />
-        <div
-          className="card"
-          style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}
-        >
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Skeleton width={60} height={22} rounded="md" />
-            <Skeleton width={48} height={22} rounded="md" />
-          </div>
-          <Skeleton width="80%" height={20} />
-          <Skeleton width="60%" height={20} />
-          <Skeleton width="70%" height={20} />
+      <div className="mx-auto flex w-full max-w-[760px] animate-fade-in flex-col gap-4 px-4 pt-10 sm:px-6">
+        <div className="flex gap-2">
+          <UISkeleton className="h-[22px] w-16" />
+          <UISkeleton className="h-[22px] w-12" />
         </div>
+        <UISkeleton className="h-8 w-4/5" />
+        <UISkeleton className="h-8 w-3/5" />
+        <UISkeleton className="mt-4 h-16 w-full rounded-2xl" />
+        <UISkeleton className="h-36 w-full rounded-2xl" />
       </div>
     )
   }
 
   if (!question) {
     return (
-      <div className="page-container" style={{ maxWidth: 760 }}>
-        <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <p style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>找不到该题目</p>
-          <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 24 }}>题目 ID: {id}</p>
-          <Link to="/questions">
-            <Button variant="primary" size="sm">
-              返回题库
-            </Button>
-          </Link>
-        </div>
+      <div className="mx-auto w-full max-w-[760px] px-4 pt-10 sm:px-6">
+        <EmptyState
+          icon={<SearchX />}
+          title="找不到该题目"
+          description={`题目 ID：${id}`}
+          action={
+            <UIButton asChild variant="primary" size="sm">
+              <Link to="/questions">返回题库</Link>
+            </UIButton>
+          }
+        />
       </div>
     )
   }
@@ -1175,7 +1184,10 @@ export default function QuestionDetail() {
         }
       />
       <div
-        className={`question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-28 sm:px-6 lg:pt-10${showMobileQuestionNav ? ' has-mobile-question-nav' : ''}`}
+        className={cn(
+          'question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-28 sm:px-6 lg:pt-10',
+          showMobileQuestionNav && 'max-sm:pb-[calc(96px+env(safe-area-inset-bottom))]',
+        )}
       >
         {isInSession ? (
           <SessionProgress
@@ -1286,40 +1298,11 @@ export default function QuestionDetail() {
         {answerVisible && (
           <div
             ref={answerRef}
-            className="card animate-scale-in"
-            style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 20 }}
+            className="flex animate-scale-in flex-col gap-5 rounded-2xl border border-line bg-canvas p-5 sm:p-6"
           >
             {/* Answer header */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 12,
-                flexWrap: 'wrap',
-                paddingBottom: 14,
-                borderBottom: '1px solid var(--border-subtle)',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  flexWrap: 'wrap',
-                  minWidth: 0,
-                  flex: '1 1 auto',
-                }}
-              >
-                <div
-                  style={{
-                    width: 3,
-                    height: 18,
-                    borderRadius: 99,
-                    background: 'var(--primary)',
-                    flexShrink: 0,
-                  }}
-                />
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3.5">
+              <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2.5">
                 {hasLearningCheck ? (
                   <AnswerPanelTabs
                     activeView={answerPanelView}
@@ -1333,7 +1316,8 @@ export default function QuestionDetail() {
                     }}
                   />
                 ) : (
-                  <h2 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                  <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+                    <BookOpenCheck className="size-4 text-accent" />
                     {answerHeading}
                   </h2>
                 )}
@@ -1349,89 +1333,32 @@ export default function QuestionDetail() {
                 )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div className="flex items-center gap-0.5">
                 <AnswerAIButton
                   title={hasCustomAnswer ? '编辑自定义答案' : '编辑参考答案'}
                   active={answerEditMode}
                   onClick={handleStartAnswerEdit}
                 >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 20h9" />
-                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-                  </svg>
+                  <PenLine />
+                </AnswerAIButton>
+                <AnswerAIButton
+                  title={isAiEnabled ? '讲解题目' : '讲解题目（请先配置 AI）'}
+                  onClick={() => openAIWithPreset('question')}
+                >
+                  <CircleHelp />
+                </AnswerAIButton>
+                <AnswerAIButton
+                  title={isAiEnabled ? '讲解知识点' : '讲解知识点（请先配置 AI）'}
+                  onClick={() => openAIWithPreset('concept')}
+                >
+                  <Lightbulb />
                 </AnswerAIButton>
                 <AnswerAIButton
                   title={isAiEnabled ? '打开 AI 助手（A）' : 'AI 助手（请先配置，快捷键 A）'}
                   active={aiDrawerOpen}
                   onClick={() => setAiDrawerOpen(true)}
                 >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
-                    <circle cx="7.5" cy="14.5" r="1.5" />
-                    <circle cx="16.5" cy="14.5" r="1.5" />
-                  </svg>
-                </AnswerAIButton>
-                <AnswerAIButton
-                  title={isAiEnabled ? '讲解题目' : '讲解题目（请先配置 AI）'}
-                  onClick={() => openAIWithPreset('question')}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.1 9a3 3 0 1 1 4.9 2.3c-.9.6-1.4 1.2-1.4 2.4" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                </AnswerAIButton>
-                <AnswerAIButton
-                  title={isAiEnabled ? '讲解知识点' : '讲解知识点（请先配置 AI）'}
-                  onClick={() => openAIWithPreset('concept')}
-                >
-                  <svg
-                    width="13"
-                    height="13"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 4v2" />
-                    <path d="M12 18v2" />
-                    <path d="M4 12h2" />
-                    <path d="M18 12h2" />
-                    <path d="m6.3 6.3 1.4 1.4" />
-                    <path d="m16.3 16.3 1.4 1.4" />
-                    <path d="m17.7 6.3-1.4 1.4" />
-                    <path d="m7.7 16.3-1.4 1.4" />
-                  </svg>
+                  <Sparkles />
                 </AnswerAIButton>
               </div>
             </div>
@@ -1450,13 +1377,12 @@ export default function QuestionDetail() {
                 onRestoreDefault={handleRestoreDefaultAnswer}
               />
             ) : answerOverrideLoading ? (
-              <Skeleton width="100%" height={96} />
+              <UISkeleton className="h-24 w-full" />
             ) : (
               <section
                 ref={answerContentRef}
-                className="prose answer-annotation-content"
+                className="prose answer-annotation-content relative min-w-0"
                 aria-label="答案内容"
-                style={{ minWidth: 0, position: 'relative' }}
               >
                 <MarkdownRenderer content={displayedAnswerText} />
               </section>
@@ -1489,12 +1415,22 @@ export default function QuestionDetail() {
             )}
 
             {/* Status actions */}
-            <div className="sticky bottom-3 z-20 -mx-2 flex flex-col gap-2 rounded-2xl border border-line-strong bg-elevated/95 p-2 shadow-popover backdrop-blur-md sm:flex-row sm:items-center">
-              <p className="flex shrink-0 items-center gap-1.5 px-2 text-xs text-fg-muted">
+            <div
+              className={cn(
+                'sticky bottom-3 z-20 -mx-2 flex flex-col gap-2 rounded-2xl border border-line-strong bg-elevated/95 p-2 shadow-popover backdrop-blur-md sm:flex-row sm:items-center',
+                showMobileQuestionNav && 'max-sm:bottom-[calc(60px+env(safe-area-inset-bottom))]',
+              )}
+            >
+              <p
+                className={cn(
+                  'flex shrink-0 items-center gap-1.5 px-2 text-xs text-fg-muted',
+                  !marking && 'max-sm:hidden',
+                )}
+              >
                 {marking ? <Spinner size="sm" /> : null}
                 {marking ? '保存中…' : '你掌握了吗？'}
               </p>
-              <div className="flex flex-1 gap-2">
+              <div className="flex flex-1 gap-1.5 sm:gap-2">
                 <StatusButton
                   onClick={() => handleSetStatus('review', '1')}
                   label="没掌握"
@@ -1521,7 +1457,12 @@ export default function QuestionDetail() {
                 <StatusButton
                   onClick={() => handleSetStatus('mastered', '3')}
                   label="完全掌握"
-                  sublabel={`${reviewIntervalDays({ status: 'mastered', reviewCount }) ?? 7} 天后复习`}
+                  sublabel={
+                    <>
+                      {reviewIntervalDays({ status: 'mastered', reviewCount }) ?? 7} 天后
+                      <span className="max-sm:hidden">复习</span>
+                    </>
+                  }
                   variant="success"
                   kbd="3"
                   active={justMarked === 'mastered' || currentStatus === 'mastered'}
@@ -1669,79 +1610,6 @@ export default function QuestionDetail() {
         />
       )}
 
-      <style>{`
-				@keyframes ai-dot-bounce {
-					0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-					30% { transform: translateY(-4px); opacity: 1; }
-				}
-				@keyframes streak-pop {
-					0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-					15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
-					25%  { transform: translate(-50%, -50%) scale(0.95); }
-					35%  { transform: translate(-50%, -50%) scale(1.05); }
-					50%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-					80%  { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-					100% { opacity: 0; transform: translate(-50%, -60%) scale(0.9); }
-				}
-				.mobile-question-nav {
-					display: none;
-				}
-				::highlight(iface-answer-annotation-yellow) {
-					background: rgba(245, 158, 11, 0.32);
-				}
-				::highlight(iface-answer-annotation-green) {
-					background: rgba(16, 185, 129, 0.24);
-				}
-				::highlight(iface-answer-annotation-blue) {
-					background: rgba(59, 130, 246, 0.22);
-				}
-				::highlight(iface-answer-annotation-pink) {
-					background: rgba(236, 72, 153, 0.22);
-				}
-				@media (max-width: 520px) {
-					.note-drawer-panel {
-						top: auto !important;
-						left: 0 !important;
-						right: 0 !important;
-						width: 100% !important;
-						height: min(82dvh, 640px) !important;
-						border-left: none !important;
-						border-top: 1px solid var(--border-subtle) !important;
-						border-radius: 18px 18px 0 0 !important;
-						animation: slide-up 0.2s var(--ease-out) both !important;
-					}
-					.session-completion-stats {
-						grid-template-columns: 1fr !important;
-					}
-					.session-completion-actions {
-						flex-direction: column !important;
-					}
-					.session-completion-actions > button {
-						width: 100% !important;
-					}
-				}
-				@media (max-width: 640px) {
-					.question-detail-page.has-mobile-question-nav {
-						padding-bottom: calc(66px + env(safe-area-inset-bottom)) !important;
-					}
-					.mobile-question-nav {
-						position: fixed;
-						left: 0;
-						right: 0;
-						bottom: 0;
-						z-index: 135;
-						display: grid;
-						grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-						gap: 10px;
-						align-items: center;
-						padding: 6px 10px calc(6px + env(safe-area-inset-bottom));
-						background: color-mix(in srgb, var(--surface) 94%, transparent);
-						border-top: 1px solid var(--border-subtle);
-						box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.07);
-						backdrop-filter: blur(16px);
-					}
-				}
-			`}</style>
       {/* ── Mobile FAB: AI Assistant ── */}
       {showMobileAiFab && (
         <Tooltip content={isAiEnabled ? 'AI 助手' : 'AI 助手（请先配置）'} shortcut="A">

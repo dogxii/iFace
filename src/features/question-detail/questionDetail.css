@@ -1,0 +1,53 @@
+/* Keyframes and CSS Custom Highlight colors used by the question detail page. */
+@keyframes ai-dot-bounce {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+@keyframes streak-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15);
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  35% {
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.9);
+  }
+}
+::highlight(iface-answer-annotation-yellow) {
+  background: rgba(245, 158, 11, 0.32);
+}
+::highlight(iface-answer-annotation-green) {
+  background: rgba(16, 185, 129, 0.24);
+}
+::highlight(iface-answer-annotation-blue) {
+  background: rgba(59, 130, 246, 0.22);
+}
+::highlight(iface-answer-annotation-pink) {
+  background: rgba(236, 72, 153, 0.22);
+}

@@ -1,5 +1,6 @@
-import { Spinner } from '@/components/ui'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { formatReviewNoteTime } from '@/lib/feedbackNote'
+import { Button, cn, Textarea } from '@/ui'
 
 export type AnswerOverrideSaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
@@ -13,6 +14,13 @@ export interface AnswerOverrideEditorProps {
   onRestoreDefault: () => void
 }
 
+const SAVE_STATUS_TEXT: Record<AnswerOverrideSaveStatus, string> = {
+  idle: '支持 Markdown',
+  saving: '保存中…',
+  saved: '已保存',
+  error: '保存失败',
+}
+
 export function AnswerOverrideEditor({
   draft,
   saveStatus,
@@ -23,133 +31,41 @@ export function AnswerOverrideEditor({
   onRestoreDefault,
 }: AnswerOverrideEditorProps) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        minWidth: 0,
-      }}
-    >
-      <textarea
+    <div className="flex min-w-0 flex-col gap-2.5">
+      <Textarea
         value={draft}
         onChange={(event) => onDraftChange(event.target.value)}
         rows={10}
-        style={{
-          width: '100%',
-          minHeight: 'min(52dvh, 520px)',
-          resize: 'vertical',
-          padding: '14px 16px',
-          borderRadius: 10,
-          border: '1px solid var(--border-subtle)',
-          background: 'var(--surface-2)',
-          color: 'var(--text)',
-          outline: 'none',
-          fontSize: 13,
-          lineHeight: 1.65,
-          fontFamily: 'var(--font-sans)',
-        }}
-        onFocus={(event) => {
-          event.currentTarget.style.borderColor = 'var(--primary)'
-          event.currentTarget.style.boxShadow = '0 0 0 3px var(--primary-light)'
-        }}
-        onBlur={(event) => {
-          event.currentTarget.style.borderColor = 'var(--border-subtle)'
-          event.currentTarget.style.boxShadow = 'none'
-        }}
+        aria-label="自定义答案"
+        className="min-h-[min(52dvh,520px)] px-4 py-3.5 text-sm"
       />
-
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 8,
-          flexWrap: 'wrap',
-          paddingTop: 2,
-        }}
-      >
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span
-          style={{
-            fontSize: 11,
-            color:
-              saveStatus === 'error'
-                ? 'var(--danger)'
-                : saveStatus === 'saved'
-                  ? 'var(--success)'
-                  : 'var(--text-3)',
-          }}
+          className={cn(
+            'text-xs',
+            saveStatus === 'error' && 'text-danger',
+            saveStatus === 'saved' && 'text-success',
+            (saveStatus === 'idle' || saveStatus === 'saving') && 'text-fg-subtle',
+          )}
         >
-          {saveStatus === 'saving'
-            ? '保存中…'
-            : saveStatus === 'saved'
-              ? '已保存'
-              : saveStatus === 'error'
-                ? '保存失败'
-                : 'Markdown'}
+          {SAVE_STATUS_TEXT[saveStatus]}
         </span>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={onRestoreDefault}
-            style={{
-              fontSize: 12,
-              color: 'var(--text-3)',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '5px 8px',
-              borderRadius: 7,
-            }}
-            onMouseEnter={(event) => {
-              event.currentTarget.style.background = 'var(--surface)'
-              event.currentTarget.style.color = 'var(--text)'
-            }}
-            onMouseLeave={(event) => {
-              event.currentTarget.style.background = 'transparent'
-              event.currentTarget.style.color = 'var(--text-3)'
-            }}
-          >
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Button variant="ghost" size="sm" onClick={onRestoreDefault}>
             恢复默认
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              fontSize: 12,
-              color: 'var(--text-2)',
-              background: 'var(--surface)',
-              border: '1px solid var(--border-subtle)',
-              cursor: 'pointer',
-              padding: '5px 10px',
-              borderRadius: 7,
-            }}
-          >
+          </Button>
+          <Button variant="secondary" size="sm" onClick={onCancel}>
             取消
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="accent"
+            size="sm"
             onClick={onSave}
-            disabled={!canSave || saveStatus === 'saving'}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              fontSize: 12,
-              fontWeight: 600,
-              color: canSave ? 'white' : 'var(--text-3)',
-              background: canSave ? 'var(--primary)' : 'var(--surface-3)',
-              border: 'none',
-              cursor: canSave ? 'pointer' : 'default',
-              padding: '6px 12px',
-              borderRadius: 8,
-              opacity: saveStatus === 'saving' ? 0.75 : 1,
-            }}
+            disabled={!canSave}
+            loading={saveStatus === 'saving'}
           >
-            {saveStatus === 'saving' && <Spinner size="sm" />}
             保存答案
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -168,38 +84,14 @@ export function AnswerOverrideHeaderMeta({
   onToggleOriginal,
 }: AnswerOverrideHeaderMetaProps) {
   return (
-    <div
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-        flexWrap: 'wrap',
-        minWidth: 0,
-      }}
-    >
-      <span
-        style={{
-          fontSize: 11,
-          lineHeight: 1.35,
-          color: 'var(--text-3)',
-          whiteSpace: 'nowrap',
-        }}
-      >
+    <div className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
+      <span className="text-2xs whitespace-nowrap text-fg-subtle">
         {updatedAt ? formatReviewNoteTime(updatedAt) : '已自定义'}
       </span>
       <button
         type="button"
         onClick={onToggleOriginal}
-        style={{
-          fontSize: 11,
-          color: 'var(--text-2)',
-          background: 'transparent',
-          border: '1px solid var(--border-subtle)',
-          cursor: 'pointer',
-          padding: '2px 7px',
-          borderRadius: 999,
-          lineHeight: 1.45,
-        }}
+        className="rounded-full border border-line px-2 py-px text-2xs text-fg-muted transition-colors hover:border-line-strong hover:text-fg"
       >
         {showingOriginal ? '看自定义' : '看参考答案'}
       </button>
@@ -225,12 +117,7 @@ export function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPan
     <div
       role="tablist"
       aria-label="答案学习视图"
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 2,
-        minWidth: 0,
-      }}
+      className="inline-flex min-w-0 items-center gap-0.5 rounded-lg bg-muted p-0.5"
     >
       {items.map((item) => {
         const active = activeView === item.view
@@ -241,34 +128,12 @@ export function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPan
             role="tab"
             aria-selected={active}
             onClick={() => onChange(item.view)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: 30,
-              padding: '0 11px',
-              borderRadius: 8,
-              border: 'none',
-              background: active ? 'var(--primary-light)' : 'transparent',
-              color: active ? 'var(--primary)' : 'var(--text-2)',
-              fontSize: 12,
-              fontWeight: active ? 600 : 500,
-              cursor: 'pointer',
-              transition: 'background 0.15s, color 0.15s',
-              whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={(event) => {
-              if (active) return
-              event.currentTarget.style.background = 'var(--surface-2)'
-              event.currentTarget.style.color = 'var(--text)'
-            }}
-            onMouseLeave={(event) => {
-              if (active) return
-              event.currentTarget.style.background = 'transparent'
-              event.currentTarget.style.color = 'var(--text-2)'
-            }}
+            className={cn(
+              'inline-flex h-7 items-center justify-center rounded-md px-3 text-xs font-medium whitespace-nowrap transition-colors',
+              active ? 'bg-canvas text-fg shadow-raised' : 'text-fg-muted hover:text-fg',
+            )}
           >
-            <span>{item.label}</span>
+            {item.label}
           </button>
         )
       })}
@@ -289,72 +154,20 @@ export function MobileQuestionNav({
   onPrev,
   onNext,
 }: MobileQuestionNavProps) {
-  const navButtonStyle = (disabled: boolean): React.CSSProperties => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 4,
-    minWidth: 0,
-    height: 38,
-    padding: '0 10px',
-    borderRadius: 10,
-    border: '1px solid var(--border-subtle)',
-    background: 'var(--surface)',
-    color: disabled ? 'var(--text-3)' : 'var(--text-2)',
-    fontSize: 12,
-    fontWeight: 600,
-    cursor: disabled ? 'default' : 'pointer',
-    opacity: disabled ? 0.48 : 1,
-    whiteSpace: 'nowrap',
-  })
-
   return (
-    <div className="mobile-question-nav">
-      <button
-        type="button"
-        onClick={onPrev}
-        disabled={prevDisabled}
-        style={navButtonStyle(prevDisabled)}
-      >
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <line x1="19" y1="12" x2="5" y2="12" />
-          <polyline points="12 19 5 12 12 5" />
-        </svg>
+    <nav
+      aria-label="题目切换"
+      className="fixed inset-x-0 bottom-0 z-[135] grid grid-cols-2 gap-2.5 border-t border-line bg-canvas/90 px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden"
+    >
+      <Button variant="secondary" onClick={onPrev} disabled={prevDisabled}>
+        <ArrowLeft />
         上一题
-      </button>
-      <button
-        type="button"
-        onClick={onNext}
-        disabled={nextDisabled}
-        style={navButtonStyle(nextDisabled)}
-      >
+      </Button>
+      <Button variant="secondary" onClick={onNext} disabled={nextDisabled}>
         下一题
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <line x1="5" y1="12" x2="19" y2="12" />
-          <polyline points="12 5 19 12 12 19" />
-        </svg>
-      </button>
-    </div>
+        <ArrowRight />
+      </Button>
+    </nav>
   )
 }
 
@@ -375,34 +188,13 @@ export function AnswerAIButton({
       onClick={onClick}
       aria-label={title}
       title={title}
-      style={{
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        border: '1px solid',
-        borderColor: active ? 'rgba(var(--primary-rgb),0.3)' : 'transparent',
-        background: active ? 'rgba(var(--primary-rgb),0.08)' : 'transparent',
-        color: active ? 'var(--primary)' : 'var(--text-3)',
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.15s',
-      }}
-      onMouseEnter={(e) => {
-        ;(e.currentTarget as HTMLElement).style.borderColor = 'rgba(var(--primary-rgb),0.28)'
-        ;(e.currentTarget as HTMLElement).style.background = 'rgba(var(--primary-rgb),0.08)'
-        ;(e.currentTarget as HTMLElement).style.color = 'var(--primary)'
-      }}
-      onMouseLeave={(e) => {
-        ;(e.currentTarget as HTMLElement).style.borderColor = active
-          ? 'rgba(var(--primary-rgb),0.3)'
-          : 'transparent'
-        ;(e.currentTarget as HTMLElement).style.background = active
-          ? 'rgba(var(--primary-rgb),0.08)'
-          : 'transparent'
-        ;(e.currentTarget as HTMLElement).style.color = active ? 'var(--primary)' : 'var(--text-3)'
-      }}
+      aria-pressed={active}
+      className={cn(
+        'inline-flex size-7 items-center justify-center rounded-md transition-colors [&_svg]:size-3.5',
+        active
+          ? 'bg-accent-subtle text-accent'
+          : 'text-fg-subtle hover:bg-accent-subtle hover:text-accent',
+      )}
     >
       {children}
     </button>
