@@ -1,6 +1,6 @@
 import { Analytics } from '@vercel/analytics/react'
-import { lazy, type ReactNode, Suspense, useEffect, useLayoutEffect } from 'react'
-import { BrowserRouter, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
+import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AppShell } from '@/app/AppShell'
 import { OnboardingGuide } from '@/components/layout/OnboardingGuide'
 import { Spinner } from '@/components/ui'
@@ -8,7 +8,7 @@ import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
-import { Breadcrumb, PageHeader, Toaster, TooltipProvider } from '@/ui'
+import { Toaster, TooltipProvider } from '@/ui'
 
 const Dashboard = lazy(routeLoaders.dashboard)
 const QuestionList = lazy(routeLoaders.questionList)
@@ -54,26 +54,6 @@ function ApiAuthFallback() {
   }, [location])
 
   return <PageLoader />
-}
-
-/** Pages not yet rebuilt on the v1.5 design system: give them the shared page header. */
-function LegacyPage({ crumbs, page }: { crumbs: string[]; page: ReactNode }) {
-  const navigate = useNavigate()
-  return (
-    <>
-      <PageHeader
-        title={
-          <Breadcrumb
-            items={crumbs.map((label, index) => ({
-              label,
-              onClick: index === 0 && crumbs.length > 1 ? () => navigate('/tools') : undefined,
-            }))}
-          />
-        }
-      />
-      {page}
-    </>
-  )
 }
 
 function AppRecoveryHandlers() {
@@ -129,7 +109,7 @@ function AppRoutes() {
           <Route path="/tools/jd-match" element={<JdMatch />} />
           <Route path="/tools/:toolId" element={<AITool />} />
           <Route path="/import" element={<ImportPage />} />
-          <Route path="/prompt" element={<LegacyPage crumbs={['出题']} page={<PromptPage />} />} />
+          <Route path="/prompt" element={<PromptPage />} />
         </Routes>
       </Suspense>
     </AppErrorBoundary>

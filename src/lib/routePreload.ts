@@ -9,7 +9,7 @@ export const routeLoaders = {
   jdMatch: () => import('@/features/tools/JdMatchPage'),
   aiTool: () => import('@/features/tools/AIToolPage'),
   importPage: () => import('@/features/import/ImportPage'),
-  promptPage: () => import('@/pages/PromptPage'),
+  promptPage: () => import('@/features/prompt/PromptPage'),
 }
 
 export type RoutePreloadKey = keyof typeof routeLoaders
