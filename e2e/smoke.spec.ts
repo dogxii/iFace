@@ -29,10 +29,11 @@ test('marking a question as mastered persists after reload', async ({ page }) =>
   await expect(first).toBeVisible({ timeout: 20_000 })
   await first.click()
 
+  // In the default "answer first" mode the status buttons appear after revealing the answer.
+  const reveal = page.getByRole('button', { name: /查看参考答案/ })
   const mastered = page.getByRole('button', { name: /完全掌握/ })
-  if (!(await mastered.isVisible())) {
-    await page.keyboard.press('Space')
-  }
+  await expect(reveal.or(mastered).first()).toBeVisible({ timeout: 20_000 })
+  if (await reveal.isVisible()) await reveal.click()
   await mastered.click()
 
   await page.goto('/')
