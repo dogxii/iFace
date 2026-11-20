@@ -90,3 +90,15 @@ test('settings exports a JSON backup of the question bank', async ({ page }) => 
   expect(backup.questions.length).toBeGreaterThan(0)
   expect(JSON.stringify(backup)).not.toContain('apiKey')
 })
+
+test('the command palette finds and opens a question', async ({ page }) => {
+  await page.goto('/')
+  await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
+  await page.keyboard.press('Control+k')
+  const input = page.getByRole('combobox', { name: '搜索题目或命令' })
+  await expect(input).toBeFocused()
+  await input.fill('闭包')
+  await expect(page.getByRole('option').first()).toBeVisible()
+  await page.keyboard.press('Enter')
+  await expect(page).toHaveURL(/\/questions\/[^/]+$/)
+})

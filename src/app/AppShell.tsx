@@ -1,6 +1,8 @@
-import { Menu, Moon, Settings, Sun } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Menu, Moon, Search, Settings, Sun } from 'lucide-react'
+import { type ReactNode, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { CommandPalette } from '@/features/command-palette/CommandPalette'
+import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { SettingsDialog } from '@/features/settings/SettingsDialog'
 import { useGistAutoSync } from '@/features/settings/useGistSync'
 import { preloadPath } from '@/lib/routePreload'
@@ -10,6 +12,7 @@ import { useUIState } from '@/store/useUIStore'
 import {
   Button,
   cn,
+  Kbd,
   Progress,
   Sheet,
   SheetContent,
@@ -116,9 +119,25 @@ function UserRow() {
   )
 }
 
+function SearchButton() {
+  const setPaletteOpen = useUIState((s) => s.setPaletteOpen)
+  return (
+    <button
+      type="button"
+      onClick={() => setPaletteOpen(true)}
+      className="mb-2 flex h-8 w-full items-center gap-2 rounded-md border border-line bg-canvas px-2.5 text-sm text-fg-subtle transition-colors outline-none hover:border-line-strong hover:text-fg-muted focus-visible:ring-2 focus-visible:ring-ring"
+    >
+      <Search className="size-4" />
+      搜索…
+      <Kbd className="ml-auto">{PALETTE_SHORTCUT}</Kbd>
+    </button>
+  )
+}
+
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <>
+      <SearchButton />
       <nav aria-label="主导航" className="flex flex-col gap-px">
         <NavItems items={PRIMARY_NAV} onNavigate={onNavigate} />
         <SidebarGroupLabel>工具</SidebarGroupLabel>
@@ -139,6 +158,14 @@ function MobileTopBar() {
     <header className="sticky top-0 z-40 flex h-13 items-center gap-1 border-b border-line bg-canvas/85 px-3 backdrop-blur-md lg:hidden">
       <Brand />
       <div className="ml-auto flex items-center gap-0.5">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="搜索"
+          onClick={() => useUIState.getState().setPaletteOpen(true)}
+        >
+          <Search />
+        </Button>
         <ThemeButton />
         <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={() => openSettings()}>
           <Settings />
@@ -156,6 +183,21 @@ function MobileTopBar() {
   )
 }
 
+/** ⌘K / Ctrl+K toggles the command palette from anywhere, including text fields. */
+function usePaletteHotkey() {
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) return
+      if (event.altKey || event.shiftKey) return
+      event.preventDefault()
+      const { paletteOpen, setPaletteOpen } = useUIState.getState()
+      setPaletteOpen(!paletteOpen)
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+}
+
 /**
  * Application frame: sidebar on desktop, top bar + slide-out menu on mobile.
  * Pages render inside `children`. `--navbar-h` is the height of the sticky mobile top bar
@@ -163,6 +205,7 @@ function MobileTopBar() {
  */
 export function AppShell({ children }: { children: ReactNode }) {
   useGistAutoSync()
+  usePaletteHotkey()
   const mobileNavOpen = useUIState((s) => s.mobileNavOpen)
   const setMobileNavOpen = useUIState((s) => s.setMobileNavOpen)
 
@@ -187,6 +230,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="min-w-0 lg:pl-58">{children}</div>
 
       <SettingsDialog />
+      <CommandPalette />
     </div>
   )
 }

@@ -12,6 +12,7 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { dataSource } from '@/data/source'
+import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { useQuestions } from '@/hooks/useQuestions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
@@ -90,16 +91,16 @@ function useNotes(): QuestionNote[] {
 }
 
 function SearchButton() {
-  const navigate = useNavigate()
+  const setPaletteOpen = useUIState((s) => s.setPaletteOpen)
   return (
     <button
       type="button"
-      onClick={() => navigate('/questions')}
-      onPointerEnter={() => preloadPath('/questions')}
+      onClick={() => setPaletteOpen(true)}
       className="hidden h-8 w-64 items-center gap-2 rounded-lg border border-line bg-canvas px-2.5 text-sm text-fg-subtle transition-colors hover:border-line-strong sm:flex"
     >
       <Search className="size-4" />
-      搜索题目、标签、笔记
+      搜索题目、标签
+      <Kbd className="ml-auto">{PALETTE_SHORTCUT}</Kbd>
     </button>
   )
 }
