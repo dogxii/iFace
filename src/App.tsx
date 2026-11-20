@@ -1,13 +1,14 @@
 import { Analytics } from '@vercel/analytics/react'
 import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { Navbar } from '@/components/layout/Navbar'
+import { AppShell } from '@/app/AppShell'
 import { OnboardingGuide } from '@/components/layout/OnboardingGuide'
 import { Spinner } from '@/components/ui'
 import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
+import { Toaster, TooltipProvider } from '@/ui'
 
 const Dashboard = lazy(routeLoaders.dashboard)
 const QuestionList = lazy(routeLoaders.questionList)
@@ -117,36 +118,38 @@ function AppRoutes() {
 
 function AppLayout() {
   return (
-    <div className="min-h-dvh bg-[var(--surface)]">
+    <AppShell>
       <AppRecoveryHandlers />
       <ScrollToTop />
-      <Navbar />
       <main>
         <AppRoutes />
       </main>
       <OnboardingGuide />
       <PWAUpdatePrompt />
       <Analytics />
-    </div>
+    </AppShell>
   )
 }
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {DesignSystem ? (
-          <Route
-            path="/design"
-            element={
-              <Suspense fallback={<PageLoader />}>
-                <DesignSystem />
-              </Suspense>
-            }
-          />
-        ) : null}
-        <Route path="*" element={<AppLayout />} />
-      </Routes>
-    </BrowserRouter>
+    <TooltipProvider delayDuration={400}>
+      <BrowserRouter>
+        <Routes>
+          {DesignSystem ? (
+            <Route
+              path="/design"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <DesignSystem />
+                </Suspense>
+              }
+            />
+          ) : null}
+          <Route path="*" element={<AppLayout />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </TooltipProvider>
   )
 }
