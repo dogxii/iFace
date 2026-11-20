@@ -1,7 +1,7 @@
 export const routeLoaders = {
   dashboard: () => import('@/features/dashboard/DashboardPage'),
   questionList: () => import('@/features/question-list/QuestionListPage'),
-  questionDetail: () => import('@/pages/QuestionDetail'),
+  questionDetail: () => import('@/features/question-detail/QuestionDetailPage'),
   practice: () => import('@/pages/Practice'),
   mockInterview: () => import('@/pages/MockInterview'),
   weakPoints: () => import('@/pages/WeakPoints'),
