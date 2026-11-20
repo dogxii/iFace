@@ -41,3 +41,11 @@ test('marking a question as mastered persists after reload', async ({ page }) =>
   await page.reload()
   await expect(page.getByText(/已掌握 1 道/)).toBeVisible({ timeout: 20_000 })
 })
+
+test('theme choice persists across reloads', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: '切换暗色' }).click()
+  await expect(page.locator('html')).toHaveClass(/dark/)
+  await page.reload()
+  await expect(page.locator('html')).toHaveClass(/dark/)
+})
