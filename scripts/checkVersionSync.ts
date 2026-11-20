@@ -72,10 +72,10 @@ expectIncludes(
   '类型声明应包含 __APP_VERSION__',
 )
 
-const settingsDrawer = read('src/components/layout/SettingsDrawer.tsx')
+const settingsDialog = read('src/features/settings/SettingsDialog.tsx')
 expectIncludes(
-  'src/components/layout/SettingsDrawer.tsx',
-  settingsDrawer,
+  'src/features/settings/SettingsDialog.tsx',
+  settingsDialog,
   'v{__APP_VERSION__}',
   '设置页应展示注入的应用版本',
 )

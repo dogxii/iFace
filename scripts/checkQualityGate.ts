@@ -60,6 +60,7 @@ if (!checkAll) {
 
 const expectedCheckAll = [
   'bun run check',
+  'bun run test',
   'bun run check:version',
   'bun run check:release',
   'bun run check:quality-gate',

@@ -59,7 +59,12 @@ export function SettingsDialog() {
             className="flex shrink-0 flex-col border-b border-line bg-subtle/60 sm:border-r sm:border-b-0"
           >
             <div className="flex h-13 items-center justify-between px-4 sm:h-auto sm:px-4 sm:pt-5 sm:pb-3">
-              <D.Title className="text-base font-semibold text-fg">设置</D.Title>
+              <D.Title className="flex items-baseline gap-2 text-base font-semibold text-fg">
+                设置
+                <span className="text-xs font-normal text-fg-subtle tabular-nums sm:hidden">
+                  v{__APP_VERSION__}
+                </span>
+              </D.Title>
               <D.Close asChild>
                 <Button variant="ghost" size="icon-sm" aria-label="关闭设置" className="sm:hidden">
                   <X />
@@ -88,6 +93,14 @@ export function SettingsDialog() {
                 )
               })}
             </div>
+            <a
+              href="https://github.com/dogxii/iface/releases"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-auto hidden px-4 pt-3 pb-4 text-xs text-fg-subtle tabular-nums hover:text-fg-muted sm:block"
+            >
+              iFace v{__APP_VERSION__}
+            </a>
           </nav>
 
           <div className="flex min-h-0 flex-1 flex-col">
