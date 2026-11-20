@@ -28,6 +28,7 @@ import {
 } from '@/lib/db'
 import { type LearningCheckQuestion, loadLearningChecksForQuestion } from '@/lib/learningCheck'
 import { createPracticeSessionPath, readPracticeSession } from '@/lib/practiceSession'
+import { reviewIntervalDays } from '@/store/studyLogic'
 import { useAIStore } from '@/store/useAIStore'
 import { clearSessionReview, useStudyStore } from '@/store/useStudyStore'
 import { useUIState } from '@/store/useUIStore'
@@ -1497,7 +1498,7 @@ export default function QuestionDetail() {
                 <StatusButton
                   onClick={() => handleSetStatus('review', '1')}
                   label="没掌握"
-                  sublabel="加入待复习"
+                  sublabel="明天再练"
                   variant="danger"
                   kbd="1"
                   active={
@@ -1511,7 +1512,7 @@ export default function QuestionDetail() {
                 <StatusButton
                   onClick={() => handleSetStatus('review', '2')}
                   label="大概会"
-                  sublabel="还需巩固"
+                  sublabel="明天巩固"
                   variant="warning"
                   kbd="2"
                   active={justMarked === 'review' && lastPressedKey === '2'}
@@ -1520,7 +1521,7 @@ export default function QuestionDetail() {
                 <StatusButton
                   onClick={() => handleSetStatus('mastered', '3')}
                   label="完全掌握"
-                  sublabel="不再推荐"
+                  sublabel={`${reviewIntervalDays({ status: 'mastered', reviewCount }) ?? 7} 天后复习`}
                   variant="success"
                   kbd="3"
                   active={justMarked === 'mastered' || currentStatus === 'mastered'}

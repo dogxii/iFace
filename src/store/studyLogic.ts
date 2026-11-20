@@ -121,3 +121,39 @@ export function estimateDaysLeft(
   const remaining = totalQuestions - mastered
   return remaining <= 0 ? 0 : Math.ceil(remaining / Math.max(1, dailyCount))
 }
+
+// ─── Spaced review ─────────────────────────────────────────────────────────────
+// Derived from existing record fields only (status, reviewCount, lastUpdated) so no
+// stored data changes. "review" questions come back the next day; mastered questions
+// come back after a growing interval.
+
+const DAY_MS = 24 * 60 * 60 * 1000
+export const MASTERED_INTERVAL_DAYS = [7, 14, 30, 60] as const
+
+export function reviewIntervalDays(
+  record: Pick<StudyRecord, 'status' | 'reviewCount'>,
+): number | null {
+  if (record.status === 'review') return 1
+  if (record.status === 'mastered') {
+    const step = Math.min(Math.max(record.reviewCount, 0), MASTERED_INTERVAL_DAYS.length - 1)
+    return MASTERED_INTERVAL_DAYS[step]
+  }
+  return null
+}
+
+export function nextReviewAt(record: StudyRecord): number | null {
+  const days = reviewIntervalDays(record)
+  return days === null ? null : record.lastUpdated + days * DAY_MS
+}
+
+export function isDueForReview(record: StudyRecord, now: number): boolean {
+  const at = nextReviewAt(record)
+  return at !== null && at <= now
+}
+
+/** Records due for review, most overdue first. */
+export function dueRecords(records: StudyRecordMap, now: number): StudyRecord[] {
+  return Object.values(records)
+    .filter((record) => isDueForReview(record, now))
+    .sort((a, b) => (nextReviewAt(a) ?? 0) - (nextReviewAt(b) ?? 0))
+}

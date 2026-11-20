@@ -4,11 +4,15 @@ import {
   buildStatusRecord,
   clampDailyGoal,
   countStatuses,
+  dueRecords,
   emptyStreak,
   estimateDaysLeft,
   incrementStreak,
+  isDueForReview,
+  nextReviewAt,
   parseStreak,
   resetStreak,
+  reviewIntervalDays,
   rollStreakToToday,
   weakRecords,
 } from './studyLogic'
@@ -118,5 +122,39 @@ describe('derived queries', () => {
     expect(clampDailyGoal(1)).toBe(5)
     expect(clampDailyGoal(12.4)).toBe(12)
     expect(clampDailyGoal(99)).toBe(50)
+  })
+})
+
+describe('spaced review', () => {
+  const DAY = 86_400_000
+  it('schedules review questions for the next day and mastered ones on a growing interval', () => {
+    expect(reviewIntervalDays({ status: 'review', reviewCount: 5 })).toBe(1)
+    expect(reviewIntervalDays({ status: 'mastered', reviewCount: 0 })).toBe(7)
+    expect(reviewIntervalDays({ status: 'mastered', reviewCount: 2 })).toBe(30)
+    expect(reviewIntervalDays({ status: 'mastered', reviewCount: 9 })).toBe(60)
+    expect(reviewIntervalDays({ status: 'unlearned', reviewCount: 0 })).toBeNull()
+  })
+
+  it('lists due records, most overdue first', () => {
+    const now = 100 * DAY
+    const records = {
+      a: { questionId: 'a', status: 'review' as const, lastUpdated: now - 2 * DAY, reviewCount: 1 },
+      b: { questionId: 'b', status: 'review' as const, lastUpdated: now - DAY / 2, reviewCount: 1 },
+      c: {
+        questionId: 'c',
+        status: 'mastered' as const,
+        lastUpdated: now - 10 * DAY,
+        reviewCount: 0,
+      },
+      d: {
+        questionId: 'd',
+        status: 'mastered' as const,
+        lastUpdated: now - 10 * DAY,
+        reviewCount: 1,
+      },
+    }
+    expect(isDueForReview(records.b, now)).toBe(false)
+    expect(dueRecords(records, now).map((r) => r.questionId)).toEqual(['c', 'a'])
+    expect(nextReviewAt(records.d)).toBe(now + 4 * DAY)
   })
 })
