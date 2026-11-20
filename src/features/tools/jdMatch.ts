@@ -2,9 +2,6 @@ import type { ChatCompletionMessage } from '@/lib/aiClient'
 
 export const DEFAULT_ROLE = '前端工程师'
 
-export const RESUME_ACCEPT =
-  '.pdf,.docx,.txt,.md,text/plain,text/markdown,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-
 const REPORT_SECTION_TITLES = new Set([
   '总体判断',
   '匹配点',

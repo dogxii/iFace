@@ -85,7 +85,7 @@ export function Button({
       {shortcut ? (
         <kbd
           className={cn(
-            'ml-1 rounded border px-1 font-sans text-2xs leading-4 font-normal',
+            'ml-1 rounded border px-1 font-sans text-2xs leading-4 font-normal pointer-coarse:hidden',
             onDark ? 'border-current/30 opacity-70' : 'border-line bg-subtle text-fg-subtle',
           )}
         >

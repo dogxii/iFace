@@ -2,23 +2,20 @@ import {
   CircleAlert,
   Copy,
   FileSearch,
-  FileText,
-  FileUp,
   History,
   Plus,
   Settings2,
   Sparkles,
   Square,
   Trash2,
-  X,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ResumeInput, type ResumeValue } from '@/components/ResumeInput'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useBufferedText } from '@/hooks/useBufferedText'
 import { requestChatCompletionStream } from '@/lib/aiClient'
 import { deleteJdMatchReport, getAllJdMatchReports, putJdMatchReport } from '@/lib/db'
-import { parseResumeFile } from '@/lib/resumeParser'
 import { useAIStore } from '@/store/useAIStore'
 import { useUIState } from '@/store/useUIStore'
 import type { JdMatchReport } from '@/types'
@@ -45,9 +42,10 @@ import {
   extractGeneratedTitle,
   extractMatchScore,
   formatReportTime,
-  RESUME_ACCEPT,
   stripGeneratedTitle,
 } from './jdMatch'
+
+const EMPTY_RESUME: ResumeValue = { text: '', fileName: null }
 
 function sortReports(reports: JdMatchReport[]) {
   return [...reports].sort((a, b) => b.updatedAt - a.updatedAt)
@@ -85,21 +83,17 @@ export default function JdMatchPage() {
   const openSettings = useUIState((s) => s.openSettings)
   const aiReady = config.enabled && config.apiKey.trim().length > 0
 
-  const fileRef = useRef<HTMLInputElement>(null)
   const reportRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
   const [roleTitle, setRoleTitle] = useState(DEFAULT_ROLE)
   const [jdText, setJdText] = useState('')
-  const [resumeText, setResumeText] = useState('')
-  const [resumeFileName, setResumeFileName] = useState<string | null>(null)
-  const [resumeMessage, setResumeMessage] = useState<string | null>(null)
-  const [dragging, setDragging] = useState(false)
+  const [resume, setResume] = useState<ResumeValue>(EMPTY_RESUME)
+  const resumeText = resume.text
   const [report, setReport] = useState('')
   const [savedReports, setSavedReports] = useState<JdMatchReport[]>([])
   const [activeReportId, setActiveReportId] = useState<string | null>(null)
   const { text: streamingText, appendText, resetText } = useBufferedText()
   const [error, setError] = useState<string | null>(null)
-  const [parsingResume, setParsingResume] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
 
   const displayReport = streamingText || report
@@ -111,29 +105,6 @@ export default function JdMatchPage() {
   }, [])
 
   useEffect(() => () => abortRef.current?.abort(), [])
-
-  const handleResumeFile = useCallback(async (file: File) => {
-    setParsingResume(true)
-    setResumeMessage(null)
-    setError(null)
-    try {
-      const parsed = await parseResumeFile(file)
-      setResumeText(parsed.text)
-      setResumeFileName(parsed.fileName)
-      setResumeMessage(parsed.warning ?? null)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '简历解析失败')
-    } finally {
-      setParsingResume(false)
-      if (fileRef.current) fileRef.current.value = ''
-    }
-  }, [])
-
-  const clearResume = () => {
-    setResumeText('')
-    setResumeFileName(null)
-    setResumeMessage(null)
-  }
 
   const handleAnalyze = useCallback(async () => {
     if (!aiReady) return setError('请先在设置中启用 AI 并配置 API Key')
@@ -177,7 +148,7 @@ export default function JdMatchPage() {
         roleTitle: role,
         jdText: jdText.trim(),
         resumeText: resumeText.trim(),
-        resumeFileName: resumeFileName ?? undefined,
+        resumeFileName: resume.fileName ?? undefined,
         markdown,
         model: config.model,
         createdAt: now,
@@ -195,7 +166,7 @@ export default function JdMatchPage() {
       if (abortRef.current === controller) abortRef.current = null
       setAnalyzing(false)
     }
-  }, [aiReady, appendText, config, jdText, resumeFileName, resumeText, roleTitle, resetText])
+  }, [aiReady, appendText, config, jdText, resume.fileName, resumeText, roleTitle, resetText])
 
   const handleStop = () => {
     abortRef.current?.abort()
@@ -206,9 +177,7 @@ export default function JdMatchPage() {
   const handleSelectReport = (item: JdMatchReport) => {
     setRoleTitle(item.roleTitle)
     setJdText(item.jdText)
-    setResumeText(item.resumeText)
-    setResumeFileName(item.resumeFileName ?? null)
-    setResumeMessage(null)
+    setResume({ text: item.resumeText, fileName: item.resumeFileName ?? null })
     setReport(item.markdown)
     resetText('')
     setError(null)
@@ -239,7 +208,7 @@ export default function JdMatchPage() {
     handleStop()
     setRoleTitle(DEFAULT_ROLE)
     setJdText('')
-    clearResume()
+    setResume(EMPTY_RESUME)
     setReport('')
     resetText('')
     setError(null)
@@ -330,89 +299,12 @@ export default function JdMatchPage() {
                   />
                 </Field>
 
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <label htmlFor="jd-resume" className="text-sm font-medium text-fg">
-                      简历
-                    </label>
-                    {resumeText ? (
-                      <span className="text-xs text-fg-subtle">{resumeText.trim().length} 字</span>
-                    ) : null}
-                  </div>
-
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept={RESUME_ACCEPT}
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleResumeFile(file)
-                    }}
-                  />
-
-                  {resumeFileName ? (
-                    <div className="flex items-center gap-2.5 rounded-lg border border-line bg-subtle px-3 py-2">
-                      <FileText className="size-4 shrink-0 text-accent" />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-fg">{resumeFileName}</p>
-                        <p className="truncate text-xs text-fg-subtle">
-                          {resumeMessage ?? '已解析，可在下方修改文本'}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        aria-label="移除简历"
-                        onClick={clearResume}
-                      >
-                        <X />
-                      </Button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={parsingResume}
-                      onClick={() => fileRef.current?.click()}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        setDragging(true)
-                      }}
-                      onDragLeave={() => setDragging(false)}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        setDragging(false)
-                        const file = e.dataTransfer.files?.[0]
-                        if (file) handleResumeFile(file)
-                      }}
-                      className={cn(
-                        'flex flex-col items-center gap-1 rounded-lg border border-dashed px-3 py-4 text-center transition-colors',
-                        dragging
-                          ? 'border-accent bg-accent-subtle'
-                          : 'border-line-strong hover:border-accent hover:bg-subtle',
-                      )}
-                    >
-                      {parsingResume ? (
-                        <Spinner size="sm" className="text-accent" />
-                      ) : (
-                        <FileUp className="size-4 text-fg-subtle" />
-                      )}
-                      <span className="text-sm text-fg">
-                        {parsingResume ? '正在解析简历…' : '上传或拖入简历文件'}
-                      </span>
-                      <span className="text-xs text-fg-subtle">支持 PDF、DOCX、TXT、MD</span>
-                    </button>
-                  )}
-
-                  <Textarea
-                    id="jd-resume"
-                    value={resumeText}
-                    onChange={(e) => setResumeText(e.target.value)}
-                    placeholder="也可以直接粘贴简历文本…"
-                    rows={resumeText ? 8 : 4}
-                    className="text-sm"
-                  />
-                </div>
+                <ResumeInput
+                  id="jd-resume"
+                  value={resume}
+                  onChange={setResume}
+                  onError={setError}
+                />
               </div>
 
               <div className="flex gap-2 border-t border-line p-4">

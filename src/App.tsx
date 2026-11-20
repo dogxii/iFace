@@ -123,10 +123,7 @@ function AppRoutes() {
           <Route path="/questions" element={<QuestionList />} />
           <Route path="/questions/:id" element={<QuestionDetailRoute />} />
           <Route path="/practice" element={<Practice />} />
-          <Route
-            path="/mock-interview"
-            element={<LegacyPage crumbs={['模拟面试']} page={<MockInterview />} />}
-          />
+          <Route path="/mock-interview" element={<MockInterview />} />
           <Route path="/weak" element={<WeakPoints />} />
           <Route path="/tools" element={<Tools />} />
           <Route path="/tools/jd-match" element={<JdMatch />} />
