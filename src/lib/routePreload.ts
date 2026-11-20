@@ -1,6 +1,6 @@
 export const routeLoaders = {
   dashboard: () => import('@/features/dashboard/DashboardPage'),
-  questionList: () => import('@/pages/QuestionList'),
+  questionList: () => import('@/features/question-list/QuestionListPage'),
   questionDetail: () => import('@/pages/QuestionDetail'),
   practice: () => import('@/pages/Practice'),
   mockInterview: () => import('@/pages/MockInterview'),
