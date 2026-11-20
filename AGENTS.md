@@ -4,10 +4,12 @@
 
 iFace is a Vite React 19 + TypeScript app. Main code lives in `src/`:
 
-- `src/pages/` contains route screens such as `Dashboard`, `Practice`, and `QuestionDetail`.
-- `src/ui/` is the v1.5 component library (Radix primitives + Tailwind, variants via `cva`). Use it for all new UI; `src/components/ui/` holds legacy widgets that are being replaced.
+- `src/app/` holds the app shell (sidebar, mobile nav), error boundary and PWA update prompt.
+- `src/features/<feature>/` holds route screens and their logic, e.g. `dashboard/`, `question-list/`, `question-detail/`, `practice/`, `settings/`. Keep pure logic in a sibling `*.ts` module with a `*.test.ts` next to it, and keep the page component focused on layout.
+- `src/ui/` is the v1.5 component library (Radix primitives + Tailwind, variants via `cva`). Use it for all UI.
+- `src/components/ui/` holds Markdown rendering and the detail-page AI / learning-check panels that predate `src/ui`; do not add new components there.
 - `src/styles/tokens.css` defines design tokens (`bg-canvas`, `text-fg-muted`, `border-line`, `bg-accent`, …) for light and dark themes. Prefer tokens over inline `style={{}}` and raw colors.
-- `src/components/layout/` holds legacy shell UI.
+- `src/pages/DesignSystem.tsx` is the dev-only `/design` showcase.
 - `src/store/` contains app stores, and `src/hooks/` contains React hooks.
 - `src/lib/` contains IndexedDB, question loading, and sync helpers.
 - `src/types/` and `src/data/` hold shared types and schemas.
@@ -29,10 +31,11 @@ Use Bun for package and script commands.
 - `bun run format` formats files with Biome.
 - `bun run test` runs Vitest unit tests (`src/**/*.test.ts`); `bun run test:e2e` runs Playwright smoke tests in `e2e/`.
 - In `bun dev`, open `/design` to see every component and token in light and dark mode (not included in production builds).
+- `bun run check:all` is the release gate: it adds the `scripts/check*.ts` checks (version sync, question bank, backup, Gist sync, AI, PWA output, docs) and requires fresh external smoke records (`bun run smoke:external:ai` / `smoke:external:gist`, real credentials, at most 7 days old).
 
 ## Coding Style & Naming Conventions
 
-Biome is the source of truth. Use 2-space indentation, 100-character lines, single quotes, no required semicolons, trailing commas in JavaScript/TypeScript, and no trailing commas in JSON. Name components and pages in `PascalCase`, hooks as `useSomething`, and stores as `useSomethingStore`. Keep route screens in `src/pages/` and reusable pieces in `src/components/`.
+Biome is the source of truth. Use 2-space indentation, 100-character lines, single quotes, no required semicolons, trailing commas in JavaScript/TypeScript, and no trailing commas in JSON. Name components and pages in `PascalCase`, hooks as `useSomething`, and stores as `useSomethingState` (in files named `useSomethingStore.ts`). Keep route screens in `src/features/` and reusable UI in `src/ui/`.
 
 ## Testing Guidelines
 

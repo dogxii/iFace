@@ -59,7 +59,7 @@
 - [x] 设计 token：颜色、字号、间距、圆角、阴影、动效，写进 Tailwind v4 `@theme`，亮色 / 暗色各一套
 - [x] 基础组件：Button、IconButton、Tag、Kbd、Input、Textarea、Select、Switch、SegmentedControl、Progress、Box/Card、EmptyState、Skeleton、Spinner
 - [x] 交互组件（Radix）：Dialog、Sheet（抽屉）、DropdownMenu、Popover、Tooltip、Tabs、Select、Toast
-- [ ] CommandPalette（⌘K）：页面重建时随全局搜索一起做
+- [x] CommandPalette（⌘K）：全局搜索题目、笔记和命令
 - [x] 应用外壳组件：Sidebar、SidebarItem、PageHeader、Breadcrumb、PageTitle（接入路由在阶段 3）
 - [x] 开发环境 `/design` 展示页，覆盖全部组件和状态，亮色 / 暗色对照
 - 验收：组件全部有类型和变体，`/design` 页截图对齐设计稿
@@ -97,32 +97,39 @@ src/
 ```
 
 - [ ] `QuestionDetail` → 页面壳不超过 400 行；划线/批注、笔记格式化、评分解析等**纯函数抽出来并补测试**
-- [ ] `SettingsDrawer` → 每个 tab 一个文件，抽出数据导入导出的 service
-- [ ] `PromptPage` / `QuestionList` / `Dashboard` / `MockInterview` / `ImportPage` 照同样方式拆
+- [x] `SettingsDrawer` → `features/settings/` 每个 tab 一个文件，数据导入导出逻辑在 `settingsData.ts`（有测试）
+- [x] `PromptPage` / `QuestionList` / `Dashboard` / `MockInterview` / `ImportPage` 照同样方式拆：页面组件 + 纯函数模块 + 单元测试
 进度：
 - [x] 应用外壳：侧边栏（桌面）+ 顶栏与抽屉菜单（移动端），设置改为全局共享
 - [x] 概览：继续上次、今日目标、统计、今日推荐、活跃度热力图、模块进度、最近笔记
 - [x] 题库：分类侧栏、搜索（含笔记）、筛选与排序、筛选标签；URL 作为唯一筛选状态
 - [x] 题目详情：6.7k 行拆成 8 个文件；新页头、题目区、吸底的掌握程度按钮、底部导航
-- [ ] 题目详情（续）：作答框、笔记抽屉、AI 抽屉、模块抽屉、批注工具条换成新组件；右侧目录栏；继续拆分 `QuestionDetailPage.tsx`（约 2.2k 行）
+- [x] 题目详情（续）：作答框、笔记抽屉、AI 抽屉、模块抽屉、批注工具条换成新组件
+- [ ] 题目详情（待做）：右侧目录栏；继续拆分 `QuestionDetailPage.tsx`（约 1.6k 行）；`AIPanel` / `LearningCheckPanel` / `MarkdownRenderer` 内联样式改为 token 类名（外观已通过变量映射统一）
 - [x] 练习：快速开始（到期复习 / 待复习 / 学新题 / 随机）、模块选择、题量与随机顺序
 - [x] 间隔复习：由现有记录字段推算（待复习次日、已掌握 7/14/30/60 天），不改存储
-- [ ] 设置（`SettingsDrawer.tsx` 3.6k 行）：按 tab 拆分并重建
-- [ ] 薄弱点、模拟面试、导入、出题、AI 工具箱、JD 诊断：目前沿用旧页面，已统一配色和页头
+- [x] 设置：改为全局对话框，按 tab 拆分并重建（学习 / AI / 数据 / 同步）
+- [x] 薄弱点、模拟面试、导入、出题、AI 工具箱、JD 诊断：全部用新组件重建，旧页面和 `LegacyPage` 已删除
+- [x] 首次引导：Radix 对话框重建，保留作者文案和 `iface_onboarding_done_v1`
+- [x] 删除旧组件库 `components/ui/index.tsx`、`components/layout/` 和 `index.css` 中不再使用的旧样式类
 - [x] 旧 CSS 变量指向新 token，未重建的页面也使用新配色和暗色模式
 - 验收：单文件原则上不超过 600 行；功能不变，E2E 通过；亮色 / 暗色截图检查
 
 ### 阶段 4：数据与性能（约 2 天）
-- [ ] PWA：题库 JSON 不再预缓存，改为 `StaleWhileRevalidate` 运行时缓存（加载过的模块离线也能用），预缓存目标降到 1.5 MB 以下
+- [x] PWA：题库与学习检测 JSON 不再预缓存，改为 `NetworkFirst` 运行时缓存；预缓存从 6.5 MB（104 项）降到 1.6 MB。同时修复同源 runtime 路由用 RegExp 永远匹配不上的问题
 - [ ] `db.ts` 收敛为 repository 层（questions / records / notes），给 SettingsDrawer 等调用方提供按需查询
-- [ ] Markdown：`rehype-highlight` 只注册题库实际用到的语言；评估 `MarkdownRenderer` chunk 体积
+- [x] 入口 chunk：设置对话框、Gist 同步按需加载，React 单独分包；入口从 613 kB 降到 325 kB，构建不再有大 chunk 警告
+- [ ] Markdown：`rehype-highlight` 会静态引入 lowlight 的 `common` 语言集，传 `languages` 无法减小体积；需要自写 rehype 插件直接用 lowlight 才能裁剪（chunk 已懒加载，优先级低）
 - [ ] 长列表（QuestionList）评估是否需要虚拟滚动
 - 验收：Lighthouse 性能分和首屏 JS 体积给出对比数据
 
 ### 阶段 5：收尾（约 1 天）
-- [ ] 更新 `AGENTS.md`、README，以及目录结构说明
-- [ ] 清理无用的资源（如 `src/assets/react.svg`、根目录 531 KB 的 `origin-icon.png`）
-- [ ] 发布 v1.5.0，`check:all` 全部通过
+- [x] 更新 `AGENTS.md`、README（功能、使用说明、预览截图），以及目录结构说明
+- [x] 修复 `scripts/check*.ts` 中指向已删除文件的检查；PWA 检查改为校验运行时缓存策略；恢复设置中的版本号展示
+- [x] 清理无用的资源：删除 `src/assets/react.svg`、`public/vite.svg`；根目录 `origin-icon.png` 是图标源文件，保留
+- [ ] 发布 v1.5.0，`check:all` 全部通过。剩余两项需要维护者完成：
+  - `check:external-records`：用真实 AI Key / Gist Token 重新运行 `smoke:external:ai`、`smoke:external:gist`（记录超过 7 天）
+  - `check:quality-gate`：为 1.5.0 写新的验收记录（现有 `SMOKE_RESULT_2026-05-05.md` 不含 `bun run test` 门禁），并同步 `package.json` 版本号与 README 徽章
 
 ## 五、分支与发布
 

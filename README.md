@@ -26,7 +26,7 @@ https://face.dogxi.me
   <img src="docs/screenshots/dashboard.png" alt="概览页" width="49%" />
   <img src="docs/screenshots/practice.png" alt="练习页" width="49%" />
   <br/><br/>
-  <img src="docs/screenshots/question-detail.png" alt="题目详情 + AI 助手" width="49%" />
+  <img src="docs/screenshots/question-detail.png" alt="题目详情" width="49%" />
   <img src="docs/screenshots/settings.png" alt="设置面板" width="49%" />
 </div>
 
@@ -40,10 +40,13 @@ iFace 是一款专为 前端/Agent/Golang 等工程师备战技术面试打造�
 
 ## ⚡️ 功能特性
 
-- 题库管理：内置高频题库，支持自定义导入
-- 智能刷题：按模块、难度、状态灵活练习
-- AI 面试教练：辅助拆题、复盘、追问和模拟面试
-- 数据与进度：本地保存进度，支持导入导出和备份
+- 题库管理：内置前端 / Golang / Java / AI Agent 题库，支持 JSON 或 Markdown 导入，可直接粘贴 AI 生成的题目
+- 智能刷题：按模块、难度、状态组合练习，先作答再看答案，附带选择题小测
+- 间隔复习：根据掌握情况自动推算下次复习时间，到期题目集中出现在练习和薄弱点页
+- 全局搜索：`⌘K` / `Ctrl K` 搜索题目、笔记和常用命令
+- AI 面试教练：拆题、评分作答、追问，模拟面试，简历 JD 诊断，AI 出题 Prompt
+- 数据与进度：全部保存在浏览器本地，支持导入导出备份和 GitHub Gist 同步
+- 亮色 / 暗色主题，支持安装为 PWA 离线使用
 
 
 ## 🚀 快速开始
@@ -66,15 +69,19 @@ bun install
 bun dev
 ```
 
-访问 [http://localhost:5173](http://localhost:5173)
+访问 [http://localhost:5173](http://localhost:5173)。开发环境下打开 `/design` 可以查看全部组件和设计 token。
+
+常用脚本：`bun run check`（Biome）、`bun run test`（Vitest）、`bun run test:e2e`（Playwright）、`bun run build`。
 
 ## 🧭 使用指南
 
 ### 导入题库
 
-1. 进入「**导入**」页面
-2. 点击「加载内置题库」即可使用开箱即用的题目
-3. 或上传自己的 JSON 文件（格式见下方）
+内置题库在首次打开时自动加载。导入自定义题目：
+
+1. 进入侧边栏「**导入题库**」
+2. 上传 `.json` / `.md` 文件，或直接粘贴内容（自动识别 JSON 和 Markdown）
+3. 想让 AI 帮忙出题，可以在「**出题**」页复制现成的 Prompt，把 AI 的输出粘贴回导入页
 
 <details>
 <summary>自定义题库 JSON 格式</summary>
@@ -103,8 +110,8 @@ bun dev
 
 ### 配置 AI 助手
 
-1. 点击右上角**齿轮图标**打开设置
-2. 切换到「**AI 助手**」tab
+1. 点击侧边栏底部的**齿轮图标**（或 `⌘K` 搜索「设置」）打开设置
+2. 切换到「**AI 助手**」页签
 3. 填入 API Key 和 Base URL，选择模型，保存
 4. 在任意题目详情页即可开始与 AI 对话
 
