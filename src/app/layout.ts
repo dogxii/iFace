@@ -18,9 +18,6 @@ export const SIDE_PANEL = {
   minContent: 520,
 } as const
 
-/** Keyboard step for resize handles, in px (Shift multiplies it). */
-export const RESIZE_STEP = 16
-
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), Math.max(min, max))
 }
@@ -64,8 +61,12 @@ export interface DetailPanelsInput {
 }
 
 export interface DetailPanelsLayout {
+  /** Whether the module list fits beside the page (so pinning it would dock it). */
+  moduleFits: boolean
   moduleDocked: boolean
   moduleWidth: number
+  /** Largest width the docked module list may take right now. */
+  moduleMaxWidth: number
   sidePanelWidth: number
 }
 
@@ -77,14 +78,16 @@ export interface DetailPanelsLayout {
 export function resolveDetailPanels(input: DetailPanelsInput): DetailPanelsLayout {
   const reserved = input.sidePanelOpen ? SIDE_PANEL.min : 0
   const room = input.viewportWidth - input.sidebarWidth - reserved - MODULE_PANEL.minContent
-  const moduleDocked = input.modulePinned && room >= MODULE_PANEL.min
-  const moduleWidth = Math.round(
-    clamp(input.moduleWidth, MODULE_PANEL.min, Math.min(MODULE_PANEL.max, room)),
-  )
+  const moduleFits = room >= MODULE_PANEL.min
+  const moduleDocked = input.modulePinned && moduleFits
+  const moduleMaxWidth = clamp(room, MODULE_PANEL.min, MODULE_PANEL.max)
+  const moduleWidth = Math.round(clamp(input.moduleWidth, MODULE_PANEL.min, moduleMaxWidth))
   const leftWidth = input.sidebarWidth + (moduleDocked ? moduleWidth : 0)
   return {
+    moduleFits,
     moduleDocked,
     moduleWidth,
+    moduleMaxWidth,
     sidePanelWidth: clampSidePanelWidth(input.sidePanelWidth, input.viewportWidth, leftWidth),
   }
 }

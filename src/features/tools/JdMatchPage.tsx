@@ -9,7 +9,7 @@ import {
   Square,
   Trash2,
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ResumeInput, type ResumeValue } from '@/components/ResumeInput'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
@@ -121,10 +121,7 @@ export default function JdMatchPage() {
   const setRoleTitle = (roleTitle: string) => setDraft((d) => ({ ...d, roleTitle }))
   const setJdText = (jdText: string) => setDraft((d) => ({ ...d, jdText }))
   const setResume = (resume: ResumeValue) => setDraft((d) => ({ ...d, resume }))
-  const setActiveReportId = useCallback(
-    (reportId: string | null) => setDraft((d) => ({ ...d, reportId })),
-    [setDraft],
-  )
+  const setActiveReportId = (reportId: string | null) => setDraft((d) => ({ ...d, reportId }))
   const resumeText = resume.text
   const [report, setReport] = useState('')
   const [savedReports, setSavedReports] = useState<JdMatchReport[]>([])
@@ -148,7 +145,7 @@ export default function JdMatchPage() {
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
-  const handleAnalyze = useCallback(async () => {
+  const handleAnalyze = async () => {
     if (!aiReady) return setError('请先在设置中启用 AI 并配置 API Key')
     if (!jdText.trim()) return setError('请粘贴岗位 JD')
     if (!resumeText.trim()) return setError('请上传或粘贴简历文本')
@@ -208,17 +205,7 @@ export default function JdMatchPage() {
       if (abortRef.current === controller) abortRef.current = null
       setAnalyzing(false)
     }
-  }, [
-    aiReady,
-    appendText,
-    config,
-    jdText,
-    resume.fileName,
-    resumeText,
-    roleTitle,
-    resetText,
-    setActiveReportId,
-  ])
+  }
 
   const handleStop = () => {
     abortRef.current?.abort()

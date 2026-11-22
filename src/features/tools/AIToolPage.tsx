@@ -84,7 +84,7 @@ function AIToolView({ tool }: { tool: AIToolConfig }) {
     () => ({ values: createInitialValues(tool), result: '' }),
     [tool],
   )
-  const [draft, setDraft, clearDraft] = useDraft(`tool:${tool.id}`, initialDraft, parseToolDraft)
+  const [draft, setDraft] = useDraft(`tool:${tool.id}`, initialDraft, parseToolDraft)
   const { values, result } = draft
   const setValue = (id: string, value: string) =>
     setDraft((d) => ({ ...d, values: { ...d.values, [id]: value } }))
@@ -157,7 +157,7 @@ function AIToolView({ tool }: { tool: AIToolConfig }) {
     handleStop()
     resetText('')
     setError(null)
-    clearDraft()
+    setDraft(initialDraft)
   }
 
   const crumbs = [{ label: 'AI 工具箱', onClick: () => navigate('/tools') }, { label: tool.title }]
@@ -194,7 +194,7 @@ function AIToolView({ tool }: { tool: AIToolConfig }) {
 
         <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
           <Box className="flex flex-col">
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-4 py-3">
+            <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
               <h2 className="text-sm font-semibold text-fg">输入材料</h2>
               {aiReady ? (
                 <Tag variant="soft" className="max-w-40 truncate font-mono text-2xs">
@@ -237,7 +237,7 @@ function AIToolView({ tool }: { tool: AIToolConfig }) {
                 )
               })}
             </div>
-            <div className="flex shrink-0 gap-2 border-t border-line p-4">
+            <div className="flex gap-2 border-t border-line p-4">
               {generating ? (
                 <Button variant="secondary" className="flex-1" onClick={handleStop}>
                   <Square />

@@ -5,8 +5,9 @@ const SAVE_DELAY = 400
 
 /**
  * Form state that survives navigation, reloads and closed tabs. Saved to localStorage under
- * `iface_draft:<scope>` (debounced, flushed on pagehide and unmount) and removed again when the
- * value is back to `initial`.
+ * `iface_draft:<scope>` (debounced, flushed on pagehide and unmount); setting it back to
+ * `initial` removes the key. `scope` must stay the same for the component's lifetime (remount
+ * with a `key` to switch scopes).
  *
  * `parse` restores a stored value, returning null to discard it (e.g. after a shape change).
  */
@@ -14,34 +15,29 @@ export function useDraft<T>(
   scope: string,
   initial: T,
   parse: (value: unknown) => T | null,
-): [T, (next: SetStateAction<T>) => void, () => void] {
+): [T, (next: SetStateAction<T>) => void] {
   const [value, setValue] = useState<T>(() => {
     const stored = readDraft(scope)
     return (stored === null ? null : parse(stored)) ?? initial
   })
   const initialJSON = JSON.stringify(initial)
-  const pending = useRef<{ scope: string; value: T } | null>(null)
+  const pending = useRef<{ value: T } | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const firstRender = useRef(true)
 
   const flush = useCallback(() => {
     clearTimeout(timer.current)
-    const next = pending.current
+    if (!pending.current) return
+    const { value: next } = pending.current
     pending.current = null
-    if (!next) return
-    if (JSON.stringify(next.value) === initialJSON) removeDraft(next.scope)
-    else writeDraft(next.scope, next.value)
-  }, [initialJSON])
+    if (JSON.stringify(next) === initialJSON) removeDraft(scope)
+    else writeDraft(scope, next)
+  }, [initialJSON, scope])
 
   useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false
-      return
-    }
-    pending.current = { scope, value }
+    pending.current = { value }
     clearTimeout(timer.current)
     timer.current = setTimeout(flush, SAVE_DELAY)
-  }, [flush, scope, value])
+  }, [flush, value])
 
   useEffect(() => {
     window.addEventListener('pagehide', flush)
@@ -51,15 +47,7 @@ export function useDraft<T>(
     }
   }, [flush])
 
-  const clear = useCallback(() => {
-    clearTimeout(timer.current)
-    pending.current = null
-    removeDraft(scope)
-    setValue(initial)
-    // The effect would re-save `initial`; that only removes the key again.
-  }, [initial, scope])
-
-  return [value, setValue, clear]
+  return [value, setValue]
 }
 
 /** `parse` helper for drafts that are a flat record of strings. */

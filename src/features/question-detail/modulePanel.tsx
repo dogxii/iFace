@@ -1,6 +1,6 @@
 import { PanelLeft, PanelLeftClose, Search, X } from 'lucide-react'
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef } from 'react'
-import { MODULE_PANEL } from '@/app/layout'
+import { clamp, MODULE_PANEL } from '@/app/layout'
 import { type ModuleStatusFilter, useUIState } from '@/store/useUIStore'
 import { DIFFICULTY_LABELS, type Question, type StudyStatus } from '@/types'
 import {
@@ -16,8 +16,9 @@ import {
   type StatusTone,
   Tooltip,
 } from '@/ui'
+import type { DetailLayout } from './sidePanel'
 
-export const MODULE_QUESTION_STATUS_FILTERS: ModuleStatusFilter[] = [
+const MODULE_QUESTION_STATUS_FILTERS: ModuleStatusFilter[] = [
   'all',
   'unlearned',
   'review',
@@ -45,17 +46,10 @@ interface ListProps {
 }
 
 export interface ModuleQuestionPanelProps extends ListProps {
-  /** Docked beside the page (wide screens, pinned) instead of a modal sheet. */
-  docked: boolean
-  width: number
-  /** Largest width the docked panel may take at the current viewport. */
-  maxWidth: number
-  onResize: (width: number) => void
+  layout: DetailLayout
+  /** The sheet used when the list can't dock (narrow screens, or not pinned). */
   sheetOpen: boolean
   onSheetOpenChange: (open: boolean) => void
-  /** Offer "pin" in the sheet header (wide screens with room to dock). */
-  canDock: boolean
-  onPinnedChange: (pinned: boolean) => void
 }
 
 /**
@@ -64,31 +58,32 @@ export interface ModuleQuestionPanelProps extends ListProps {
  * otherwise.
  */
 export function ModuleQuestionPanel({
-  docked,
-  width,
-  maxWidth,
-  onResize,
+  layout,
   sheetOpen,
   onSheetOpenChange,
-  canDock,
-  onPinnedChange,
   ...list
 }: ModuleQuestionPanelProps) {
+  const setPinned = useUIState((s) => s.setModulePanelPinned)
+  const setWidth = useUIState((s) => s.setModulePanelWidth)
+  const pin = (pinned: boolean) => {
+    setPinned(pinned)
+    if (pinned) onSheetOpenChange(false)
+  }
   const currentIndex = list.questions.findIndex((item) => item.id === list.question.id)
   const position =
     currentIndex >= 0 ? `第 ${currentIndex + 1} / ${list.questions.length} 题` : undefined
 
-  if (docked) {
+  if (layout.moduleDocked) {
     return (
       <aside
         aria-label="本模块题目"
-        style={{ width }}
+        style={{ width: layout.moduleWidth }}
         className="fixed inset-y-0 left-[var(--sidebar-w)] z-20 flex flex-col border-r border-line bg-canvas"
         onKeyDown={(event) => {
           if (event.key !== 'Escape' || event.defaultPrevented) return
           // Don't also close the side panel on the right.
           event.preventDefault()
-          onPinnedChange(false)
+          pin(false)
         }}
       >
         <header className="flex h-13 shrink-0 items-center gap-2 border-b border-line pr-2 pl-4">
@@ -103,7 +98,7 @@ export function ModuleQuestionPanel({
               variant="ghost"
               size="icon-sm"
               aria-label="收起题目列表"
-              onClick={() => onPinnedChange(false)}
+              onClick={() => pin(false)}
             >
               <PanelLeftClose />
             </Button>
@@ -113,11 +108,13 @@ export function ModuleQuestionPanel({
         <ResizeHandle
           edge="right"
           label="调整题目列表宽度"
-          value={width}
+          value={layout.moduleWidth}
           min={MODULE_PANEL.min}
-          max={maxWidth}
-          onResize={onResize}
-          onReset={() => onResize(MODULE_PANEL.default)}
+          max={layout.moduleMaxWidth}
+          onResize={(raw) =>
+            setWidth(Math.round(clamp(raw, MODULE_PANEL.min, layout.moduleMaxWidth)))
+          }
+          onReset={() => setWidth(MODULE_PANEL.default)}
         />
       </aside>
     )
@@ -132,13 +129,13 @@ export function ModuleQuestionPanel({
           title={list.question.module}
           description={position}
           headerAction={
-            canDock ? (
+            layout.moduleCanDock ? (
               <Tooltip content="固定在页面左侧" side="bottom">
                 <Button
                   variant="ghost"
                   size="icon-sm"
                   aria-label="固定在页面左侧"
-                  onClick={() => onPinnedChange(true)}
+                  onClick={() => pin(true)}
                 >
                   <PanelLeft />
                 </Button>

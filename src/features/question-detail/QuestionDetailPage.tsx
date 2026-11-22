@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { clamp, MODULE_PANEL } from '@/app/layout'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useDelayedFlag } from '@/hooks/useDelayedFlag'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
@@ -98,7 +97,6 @@ export default function QuestionDetail() {
   const toggleSidePanel = useUIState((state) => state.toggleSidePanel)
   const panelLayout = useDetailLayout()
   const setModulePanelPinned = useUIState((state) => state.setModulePanelPinned)
-  const setModulePanelWidth = useUIState((state) => state.setModulePanelWidth)
 
   const [answerVisible, setAnswerVisible] = useState(false)
   const [marking, setMarking] = useState(false)
@@ -570,13 +568,11 @@ export default function QuestionDetail() {
 
           {/* "answer-first": write your own answer above the reference */}
           {showAnswerInputAbove && (
-            <div>
-              <MyAnswerInput
-                key={`answer-above-${questionId}`}
-                {...answerInputProps}
-                autoFocus={answerNavigationMode !== 'check'}
-              />
-            </div>
+            <MyAnswerInput
+              key={`answer-above-${questionId}`}
+              {...answerInputProps}
+              autoFocus={answerNavigationMode !== 'check'}
+            />
           )}
 
           {answerVisible && (
@@ -770,21 +766,9 @@ export default function QuestionDetail() {
       </div>
 
       <ModuleQuestionPanel
-        docked={panelLayout.moduleDocked}
-        width={panelLayout.moduleWidth}
-        maxWidth={panelLayout.moduleMaxWidth}
-        onResize={(width) =>
-          setModulePanelWidth(
-            Math.round(clamp(width, MODULE_PANEL.min, panelLayout.moduleMaxWidth)),
-          )
-        }
+        layout={panelLayout}
         sheetOpen={moduleSheetOpen && !panelLayout.moduleDocked}
         onSheetOpenChange={setModuleSheetOpen}
-        canDock={panelLayout.moduleCanDock}
-        onPinnedChange={(pinned) => {
-          setModulePanelPinned(pinned)
-          if (pinned) setModuleSheetOpen(false)
-        }}
         question={question}
         questions={currentModuleQuestions}
         records={records}

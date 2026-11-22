@@ -30,9 +30,11 @@ export const STORAGE_KEYS = {
  * Prefix for unsent form drafts (AI tools, JD match, mock interview setup, import paste…),
  * one key per form: `iface_draft:<scope>`. Local to this browser; not backed up or synced.
  */
-export const DRAFT_KEY_PREFIX = 'iface_draft:'
+const DRAFT_KEY_PREFIX = 'iface_draft:'
 
-export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
+export type StorageKey =
+  | (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
+  | `${typeof DRAFT_KEY_PREFIX}${string}`
 
 function store(): Storage | null {
   try {
@@ -103,24 +105,17 @@ export function removeKey(key: StorageKey): void {
   } catch {}
 }
 
+const draftKey = (scope: string): StorageKey => `${DRAFT_KEY_PREFIX}${scope}`
+
 /** Read a form draft saved under `iface_draft:<scope>`, or null. */
 export function readDraft(scope: string): unknown {
-  try {
-    const raw = store()?.getItem(DRAFT_KEY_PREFIX + scope)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
+  return readJSON(draftKey(scope), (value) => value, null)
 }
 
 export function writeDraft(scope: string, value: unknown): void {
-  try {
-    store()?.setItem(DRAFT_KEY_PREFIX + scope, JSON.stringify(value))
-  } catch {}
+  writeJSON(draftKey(scope), value)
 }
 
 export function removeDraft(scope: string): void {
-  try {
-    store()?.removeItem(DRAFT_KEY_PREFIX + scope)
-  } catch {}
+  removeKey(draftKey(scope))
 }

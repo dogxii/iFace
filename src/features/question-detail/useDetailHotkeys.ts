@@ -3,7 +3,7 @@ import type { StudyStatus } from '@/types'
 import { blurActiveControl, isEditableTarget } from './answerInput'
 
 interface Options {
-  /** A modal overlay (settings, module drawer, mobile side sheet) owns the keyboard while open. */
+  /** A modal overlay (settings, module list sheet, mobile side sheet) owns the keyboard while open. */
   overlayOpen: boolean
   /** True while a status change is being saved. */
   busy: () => boolean

@@ -1,12 +1,6 @@
 import { NotebookPen, Sparkles, X } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import {
-  clampSidePanelWidth,
-  MODULE_PANEL,
-  resolveDetailPanels,
-  SIDE_PANEL,
-  SIDEBAR,
-} from '@/app/layout'
+import { clampSidePanelWidth, resolveDetailPanels, SIDE_PANEL, SIDEBAR } from '@/app/layout'
 import { useMediaQuery, useViewportWidth } from '@/hooks/useMediaQuery'
 import { isEditableTarget } from '@/lib/dom'
 import { type SidePanelTab, useUIState } from '@/store/useUIStore'
@@ -32,15 +26,14 @@ export function useDetailLayout() {
   const viewportWidth = useViewportWidth()
   const desktop = useMediaQuery(DESKTOP_QUERY)
   const shownSidebar = sidebarCollapsed ? SIDEBAR.rail : sidebarWidth
-  const input = {
+  const panels = resolveDetailPanels({
     viewportWidth,
     sidebarWidth: shownSidebar,
     modulePinned,
     moduleWidth: storedModuleWidth,
     sidePanelOpen: tab !== null,
     sidePanelWidth: storedWidth,
-  }
-  const panels = resolveDetailPanels(input)
+  })
   const moduleDocked = desktop && panels.moduleDocked
   return {
     tab,
@@ -51,20 +44,10 @@ export function useDetailLayout() {
     /** Width occupied left of the page: app sidebar plus the docked module list. */
     leftWidth: shownSidebar + (moduleDocked ? panels.moduleWidth : 0),
     moduleDocked,
-    moduleWidth: panels.moduleWidth,
     /** Whether pinning the module list would dock it right now. */
-    moduleCanDock: desktop && resolveDetailPanels({ ...input, modulePinned: true }).moduleDocked,
-    /** Largest docked module list width at this viewport. */
-    moduleMaxWidth: Math.max(
-      MODULE_PANEL.min,
-      Math.min(
-        MODULE_PANEL.max,
-        viewportWidth -
-          shownSidebar -
-          (tab !== null ? SIDE_PANEL.min : 0) -
-          MODULE_PANEL.minContent,
-      ),
-    ),
+    moduleCanDock: desktop && panels.moduleFits,
+    moduleWidth: panels.moduleWidth,
+    moduleMaxWidth: panels.moduleMaxWidth,
   }
 }
 

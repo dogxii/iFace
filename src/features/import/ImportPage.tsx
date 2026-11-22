@@ -396,7 +396,7 @@ function PastePanel({
   busy: boolean
   onImport: (text: string, source: string, format: PasteFormat) => Promise<boolean>
 }) {
-  const [draft, setDraft, clearDraft] = useDraft(PASTE_DRAFT, EMPTY_PASTE, parsePasteDraft)
+  const [draft, setDraft] = useDraft(PASTE_DRAFT, EMPTY_PASTE, parsePasteDraft)
   const { text, source } = draft
   const setText = (next: string) => setDraft((d) => ({ ...d, text: next }))
   const setSource = (next: string) => setDraft((d) => ({ ...d, source: next }))
@@ -406,7 +406,7 @@ function PastePanel({
   const submit = async () => {
     if (!format || !source.trim()) return
     const ok = await onImport(text, source.trim(), format)
-    if (ok) clearDraft()
+    if (ok) setDraft(EMPTY_PASTE)
   }
 
   return (
