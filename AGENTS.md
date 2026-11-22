@@ -37,6 +37,8 @@ Use Bun for package and script commands.
 
 Biome is the source of truth. Use 2-space indentation, 100-character lines, single quotes, no required semicolons, trailing commas in JavaScript/TypeScript, and no trailing commas in JSON. Name components and pages in `PascalCase`, hooks as `useSomething`, and stores as `useSomethingState` (in files named `useSomethingStore.ts`). Keep route screens in `src/features/` and reusable UI in `src/ui/`.
 
+Keep the app fast and calm: no entrance animations on page content (question switches, cards, messages, lists). Motion is for overlays only (dialogs, sheets, menus, toasts) and stays short. Delay loading placeholders with `useDelayedFlag` so fast loads never flash a spinner or skeleton.
+
 ## Testing Guidelines
 
 Before submitting changes, run `bun run check`, `bun run test` and `bun run build`; run `bun run test:e2e` for changes that touch pages or data flow. Place unit tests next to the code under test as `*.test.ts`. For UI changes, also manually verify importing bundled questions, practicing, viewing details, settings, and AI configuration paths in both themes.
