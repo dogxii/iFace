@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { DifficultyBars } from '@/components/DifficultyBars'
 import { dataSource } from '@/data/source'
 import { useQuestions } from '@/hooks/useQuestions'
@@ -323,6 +323,31 @@ function ListSkeleton() {
   )
 }
 
+/** Rows loaded per history entry (in memory, for back navigation). */
+const loadedPages = new Map<string, number>()
+
+/** Loads the next page when it scrolls into view; also a plain button for keyboard users. */
+function LoadMore({ onLoad }: { onLoad: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null)
+  const latest = useRef(onLoad)
+  latest.current = onLoad
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      (entries) => entries.some((e) => e.isIntersecting) && latest.current(),
+      { rootMargin: '600px 0px' },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return (
+    <Button ref={ref} onClick={onLoad}>
+      加载更多
+    </Button>
+  )
+}
+
 export default function QuestionListPage() {
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -332,7 +357,13 @@ export default function QuestionListPage() {
   const hiddenCategories = useStudyState((s) => s.hiddenCategories)
   const { notes, starred, toggleStar } = useQuestionMeta()
   const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
-  const [page, setPage] = useState(1)
+  const location = useLocation()
+  // Remember how many rows were loaded on this history entry, so back from a question restores
+  // the same list (and ScrollManager can put you back where you were).
+  const [page, setPage] = useState(() => loadedPages.get(location.key) ?? 1)
+  useEffect(() => {
+    loadedPages.set(location.key, page)
+  }, [location.key, page])
   const [now] = useState(() => Date.now())
   const [searchText, setSearchText] = useState(query.search)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -504,7 +535,7 @@ export default function QuestionListPage() {
         }
       />
       <div className="grid lg:grid-cols-[228px_1fr]">
-        <aside className="sticky top-13 hidden h-[calc(100dvh-52px)] overflow-y-auto border-r border-line px-3 py-5 lg:block">
+        <aside className="sticky top-13 hidden h-[calc(100dvh-52px)] overflow-y-auto overscroll-contain border-r border-line px-3 py-5 lg:block">
           <CategoryPanel
             groups={groups}
             query={query}
@@ -534,7 +565,7 @@ export default function QuestionListPage() {
             }
           />
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="mt-5 flex flex-wrap items-center gap-2 bg-canvas md:sticky md:top-[calc(var(--navbar-h,0px)+52px)] md:z-20 md:-mx-2 md:px-2 md:py-2.5">
             <Input
               ref={searchRef}
               className="w-full sm:w-80"
@@ -720,7 +751,7 @@ export default function QuestionListPage() {
                 显示 {shown.length} / {result.questions.length}
               </span>
               {shown.length < result.questions.length ? (
-                <Button onClick={() => setPage((p) => p + 1)}>加载更多</Button>
+                <LoadMore key={shown.length} onLoad={() => setPage((p) => p + 1)} />
               ) : null}
             </div>
           ) : null}

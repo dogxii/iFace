@@ -1,9 +1,10 @@
 import { Analytics } from '@vercel/analytics/react'
-import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AppErrorBoundary } from '@/app/AppErrorBoundary'
 import { AppShell } from '@/app/AppShell'
 import { PWAUpdatePrompt } from '@/app/PWAUpdatePrompt'
+import { ScrollManager } from '@/app/ScrollManager'
 import { OnboardingDialog } from '@/features/onboarding/OnboardingDialog'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
@@ -65,28 +66,6 @@ function QuestionDetailRoute() {
   return <QuestionDetail key={id ?? 'question'} />
 }
 
-function ScrollToTop() {
-  const { pathname } = useLocation()
-
-  useEffect(() => {
-    const previous = window.history.scrollRestoration
-    window.history.scrollRestoration = 'manual'
-    return () => {
-      window.history.scrollRestoration = previous
-    }
-  }, [])
-
-  useLayoutEffect(() => {
-    if (!pathname) return
-    const previousScrollBehavior = document.documentElement.style.scrollBehavior
-    document.documentElement.style.scrollBehavior = 'auto'
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    document.documentElement.style.scrollBehavior = previousScrollBehavior
-  }, [pathname])
-
-  return null
-}
-
 function AppRoutes() {
   const location = useLocation()
   const resetKey = `${location.pathname}${location.search}`
@@ -119,7 +98,7 @@ function AppLayout() {
   return (
     <AppShell>
       <AppRecoveryHandlers />
-      <ScrollToTop />
+      <ScrollManager />
       <main>
         <AppRoutes />
       </main>

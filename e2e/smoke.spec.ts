@@ -212,3 +212,17 @@ test('form drafts survive leaving the page', async ({ page }) => {
   await page.goto('/tools/jd-match')
   await expect(page.getByLabel('岗位 JD')).toHaveValue('e2e 草稿 JD', { timeout: 20_000 })
 })
+
+test('going back to the question list restores the scroll position', async ({ page }) => {
+  await page.goto('/questions')
+  const rows = page.locator('a[href^="/questions/"]')
+  await expect(rows.first()).toBeVisible({ timeout: 20_000 })
+  const target = rows.nth(20)
+  await target.scrollIntoViewIfNeeded()
+  const before = await page.evaluate<number>('window.scrollY')
+  expect(before).toBeGreaterThan(200)
+  await target.click()
+  await expect(page).toHaveURL(/\/questions\/[^/]+$/)
+  await page.goBack()
+  await expect.poll(() => page.evaluate<number>('window.scrollY')).toBeGreaterThan(before - 10)
+})
