@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { SMOKE_RESULT_FILE } from './releaseRecord'
 
 interface Failure {
   file: string
@@ -90,7 +91,7 @@ if (!releaseScript.includes('bun scripts/checkReleaseReadiness.ts "$VERSION"')) 
   addFailure('scripts/release.sh', '发版脚本必须在发布前执行 checkReleaseReadiness')
 }
 
-const docsWithFullGate = ['docs/RELEASE_NOTES_1.0.md', 'docs/SMOKE_TEST.md']
+const docsWithFullGate = ['docs/RELEASE_NOTES_1.5.md', 'docs/SMOKE_TEST.md']
 for (const file of docsWithFullGate) {
   const content = read(file)
   for (const command of expectedCheckAll) {
@@ -100,10 +101,10 @@ for (const file of docsWithFullGate) {
   }
 }
 
-const smokeResult = read('docs/SMOKE_RESULT_2026-05-05.md')
+const smokeResult = read(SMOKE_RESULT_FILE)
 for (const command of expectedCheckAll) {
   if (!smokeResult.includes(command)) {
-    addFailure('docs/SMOKE_RESULT_2026-05-05.md', `阶段性验收记录缺少门禁结果：${command}`)
+    addFailure(SMOKE_RESULT_FILE, `验收记录缺少门禁结果：${command}`)
   }
 }
 

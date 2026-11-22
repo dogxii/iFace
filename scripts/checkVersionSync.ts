@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { SMOKE_RESULT_FILE } from './releaseRecord'
 
 interface Failure {
   file: string
@@ -47,9 +48,9 @@ expectIncludes(
   'Roadmap 当前版本应跟随 package.json',
 )
 
-const smokeResult = read('docs/SMOKE_RESULT_2026-05-05.md')
+const smokeResult = read(SMOKE_RESULT_FILE)
 expectIncludes(
-  'docs/SMOKE_RESULT_2026-05-05.md',
+  SMOKE_RESULT_FILE,
   smokeResult,
   `应用版本：\`${version}\``,
   'Smoke Result 应记录当前应用版本',

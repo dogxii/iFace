@@ -17,6 +17,7 @@
 - 这两个外部 smoke 记录不含密钥，并会写入当时的 `packageVersion`；正式 1.0 发版检查会读取它们作为证据，且要求记录在 7 天内生成。
 - 单项排查命令：
   - `bun run check`
+  - `bun run test`
   - `bun run check:version`
   - `bun run check:release`
   - `bun run check:quality-gate`

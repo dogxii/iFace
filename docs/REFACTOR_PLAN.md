@@ -96,7 +96,7 @@ src/
   store/  types/
 ```
 
-- [ ] `QuestionDetail` → 页面壳不超过 400 行；划线/批注、笔记格式化、评分解析等**纯函数抽出来并补测试**
+- [ ] `QuestionDetail` → 页面壳不超过 400 行（目前约 800 行）；划线/批注、会话导航、目录等纯函数已抽出并补测试
 - [x] `SettingsDrawer` → `features/settings/` 每个 tab 一个文件，数据导入导出逻辑在 `settingsData.ts`（有测试）
 - [x] `PromptPage` / `QuestionList` / `Dashboard` / `MockInterview` / `ImportPage` 照同样方式拆：页面组件 + 纯函数模块 + 单元测试
 进度：
@@ -105,14 +105,15 @@ src/
 - [x] 题库：分类侧栏、搜索（含笔记）、筛选与排序、筛选标签；URL 作为唯一筛选状态
 - [x] 题目详情：6.7k 行拆成 8 个文件；新页头、题目区、吸底的掌握程度按钮、底部导航
 - [x] 题目详情（续）：作答框、笔记抽屉、AI 抽屉、模块抽屉、批注工具条换成新组件
-- [ ] 题目详情（待做）：右侧目录栏；继续拆分 `QuestionDetailPage.tsx`（约 1.6k 行）；`AIPanel` / `LearningCheckPanel` / `MarkdownRenderer` 内联样式改为 token 类名（外观已通过变量映射统一）
+- [x] 题目详情（收尾）：长答案右侧目录栏（≥1440px）；`QuestionDetailPage.tsx` 从 1.6k 行拆到约 800 行（`useAnswerOverride` / `useAnswerAnnotations` / `useDetailHotkeys`、`sessionNav.ts` 有测试）
+- [x] AI 对话、学习检验、Markdown 渲染改用 token 类名（`aiChat.tsx`、`learningCheck.tsx`、`styles/markdown.css`），`index.css` 中的旧 CSS 变量别名已删除
 - [x] 练习：快速开始（到期复习 / 待复习 / 学新题 / 随机）、模块选择、题量与随机顺序
 - [x] 间隔复习：由现有记录字段推算（待复习次日、已掌握 7/14/30/60 天），不改存储
 - [x] 设置：改为全局对话框，按 tab 拆分并重建（学习 / AI / 数据 / 同步）
 - [x] 薄弱点、模拟面试、导入、出题、AI 工具箱、JD 诊断：全部用新组件重建，旧页面和 `LegacyPage` 已删除
 - [x] 首次引导：Radix 对话框重建，保留作者文案和 `iface_onboarding_done_v1`
 - [x] 删除旧组件库 `components/ui/index.tsx`、`components/layout/` 和 `index.css` 中不再使用的旧样式类
-- [x] 旧 CSS 变量指向新 token，未重建的页面也使用新配色和暗色模式
+- [x] 旧 CSS 变量先指向新 token 过渡，组件迁移完成后已删除
 - 验收：单文件原则上不超过 600 行；功能不变，E2E 通过；亮色 / 暗色截图检查
 
 ### 阶段 4：数据与性能（约 2 天）
@@ -127,9 +128,10 @@ src/
 - [x] 更新 `AGENTS.md`、README（功能、使用说明、预览截图），以及目录结构说明
 - [x] 修复 `scripts/check*.ts` 中指向已删除文件的检查；PWA 检查改为校验运行时缓存策略；恢复设置中的版本号展示
 - [x] 清理无用的资源：删除 `src/assets/react.svg`、`public/vite.svg`；根目录 `origin-icon.png` 是图标源文件，保留
-- [ ] 发布 v1.5.0，`check:all` 全部通过。剩余两项需要维护者完成：
-  - `check:external-records`：用真实 AI Key / Gist Token 重新运行 `smoke:external:ai`、`smoke:external:gist`（记录超过 7 天）
-  - `check:quality-gate`：为 1.5.0 写新的验收记录（现有 `SMOKE_RESULT_2026-05-05.md` 不含 `bun run test` 门禁），并同步 `package.json` 版本号与 README 徽章
+- [x] 版本号切到 1.5.0（`package.json`、README 徽章、Roadmap），发布说明 `docs/RELEASE_NOTES_1.5.md`，验收记录 `docs/SMOKE_RESULT_1.5.0.md`（门禁脚本通过 `scripts/releaseRecord.ts` 指向它）
+- [ ] 发布 v1.5.0，`check:all` 全部通过。剩余需要维护者完成：
+  - `check:external-records`：用真实 AI Key / Gist Token 重新运行 `smoke:external:ai`、`smoke:external:gist`
+  - 按 `SMOKE_TEST.md` 人工验收，把验收记录和发布说明改为正式状态
 
 ## 五、分支与发布
 

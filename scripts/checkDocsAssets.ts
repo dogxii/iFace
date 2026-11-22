@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, normalize } from 'node:path'
+import { SMOKE_RESULT_FILE } from './releaseRecord'
 
 interface Failure {
   file: string
@@ -12,8 +13,10 @@ const markdownFiles = [
   'docs/ROADMAP.md',
   'docs/SMOKE_TEST.md',
   'docs/SMOKE_RESULT_2026-05-05.md',
+  SMOKE_RESULT_FILE,
   'docs/RELEASE_AUDIT_1.0.md',
   'docs/RELEASE_NOTES_1.0.md',
+  'docs/RELEASE_NOTES_1.5.md',
 ]
 const requiredFiles = [
   '.env.example',
