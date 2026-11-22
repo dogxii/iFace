@@ -236,10 +236,7 @@ export default function AIToolPage() {
                 </Callout>
               ) : null}
               {displayResult ? (
-                <MarkdownRenderer
-                  content={displayResult}
-                  className="prose text-sm [&>:first-child]:mt-0!"
-                />
+                <MarkdownRenderer content={displayResult} className="prose text-sm" />
               ) : generating ? (
                 <p
                   className="flex items-center gap-2 py-16 text-sm text-fg-muted"

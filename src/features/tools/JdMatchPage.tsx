@@ -450,10 +450,7 @@ export default function JdMatchPage() {
                 </Callout>
               ) : null}
               {displayReport ? (
-                <MarkdownRenderer
-                  content={displayReport}
-                  className="prose text-sm [&>:first-child]:mt-0!"
-                />
+                <MarkdownRenderer content={displayReport} className="prose text-sm" />
               ) : analyzing ? (
                 <p
                   className="flex items-center gap-2 py-16 text-sm text-fg-muted"

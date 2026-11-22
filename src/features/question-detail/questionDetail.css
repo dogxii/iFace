@@ -51,3 +51,36 @@
 ::highlight(iface-answer-annotation-pink) {
   background: rgba(236, 72, 153, 0.22);
 }
+
+/* Markdown inside learning-check prompts, options and explanations inherits the container's
+   size and color (overrides the layered .markdown defaults). */
+.learning-check-markdown p {
+  margin-bottom: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.learning-check-markdown ul,
+.learning-check-markdown ol {
+  margin: 6px 0 0;
+}
+
+.learning-check-markdown li {
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.learning-check-markdown .code-block-wrap {
+  margin-top: 10px;
+}
+
+.learning-check-markdown pre {
+  margin: 8px 0 0;
+  font-weight: 400;
+}
+
+.learning-check-markdown code {
+  font-weight: 400;
+}

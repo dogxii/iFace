@@ -12,7 +12,6 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
-import { LearningCheckPanel } from '@/components/ui/LearningCheckPanel'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { getQuestionFlag, getQuestionNote, setQuestionStarred } from '@/lib/db'
 import { type LearningCheckQuestion, loadLearningChecksForQuestion } from '@/lib/learningCheck'
@@ -42,6 +41,7 @@ import {
   MobileQuestionNav,
 } from './answerPanel'
 import { DetailBreadcrumb, QuestionIntro, StatusDock } from './detailSections'
+import { LearningCheckPanel } from './learningCheck'
 import { ModuleQuestionDrawer } from './moduleDrawer'
 import { NoteDrawer } from './notes'
 import { SessionCompletionCard, SessionProgress, ShortcutHints, StreakCelebration } from './session'

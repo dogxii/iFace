@@ -541,7 +541,7 @@ export function ReportView({
       <div className="px-5 py-5">
         <MarkdownRenderer
           content={report?.markdown ?? streamingMarkdown ?? ''}
-          className="prose text-sm [&>:first-child]:mt-0!"
+          className="prose text-sm"
         />
       </div>
 
