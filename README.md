@@ -3,7 +3,9 @@
 
 <div align="center">
 
-# 😎 iFace
+<img src="docs/design/logo/logo.svg" width="72" alt="iFace logo" />
+
+# iFace
 
 **八股面试题库 · 智能刷题工具**
 
@@ -49,7 +51,7 @@ iFace 是一款专为 前端/Agent/Golang 等工程师备战技术面试打造�
 - 不丢输入：JD、简历、AI 工具、模拟面试、粘贴导入等表单自动保存草稿，离开页面或刷新后还在；从题目返回题库会回到原来的位置
 - AI 面试教练：拆题、评分作答、追问，模拟面试，简历 JD 诊断，AI 出题 Prompt
 - 数据与进度：全部保存在浏览器本地，支持导入导出备份和 GitHub Gist 同步
-- 亮色 / 暗色主题，支持安装为 PWA 离线使用
+- 浅色 / 深色 / 跟随系统主题，支持安装为 PWA 离线使用
 
 
 ## 🚀 快速开始
