@@ -12,12 +12,12 @@ export function SettingsSection({
   title: ReactNode
   description?: ReactNode
   action?: ReactNode
-  children: ReactNode
+  children?: ReactNode
   className?: string
 }) {
   return (
     <section className={cn('border-b border-line py-6 first:pt-1 last:border-b-0', className)}>
-      <div className="mb-3 flex items-start justify-between gap-4">
+      <div className={cn('flex items-start justify-between gap-4', children != null && 'mb-3')}>
         <div className="min-w-0">
           <h3 className="text-sm font-semibold text-fg">{title}</h3>
           {description ? (

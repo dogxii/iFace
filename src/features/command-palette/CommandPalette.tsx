@@ -27,10 +27,11 @@ interface PaletteItem extends PaletteCommand {
 }
 
 const SETTINGS_COMMANDS: { tab: SettingsTab; label: string; keywords: string[] }[] = [
-  { tab: 'study', label: '设置：学习偏好', keywords: ['settings', '外观', '每日目标', '题库展示'] },
+  { tab: 'study', label: '设置：偏好', keywords: ['settings', '外观', '每日目标', '题库展示'] },
   { tab: 'ai', label: '设置：AI 助手', keywords: ['settings', 'api key', '模型'] },
   { tab: 'data', label: '设置：数据管理', keywords: ['settings', '导出', '备份', 'export'] },
   { tab: 'sync', label: '设置：云同步', keywords: ['settings', 'github', 'gist'] },
+  { tab: 'about', label: '设置：关于', keywords: ['about', '版本', '快捷键', 'version'] },
 ]
 
 export function CommandPalette() {

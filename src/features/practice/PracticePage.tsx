@@ -272,7 +272,7 @@ export default function PracticePage() {
           <EmptyState
             icon={<EyeOff />}
             title="所有题库都已隐藏"
-            description="在设置的「学习偏好 → 题库展示」中重新开启需要练习的分类。"
+            description="在设置的「偏好 → 题库展示」中重新开启需要练习的分类。"
             action={<Button onClick={() => openSettings('study')}>打开设置</Button>}
           />
         ) : (

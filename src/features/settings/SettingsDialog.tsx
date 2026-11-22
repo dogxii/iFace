@@ -1,7 +1,16 @@
-import { Cloud, Database, GraduationCap, type LucideIcon, Sparkles, X } from 'lucide-react'
+import {
+  Cloud,
+  Database,
+  Info,
+  type LucideIcon,
+  SlidersHorizontal,
+  Sparkles,
+  X,
+} from 'lucide-react'
 import { Dialog as D } from 'radix-ui'
 import { type SettingsTab, useUIState } from '@/store/useUIStore'
 import { Button, cn } from '@/ui'
+import { AboutSettings } from './AboutSettings'
 import { AISettings } from './AISettings'
 import { DataSettings } from './DataSettings'
 import { StudySettings } from './StudySettings'
@@ -10,9 +19,9 @@ import { SyncSettings } from './SyncSettings'
 const TABS: { id: SettingsTab; label: string; description: string; icon: LucideIcon }[] = [
   {
     id: 'study',
-    label: '学习偏好',
-    description: '每日目标、答题方式和题库展示',
-    icon: GraduationCap,
+    label: '偏好',
+    description: '外观、每日目标、答题方式和题库展示',
+    icon: SlidersHorizontal,
   },
   {
     id: 'ai',
@@ -31,6 +40,12 @@ const TABS: { id: SettingsTab; label: string; description: string; icon: LucideI
     label: '云同步',
     description: '用 GitHub 私人 Gist 在多设备间同步进度',
     icon: Cloud,
+  },
+  {
+    id: 'about',
+    label: '关于',
+    description: '版本、链接、快捷键和新手引导',
+    icon: Info,
   },
 ]
 
@@ -93,14 +108,13 @@ export function SettingsDialog() {
                 )
               })}
             </div>
-            <a
-              href="https://github.com/dogxii/iface/releases"
-              target="_blank"
-              rel="noreferrer"
-              className="mt-auto hidden px-4 pt-3 pb-4 text-xs text-fg-subtle tabular-nums hover:text-fg-muted sm:block"
+            <button
+              type="button"
+              onClick={() => setTab('about')}
+              className="mt-auto hidden px-4 pt-3 pb-4 text-left text-xs text-fg-subtle tabular-nums hover:text-fg-muted sm:block"
             >
               iFace v{__APP_VERSION__}
-            </a>
+            </button>
           </nav>
 
           <div className="flex min-h-0 flex-1 flex-col">
@@ -119,6 +133,7 @@ export function SettingsDialog() {
             {tab === 'ai' ? <AISettings /> : null}
             {tab === 'data' ? <DataSettings /> : null}
             {tab === 'sync' ? <SyncSettings /> : null}
+            {tab === 'about' ? <AboutSettings /> : null}
           </div>
         </D.Content>
       </D.Portal>

@@ -190,6 +190,15 @@ test('first visit shows the onboarding guide once', async ({ page }) => {
   await page.reload()
   await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
   await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  // Settings → About reopens the guide from its first step.
+  await page.getByRole('button', { name: '设置' }).first().click()
+  await page
+    .getByRole('navigation', { name: '设置分类' })
+    .getByRole('button', { name: /关于/ })
+    .click()
+  await page.getByRole('button', { name: '重新查看' }).click()
+  await expect(page.getByRole('dialog', { name: '欢迎来到 iFace！' })).toBeVisible()
 })
 
 test('the sidebar collapses to an icon rail and remembers it', async ({ page }) => {

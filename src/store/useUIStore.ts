@@ -3,7 +3,7 @@ import { MODULE_PANEL, SIDE_PANEL, SIDEBAR } from '@/app/layout'
 import { readBoolean, readInt, STORAGE_KEYS, writeBoolean, writeString } from '@/lib/storage'
 import type { StudyStatus } from '@/types'
 
-export type SettingsTab = 'study' | 'ai' | 'data' | 'sync'
+export type SettingsTab = 'study' | 'ai' | 'data' | 'sync' | 'about'
 
 /** Tabs of the question detail side panel. */
 export type SidePanelTab = 'notes' | 'ai'
