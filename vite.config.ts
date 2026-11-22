@@ -15,6 +15,7 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: [
         'favicon.ico',
+        'favicon.svg',
         'favicon-16x16.png',
         'favicon-32x32.png',
         'apple-touch-icon.png',
@@ -45,13 +46,13 @@ export default defineConfig({
             purpose: 'any',
           },
           {
-            src: '/icons/icon-512x512.png',
+            src: '/icons/icon-maskable-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
           },
           {
-            src: '/icons/icon-192x192.png',
+            src: '/icons/icon-maskable-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable',

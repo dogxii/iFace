@@ -180,8 +180,8 @@ if (existsSync(join(distDir, 'manifest.webmanifest'))) {
       const requiredIcons = [
         { src: '/icons/icon-192x192.png', purpose: 'any' },
         { src: '/icons/icon-512x512.png', purpose: 'any' },
-        { src: '/icons/icon-192x192.png', purpose: 'maskable' },
-        { src: '/icons/icon-512x512.png', purpose: 'maskable' },
+        { src: '/icons/icon-maskable-192x192.png', purpose: 'maskable' },
+        { src: '/icons/icon-maskable-512x512.png', purpose: 'maskable' },
       ]
 
       for (const requiredIcon of requiredIcons) {
@@ -214,6 +214,8 @@ const requiredIconFiles = [
   { file: 'icon-180x180.png', minBytes: 1024 },
   { file: 'icon-192x192.png', minBytes: 1024 },
   { file: 'icon-512x512.png', minBytes: 1024 },
+  { file: 'icon-maskable-192x192.png', minBytes: 1024 },
+  { file: 'icon-maskable-512x512.png', minBytes: 1024 },
 ]
 
 for (const icon of requiredIconFiles) {

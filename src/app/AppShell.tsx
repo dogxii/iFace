@@ -1,6 +1,7 @@
 import { Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Settings, Sun } from 'lucide-react'
 import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { BrandMark } from '@/components/BrandMark'
 import { CommandPalette } from '@/features/command-palette/CommandPalette'
 import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { useGistAutoSync } from '@/features/settings/useGistSync'
@@ -37,9 +38,7 @@ function Brand({ collapsed = false }: { collapsed?: boolean }) {
         collapsed ? 'justify-center px-0' : 'px-2',
       )}
     >
-      <span className="flex size-5.5 shrink-0 items-center justify-center rounded-md bg-fg text-xs font-semibold text-canvas">
-        i
-      </span>
+      <BrandMark className="size-5.5" />
       {collapsed ? null : 'iFace'}
     </NavLink>
   )

@@ -1,10 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="100%" stop-color="#6366f1"/>
-    </linearGradient>
-  </defs>
-  <rect width="64" height="64" rx="16" fill="url(#g)"/>
-  <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="700" font-size="32" fill="white">iF</text>
+  <rect width="64" height="64" rx="16" fill="#ffc933"/>
+  <path d="M13.5 28q6-6.5 12 0M17.5 40.5q14.5 12.5 29 0" stroke="#1c1917" stroke-width="5.6" stroke-linecap="round"/>
+  <ellipse cx="43" cy="24.5" rx="4.8" ry="6" fill="#1c1917"/>
 </svg>

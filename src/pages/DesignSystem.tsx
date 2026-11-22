@@ -22,6 +22,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
+import { BrandMark } from '@/components/BrandMark'
 import { ModuleMark } from '@/components/ModuleMark'
 import {
   Box,
@@ -694,9 +695,7 @@ export default function DesignSystem() {
             <div className="flex h-[420px] overflow-hidden rounded-xl border border-line">
               <Sidebar>
                 <div className="mb-3 flex h-9 items-center gap-2 px-2 text-md font-semibold tracking-tight">
-                  <span className="flex size-5.5 items-center justify-center rounded-md bg-fg text-xs text-canvas">
-                    i
-                  </span>
+                  <BrandMark className="size-5.5" />
                   iFace
                 </div>
                 <SidebarItem icon={<House />}>概览</SidebarItem>
