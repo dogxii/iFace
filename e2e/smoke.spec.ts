@@ -44,12 +44,24 @@ test('marking a question as mastered persists after reload', async ({ page }) =>
   await expect(page.getByText(/已掌握 1 道/)).toBeVisible({ timeout: 20_000 })
 })
 
-test('theme choice persists across reloads', async ({ page }) => {
+test('theme choice persists and can follow the system', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' })
   await page.goto('/')
-  await page.getByRole('button', { name: '切换暗色' }).click()
-  await expect(page.locator('html')).toHaveClass(/dark/)
+  const html = page.locator('html')
+  await expect(html).not.toHaveClass(/dark/)
+
+  const themeButton = page.getByRole('button', { name: /^主题：/ }).first()
+  await themeButton.click()
+  await page.getByRole('menuitemradio', { name: '深色' }).click()
+  await expect(html).toHaveClass(/dark/)
   await page.reload()
-  await expect(page.locator('html')).toHaveClass(/dark/)
+  await expect(html).toHaveClass(/dark/)
+
+  await themeButton.click()
+  await page.getByRole('menuitemradio', { name: '跟随系统' }).click()
+  await expect(html).not.toHaveClass(/dark/)
+  await page.emulateMedia({ colorScheme: 'dark' })
+  await expect(html).toHaveClass(/dark/)
 })
 
 test('a question note is saved and survives a reload', async ({ page }) => {

@@ -1,5 +1,6 @@
 import { BookOpenText, Brain, type LucideIcon, PenLine, RotateCcw } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { ThemeSegmentedControl } from '@/app/themeOptions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import {
   type AnswerNavigationMode,
@@ -72,6 +73,10 @@ export function StudySettings() {
 
   return (
     <SettingsBody>
+      <SettingsSection title="外观" description="跟随系统时会随操作系统的浅色 / 深色自动切换。">
+        <ThemeSegmentedControl />
+      </SettingsSection>
+
       <SettingsSection
         title="每日目标"
         description="概览和侧边栏会按这个数字显示今日进度。"

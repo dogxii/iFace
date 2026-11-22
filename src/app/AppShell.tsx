@@ -1,4 +1,4 @@
-import { Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Settings, Sun } from 'lucide-react'
+import { Menu, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
 import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { BrandMark } from '@/components/BrandMark'
@@ -8,11 +8,16 @@ import { useGistAutoSync } from '@/features/settings/useGistSync'
 import { isEditableTarget } from '@/lib/dom'
 import { preloadPath } from '@/lib/routePreload'
 import { useAuthState } from '@/store/useAuthStore'
-import { useStudyState } from '@/store/useStudyStore'
+import { type ThemePreference, useStudyState } from '@/store/useStudyStore'
 import { useUIState } from '@/store/useUIStore'
 import {
   Button,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
   Kbd,
   Progress,
   ProgressRing,
@@ -26,6 +31,7 @@ import {
 } from '@/ui'
 import { resolveSidebarDrag, SIDEBAR } from './layout'
 import { isNavItemActive, type NavItem, PRIMARY_NAV, TOOL_NAV } from './navigation'
+import { THEME_OPTIONS } from './themeOptions'
 
 function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
@@ -112,16 +118,33 @@ function TodayGoal({ collapsed = false }: { collapsed?: boolean }) {
   )
 }
 
-function ThemeButton({ side }: { side?: 'top' | 'right' }) {
+function ThemeButton({ side = 'top' }: { side?: 'top' | 'right' | 'bottom' }) {
   const theme = useStudyState((s) => s.theme)
-  const toggleTheme = useStudyState((s) => s.toggleTheme)
-  const label = theme === 'dark' ? '切换亮色' : '切换暗色'
+  const setTheme = useStudyState((s) => s.setTheme)
+  const current = THEME_OPTIONS.find((option) => option.value === theme) ?? THEME_OPTIONS[2]
   return (
-    <Tooltip content={label} side={side}>
-      <Button variant="ghost" size="icon-sm" aria-label={label} onClick={toggleTheme}>
-        {theme === 'dark' ? <Sun /> : <Moon />}
-      </Button>
-    </Tooltip>
+    <DropdownMenu>
+      <Tooltip content={`主题：${current.label}`} side={side}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon-sm" aria-label={`主题：${current.label}`}>
+            <current.icon />
+          </Button>
+        </DropdownMenuTrigger>
+      </Tooltip>
+      <DropdownMenuContent side={side} align="end" className="min-w-36">
+        <DropdownMenuRadioGroup
+          value={theme}
+          onValueChange={(value) => setTheme(value as ThemePreference)}
+        >
+          {THEME_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              <option.icon />
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -305,7 +328,7 @@ function MobileTopBar() {
         >
           <Search />
         </Button>
-        <ThemeButton />
+        <ThemeButton side="bottom" />
         <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={() => openSettings()}>
           <Settings />
         </Button>

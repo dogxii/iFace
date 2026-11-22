@@ -157,3 +157,18 @@ export function dueRecords(records: StudyRecordMap, now: number): StudyRecord[] 
     .filter((record) => isDueForReview(record, now))
     .sort((a, b) => (nextReviewAt(a) ?? 0) - (nextReviewAt(b) ?? 0))
 }
+
+// ─── Theme ────────────────────────────────────────────────────────────────────
+
+export type Theme = 'light' | 'dark'
+/** What the user picked; `system` follows the OS appearance. */
+export type ThemePreference = Theme | 'system'
+
+export function parseThemePreference(value: string | null): ThemePreference {
+  return value === 'light' || value === 'dark' || value === 'system' ? value : 'system'
+}
+
+export function resolveTheme(preference: ThemePreference, systemDark: boolean): Theme {
+  if (preference === 'system') return systemDark ? 'dark' : 'light'
+  return preference
+}

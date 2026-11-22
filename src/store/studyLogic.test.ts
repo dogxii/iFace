@@ -11,7 +11,9 @@ import {
   isDueForReview,
   nextReviewAt,
   parseStreak,
+  parseThemePreference,
   resetStreak,
+  resolveTheme,
   reviewIntervalDays,
   rollStreakToToday,
   weakRecords,
@@ -156,5 +158,19 @@ describe('spaced review', () => {
     expect(isDueForReview(records.b, now)).toBe(false)
     expect(dueRecords(records, now).map((r) => r.questionId)).toEqual(['c', 'a'])
     expect(nextReviewAt(records.d)).toBe(now + 4 * DAY)
+  })
+})
+
+describe('theme preference', () => {
+  it('defaults unknown or missing values to following the system', () => {
+    expect(parseThemePreference(null)).toBe('system')
+    expect(parseThemePreference('sepia')).toBe('system')
+    expect(parseThemePreference('dark')).toBe('dark')
+  })
+
+  it('resolves system against the OS appearance and keeps explicit choices', () => {
+    expect(resolveTheme('system', true)).toBe('dark')
+    expect(resolveTheme('system', false)).toBe('light')
+    expect(resolveTheme('light', true)).toBe('light')
   })
 })

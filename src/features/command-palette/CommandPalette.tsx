@@ -3,15 +3,14 @@ import {
   CornerDownLeft,
   FileQuestion,
   type LucideIcon,
-  Moon,
   Search,
   Settings,
-  Sun,
 } from 'lucide-react'
 import { Dialog as D } from 'radix-ui'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { isNavItemActive, PRIMARY_NAV, TOOL_NAV } from '@/app/navigation'
+import { THEME_OPTIONS } from '@/app/themeOptions'
 import { useQuestions } from '@/hooks/useQuestions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
@@ -28,7 +27,7 @@ interface PaletteItem extends PaletteCommand {
 }
 
 const SETTINGS_COMMANDS: { tab: SettingsTab; label: string; keywords: string[] }[] = [
-  { tab: 'study', label: '设置：学习偏好', keywords: ['settings', '每日目标', '题库展示'] },
+  { tab: 'study', label: '设置：学习偏好', keywords: ['settings', '外观', '每日目标', '题库展示'] },
   { tab: 'ai', label: '设置：AI 助手', keywords: ['settings', 'api key', '模型'] },
   { tab: 'data', label: '设置：数据管理', keywords: ['settings', '导出', '备份', 'export'] },
   { tab: 'sync', label: '设置：云同步', keywords: ['settings', 'github', 'gist'] },
@@ -58,7 +57,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
   const openSettings = useUIState((s) => s.openSettings)
   const theme = useStudyState((s) => s.theme)
-  const toggleTheme = useStudyState((s) => s.toggleTheme)
+  const setTheme = useStudyState((s) => s.setTheme)
   const hiddenCategories = useStudyState((s) => s.hiddenCategories)
   const { allQuestions } = useQuestions()
   const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
@@ -90,17 +89,17 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       run: go(item.path),
     }))
     const actions: PaletteItem[] = [
-      {
-        id: 'theme',
+      ...THEME_OPTIONS.filter((option) => option.value !== theme).map<PaletteItem>((option) => ({
+        id: `theme:${option.value}`,
         group: '操作',
-        label: theme === 'dark' ? '切换到浅色主题' : '切换到暗色主题',
-        keywords: ['theme', 'dark', 'light', '主题'],
-        icon: theme === 'dark' ? Sun : Moon,
+        label: `主题：${option.label}`,
+        keywords: ['theme', option.value, '主题', '外观'],
+        icon: option.icon,
         run: () => {
-          toggleTheme()
+          setTheme(option.value)
           onClose()
         },
-      },
+      })),
       ...SETTINGS_COMMANDS.map<PaletteItem>((cmd) => ({
         id: `settings:${cmd.tab}`,
         group: '操作',
@@ -129,7 +128,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       ...filterCommands(navCommands, query),
       ...filterCommands(actions, query),
     ]
-  }, [navigate, onClose, openSettings, query, theme, toggleTheme, visibleQuestions])
+  }, [navigate, onClose, openSettings, query, setTheme, theme, visibleQuestions])
 
   useEffect(() => {
     listRef.current

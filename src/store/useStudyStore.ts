@@ -38,16 +38,24 @@ import {
   incrementStreak as nextStreakAfterMark,
   resetStreak as nextStreakAfterReset,
   parseStreak,
+  parseThemePreference,
+  resolveTheme,
   rollStreakToToday,
   type StatusCounts,
   type StreakData,
+  type ThemePreference,
   toDateKey,
   weakRecords,
 } from './studyLogic'
 
-export { DAILY_GOAL_DEFAULT, DAILY_GOAL_MAX, DAILY_GOAL_MIN, type StatusCounts, type StreakData }
-
-export type Theme = 'light' | 'dark'
+export {
+  DAILY_GOAL_DEFAULT,
+  DAILY_GOAL_MAX,
+  DAILY_GOAL_MIN,
+  type StatusCounts,
+  type StreakData,
+  type ThemePreference,
+}
 
 export type StudyMode =
   | 'answer-first' // 先作答，再展开参考答案（默认）
@@ -62,7 +70,7 @@ const ANSWER_NAV_MODES: readonly AnswerNavigationMode[] = ['answer', 'check']
 // ─── Persisted preferences ────────────────────────────────────────────────────
 
 interface Preferences {
-  theme: Theme
+  theme: ThemePreference
   studyMode: StudyMode
   answerNavigationMode: AnswerNavigationMode
   mobileQuestionNavEnabled: boolean
@@ -72,19 +80,20 @@ interface Preferences {
   hiddenCategories: Set<string>
 }
 
-function systemTheme(): Theme {
+const DARK_QUERY = '(prefers-color-scheme: dark)'
+
+function systemDark(): boolean {
   try {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    return window.matchMedia(DARK_QUERY).matches
   } catch {
-    return 'light'
+    return false
   }
 }
 
 function loadPreferences(): Preferences {
   const today = toDateKey()
-  const storedTheme = readString(STORAGE_KEYS.theme)
   return {
-    theme: storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : systemTheme(),
+    theme: parseThemePreference(readString(STORAGE_KEYS.theme)),
     studyMode: readEnum(STORAGE_KEYS.studyMode, STUDY_MODES, 'answer-first'),
     answerNavigationMode: readEnum(STORAGE_KEYS.answerNavigationMode, ANSWER_NAV_MODES, 'answer'),
     mobileQuestionNavEnabled: readBoolean(STORAGE_KEYS.mobileQuestionNav, false),
@@ -123,9 +132,11 @@ function persistPreferences(next: Preferences, prev: Preferences): void {
   }
 }
 
-export function applyThemeToDom(theme: Theme): void {
+/** Apply the theme preference to the page, resolving `system` against the OS appearance. */
+function syncTheme(): void {
   if (typeof document === 'undefined') return
-  document.documentElement.classList.toggle('dark', theme === 'dark')
+  const dark = resolveTheme(useStudyState.getState().theme, systemDark()) === 'dark'
+  document.documentElement.classList.toggle('dark', dark)
 }
 
 // ─── Cross-tab sync ───────────────────────────────────────────────────────────
@@ -178,8 +189,7 @@ export interface StudyActions {
   restoreRecords: (records: StudyRecord[]) => Promise<void>
   resetAll: () => Promise<void>
   reloadRecords: () => Promise<void>
-  setTheme: (theme: Theme) => void
-  toggleTheme: () => void
+  setTheme: (theme: ThemePreference) => void
   setStudyMode: (mode: StudyMode) => void
   setAnswerNavigationMode: (mode: AnswerNavigationMode) => void
   setMobileQuestionNavEnabled: (enabled: boolean) => void
@@ -205,7 +215,7 @@ function withRecords(records: StudyRecordMap) {
 export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
   const setPreferences = (patch: Partial<Preferences>, broadcast = true) => {
     set(patch)
-    if (patch.theme) applyThemeToDom(patch.theme)
+    if (patch.theme) syncTheme()
     if (broadcast) {
       const { hiddenCategories, ...rest } = patch
       post({
@@ -270,7 +280,6 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
     },
 
     setTheme: (theme) => setPreferences({ theme }),
-    toggleTheme: () => setPreferences({ theme: get().theme === 'light' ? 'dark' : 'light' }),
     setStudyMode: (studyMode) => setPreferences({ studyMode }),
     setAnswerNavigationMode: (answerNavigationMode) => setPreferences({ answerNavigationMode }),
     setMobileQuestionNavEnabled: (mobileQuestionNavEnabled) =>
@@ -317,7 +326,12 @@ let initPromise: Promise<void> | null = null
 export function initStudyStore(): Promise<void> {
   if (initPromise) return initPromise
 
-  applyThemeToDom(useStudyState.getState().theme)
+  syncTheme()
+  try {
+    window.matchMedia(DARK_QUERY).addEventListener('change', syncTheme)
+  } catch {
+    // No matchMedia (e.g. tests): explicit light / dark still applies.
+  }
 
   channel?.addEventListener('message', (event: MessageEvent<SyncMessage>) => {
     const message = event.data
@@ -346,7 +360,7 @@ export function initStudyStore(): Promise<void> {
           ? { ...rest, hiddenCategories: new Set(hiddenCategories) }
           : rest
         useStudyState.setState(patch)
-        if (patch.theme) applyThemeToDom(patch.theme)
+        if (patch.theme) syncTheme()
         break
       }
     }
