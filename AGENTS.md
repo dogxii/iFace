@@ -10,7 +10,7 @@ iFace is a Vite React 19 + TypeScript app. Main code lives in `src/`:
 - `src/components/ui/` holds the Markdown renderer (element styles in `src/styles/markdown.css`) and the speech input button; do not add new components there.
 - `src/styles/tokens.css` defines design tokens (`bg-canvas`, `text-fg-muted`, `border-line`, `bg-accent`, …) for light and dark themes. Prefer tokens over inline `style={{}}` and raw colors.
 - `src/pages/DesignSystem.tsx` is the dev-only `/design` showcase.
-- `src/store/` contains app stores, and `src/hooks/` contains React hooks.
+- `src/store/` contains app stores, and `src/hooks/` contains React hooks. Use `useDraft` for form input that would hurt to lose (saved under `iface_draft:<scope>`).
 - `src/lib/` contains IndexedDB, question loading, and sync helpers.
 - `src/types/` and `src/data/` hold shared types and schemas.
 - `public/questions/` stores bundled question JSON assets by category.
