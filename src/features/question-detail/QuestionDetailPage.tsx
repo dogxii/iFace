@@ -55,6 +55,7 @@ import {
   sessionSearchOf,
   summarizeSession,
 } from './sessionNav'
+import { AnswerTocRail } from './tocRail'
 import { useAnswerAnnotations } from './useAnswerAnnotations'
 import { useAnswerOverride } from './useAnswerOverride'
 import { useDetailHotkeys } from './useDetailHotkeys'
@@ -643,6 +644,10 @@ export default function QuestionDetail() {
                 onSaveComment={annotations.saveComment}
                 onCancel={annotations.cancel}
               />
+            )}
+
+            {answerInteractive && (
+              <AnswerTocRail key={displayedAnswerHash} rootRef={annotations.contentRef} />
             )}
 
             {answerInteractive && (
