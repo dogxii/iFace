@@ -93,7 +93,7 @@ export function AnswerTocRail({ rootRef }: { rootRef: RefObject<HTMLElement | nu
     <div className="absolute inset-y-0 left-[calc(100%+32px)] hidden w-44 @min-[1180px]/detail:block">
       <nav
         aria-label="答案目录"
-        className="sticky top-20 max-h-[calc(100dvh-120px)] animate-fade-in overflow-y-auto overscroll-contain"
+        className="sticky top-20 max-h-[calc(100dvh-120px)] overflow-y-auto overscroll-contain"
       >
         <p className="mb-2 text-xs font-medium text-fg-subtle">目录</p>
         <ol className="flex flex-col border-l border-line">

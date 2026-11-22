@@ -7,7 +7,6 @@ import {
   SIDE_PANEL,
   SIDEBAR,
 } from '@/app/layout'
-import { useEnterAnimation } from '@/hooks/useEnterAnimation'
 import { useMediaQuery, useViewportWidth } from '@/hooks/useMediaQuery'
 import { isEditableTarget } from '@/lib/dom'
 import { type SidePanelTab, useUIState } from '@/store/useUIStore'
@@ -140,7 +139,6 @@ export function DetailSidePanel({
   const [visited, setVisited] = useState<Set<SidePanelTab>>(() => new Set())
   const panelRef = useRef<HTMLElement>(null)
   const tab = layout.tab
-  const animate = useEnterAnimation('side-panel', layout.docked)
 
   if (tab && !visited.has(tab)) setVisited(new Set(visited).add(tab))
 
@@ -230,10 +228,7 @@ export function DetailSidePanel({
       ref={panelRef}
       aria-label="笔记与 AI 助手"
       style={{ width: layout.width }}
-      className={cn(
-        'fixed inset-y-0 right-0 z-30 flex flex-col border-l border-line bg-canvas',
-        animate && 'animate-slide-in-right',
-      )}
+      className="fixed inset-y-0 right-0 z-30 flex flex-col border-l border-line bg-canvas"
     >
       <ResizeHandle
         edge="left"

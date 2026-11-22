@@ -102,7 +102,7 @@ function Message({
 
   if (isUser) {
     return (
-      <div className="group flex animate-fade-in flex-col items-end gap-1">
+      <div className="group flex flex-col items-end gap-1">
         <div className="max-w-[85%] rounded-2xl rounded-br-md bg-muted px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap text-fg">
           {content}
         </div>
@@ -118,7 +118,7 @@ function Message({
   }
 
   return (
-    <div className="group flex animate-fade-in flex-col gap-1">
+    <div className="group flex flex-col gap-1">
       <div className="min-w-0 text-sm leading-[1.75] break-words text-fg">
         {content ? (
           <div className="ai-chat-markdown">
@@ -526,7 +526,7 @@ export function AIChatPanel({
             {error && (
               <div
                 role="alert"
-                className="flex animate-fade-in items-start gap-2 rounded-lg border border-danger/20 bg-danger-subtle px-3 py-2.5 text-xs leading-normal text-danger"
+                className="flex items-start gap-2 rounded-lg border border-danger/20 bg-danger-subtle px-3 py-2.5 text-xs leading-normal text-danger"
               >
                 <p className="min-w-0 flex-1">
                   <span className="font-semibold">出错了：</span>

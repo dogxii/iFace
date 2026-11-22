@@ -274,7 +274,7 @@ export function DataSettings() {
         </div>
 
         {preview ? (
-          <Box className="mt-3 animate-scale-in overflow-hidden">
+          <Box className="mt-3 overflow-hidden">
             <div className="flex items-start gap-3 border-b border-line px-4 py-3">
               <FileJson className="mt-0.5 size-4 shrink-0 text-accent" />
               <div className="min-w-0">

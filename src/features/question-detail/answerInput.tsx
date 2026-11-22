@@ -435,7 +435,7 @@ export function MyAnswerInput({
         ) : null}
 
         {displayFeedback || isStreaming ? (
-          <div className="animate-scale-in overflow-hidden rounded-xl border border-line bg-subtle/60">
+          <div className="overflow-hidden rounded-xl border border-line bg-subtle/60">
             <div className="border-b border-line px-3.5 py-2.5">
               <p className="mb-1 text-2xs font-medium text-fg-subtle">我的作答</p>
               <p className="text-sm leading-relaxed whitespace-pre-wrap text-fg-muted">{text}</p>

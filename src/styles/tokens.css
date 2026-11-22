@@ -137,12 +137,12 @@
 
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --animate-fade-in: ds-fade-in 160ms var(--ease-out-expo);
-  --animate-fade-out: ds-fade-out 120ms ease-in;
-  --animate-scale-in: ds-scale-in 180ms var(--ease-out-expo);
-  --animate-slide-in-right: ds-slide-in-right 260ms var(--ease-out-expo);
-  --animate-slide-in-bottom: ds-slide-in-bottom 260ms var(--ease-out-expo);
-  --animate-slide-in-left: ds-slide-in-left 260ms var(--ease-out-expo);
+  --animate-fade-in: ds-fade-in 120ms var(--ease-out-expo);
+  --animate-fade-out: ds-fade-out 100ms ease-in;
+  --animate-scale-in: ds-scale-in 140ms var(--ease-out-expo);
+  --animate-slide-in-right: ds-slide-in-right 200ms var(--ease-out-expo);
+  --animate-slide-in-bottom: ds-slide-in-bottom 200ms var(--ease-out-expo);
+  --animate-slide-in-left: ds-slide-in-left 200ms var(--ease-out-expo);
 }
 
 @keyframes ds-fade-in {

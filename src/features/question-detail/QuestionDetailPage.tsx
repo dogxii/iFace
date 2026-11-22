@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { clamp, MODULE_PANEL } from '@/app/layout'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
+import { useDelayedFlag } from '@/hooks/useDelayedFlag'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { getQuestionFlag, getQuestionNote, setQuestionStarred } from '@/lib/db'
 import { type LearningCheckQuestion, loadLearningChecksForQuestion } from '@/lib/learningCheck'
@@ -167,6 +168,7 @@ export default function QuestionDetail() {
 
   // ── Answer ───────────────────────────────────────────────────────────────
   const answer = useAnswerOverride(id, question)
+  const answerSkeletonVisible = useDelayedFlag(answer.loading)
   const hasLearningCheck = learningChecks.length > 0
   const displayedAnswerHash = hashAnswerText(answer.displayedText)
   const annotations = useAnswerAnnotations({
@@ -410,7 +412,7 @@ export default function QuestionDetail() {
 
   if (loading) {
     return (
-      <div className="mx-auto flex w-full max-w-[760px] animate-fade-in flex-col gap-4 px-4 pt-10 sm:px-6">
+      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-10 sm:px-6">
         <div className="flex gap-2">
           <UISkeleton className="h-[22px] w-16" />
           <UISkeleton className="h-[22px] w-12" />
@@ -476,7 +478,7 @@ export default function QuestionDetail() {
         } as React.CSSProperties
       }
       className={cn(
-        'resize-animated min-w-0 transition-[padding] duration-200 ease-out',
+        'min-w-0',
         panelLayout.docked && 'pr-[var(--panel-w)]',
         panelLayout.moduleDocked && 'pl-[var(--module-w)]',
       )}
@@ -568,7 +570,7 @@ export default function QuestionDetail() {
 
           {/* "answer-first": write your own answer above the reference */}
           {showAnswerInputAbove && (
-            <div className="animate-fade-in">
+            <div>
               <MyAnswerInput
                 key={`answer-above-${questionId}`}
                 {...answerInputProps}
@@ -578,7 +580,7 @@ export default function QuestionDetail() {
           )}
 
           {answerVisible && (
-            <div className="relative flex animate-scale-in flex-col gap-5 rounded-2xl border border-line bg-canvas p-5 sm:p-6">
+            <div className="relative flex flex-col gap-5 rounded-2xl border border-line bg-canvas p-5 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3.5">
                 <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2.5">
                   {hasLearningCheck ? (
@@ -654,7 +656,8 @@ export default function QuestionDetail() {
                   onRestoreDefault={answer.restoreDefault}
                 />
               ) : answer.loading ? (
-                <UISkeleton className="h-24 w-full" />
+                // A custom answer usually loads within a frame; only show a skeleton if it's slow.
+                <UISkeleton className={cn('h-24 w-full', !answerSkeletonVisible && 'invisible')} />
               ) : (
                 <section
                   ref={annotations.contentRef}
@@ -737,9 +740,7 @@ export default function QuestionDetail() {
             </p>
           )}
 
-          <div className="animate-fade-in">
-            <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
-          </div>
+          <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
 
           <nav
             aria-label="题目导航"

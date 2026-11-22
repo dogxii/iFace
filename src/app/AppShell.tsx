@@ -257,7 +257,7 @@ function DesktopSidebar({ width, collapsed }: { width: number; collapsed: boolea
       aria-label="侧栏"
       style={{ width }}
       className={cn(
-        'resize-animated fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 ease-out lg:flex',
+        'resize-animated fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-150 ease-out lg:flex',
         collapsed ? 'px-2' : 'px-2.5',
       )}
     >
@@ -405,7 +405,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      <div className="resize-animated min-w-0 transition-[padding] duration-200 ease-out lg:pl-[var(--sidebar-w)]">
+      <div className="resize-animated min-w-0 transition-[padding] duration-150 ease-out lg:pl-[var(--sidebar-w)]">
         {children}
       </div>
 

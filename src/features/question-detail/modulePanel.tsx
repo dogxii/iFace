@@ -1,7 +1,6 @@
 import { PanelLeft, PanelLeftClose, Search, X } from 'lucide-react'
 import { type KeyboardEvent, type MouseEvent, useEffect, useMemo, useRef } from 'react'
 import { MODULE_PANEL } from '@/app/layout'
-import { useEnterAnimation } from '@/hooks/useEnterAnimation'
 import { type ModuleStatusFilter, useUIState } from '@/store/useUIStore'
 import { DIFFICULTY_LABELS, type Question, type StudyStatus } from '@/types'
 import {
@@ -75,7 +74,6 @@ export function ModuleQuestionPanel({
   onPinnedChange,
   ...list
 }: ModuleQuestionPanelProps) {
-  const animate = useEnterAnimation('module-panel', docked)
   const currentIndex = list.questions.findIndex((item) => item.id === list.question.id)
   const position =
     currentIndex >= 0 ? `第 ${currentIndex + 1} / ${list.questions.length} 题` : undefined
@@ -85,10 +83,7 @@ export function ModuleQuestionPanel({
       <aside
         aria-label="本模块题目"
         style={{ width }}
-        className={cn(
-          'fixed inset-y-0 left-[var(--sidebar-w)] z-20 flex flex-col border-r border-line bg-canvas',
-          animate && 'animate-slide-in-left',
-        )}
+        className="fixed inset-y-0 left-[var(--sidebar-w)] z-20 flex flex-col border-r border-line bg-canvas"
         onKeyDown={(event) => {
           if (event.key !== 'Escape' || event.defaultPrevented) return
           // Don't also close the side panel on the right.

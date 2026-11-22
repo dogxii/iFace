@@ -6,6 +6,7 @@ import { AppShell } from '@/app/AppShell'
 import { PWAUpdatePrompt } from '@/app/PWAUpdatePrompt'
 import { ScrollManager } from '@/app/ScrollManager'
 import { OnboardingDialog } from '@/features/onboarding/OnboardingDialog'
+import { useDelayedFlag } from '@/hooks/useDelayedFlag'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
 import { Spinner, Toaster, TooltipProvider } from '@/ui'
@@ -25,9 +26,11 @@ const PromptPage = lazy(routeLoaders.promptPage)
 const DesignSystem = import.meta.env.DEV ? lazy(() => import('@/pages/DesignSystem')) : null
 
 function PageLoader() {
+  // Route chunks are usually preloaded on hover; only show the spinner if loading is slow.
+  const visible = useDelayedFlag(true, 300)
   return (
     <div className="flex items-center justify-center min-h-[60dvh]">
-      <div className="flex flex-col items-center gap-3">
+      <div className={visible ? 'flex flex-col items-center gap-3' : 'invisible'}>
         <Spinner size="lg" className="text-fg-subtle" />
         <p className="text-sm text-fg-subtle">加载中…</p>
       </div>

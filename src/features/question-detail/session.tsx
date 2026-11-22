@@ -198,7 +198,7 @@ export function SessionCompletionCard({
   return (
     <div
       className={cn(
-        'flex animate-scale-in flex-col gap-5 rounded-2xl border bg-canvas p-5',
+        'flex flex-col gap-5 rounded-2xl border bg-canvas p-5',
         allMastered ? 'border-success/30' : 'border-line',
       )}
     >
