@@ -110,7 +110,7 @@ export function OnboardingDialog() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto px-6 pt-4 pb-6">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-6">
             {step.id === 'welcome' ? <WelcomeStep /> : null}
             {step.id === 'banks' ? <BanksStep /> : null}
             {step.id === 'start' ? <StartStep onLeave={close} /> : null}

@@ -253,7 +253,7 @@ export function HistoryList({
       {sessions.length === 0 ? (
         <p className="px-4 py-6 text-center text-sm text-fg-subtle">还没有面试记录</p>
       ) : (
-        <ul className="flex max-h-[420px] flex-col gap-0.5 overflow-y-auto p-1.5">
+        <ul className="flex max-h-[420px] flex-col gap-0.5 overflow-y-auto overscroll-contain p-1.5">
           {sessions.map((session) => {
             const active = session.id === activeId
             return (

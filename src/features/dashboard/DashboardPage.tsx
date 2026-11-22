@@ -270,7 +270,7 @@ function DashboardSkeleton() {
       <Skeleton className="h-4 w-80" />
       <Skeleton className="h-44 w-full rounded-xl" />
       <Skeleton className="h-24 w-full rounded-xl" />
-      <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Skeleton className="h-72 rounded-xl" />
         <Skeleton className="h-72 rounded-xl" />
       </div>
@@ -444,7 +444,7 @@ export default function DashboardPage() {
               />
             </StatGroup>
 
-            <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
+            <div className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
               <div className="min-w-0">
                 <SectionHeader
                   title="今日推荐"

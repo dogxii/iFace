@@ -180,7 +180,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
         id="command-palette-list"
         role="listbox"
         aria-label="结果"
-        className="min-h-0 flex-1 overflow-y-auto p-2"
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
       >
         {items.length === 0 ? (
           <p className="px-3 py-10 text-center text-sm text-fg-subtle">
