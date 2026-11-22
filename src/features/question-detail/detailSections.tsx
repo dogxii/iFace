@@ -1,5 +1,7 @@
 import { ChevronDown, ChevronRight, Eye, NotebookPen, RotateCcw, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { DIFFICULTY_TONE } from '@/components/DifficultyBars'
+import { ModuleMark } from '@/components/ModuleMark'
 import { reviewIntervalDays } from '@/store/studyLogic'
 import { DIFFICULTY_LABELS, type Question, type StudyStatus } from '@/types'
 import { cn, Kbd, Spinner, Tag, Tooltip, Button as UIButton } from '@/ui'
@@ -29,8 +31,9 @@ export function DetailBreadcrumb({
         aria-label={`展开${module}题目列表`}
         aria-expanded={moduleOpen}
         title="展开本模块题目列表（L）"
-        className="inline-flex min-w-0 items-center gap-0.5 rounded-md px-1 hover:bg-muted hover:text-fg"
+        className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-1.5 hover:bg-muted hover:text-fg"
       >
+        <ModuleMark module={module} size="sm" />
         <span className="truncate">{module}</span>
         <ChevronDown className="size-3.5 shrink-0" />
       </button>
@@ -67,12 +70,11 @@ export function QuestionIntro({
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Tag>{question.module}</Tag>
-        <Tag
-          dot={
-            question.difficulty === 1 ? 'success' : question.difficulty === 2 ? 'warning' : 'danger'
-          }
-        >
+        <Tag className="pl-1">
+          <ModuleMark module={question.module} size="sm" />
+          {question.module}
+        </Tag>
+        <Tag dot={DIFFICULTY_TONE[question.difficulty]}>
           {DIFFICULTY_LABELS[question.difficulty]}
         </Tag>
         {status !== 'unlearned' && (

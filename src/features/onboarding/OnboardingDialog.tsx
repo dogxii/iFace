@@ -295,7 +295,7 @@ function QuickChip({
       className={cn(
         'inline-flex h-7 items-center rounded-full border px-3 text-xs font-medium transition-colors',
         active
-          ? 'border-fg bg-fg text-canvas'
+          ? 'border-accent bg-accent-subtle text-fg'
           : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
       )}
     >

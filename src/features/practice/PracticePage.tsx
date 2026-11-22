@@ -1,9 +1,11 @@
 import { Check, Clock, Download, EyeOff, Play, RotateCcw, Shuffle, Sparkles } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { HUE_CLASSES, ModuleMark } from '@/components/ModuleMark'
 import { useDraft } from '@/hooks/useDraft'
 import { useQuestions } from '@/hooks/useQuestions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
+import type { ModuleHue } from '@/lib/moduleHue'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
 import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { dueRecords } from '@/store/studyLogic'
@@ -18,7 +20,6 @@ import {
   EmptyState,
   PageHeader,
   PageTitle,
-  ProgressRing,
   SectionHeader,
   SegmentedControl,
   Skeleton,
@@ -43,12 +44,14 @@ interface ModuleInfo {
 
 function PresetCard({
   icon,
+  hue,
   title,
   description,
   count,
   onStart,
 }: {
   icon: ReactNode
+  hue: ModuleHue
   title: string
   description: string
   count: number
@@ -61,13 +64,25 @@ function PresetCard({
       disabled={count === 0}
       className="group flex flex-col items-start rounded-xl border border-line bg-canvas p-4 text-left transition-colors outline-none hover:border-line-strong hover:bg-subtle/60 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
     >
-      <span className="flex size-8 items-center justify-center rounded-lg border border-line bg-subtle text-fg-muted [&_svg]:size-4">
+      <span
+        className={cn(
+          'flex size-8 items-center justify-center rounded-lg [&_svg]:size-4',
+          HUE_CLASSES[hue].mark,
+        )}
+      >
         {icon}
       </span>
       <span className="mt-3 text-base font-medium text-fg">{title}</span>
       <span className="mt-0.5 text-xs text-fg-muted">{description}</span>
       <span className="mt-3 text-xs text-fg-subtle tabular-nums">
-        {count > 0 ? `${count} 道 · 开始 →` : '暂无'}
+        {count > 0 ? (
+          <>
+            <span className="font-medium text-fg">{count}</span> 道 ·{' '}
+            <span className="text-accent">开始 →</span>
+          </>
+        ) : (
+          '暂无'
+        )}
       </span>
     </button>
   )
@@ -90,11 +105,11 @@ function ModuleToggle({
       className={cn(
         'flex items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring',
         selected
-          ? 'border-fg bg-subtle text-fg'
+          ? 'border-accent bg-accent-subtle text-fg'
           : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
       )}
     >
-      <ProgressRing value={info.mastered} max={info.total} size={16} stroke={2.5} />
+      <ModuleMark module={info.module} />
       <span className="min-w-0 flex-1 truncate">{info.module}</span>
       <span className="text-xs tabular-nums text-fg-subtle">
         {info.mastered}/{info.total}
@@ -102,7 +117,7 @@ function ModuleToggle({
       <span
         className={cn(
           'flex size-4 items-center justify-center rounded border',
-          selected ? 'border-fg bg-fg text-canvas' : 'border-line-strong',
+          selected ? 'border-accent bg-accent text-accent-fg' : 'border-line-strong',
         )}
       >
         {selected ? <Check className="size-3" strokeWidth={3} /> : null}
@@ -267,6 +282,7 @@ export default function PracticePage() {
             <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <PresetCard
                 icon={<Clock />}
+                hue="rose"
                 title="到期复习"
                 description="按复习间隔到期的题，越久越优先"
                 count={due.length}
@@ -274,6 +290,7 @@ export default function PracticePage() {
               />
               <PresetCard
                 icon={<RotateCcw />}
+                hue="amber"
                 title="待复习"
                 description="所有标记为没掌握 / 大概会的题"
                 count={visibleQuestions.filter((q) => records[q.id]?.status === 'review').length}
@@ -294,6 +311,7 @@ export default function PracticePage() {
               />
               <PresetCard
                 icon={<Sparkles />}
+                hue="violet"
                 title="学新题"
                 description={`随机 ${dailyGoal} 道还没学过的题`}
                 count={unlearned.length}
@@ -301,6 +319,7 @@ export default function PracticePage() {
               />
               <PresetCard
                 icon={<Shuffle />}
+                hue="teal"
                 title="随机抽查"
                 description="从全部题目随机 10 道"
                 count={visibleQuestions.length}

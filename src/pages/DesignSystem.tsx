@@ -22,6 +22,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { type ReactNode, useEffect, useState } from 'react'
+import { ModuleMark } from '@/components/ModuleMark'
 import {
   Box,
   BoxHeader,
@@ -228,7 +229,6 @@ export default function DesignSystem() {
           <Section id="buttons" title="按钮">
             <Row label="变体">
               <Button variant="primary">开始练习</Button>
-              <Button variant="accent">获取 AI 点评</Button>
               <Button variant="secondary">随机一题</Button>
               <Button variant="ghost">取消</Button>
               <Button variant="danger">删除</Button>
@@ -293,6 +293,16 @@ export default function DesignSystem() {
                   <span key={tone} className="flex items-center gap-1.5 text-sm text-fg-muted">
                     <StatusDot tone={tone} />
                     {tone}
+                  </span>
+                ),
+              )}
+            </Row>
+            <Row label="模块标识">
+              {['JS基础', 'React', 'Vue', 'CSS', 'Go基础', 'Redis', 'Agent架构', '自定义模块'].map(
+                (module) => (
+                  <span key={module} className="flex items-center gap-2 text-sm text-fg">
+                    <ModuleMark module={module} />
+                    {module}
                   </span>
                 ),
               )}

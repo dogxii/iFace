@@ -12,6 +12,7 @@ import {
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { DifficultyBars } from '@/components/DifficultyBars'
+import { ModuleDot, ModuleMark } from '@/components/ModuleMark'
 import { dataSource } from '@/data/source'
 import { useQuestions } from '@/hooks/useQuestions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
@@ -35,7 +36,6 @@ import {
   Kbd,
   PageHeader,
   PageTitle,
-  ProgressRing,
   Select,
   Skeleton,
   StatusDot,
@@ -153,7 +153,7 @@ function CategoryPanel({
     active: boolean,
     icon: ReactNode,
     label: ReactNode,
-    count: number,
+    count: ReactNode,
     onClick: () => void,
   ) => (
     <button
@@ -213,9 +213,15 @@ function CategoryPanel({
               item(
                 m.module,
                 single === m.module,
-                <ProgressRing value={m.mastered} max={m.total} size={14} stroke={2.5} />,
+                <ModuleMark module={m.module} size="sm" />,
                 m.module,
-                m.total,
+                m.mastered > 0 ? (
+                  <>
+                    <span className="text-success">{m.mastered}</span>/{m.total}
+                  </>
+                ) : (
+                  m.total
+                ),
                 () => onSelect({ modules: single === m.module ? [] : [m.module] }),
               ),
             )}
@@ -223,6 +229,15 @@ function CategoryPanel({
         )
       })}
     </nav>
+  )
+}
+
+function ScopeStat({ tone, label, value }: { tone: StatusTone; label: string; value: number }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <StatusDot tone={tone} />
+      {label} <span className="text-fg tabular-nums">{value}</span>
+    </span>
   )
 }
 
@@ -274,7 +289,10 @@ function QuestionRow({
           </p>
         ) : null}
       </div>
-      <span className="hidden truncate text-sm text-fg-muted md:block">{question.module}</span>
+      <span className="hidden min-w-0 items-center gap-2 text-sm text-fg-muted md:flex">
+        <ModuleDot module={question.module} />
+        <span className="truncate">{question.module}</span>
+      </span>
       <span className="hidden items-center text-xs text-fg-subtle md:flex">
         <DifficultyBars value={question.difficulty} />
         {DIFFICULTY_LABELS[question.difficulty]}
@@ -550,8 +568,28 @@ export default function QuestionListPage() {
 
         <main className="min-w-0 px-4 py-7 sm:px-8 lg:px-9">
           <PageTitle
-            title={title}
-            description={`${scope.total} 道题 · 已掌握 ${scope.mastered} · 待复习 ${scope.review} · 未学 ${scope.total - scope.mastered - scope.review}`}
+            title={
+              query.modules.length === 1 ? (
+                <span className="flex items-center gap-3">
+                  <ModuleMark module={query.modules[0]} size="lg" />
+                  {title}
+                </span>
+              ) : (
+                title
+              )
+            }
+            description={
+              <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span>{scope.total} 道题</span>
+                <ScopeStat tone="success" label="已掌握" value={scope.mastered} />
+                <ScopeStat tone="warning" label="待复习" value={scope.review} />
+                <ScopeStat
+                  tone="neutral"
+                  label="未学"
+                  value={scope.total - scope.mastered - scope.review}
+                />
+              </span>
+            }
             actions={
               <Button
                 variant="primary"

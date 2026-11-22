@@ -421,7 +421,7 @@ export function MyAnswerInput({
                 </div>
                 <Button
                   size="sm"
-                  variant={text.trim() && isAiEnabled ? 'accent' : 'secondary'}
+                  variant={text.trim() && isAiEnabled ? 'primary' : 'secondary'}
                   onClick={handleSubmit}
                   disabled={!text.trim() || !isAiEnabled || isStreaming}
                   shortcut="⌘↵"

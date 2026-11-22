@@ -2,6 +2,7 @@ import { ArrowRight, Check, CheckCheck, Lightbulb, Play, Target } from 'lucide-r
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { DifficultyBars } from '@/components/DifficultyBars'
+import { ModuleDot } from '@/components/ModuleMark'
 import { relativeTime } from '@/features/question-list/listQuery'
 import { useQuestions } from '@/hooks/useQuestions'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
@@ -179,6 +180,7 @@ export default function WeakPointsPage() {
                 {modules.map((m) => (
                   <ModuleChip
                     key={m.module}
+                    module={m.module}
                     label={m.module}
                     count={m.count}
                     active={activeModule === m.module}
@@ -235,11 +237,13 @@ export default function WeakPointsPage() {
 }
 
 function ModuleChip({
+  module,
   label,
   count,
   active,
   onClick,
 }: {
+  module?: string
   label: string
   count: number
   active: boolean
@@ -253,14 +257,13 @@ function ModuleChip({
       className={cn(
         'inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition-colors',
         active
-          ? 'border-fg bg-fg text-canvas'
+          ? 'border-accent bg-accent-subtle text-fg'
           : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
       )}
     >
+      {module ? <ModuleDot module={module} /> : null}
       {label}
-      <span className={cn('tabular-nums', active ? 'text-canvas/70' : 'text-fg-subtle')}>
-        {count}
-      </span>
+      <span className={cn('tabular-nums', active ? 'text-accent' : 'text-fg-subtle')}>{count}</span>
     </button>
   )
 }
@@ -302,7 +305,10 @@ function WeakRow({
           {question.question}
         </Link>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
-          <span className="text-fg-muted">{question.module}</span>
+          <span className="inline-flex items-center gap-1.5 text-fg-muted">
+            <ModuleDot module={question.module} />
+            {question.module}
+          </span>
           <span className="inline-flex items-center">
             <DifficultyBars value={question.difficulty} />
             {DIFFICULTY_LABELS[question.difficulty]}

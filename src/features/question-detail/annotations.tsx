@@ -579,7 +579,7 @@ export function AnswerAnnotationToolbar({
           />
           <Button
             size="sm"
-            variant="accent"
+            variant="primary"
             className="h-7"
             onClick={onSaveComment}
             disabled={saving || !commentDraft.trim()}

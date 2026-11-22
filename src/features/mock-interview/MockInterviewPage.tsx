@@ -629,7 +629,7 @@ export default function MockInterviewPage() {
                           <span className="max-sm:hidden">澄清题意</span>
                         </Button>
                         <Button
-                          variant="accent"
+                          variant="primary"
                           size="sm"
                           className="ml-auto"
                           loading={busy === 'interviewing'}

@@ -58,7 +58,7 @@ export function AnswerOverrideEditor({
             取消
           </Button>
           <Button
-            variant="accent"
+            variant="primary"
             size="sm"
             onClick={onSave}
             disabled={!canSave}

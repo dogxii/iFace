@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { DIFFICULTY_TONE } from '@/components/DifficultyBars'
+import { ModuleDot, ModuleMark } from '@/components/ModuleMark'
 import { dataSource } from '@/data/source'
 import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { useQuestions } from '@/hooks/useQuestions'
@@ -142,8 +144,13 @@ function ContinueCard({
               {question.question}
             </h3>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              <Tag>{question.module}</Tag>
-              <Tag>{DIFFICULTY_LABELS[question.difficulty]}</Tag>
+              <Tag className="pl-1">
+                <ModuleMark module={question.module} size="sm" />
+                {question.module}
+              </Tag>
+              <Tag dot={DIFFICULTY_TONE[question.difficulty]}>
+                {DIFFICULTY_LABELS[question.difficulty]}
+              </Tag>
               {status !== 'unlearned' ? (
                 <Tag dot={STATUS_TONE[status]}>{STATUS_TEXT[status]}</Tag>
               ) : null}
@@ -242,15 +249,18 @@ function ModuleList({ modules }: { modules: ModuleProgress[] }) {
         <Link
           key={m.module}
           to={`/questions?module=${encodeURIComponent(m.module)}`}
-          className="-mx-2 grid grid-cols-[96px_1fr_52px] items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-subtle"
+          className="-mx-2 grid grid-cols-[132px_1fr_52px] items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-subtle"
         >
-          <span className="truncate text-fg">{m.module}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            <ModuleMark module={m.module} />
+            <span className="truncate text-fg">{m.module}</span>
+          </span>
           <Progress
             size="xs"
             max={m.total}
             label={`${m.module} 进度`}
             segments={[
-              { value: m.mastered, tone: 'fg' },
+              { value: m.mastered, tone: 'success' },
               { value: m.review, tone: 'warning' },
             ]}
           />
@@ -466,8 +476,11 @@ export default function DashboardPage() {
                         >
                           <StatusDot tone={STATUS_TONE[status]} />
                           <span className="truncate text-fg">{question.question}</span>
-                          <span className="hidden truncate text-xs text-fg-subtle sm:block">
-                            {question.module} · {DIFFICULTY_LABELS[question.difficulty]}
+                          <span className="hidden min-w-0 items-center gap-1.5 text-xs text-fg-subtle sm:flex">
+                            <ModuleDot module={question.module} />
+                            <span className="truncate">
+                              {question.module} · {DIFFICULTY_LABELS[question.difficulty]}
+                            </span>
                           </span>
                           <span className="text-right text-xs text-fg-muted">
                             {STATUS_TEXT[status]}

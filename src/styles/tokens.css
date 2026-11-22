@@ -50,6 +50,25 @@
   --ds-heat-2: #b4b2f5;
   --ds-heat-3: #8785ee;
   --ds-heat-4: #5e5ce6;
+  /* Categorical hues for modules: text/icon colour + a soft background. */
+  --ds-hue-blue: #2563eb;
+  --ds-hue-blue-subtle: #eef4ff;
+  --ds-hue-violet: #7c3aed;
+  --ds-hue-violet-subtle: #f4f0ff;
+  --ds-hue-pink: #db2777;
+  --ds-hue-pink-subtle: #fdf0f7;
+  --ds-hue-rose: #e11d48;
+  --ds-hue-rose-subtle: #fff0f3;
+  --ds-hue-orange: #ea580c;
+  --ds-hue-orange-subtle: #fff4ec;
+  --ds-hue-amber: #b45309;
+  --ds-hue-amber-subtle: #fef6e4;
+  --ds-hue-green: #16a34a;
+  --ds-hue-green-subtle: #edfbf2;
+  --ds-hue-teal: #0d9488;
+  --ds-hue-teal-subtle: #ebfaf8;
+  --ds-hue-cyan: #0891b2;
+  --ds-hue-cyan-subtle: #e9f8fc;
 }
 
 .dark {
@@ -82,6 +101,24 @@
   --ds-heat-2: #43418f;
   --ds-heat-3: #615fd0;
   --ds-heat-4: #7c7aff;
+  --ds-hue-blue: #6aa5ff;
+  --ds-hue-blue-subtle: rgb(96 165 250 / 0.14);
+  --ds-hue-violet: #a78bfa;
+  --ds-hue-violet-subtle: rgb(167 139 250 / 0.14);
+  --ds-hue-pink: #f472b6;
+  --ds-hue-pink-subtle: rgb(244 114 182 / 0.14);
+  --ds-hue-rose: #fb7185;
+  --ds-hue-rose-subtle: rgb(251 113 133 / 0.14);
+  --ds-hue-orange: #fb923c;
+  --ds-hue-orange-subtle: rgb(251 146 60 / 0.14);
+  --ds-hue-amber: #fbbf24;
+  --ds-hue-amber-subtle: rgb(251 191 36 / 0.14);
+  --ds-hue-green: #4ade80;
+  --ds-hue-green-subtle: rgb(74 222 128 / 0.13);
+  --ds-hue-teal: #2dd4bf;
+  --ds-hue-teal-subtle: rgb(45 212 191 / 0.13);
+  --ds-hue-cyan: #22d3ee;
+  --ds-hue-cyan-subtle: rgb(34 211 238 / 0.13);
 }
 
 @theme inline {
@@ -112,6 +149,24 @@
   --color-highlight: var(--ds-highlight);
   --color-overlay: var(--ds-overlay);
   --color-ring: var(--ds-ring);
+  --color-hue-blue: var(--ds-hue-blue);
+  --color-hue-blue-subtle: var(--ds-hue-blue-subtle);
+  --color-hue-violet: var(--ds-hue-violet);
+  --color-hue-violet-subtle: var(--ds-hue-violet-subtle);
+  --color-hue-pink: var(--ds-hue-pink);
+  --color-hue-pink-subtle: var(--ds-hue-pink-subtle);
+  --color-hue-rose: var(--ds-hue-rose);
+  --color-hue-rose-subtle: var(--ds-hue-rose-subtle);
+  --color-hue-orange: var(--ds-hue-orange);
+  --color-hue-orange-subtle: var(--ds-hue-orange-subtle);
+  --color-hue-amber: var(--ds-hue-amber);
+  --color-hue-amber-subtle: var(--ds-hue-amber-subtle);
+  --color-hue-green: var(--ds-hue-green);
+  --color-hue-green-subtle: var(--ds-hue-green-subtle);
+  --color-hue-teal: var(--ds-hue-teal);
+  --color-hue-teal-subtle: var(--ds-hue-teal-subtle);
+  --color-hue-cyan: var(--ds-hue-cyan);
+  --color-hue-cyan-subtle: var(--ds-hue-cyan-subtle);
 
   --shadow-popover: var(--ds-shadow-popover);
   --shadow-raised: var(--ds-shadow-raised);

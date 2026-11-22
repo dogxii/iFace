@@ -15,8 +15,7 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-fg text-canvas hover:opacity-88',
-        accent: 'bg-accent text-accent-fg hover:bg-accent-hover',
+        primary: 'bg-accent text-accent-fg hover:bg-accent-hover',
         secondary: 'border border-line-strong bg-canvas text-fg hover:bg-subtle',
         ghost: 'text-fg-muted hover:bg-muted hover:text-fg',
         danger: 'bg-danger text-white hover:opacity-90',
@@ -69,7 +68,7 @@ export function Button({
     )
   }
 
-  const onDark = variant === 'primary' || variant === 'accent' || variant === 'danger'
+  const onDark = variant === 'primary' || variant === 'danger'
 
   return (
     <button
