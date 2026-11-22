@@ -107,6 +107,8 @@ src/
 - [x] 题目详情（续）：作答框、笔记抽屉、AI 抽屉、模块抽屉、批注工具条换成新组件
 - [x] 题目详情（收尾）：长答案右侧目录栏（≥1440px）；`QuestionDetailPage.tsx` 从 1.6k 行拆到约 800 行（`useAnswerOverride` / `useAnswerAnnotations` / `useDetailHotkeys`、`sessionNav.ts` 有测试）
 - [x] AI 对话、学习检验、Markdown 渲染改用 token 类名（`aiChat.tsx`、`learningCheck.tsx`、`styles/markdown.css`），`index.css` 中的旧 CSS 变量别名已删除
+- [x] 交互迭代：左侧导航可拖动宽度、可折叠为图标栏（`[`，状态持久化）；笔记与 AI 合并为题目详情右侧可停靠、可拖动宽度的侧栏（移动端为底部面板），笔记编辑优先并修复自动保存丢字；目录栏改用容器查询，自动适应导航和侧栏宽度
+- [x] 滚动条：`scrollbar-gutter: stable` + 标准 `scrollbar-color`，修复打开对话框时 Radix 滚动锁定导致的横向抖动；面板内滚动 `overscroll-behavior: contain`
 - [x] 练习：快速开始（到期复习 / 待复习 / 学新题 / 随机）、模块选择、题量与随机顺序
 - [x] 间隔复习：由现有记录字段推算（待复习次日、已掌握 7/14/30/60 天），不改存储
 - [x] 设置：改为全局对话框，按 tab 拆分并重建（学习 / AI / 数据 / 同步）

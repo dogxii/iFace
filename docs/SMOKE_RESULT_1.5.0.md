@@ -14,8 +14,8 @@
 
 `bun run check:all` 中各子门禁的结果：
 
-- `bun run check`：通过，Biome 检查 213 个文件无错误。
-- `bun run test`：通过，Vitest 25 个文件、118 个用例。
+- `bun run check`：通过，Biome 检查 220 个文件无错误。
+- `bun run test`：通过，Vitest 27 个文件、128 个用例。
 - `bun run check:version`：通过，`package.json`、README 徽章、Roadmap、本记录和设置页版本展示一致。
 - `bun run check:release`：通过。
 - `bun run check:quality-gate`：通过，`check:all` 子门禁顺序、发版脚本和本记录的门禁列表一致。
@@ -30,7 +30,7 @@
 
 额外：
 
-- `bun run test:e2e`：通过，10 个 Playwright smoke 用例。
+- `bun run test:e2e`：通过，11 个 Playwright smoke 用例。
 
 ## 外部服务 Smoke（待补齐）
 
@@ -53,6 +53,10 @@ IFACE_GIST_TOKEN=... bun run smoke:external:gist
 - 学习检验：单选 / 多选、答案解析、结果汇总，亮色和暗色。
 - AI 助手：未配置提示、空状态、流式回答（mock 接口）、Markdown 渲染、重试、清空会话，亮色和暗色。
 - 首次引导只出现一次；主题切换持久化。
+- 左侧导航：拖动调整宽度、拖到最窄折叠、`[` 切换、双击 / Enter 恢复默认、方向键调整，刷新后保持。
+- 右侧停靠侧栏：`N` / `A` 切换笔记与 AI，内容区让出宽度不被遮挡，拖动调整宽度，翻题保持打开，`Esc` 关闭；手机上为底部面板。
+- 笔记：打开即可输入、`⌘↵` 预览、点击正文编辑；输入后立即切题或刷新页面，内容不丢失。
+- 滚动条：打开对话框时页面不再横向抖动。
 
 ## 人工验收（待维护者确认）
 

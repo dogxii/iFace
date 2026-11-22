@@ -4,7 +4,7 @@
 
 iFace is a Vite React 19 + TypeScript app. Main code lives in `src/`:
 
-- `src/app/` holds the app shell (sidebar, mobile nav), error boundary and PWA update prompt.
+- `src/app/` holds the app shell (resizable / collapsible sidebar, mobile nav), error boundary and PWA update prompt. Panel sizing rules live in `src/app/layout.ts`; use `ResizeHandle` from `src/ui` for any new resizable panel and register new localStorage keys in `src/lib/storage.ts`.
 - `src/features/<feature>/` holds route screens and their logic, e.g. `dashboard/`, `question-list/`, `question-detail/`, `practice/`, `settings/`. Keep pure logic in a sibling `*.ts` module with a `*.test.ts` next to it, and keep the page component focused on layout.
 - `src/ui/` is the v1.5 component library (Radix primitives + Tailwind, variants via `cva`). Use it for all UI.
 - `src/components/ui/` holds the Markdown renderer (element styles in `src/styles/markdown.css`) and the speech input button; do not add new components there.
