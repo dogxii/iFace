@@ -39,10 +39,11 @@ import {
   AnswerOverrideHeaderMeta,
   AnswerPanelTabs,
   type AnswerPanelView,
-  MobileQuestionNav,
 } from './answerPanel'
-import { DetailBreadcrumb, QuestionIntro, StatusDock } from './detailSections'
+import { DetailBreadcrumb, QuestionIntro } from './detailSections'
 import { LearningCheckPanel } from './learningCheck'
+import { activeMasteryKey, type MasteryKey } from './mastery'
+import { MasteryFooter, MasteryHeaderControl, MobileQuestionNav } from './masteryControls'
 import { ModuleQuestionPanel } from './modulePanel'
 import { SessionCompletionCard, SessionProgress, ShortcutHints, StreakCelebration } from './session'
 import {
@@ -101,7 +102,7 @@ export default function QuestionDetail() {
   const [answerVisible, setAnswerVisible] = useState(false)
   const [marking, setMarking] = useState(false)
   const [justMarked, setJustMarked] = useState<StudyStatus | null>(null)
-  const [lastPressedKey, setLastPressedKey] = useState<'1' | '2' | '3' | null>(null)
+  const [lastPressedKey, setLastPressedKey] = useState<MasteryKey | null>(null)
   const [aiInitialPrompt, setAiInitialPrompt] = useState<{
     id: string
     questionId: string
@@ -282,7 +283,7 @@ export default function QuestionDetail() {
   }, [])
 
   const handleSetStatus = useCallback(
-    async (status: StudyStatus, key?: '1' | '2' | '3') => {
+    async (status: StudyStatus, key?: MasteryKey) => {
       if (!id || markingRef.current) return
       markingRef.current = true
       setMarking(true)
@@ -451,7 +452,13 @@ export default function QuestionDetail() {
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
   const showMobileQuestionNav = mobileQuestionNavEnabled
-  // The answer card has its own AI button; hide the FAB then so it never covers the status dock.
+  const mastery = {
+    activeKey: activeMasteryKey(currentStatus, justMarked, lastPressedKey),
+    reviewCount,
+    marking,
+    onMark: handleSetStatus,
+  }
+  // The answer card has its own AI button; hide the FAB then so it never covers the answer or rating.
   const showMobileAiFab = aiFabVisible && sidePanel === null && !answerVisible
   const modulePosition = isInSession
     ? `${sessionCurrent} / ${sessionIds.length}`
@@ -514,6 +521,14 @@ export default function QuestionDetail() {
                 <ChevronRight />
               </UIButton>
             </Tooltip>
+            {answerVisible ? (
+              <>
+                <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
+                <div className="max-sm:hidden">
+                  <MasteryHeaderControl {...mastery} />
+                </div>
+              </>
+            ) : null}
             <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
             <Tooltip content={sidePanel === 'notes' ? '关闭笔记' : '笔记'} shortcut="N">
               <UIButton
@@ -542,8 +557,8 @@ export default function QuestionDetail() {
       <div className="@container/detail">
         <div
           className={cn(
-            'question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-28 sm:px-6 lg:pt-10',
-            showMobileQuestionNav && 'max-sm:pb-[calc(96px+env(safe-area-inset-bottom))]',
+            'question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-16 sm:px-6 lg:pt-10',
+            showMobileQuestionNav && 'max-sm:pb-[calc(80px+env(safe-area-inset-bottom))]',
           )}
         >
           {isInSession ? (
@@ -694,14 +709,13 @@ export default function QuestionDetail() {
                 />
               )}
 
-              <StatusDock
+              <MasteryFooter
+                {...mastery}
                 status={currentStatus}
-                reviewCount={reviewCount}
-                marking={marking}
-                justMarked={justMarked}
-                lastPressedKey={lastPressedKey}
-                aboveMobileNav={showMobileQuestionNav}
-                onMark={handleSetStatus}
+                justMarked={justMarked !== null}
+                advancing={isInSession && Boolean(nextId)}
+                // The mobile bottom bar already carries the rating.
+                className={cn(showMobileQuestionNav && 'max-sm:hidden')}
               />
 
               {/* "answer-alongside": compact answer box inside the card */}
@@ -736,7 +750,7 @@ export default function QuestionDetail() {
             </p>
           )}
 
-          <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
+          <ShortcutHints answerVisible={answerVisible} />
 
           <nav
             aria-label="题目导航"
@@ -792,10 +806,13 @@ export default function QuestionDetail() {
 
       {showMobileQuestionNav && (
         <MobileQuestionNav
+          {...mastery}
           prevDisabled={!prevId}
           nextDisabled={!nextId}
+          answerVisible={answerVisible}
           onPrev={goPrev}
           onNext={goNext}
+          onReveal={handleRevealAnswer}
         />
       )}
 

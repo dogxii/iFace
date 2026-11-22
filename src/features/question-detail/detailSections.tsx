@@ -2,10 +2,8 @@ import { ChevronDown, ChevronRight, Eye, NotebookPen, RotateCcw, Star } from 'lu
 import { Link } from 'react-router-dom'
 import { DIFFICULTY_TONE } from '@/components/DifficultyBars'
 import { ModuleMark } from '@/components/ModuleMark'
-import { reviewIntervalDays } from '@/store/studyLogic'
 import { DIFFICULTY_LABELS, type Question, type StudyStatus } from '@/types'
-import { cn, Kbd, Spinner, Tag, Tooltip, Button as UIButton } from '@/ui'
-import { StatusButton } from './session'
+import { Kbd, Tag, Tooltip, Button as UIButton } from '@/ui'
 
 export function DetailBreadcrumb({
   module,
@@ -141,81 +139,5 @@ export function QuestionIntro({
         </button>
       )}
     </header>
-  )
-}
-
-/** Sticky "你掌握了吗？" dock with the three mastery buttons. */
-export function StatusDock({
-  status,
-  reviewCount,
-  marking,
-  justMarked,
-  lastPressedKey,
-  aboveMobileNav,
-  onMark,
-}: {
-  status: StudyStatus
-  reviewCount: number
-  marking: boolean
-  justMarked: StudyStatus | null
-  lastPressedKey: '1' | '2' | '3' | null
-  /** Lift the dock above the mobile prev/next bar. */
-  aboveMobileNav: boolean
-  onMark: (status: StudyStatus, key: '1' | '2' | '3') => void
-}) {
-  return (
-    <div
-      className={cn(
-        'sticky bottom-3 z-20 -mx-2 flex flex-col gap-2 rounded-2xl border border-line-strong bg-elevated/95 p-2 shadow-popover backdrop-blur-md sm:flex-row sm:items-center',
-        aboveMobileNav && 'max-sm:bottom-[calc(60px+env(safe-area-inset-bottom))]',
-      )}
-    >
-      <p
-        className={cn(
-          'flex shrink-0 items-center gap-1.5 px-2 text-xs text-fg-muted',
-          !marking && 'max-sm:hidden',
-        )}
-      >
-        {marking ? <Spinner size="sm" /> : null}
-        {marking ? '保存中…' : '你掌握了吗？'}
-      </p>
-      <div className="flex flex-1 gap-1.5 sm:gap-2">
-        <StatusButton
-          onClick={() => onMark('review', '1')}
-          label="没掌握"
-          sublabel="明天再练"
-          variant="danger"
-          kbd="1"
-          active={
-            (justMarked === 'review' && lastPressedKey === '1') ||
-            (status === 'review' && lastPressedKey !== '2' && justMarked !== 'review')
-          }
-          disabled={marking}
-        />
-        <StatusButton
-          onClick={() => onMark('review', '2')}
-          label="大概会"
-          sublabel="明天巩固"
-          variant="warning"
-          kbd="2"
-          active={justMarked === 'review' && lastPressedKey === '2'}
-          disabled={marking}
-        />
-        <StatusButton
-          onClick={() => onMark('mastered', '3')}
-          label="完全掌握"
-          sublabel={
-            <>
-              {reviewIntervalDays({ status: 'mastered', reviewCount }) ?? 7} 天后
-              <span className="max-sm:hidden">复习</span>
-            </>
-          }
-          variant="success"
-          kbd="3"
-          active={justMarked === 'mastered' || status === 'mastered'}
-          disabled={marking}
-        />
-      </div>
-    </div>
   )
 }

@@ -31,7 +31,9 @@ test('marking a question as mastered persists after reload', async ({ page }) =>
 
   // In the default "answer first" mode the status buttons appear after revealing the answer.
   const reveal = page.getByRole('button', { name: /查看参考答案/ })
-  const mastered = page.getByRole('button', { name: /完全掌握/ })
+  const mastered = page
+    .getByRole('region', { name: '掌握程度' })
+    .getByRole('button', { name: /完全掌握/ })
   await expect(reveal.or(mastered).first()).toBeVisible({ timeout: 20_000 })
   if (await reveal.isVisible()) await reveal.click()
   await mastered.click()
@@ -110,10 +112,16 @@ test('a weak point can be marked mastered and the change undone', async ({ page 
   await first.click()
 
   const reveal = page.getByRole('button', { name: /查看参考答案/ })
-  const notYet = page.getByRole('button', { name: /没掌握/ })
+  const notYet = page
+    .getByRole('region', { name: '掌握程度' })
+    .getByRole('button', { name: /没掌握/ })
   await expect(reveal.or(notYet).first()).toBeVisible({ timeout: 20_000 })
   if (await reveal.isVisible()) await reveal.click()
   await notYet.click()
+  // The header control mirrors the rating.
+  await expect(
+    page.locator('header').getByRole('button', { name: '没掌握', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
 
   await page.goto('/weak')
   const row = page.getByRole('button', { name: /标为已掌握$/ })

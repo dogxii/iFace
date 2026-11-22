@@ -1,57 +1,6 @@
 import { ArrowLeft, RotateCcw } from 'lucide-react'
 import { useEffect } from 'react'
 import { Button, cn, Kbd, Progress, ProgressRing, Stat, StatGroup } from '@/ui'
-import type { AnswerPanelView } from './answerPanel'
-
-// ─── Status Action Button ─────────────────────────────────────────────────────
-
-export interface StatusButtonProps {
-  onClick: () => void
-  label: string
-  sublabel: React.ReactNode
-  variant: 'danger' | 'warning' | 'success'
-  kbd: string
-  active: boolean
-  disabled?: boolean
-}
-
-export function StatusButton({
-  onClick,
-  label,
-  sublabel,
-  variant,
-  kbd: kbdKey,
-  active,
-  disabled,
-}: StatusButtonProps) {
-  const tone = {
-    danger: { dot: 'bg-danger', active: 'border-danger/60 bg-danger-subtle text-danger' },
-    warning: { dot: 'bg-warning', active: 'border-warning/60 bg-warning-subtle text-warning' },
-    success: { dot: 'bg-success', active: 'border-success/60 bg-success-subtle text-success' },
-  }[variant]
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-pressed={active}
-      className={cn(
-        'grid min-w-0 flex-1 grid-cols-[auto_1fr_auto] items-center gap-x-2 rounded-xl border border-line-strong bg-canvas px-2.5 py-2 text-left transition-colors outline-none hover:bg-subtle focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 sm:gap-x-2.5 sm:px-3',
-        active && tone.active,
-      )}
-    >
-      <span className={cn('row-span-2 size-2 rounded-full', tone.dot)} aria-hidden />
-      <span className="truncate text-sm font-medium">{label}</span>
-      <Kbd className="row-span-2 max-sm:hidden">{kbdKey}</Kbd>
-      <span
-        className={cn('col-start-2 truncate text-xs', active ? 'opacity-80' : 'text-fg-subtle')}
-      >
-        {sublabel}
-      </span>
-    </button>
-  )
-}
 
 // ─── Session Progress ─────────────────────────────────────────────────────────
 
@@ -90,25 +39,10 @@ function Hint({ k, children }: { k: string; children: string }) {
   )
 }
 
-export function ShortcutHints({
-  answerVisible,
-  answerPanelView,
-}: {
-  answerVisible: boolean
-  answerPanelView: AnswerPanelView
-}) {
-  const showStatusShortcuts = answerVisible && answerPanelView === 'answer'
-
+export function ShortcutHints({ answerVisible }: { answerVisible: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-3 text-xs text-fg-subtle max-sm:hidden">
       {!answerVisible ? <Hint k="Space">查看答案</Hint> : null}
-      {showStatusShortcuts ? (
-        <>
-          <Hint k="1">没掌握</Hint>
-          <Hint k="2">大概会</Hint>
-          <Hint k="3">完全掌握</Hint>
-        </>
-      ) : null}
       <Hint k="→">下一题</Hint>
       <Hint k="←">上一题</Hint>
       <Hint k="N">笔记</Hint>

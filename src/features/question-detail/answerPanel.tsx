@@ -1,4 +1,3 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { formatReviewNoteTime } from '@/lib/feedbackNote'
 import { Button, cn, Textarea } from '@/ui'
 
@@ -138,36 +137,6 @@ export function AnswerPanelTabs({ activeView, answerLabel, onChange }: AnswerPan
         )
       })}
     </div>
-  )
-}
-
-export interface MobileQuestionNavProps {
-  prevDisabled: boolean
-  nextDisabled: boolean
-  onPrev: () => void
-  onNext: () => void
-}
-
-export function MobileQuestionNav({
-  prevDisabled,
-  nextDisabled,
-  onPrev,
-  onNext,
-}: MobileQuestionNavProps) {
-  return (
-    <nav
-      aria-label="题目切换"
-      className="fixed inset-x-0 bottom-0 z-[35] grid grid-cols-2 gap-2.5 border-t border-line bg-canvas/90 px-2.5 pt-1.5 pb-[calc(6px+env(safe-area-inset-bottom))] backdrop-blur-md sm:hidden"
-    >
-      <Button variant="secondary" onClick={onPrev} disabled={prevDisabled}>
-        <ArrowLeft />
-        上一题
-      </Button>
-      <Button variant="secondary" onClick={onNext} disabled={nextDisabled}>
-        下一题
-        <ArrowRight />
-      </Button>
-    </nav>
   )
 }
 
