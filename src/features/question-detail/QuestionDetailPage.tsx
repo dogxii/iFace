@@ -5,6 +5,7 @@ import {
   CircleHelp,
   Flame,
   Lightbulb,
+  NotebookPen,
   PenLine,
   SearchX,
   Sparkles,
@@ -29,7 +30,6 @@ import {
   Skeleton as UISkeleton,
 } from '@/ui'
 import './questionDetail.css'
-import { AIDrawer } from './aiDrawer'
 import { AnswerAnnotationToolbar, AnswerCommentMarkers, hashAnswerText } from './annotations'
 import { blurActiveControl, MyAnswerInput, withLearningCheckSearch } from './answerInput'
 import {
@@ -43,7 +43,6 @@ import {
 import { DetailBreadcrumb, QuestionIntro, StatusDock } from './detailSections'
 import { LearningCheckPanel } from './learningCheck'
 import { ModuleQuestionDrawer } from './moduleDrawer'
-import { NoteDrawer } from './notes'
 import { SessionCompletionCard, SessionProgress, ShortcutHints, StreakCelebration } from './session'
 import {
   adjacentInModule,
@@ -55,6 +54,7 @@ import {
   sessionSearchOf,
   summarizeSession,
 } from './sessionNav'
+import { DetailSidePanel, useSidePanelLayout } from './sidePanel'
 import { AnswerTocRail } from './tocRail'
 import { useAnswerAnnotations } from './useAnswerAnnotations'
 import { useAnswerOverride } from './useAnswerOverride'
@@ -91,19 +91,21 @@ export default function QuestionDetail() {
   const { config: aiConfig } = useAIStore()
   const settingsOpen = useUIState((state) => state.settingsOpen)
   const openSettings = useUIState((state) => state.openSettings)
+  const sidePanel = useUIState((state) => state.sidePanel)
+  const setSidePanel = useUIState((state) => state.setSidePanel)
+  const toggleSidePanel = useUIState((state) => state.toggleSidePanel)
+  const panelLayout = useSidePanelLayout()
 
   const [answerVisible, setAnswerVisible] = useState(false)
   const [marking, setMarking] = useState(false)
   const [justMarked, setJustMarked] = useState<StudyStatus | null>(null)
   const [lastPressedKey, setLastPressedKey] = useState<'1' | '2' | '3' | null>(null)
-  const [aiDrawerOpen, setAiDrawerOpen] = useState(false)
   const [aiInitialPrompt, setAiInitialPrompt] = useState<{
     id: string
     questionId: string
     text: string
   } | null>(null)
   const [answerPanelView, setAnswerPanelView] = useState<AnswerPanelView>('answer')
-  const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [moduleDrawerOpen, setModuleDrawerOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
   const [starred, setStarred] = useState(false)
@@ -186,7 +188,6 @@ export default function QuestionDetail() {
     setAiInitialPrompt(null)
     setAnswerPanelView('answer')
     setSessionFinished(false)
-    setNoteDrawerOpen(false)
     window.scrollTo({ top: 0, behavior: 'auto' })
     // Clear per-question session review guard so the new question starts fresh
     return () => {
@@ -224,11 +225,11 @@ export default function QuestionDetail() {
   // ?note=1 opens the note drawer once (links from the dashboard and search).
   useEffect(() => {
     if (searchParams.get('note') !== '1') return
-    setNoteDrawerOpen(true)
+    setSidePanel('notes')
     const nextParams = new URLSearchParams(searchParams)
     nextParams.delete('note')
     setSearchParams(nextParams, { replace: true })
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, setSidePanel])
 
   useEffect(() => {
     let cancelled = false
@@ -268,9 +269,9 @@ export default function QuestionDetail() {
         questionId: question.id,
         text: AI_PRESET_PROMPTS[preset],
       })
-      setAiDrawerOpen(true)
+      setSidePanel('ai')
     },
-    [question],
+    [question, setSidePanel],
   )
 
   const handleAIInitialPromptConsumed = useCallback((promptId: string) => {
@@ -381,13 +382,13 @@ export default function QuestionDetail() {
   }
 
   useDetailHotkeys({
-    overlayOpen: settingsOpen || aiDrawerOpen || moduleDrawerOpen,
-    noteOpen: noteDrawerOpen,
+    // The docked panel is non-modal: page shortcuts keep working unless the mobile sheet is up.
+    overlayOpen: settingsOpen || moduleDrawerOpen || (sidePanel !== null && !panelLayout.desktop),
     busy: () => markingRef.current,
     answerVisible,
     checkView: answerPanelView === 'check',
-    toggleNote: () => setNoteDrawerOpen((open) => !open),
-    openAI: () => setAiDrawerOpen(true),
+    toggleNote: () => toggleSidePanel('notes'),
+    toggleAI: () => toggleSidePanel('ai'),
     openModule: () => setModuleDrawerOpen(true),
     revealAnswer: handleRevealAnswer,
     setStatus: handleSetStatus,
@@ -441,7 +442,7 @@ export default function QuestionDetail() {
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
   const showMobileQuestionNav = mobileQuestionNavEnabled
   // The answer card has its own AI button; hide the FAB then so it never covers the status dock.
-  const showMobileAiFab = aiFabVisible && !aiDrawerOpen && !answerVisible
+  const showMobileAiFab = aiFabVisible && sidePanel === null && !answerVisible
   const modulePosition = isInSession
     ? `${sessionCurrent} / ${sessionIds.length}`
     : `${Math.max(1, currentModuleQuestions.findIndex((item) => item.id === question.id) + 1)} / ${currentModuleQuestions.length}`
@@ -450,24 +451,27 @@ export default function QuestionDetail() {
     questionId,
     questionText: question.question,
     answerText: answer.effectiveText,
-    onOpenAIPanel: () => setAiDrawerOpen(true),
-    onOpenNote: () => setNoteDrawerOpen(true),
+    onOpenAIPanel: () => setSidePanel('ai'),
+    onOpenNote: () => setSidePanel('notes'),
     isAiEnabled,
     onNoteSaved: handleNoteSaved,
   }
 
   return (
-    <>
+    <div
+      style={{ '--panel-w': `${panelLayout.width}px` } as React.CSSProperties}
+      className={cn(
+        'resize-animated min-w-0 transition-[padding] duration-200 ease-out',
+        panelLayout.docked && 'pr-[var(--panel-w)]',
+      )}
+    >
       <PageHeader
         title={
           <DetailBreadcrumb
             module={question.module}
             position={modulePosition}
             moduleOpen={moduleDrawerOpen}
-            onOpenModule={() => {
-              setNoteDrawerOpen(false)
-              setModuleDrawerOpen(true)
-            }}
+            onOpenModule={() => setModuleDrawerOpen(true)}
           />
         }
         actions={
@@ -495,241 +499,257 @@ export default function QuestionDetail() {
               </UIButton>
             </Tooltip>
             <span className="mx-1 hidden h-5 w-px bg-line sm:block" />
+            <Tooltip content={sidePanel === 'notes' ? '关闭笔记' : '笔记'} shortcut="N">
+              <UIButton
+                variant={sidePanel === 'notes' ? 'secondary' : 'ghost'}
+                size="icon"
+                aria-label="笔记"
+                aria-pressed={sidePanel === 'notes'}
+                className="hidden sm:inline-flex"
+                onClick={() => toggleSidePanel('notes')}
+              >
+                <NotebookPen />
+              </UIButton>
+            </Tooltip>
             <UIButton
               className="hidden sm:inline-flex"
+              variant={sidePanel === 'ai' ? 'secondary' : 'ghost'}
+              aria-pressed={sidePanel === 'ai'}
               shortcut="A"
-              onClick={() => setAiDrawerOpen(true)}
+              onClick={() => toggleSidePanel('ai')}
             >
               <Sparkles />问 AI
             </UIButton>
           </>
         }
       />
-      <div
-        className={cn(
-          'question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-28 sm:px-6 lg:pt-10',
-          showMobileQuestionNav && 'max-sm:pb-[calc(96px+env(safe-area-inset-bottom))]',
-        )}
-      >
-        {isInSession ? (
-          <SessionProgress
-            current={sessionCurrent}
-            total={sessionIds.length}
-            onExit={() => navigate('/practice')}
-          />
-        ) : null}
-
-        <QuestionIntro
-          question={question}
-          status={currentStatus}
-          reviewCount={reviewCount}
-          starred={starred}
-          hasNote={hasNote}
-          answerVisible={answerVisible}
-          onToggleStarred={handleToggleStarred}
-          onOpenNote={() => setNoteDrawerOpen(true)}
-          onReveal={handleRevealAnswer}
-        />
-
-        {/* "answer-first": write your own answer above the reference */}
-        {showAnswerInputAbove && (
-          <div className="animate-fade-in">
-            <MyAnswerInput
-              key={`answer-above-${questionId}`}
-              {...answerInputProps}
-              autoFocus={answerNavigationMode !== 'check'}
-            />
-          </div>
-        )}
-
-        {answerVisible && (
-          <div className="flex animate-scale-in flex-col gap-5 rounded-2xl border border-line bg-canvas p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3.5">
-              <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2.5">
-                {hasLearningCheck ? (
-                  <AnswerPanelTabs
-                    activeView={answerPanelView}
-                    answerLabel={answerHeading}
-                    onChange={(view) => {
-                      if (view === 'check') {
-                        answer.setEditMode(false)
-                        annotations.setSelection(null)
-                      }
-                      setAnswerPanelView(view)
-                    }}
-                  />
-                ) : (
-                  <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
-                    <BookOpenCheck className="size-4 text-accent" />
-                    {answerHeading}
-                  </h2>
-                )}
-                {answer.hasCustom && !answer.editMode && (
-                  <AnswerOverrideHeaderMeta
-                    updatedAt={answer.override?.updatedAt ?? null}
-                    showingOriginal={answer.showOriginal}
-                    onToggleOriginal={() => {
-                      setAnswerPanelView('answer')
-                      answer.setShowOriginal((value) => !value)
-                    }}
-                  />
-                )}
-              </div>
-
-              <div className="flex items-center gap-0.5">
-                <AnswerAIButton
-                  title={answer.hasCustom ? '编辑自定义答案' : '编辑参考答案'}
-                  active={answer.editMode}
-                  onClick={handleStartAnswerEdit}
-                >
-                  <PenLine />
-                </AnswerAIButton>
-                <AnswerAIButton
-                  title={isAiEnabled ? '讲解题目' : '讲解题目（请先配置 AI）'}
-                  onClick={() => openAIWithPreset('question')}
-                >
-                  <CircleHelp />
-                </AnswerAIButton>
-                <AnswerAIButton
-                  title={isAiEnabled ? '讲解知识点' : '讲解知识点（请先配置 AI）'}
-                  onClick={() => openAIWithPreset('concept')}
-                >
-                  <Lightbulb />
-                </AnswerAIButton>
-                <AnswerAIButton
-                  title={isAiEnabled ? '打开 AI 助手（A）' : 'AI 助手（请先配置，快捷键 A）'}
-                  active={aiDrawerOpen}
-                  onClick={() => setAiDrawerOpen(true)}
-                >
-                  <Sparkles />
-                </AnswerAIButton>
-              </div>
-            </div>
-
-            {answerPanelView === 'check' ? (
-              <LearningCheckPanel key={`learning-check-${question.id}`} checks={learningChecks} />
-            ) : answer.editMode ? (
-              <AnswerOverrideEditor
-                draft={answer.draft}
-                saveStatus={answer.saveStatus}
-                canSave={answer.canSave}
-                onDraftChange={answer.setDraft}
-                onSave={answer.save}
-                onCancel={answer.cancelEdit}
-                onRestoreDefault={answer.restoreDefault}
-              />
-            ) : answer.loading ? (
-              <UISkeleton className="h-24 w-full" />
-            ) : (
-              <section
-                ref={annotations.contentRef}
-                className="prose answer-annotation-content relative min-w-0"
-                aria-label="答案内容"
-              >
-                <MarkdownRenderer content={answer.displayedText} />
-              </section>
-            )}
-
-            {answerInteractive && annotations.selection && (
-              <AnswerAnnotationToolbar
-                toolbarRef={annotations.toolbarRef}
-                selection={annotations.selection}
-                commentOpen={annotations.commentOpen}
-                commentDraft={annotations.commentDraft}
-                saving={annotations.saving}
-                onHighlight={(color) => annotations.create('highlight', color)}
-                onClearHighlight={annotations.clearHighlight}
-                onOpenComment={() => annotations.setCommentOpen(true)}
-                onCommentDraftChange={annotations.setCommentDraft}
-                onSaveComment={annotations.saveComment}
-                onCancel={annotations.cancel}
-              />
-            )}
-
-            {answerInteractive && (
-              <AnswerTocRail key={displayedAnswerHash} rootRef={annotations.contentRef} />
-            )}
-
-            {answerInteractive && (
-              <AnswerCommentMarkers
-                rootRef={annotations.contentRef}
-                annotations={annotations.visible}
-                activeId={annotations.activeCommentId}
-                onActiveChange={annotations.setActiveCommentId}
-                onDelete={annotations.deleteComment}
-              />
-            )}
-
-            <StatusDock
-              status={currentStatus}
-              reviewCount={reviewCount}
-              marking={marking}
-              justMarked={justMarked}
-              lastPressedKey={lastPressedKey}
-              aboveMobileNav={showMobileQuestionNav}
-              onMark={handleSetStatus}
-            />
-
-            {/* "answer-alongside": compact answer box inside the card */}
-            {showAnswerContent && showAnswerInputInside && (
-              <MyAnswerInput key={`answer-inside-${questionId}`} {...answerInputProps} compact />
-            )}
-          </div>
-        )}
-
-        {showSessionSummary && (
-          <SessionCompletionCard
-            mastered={sessionStats.mastered}
-            review={sessionStats.review}
-            unlearned={sessionStats.unlearned}
-            total={sessionStats.total}
-            retryCount={sessionStats.retryIds.length}
-            onRetry={handleRetrySession}
-            onBackToPractice={() => navigate('/practice')}
-            onDashboard={() => navigate('/')}
-          />
-        )}
-
-        {streak.currentStreak >= 2 && (
-          <p className="flex w-fit items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 text-xs text-fg-muted">
-            <Flame className="size-3.5 text-warning" />
-            <span className="font-semibold tabular-nums text-fg">{streak.currentStreak}</span>
-            连击
-            {streak.bestStreak > streak.currentStreak && (
-              <span className="text-fg-subtle">· 最高 {streak.bestStreak}</span>
-            )}
-            <span className="text-fg-subtle">· 今日 {streak.todayCount} 题</span>
-          </p>
-        )}
-
-        <div className="animate-fade-in">
-          <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
-        </div>
-
-        <nav
-          aria-label="题目导航"
-          className="flex items-center justify-between border-t border-line pt-4"
+      <div className="@container/detail">
+        <div
+          className={cn(
+            'question-detail-page mx-auto flex w-full max-w-[760px] flex-col gap-4 px-4 pt-6 pb-28 sm:px-6 lg:pt-10',
+            showMobileQuestionNav && 'max-sm:pb-[calc(96px+env(safe-area-inset-bottom))]',
+          )}
         >
-          <UIButton variant="ghost" disabled={!prevId} onClick={goPrev}>
-            <ChevronLeft />
-            上一题
-          </UIButton>
-          <UIButton variant="ghost" asChild>
-            <Link
-              to={
-                isInSession
-                  ? '/practice'
-                  : `/questions?module=${encodeURIComponent(question.module)}`
-              }
-            >
-              返回列表
-            </Link>
-          </UIButton>
-          <UIButton variant="ghost" disabled={!nextId} onClick={goNext}>
-            下一题
-            <ChevronRight />
-          </UIButton>
-        </nav>
+          {isInSession ? (
+            <SessionProgress
+              current={sessionCurrent}
+              total={sessionIds.length}
+              onExit={() => navigate('/practice')}
+            />
+          ) : null}
+
+          <QuestionIntro
+            question={question}
+            status={currentStatus}
+            reviewCount={reviewCount}
+            starred={starred}
+            hasNote={hasNote}
+            answerVisible={answerVisible}
+            onToggleStarred={handleToggleStarred}
+            onOpenNote={() => setSidePanel('notes')}
+            onReveal={handleRevealAnswer}
+          />
+
+          {/* "answer-first": write your own answer above the reference */}
+          {showAnswerInputAbove && (
+            <div className="animate-fade-in">
+              <MyAnswerInput
+                key={`answer-above-${questionId}`}
+                {...answerInputProps}
+                autoFocus={answerNavigationMode !== 'check'}
+              />
+            </div>
+          )}
+
+          {answerVisible && (
+            <div className="relative flex animate-scale-in flex-col gap-5 rounded-2xl border border-line bg-canvas p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3.5">
+                <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2.5">
+                  {hasLearningCheck ? (
+                    <AnswerPanelTabs
+                      activeView={answerPanelView}
+                      answerLabel={answerHeading}
+                      onChange={(view) => {
+                        if (view === 'check') {
+                          answer.setEditMode(false)
+                          annotations.setSelection(null)
+                        }
+                        setAnswerPanelView(view)
+                      }}
+                    />
+                  ) : (
+                    <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
+                      <BookOpenCheck className="size-4 text-accent" />
+                      {answerHeading}
+                    </h2>
+                  )}
+                  {answer.hasCustom && !answer.editMode && (
+                    <AnswerOverrideHeaderMeta
+                      updatedAt={answer.override?.updatedAt ?? null}
+                      showingOriginal={answer.showOriginal}
+                      onToggleOriginal={() => {
+                        setAnswerPanelView('answer')
+                        answer.setShowOriginal((value) => !value)
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div className="flex items-center gap-0.5">
+                  <AnswerAIButton
+                    title={answer.hasCustom ? '编辑自定义答案' : '编辑参考答案'}
+                    active={answer.editMode}
+                    onClick={handleStartAnswerEdit}
+                  >
+                    <PenLine />
+                  </AnswerAIButton>
+                  <AnswerAIButton
+                    title={isAiEnabled ? '讲解题目' : '讲解题目（请先配置 AI）'}
+                    onClick={() => openAIWithPreset('question')}
+                  >
+                    <CircleHelp />
+                  </AnswerAIButton>
+                  <AnswerAIButton
+                    title={isAiEnabled ? '讲解知识点' : '讲解知识点（请先配置 AI）'}
+                    onClick={() => openAIWithPreset('concept')}
+                  >
+                    <Lightbulb />
+                  </AnswerAIButton>
+                  <AnswerAIButton
+                    title={isAiEnabled ? '打开 AI 助手（A）' : 'AI 助手（请先配置，快捷键 A）'}
+                    active={sidePanel === 'ai'}
+                    onClick={() => setSidePanel('ai')}
+                  >
+                    <Sparkles />
+                  </AnswerAIButton>
+                </div>
+              </div>
+
+              {answerPanelView === 'check' ? (
+                <LearningCheckPanel key={`learning-check-${question.id}`} checks={learningChecks} />
+              ) : answer.editMode ? (
+                <AnswerOverrideEditor
+                  draft={answer.draft}
+                  saveStatus={answer.saveStatus}
+                  canSave={answer.canSave}
+                  onDraftChange={answer.setDraft}
+                  onSave={answer.save}
+                  onCancel={answer.cancelEdit}
+                  onRestoreDefault={answer.restoreDefault}
+                />
+              ) : answer.loading ? (
+                <UISkeleton className="h-24 w-full" />
+              ) : (
+                <section
+                  ref={annotations.contentRef}
+                  className="prose answer-annotation-content relative min-w-0"
+                  aria-label="答案内容"
+                >
+                  <MarkdownRenderer content={answer.displayedText} />
+                </section>
+              )}
+
+              {answerInteractive && annotations.selection && (
+                <AnswerAnnotationToolbar
+                  toolbarRef={annotations.toolbarRef}
+                  selection={annotations.selection}
+                  commentOpen={annotations.commentOpen}
+                  commentDraft={annotations.commentDraft}
+                  saving={annotations.saving}
+                  onHighlight={(color) => annotations.create('highlight', color)}
+                  onClearHighlight={annotations.clearHighlight}
+                  onOpenComment={() => annotations.setCommentOpen(true)}
+                  onCommentDraftChange={annotations.setCommentDraft}
+                  onSaveComment={annotations.saveComment}
+                  onCancel={annotations.cancel}
+                />
+              )}
+
+              {answerInteractive && (
+                <AnswerTocRail key={displayedAnswerHash} rootRef={annotations.contentRef} />
+              )}
+
+              {answerInteractive && (
+                <AnswerCommentMarkers
+                  rootRef={annotations.contentRef}
+                  annotations={annotations.visible}
+                  activeId={annotations.activeCommentId}
+                  onActiveChange={annotations.setActiveCommentId}
+                  onDelete={annotations.deleteComment}
+                />
+              )}
+
+              <StatusDock
+                status={currentStatus}
+                reviewCount={reviewCount}
+                marking={marking}
+                justMarked={justMarked}
+                lastPressedKey={lastPressedKey}
+                aboveMobileNav={showMobileQuestionNav}
+                onMark={handleSetStatus}
+              />
+
+              {/* "answer-alongside": compact answer box inside the card */}
+              {showAnswerContent && showAnswerInputInside && (
+                <MyAnswerInput key={`answer-inside-${questionId}`} {...answerInputProps} compact />
+              )}
+            </div>
+          )}
+
+          {showSessionSummary && (
+            <SessionCompletionCard
+              mastered={sessionStats.mastered}
+              review={sessionStats.review}
+              unlearned={sessionStats.unlearned}
+              total={sessionStats.total}
+              retryCount={sessionStats.retryIds.length}
+              onRetry={handleRetrySession}
+              onBackToPractice={() => navigate('/practice')}
+              onDashboard={() => navigate('/')}
+            />
+          )}
+
+          {streak.currentStreak >= 2 && (
+            <p className="flex w-fit items-center gap-1.5 rounded-full border border-line bg-subtle px-3 py-1 text-xs text-fg-muted">
+              <Flame className="size-3.5 text-warning" />
+              <span className="font-semibold tabular-nums text-fg">{streak.currentStreak}</span>
+              连击
+              {streak.bestStreak > streak.currentStreak && (
+                <span className="text-fg-subtle">· 最高 {streak.bestStreak}</span>
+              )}
+              <span className="text-fg-subtle">· 今日 {streak.todayCount} 题</span>
+            </p>
+          )}
+
+          <div className="animate-fade-in">
+            <ShortcutHints answerVisible={answerVisible} answerPanelView={answerPanelView} />
+          </div>
+
+          <nav
+            aria-label="题目导航"
+            className="flex items-center justify-between border-t border-line pt-4"
+          >
+            <UIButton variant="ghost" disabled={!prevId} onClick={goPrev}>
+              <ChevronLeft />
+              上一题
+            </UIButton>
+            <UIButton variant="ghost" asChild>
+              <Link
+                to={
+                  isInSession
+                    ? '/practice'
+                    : `/questions?module=${encodeURIComponent(question.module)}`
+                }
+              >
+                返回列表
+              </Link>
+            </UIButton>
+            <UIButton variant="ghost" disabled={!nextId} onClick={goNext}>
+              下一题
+              <ChevronRight />
+            </UIButton>
+          </nav>
+        </div>
       </div>
 
       <ModuleQuestionDrawer
@@ -741,25 +761,14 @@ export default function QuestionDetail() {
         onNavigate={handleModuleQuestionNavigate}
       />
 
-      <AIDrawer
-        open={aiDrawerOpen}
-        onClose={() => setAiDrawerOpen(false)}
+      <DetailSidePanel
         question={{ ...question, answer: answer.displayedText }}
         answerVisible={answerVisible}
-        initialPrompt={aiInitialPrompt}
-        onInitialPromptConsumed={handleAIInitialPromptConsumed}
-        onOpenSettings={() => {
-          setAiDrawerOpen(false)
-          openSettings('ai')
-        }}
-      />
-
-      <NoteDrawer
-        open={noteDrawerOpen}
-        onClose={() => setNoteDrawerOpen(false)}
-        question={question}
-        refreshKey={noteRefreshKey}
-        onContentStateChange={setHasNote}
+        noteRefreshKey={noteRefreshKey}
+        onNoteContentChange={setHasNote}
+        aiInitialPrompt={aiInitialPrompt}
+        onAIInitialPromptConsumed={handleAIInitialPromptConsumed}
+        onOpenAISettings={() => openSettings('ai')}
       />
 
       {celebrationStreak > 0 && (
@@ -779,7 +788,7 @@ export default function QuestionDetail() {
         <Tooltip content={isAiEnabled ? 'AI 助手' : 'AI 助手（请先配置）'} shortcut="A">
           <button
             type="button"
-            onClick={() => setAiDrawerOpen(true)}
+            onClick={() => setSidePanel('ai')}
             aria-label="打开 AI 助手"
             className={cn(
               'fixed right-4 z-[36] grid size-12 place-items-center rounded-full border border-line bg-elevated text-accent shadow-raised transition-transform hover:scale-105 active:scale-95 lg:hidden',
@@ -792,6 +801,6 @@ export default function QuestionDetail() {
           </button>
         </Tooltip>
       )}
-    </>
+    </div>
   )
 }

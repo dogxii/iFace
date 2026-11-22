@@ -88,32 +88,35 @@ export function AnswerTocRail({ rootRef }: { rootRef: RefObject<HTMLElement | nu
   }
 
   return (
-    <nav
-      aria-label="答案目录"
-      // Sits in the space right of the centered 760px column (content area minus the 232px sidebar).
-      className="fixed top-24 left-[calc(232px+(100vw-232px)/2+380px+24px)] hidden max-h-[calc(100dvh-160px)] w-44 animate-fade-in overflow-y-auto min-[1440px]:block"
-    >
-      <p className="mb-2 text-xs font-medium text-fg-subtle">目录</p>
-      <ol className="flex flex-col border-l border-line">
-        {entries.map((entry, index) => (
-          <li key={entry.id}>
-            <button
-              type="button"
-              onClick={() => jumpTo(index)}
-              aria-current={index === active ? 'location' : undefined}
-              className={cn(
-                '-ml-px block w-full border-l py-1 pr-1 text-left text-xs leading-snug transition-colors',
-                depths[index] === 0 ? 'pl-3' : depths[index] === 1 ? 'pl-6' : 'pl-9',
-                index === active
-                  ? 'border-accent font-medium text-fg'
-                  : 'border-transparent text-fg-subtle hover:text-fg',
-              )}
-            >
-              <span className="line-clamp-2">{entry.text}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
-    </nav>
+    // Hangs off the right edge of the answer card; shown only when the page column (the
+    // `detail` container, which already excludes the sidebar and side panel) has room for it.
+    <div className="absolute inset-y-0 left-[calc(100%+32px)] hidden w-44 @min-[1180px]/detail:block">
+      <nav
+        aria-label="答案目录"
+        className="sticky top-20 max-h-[calc(100dvh-120px)] animate-fade-in overflow-y-auto overscroll-contain"
+      >
+        <p className="mb-2 text-xs font-medium text-fg-subtle">目录</p>
+        <ol className="flex flex-col border-l border-line">
+          {entries.map((entry, index) => (
+            <li key={entry.id}>
+              <button
+                type="button"
+                onClick={() => jumpTo(index)}
+                aria-current={index === active ? 'location' : undefined}
+                className={cn(
+                  '-ml-px block w-full border-l py-1 pr-1 text-left text-xs leading-snug transition-colors',
+                  depths[index] === 0 ? 'pl-3' : depths[index] === 1 ? 'pl-6' : 'pl-9',
+                  index === active
+                    ? 'border-accent font-medium text-fg'
+                    : 'border-transparent text-fg-subtle hover:text-fg',
+                )}
+              >
+                <span className="line-clamp-2">{entry.text}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    </div>
   )
 }

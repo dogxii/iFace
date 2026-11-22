@@ -1,15 +1,14 @@
 import {
+  ArrowUp,
   Bot,
   Check,
-  ChevronDown,
-  ChevronUp,
   Copy,
   RotateCcw,
-  Send,
   Settings,
+  Sparkles,
   Square,
   Trash2,
-  User,
+  Zap,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
@@ -21,7 +20,16 @@ import {
   useAIStore,
 } from '@/store/useAIStore'
 import type { Question } from '@/types'
-import { Button, cn } from '@/ui'
+import {
+  Button,
+  cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  Tooltip,
+  toast,
+} from '@/ui'
 
 // ─── Pieces ───────────────────────────────────────────────────────────────────
 
@@ -51,20 +59,21 @@ function MessageAction({
   children: React.ReactNode
 }) {
   return (
-    <button
-      type="button"
-      aria-label={title}
-      title={title}
-      disabled={disabled}
-      onClick={onClick}
-      className="inline-flex h-[22px] w-6 items-center justify-center rounded-md border border-transparent text-fg-subtle transition-colors hover:border-line hover:bg-muted hover:text-fg disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-3"
-    >
-      {children}
-    </button>
+    <Tooltip content={title}>
+      <button
+        type="button"
+        aria-label={title}
+        disabled={disabled}
+        onClick={onClick}
+        className="inline-flex size-6 items-center justify-center rounded-md text-fg-subtle transition-colors hover:bg-muted hover:text-fg disabled:pointer-events-none disabled:opacity-45 [&_svg]:size-3.5"
+      >
+        {children}
+      </button>
+    </Tooltip>
   )
 }
 
-interface MessageBubbleProps {
+interface MessageProps {
   message: AIMessage
   isStreaming?: boolean
   streamingText?: string
@@ -74,7 +83,11 @@ interface MessageBubbleProps {
   onRetry?: () => void
 }
 
-function MessageBubble({
+/**
+ * Chat message. The user's turns are compact bubbles on the right; replies are plain,
+ * full-width prose (easier to read long Markdown), with copy / retry underneath.
+ */
+function Message({
   message,
   isStreaming,
   streamingText,
@@ -82,67 +95,54 @@ function MessageBubble({
   retryDisabled = false,
   onCopy,
   onRetry,
-}: MessageBubbleProps) {
+}: MessageProps) {
   const isUser = message.role === 'user'
   const content = isStreaming && streamingText !== undefined ? streamingText : message.content
   const canShowActions = Boolean(content.trim()) && !isStreaming
 
-  return (
-    <div
-      className={cn(
-        'flex animate-fade-in items-start gap-2',
-        isUser ? 'flex-row-reverse' : 'flex-row',
-      )}
-    >
-      <div
-        className={cn(
-          'mt-0.5 flex size-[26px] shrink-0 items-center justify-center [&_svg]:size-3.5',
-          isUser
-            ? 'rounded-full bg-accent text-accent-fg'
-            : 'rounded-lg border border-line bg-muted text-accent',
-        )}
-      >
-        {isUser ? <User /> : <Bot />}
+  if (isUser) {
+    return (
+      <div className="group flex animate-fade-in flex-col items-end gap-1">
+        <div className="max-w-[85%] rounded-2xl rounded-br-md bg-muted px-3.5 py-2 text-sm leading-relaxed break-words whitespace-pre-wrap text-fg">
+          {content}
+        </div>
+        {canShowActions && onCopy ? (
+          <div className="flex opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+            <MessageAction title={copied ? '已复制' : '复制'} onClick={onCopy}>
+              {copied ? <Check /> : <Copy />}
+            </MessageAction>
+          </div>
+        ) : null}
       </div>
+    )
+  }
 
-      <div
-        className={cn('flex max-w-[85%] min-w-0 flex-col', isUser ? 'items-end' : 'items-start')}
-      >
-        <div
-          className={cn(
-            'w-fit max-w-full text-[13px] leading-[1.65] break-words',
-            isUser
-              ? 'rounded-[14px_4px_14px_14px] bg-accent px-3 py-2 text-accent-fg'
-              : 'rounded-[4px_14px_14px_14px] border border-line bg-subtle px-3.5 py-2.5 text-fg',
+  return (
+    <div className="group flex animate-fade-in flex-col gap-1">
+      <div className="min-w-0 text-sm leading-[1.75] break-words text-fg">
+        {content ? (
+          <div className="ai-chat-markdown">
+            <MarkdownRenderer content={content} />
+            {isStreaming && <TypingDots />}
+          </div>
+        ) : (
+          <TypingDots />
+        )}
+      </div>
+      {canShowActions ? (
+        <div className="-ml-1 flex items-center gap-0.5">
+          {onCopy && (
+            <MessageAction title={copied ? '已复制' : '复制'} onClick={onCopy}>
+              {copied ? <Check /> : <Copy />}
+            </MessageAction>
           )}
-        >
-          {isUser ? (
-            <span className="whitespace-pre-wrap">{content}</span>
-          ) : content ? (
-            <div className="ai-chat-markdown">
-              <MarkdownRenderer content={content} />
-              {isStreaming && <TypingDots />}
-            </div>
-          ) : (
-            <TypingDots />
+          {onRetry && (
+            <MessageAction title="重新回答" disabled={retryDisabled} onClick={onRetry}>
+              <RotateCcw />
+            </MessageAction>
           )}
         </div>
-
-        {canShowActions && (
-          <div className="mt-1 flex items-center gap-0.5 px-0.5">
-            {onCopy && (
-              <MessageAction title={copied ? '已复制' : '复制消息'} onClick={onCopy}>
-                {copied ? <Check /> : <Copy />}
-              </MessageAction>
-            )}
-            {!isUser && onRetry && (
-              <MessageAction title="重试回答" disabled={retryDisabled} onClick={onRetry}>
-                <RotateCcw />
-              </MessageAction>
-            )}
-          </div>
-        )}
-      </div>
+      ) : null}
     </div>
   )
 }
@@ -159,27 +159,29 @@ function EmptyChat({
   )
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-4 px-4 py-6">
-      <div className="flex size-12 items-center justify-center rounded-[14px] bg-accent-subtle text-accent [&_svg]:size-5">
-        <Bot />
-      </div>
-      <div className="text-center">
-        <p className="mb-1 text-[13px] font-semibold text-fg">AI 面试助手</p>
-        <p className="text-xs leading-normal text-fg-subtle">
-          帮你深度分析题目、优化答案、预测追问
+    <div className="flex flex-1 flex-col justify-end gap-4 px-4 pt-8 pb-4">
+      <div>
+        <p className="flex items-center gap-2 text-sm font-semibold text-fg">
+          <Sparkles className="size-4 text-accent" />
+          围绕这道题问 AI
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-fg-subtle">
+          分析考点、梳理答题结构、预测追问。题目{hasAnswer ? '和参考答案' : ''}会自动作为上下文。
         </p>
       </div>
-
-      <div className="grid w-full grid-cols-2 gap-2">
+      <div className="flex flex-col gap-1.5">
         {quickStarters.map((item) => (
           <button
             type="button"
-            key={item.label}
+            key={item.id}
             onClick={() => onQuickAction(item.prompt)}
-            className="flex flex-col items-start gap-1 rounded-[10px] border border-line bg-subtle px-3 py-2.5 text-left transition-colors hover:border-accent/30 hover:bg-accent-subtle"
+            className="group flex items-center gap-2.5 rounded-lg border border-line px-3 py-2 text-left text-sm text-fg-muted transition-colors hover:border-line-strong hover:bg-subtle hover:text-fg"
           >
-            <span className="text-base">{item.icon}</span>
-            <span className="text-xs font-medium text-fg">{item.label}</span>
+            <span aria-hidden className="text-base leading-none">
+              {item.icon}
+            </span>
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            <ArrowUp className="size-3.5 rotate-45 text-fg-subtle opacity-0 transition-opacity group-hover:opacity-100" />
           </button>
         ))}
       </div>
@@ -190,13 +192,13 @@ function EmptyChat({
 function NotConfigured({ onOpenSettings }: { onOpenSettings: () => void }) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3.5 p-6 text-center">
-      <div className="flex size-12 items-center justify-center rounded-[14px] bg-muted text-fg-subtle [&_svg]:size-5">
+      <div className="flex size-11 items-center justify-center rounded-xl bg-muted text-fg-subtle [&_svg]:size-5">
         <Bot />
       </div>
       <div>
-        <p className="mb-1 text-[13px] font-semibold text-fg">AI 助手未配置</p>
-        <p className="max-w-[220px] text-xs leading-normal text-fg-subtle">
-          请在设置中配置 API Key 并启用 AI 功能
+        <p className="mb-1 text-sm font-semibold text-fg">AI 助手未配置</p>
+        <p className="max-w-[240px] text-xs leading-normal text-fg-subtle">
+          在设置里填好 API Key 并启用 AI，就能围绕题目提问。Key 只保存在本机浏览器。
         </p>
       </div>
       <Button size="sm" variant="secondary" onClick={onOpenSettings}>
@@ -207,7 +209,7 @@ function NotConfigured({ onOpenSettings }: { onOpenSettings: () => void }) {
   )
 }
 
-function QuickActionBar({
+function QuickActionMenu({
   hasAnswer,
   onAction,
   disabled,
@@ -218,35 +220,33 @@ function QuickActionBar({
 }) {
   const { getQuickActions } = useAIStore()
   const actions = getQuickActions(hasAnswer)
-  const [expanded, setExpanded] = useState(false)
-  const visible = expanded ? actions : actions.slice(0, 3)
-
   return (
-    <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-3 py-2">
-      {visible.map((action) => (
-        <button
-          type="button"
-          key={action.id}
-          onClick={() => onAction(action.prompt)}
-          disabled={disabled}
-          className="flex items-center gap-1 rounded-md border border-line bg-subtle px-2 py-0.5 text-2xs font-medium whitespace-nowrap text-fg-muted transition-colors enabled:hover:border-accent/30 enabled:hover:bg-accent-subtle enabled:hover:text-accent disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <span>{action.icon}</span>
-          {action.label}
-        </button>
-      ))}
-
-      {actions.length > 3 && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-2xs text-fg-subtle transition-colors hover:text-fg [&_svg]:size-3"
-        >
-          {expanded ? <ChevronUp /> : <ChevronDown />}
-          {expanded ? '收起' : `+${actions.length - 3}`}
-        </button>
-      )}
-    </div>
+    <DropdownMenu>
+      <Tooltip content="快捷指令">
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            className="text-fg-muted"
+            aria-label="快捷指令"
+          >
+            <Zap />
+            指令
+          </Button>
+        </DropdownMenuTrigger>
+      </Tooltip>
+      <DropdownMenuContent side="top" align="start" className="w-56">
+        {actions.map((action) => (
+          <DropdownMenuItem key={action.id} onSelect={() => onAction(action.prompt)}>
+            <span aria-hidden className="w-4 text-center">
+              {action.icon}
+            </span>
+            {action.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 
@@ -406,11 +406,25 @@ export function AIChatPanel({
 
   const handleClear = useCallback(() => {
     if (isStreaming) abortStream()
+    const cleared = messages
     clearSession(questionId)
     setError(null)
     resetStreamingText()
     setTimeout(() => inputRef.current?.focus(), 60)
-  }, [clearSession, abortStream, questionId, isStreaming, resetStreamingText])
+    if (cleared.length > 0) {
+      toast('已清空对话', {
+        action: { label: '撤销', onClick: () => replaceSessionMessages(questionId, cleared) },
+      })
+    }
+  }, [
+    abortStream,
+    clearSession,
+    isStreaming,
+    messages,
+    questionId,
+    replaceSessionMessages,
+    resetStreamingText,
+  ])
 
   const handleCopyMessage = useCallback(async (messageId: string, text: string) => {
     setCopiedMessageId(messageId)
@@ -468,38 +482,24 @@ export function AIChatPanel({
   }
 
   const canSend = input.trim().length > 0
+  const hasMessages = messages.length > 0
 
   return (
-    <div className="flex h-full flex-col overflow-hidden">
-      {messages.length > 0 && (
-        <div className="flex shrink-0 justify-end px-3 pt-1.5">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={handleClear}
-            aria-label="清空当前题目 AI 会话"
-            title="清空当前题目 AI 会话"
-            className="hover:bg-danger-subtle hover:text-danger"
-          >
-            <Trash2 />
-          </Button>
-        </div>
-      )}
-
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex flex-1 flex-col overflow-y-auto"
+        className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
       >
-        {messages.length === 0 && !isStreaming ? (
+        {!hasMessages && !isStreaming ? (
           <EmptyChat hasAnswer={answerVisible} onQuickAction={handleQuickAction} />
         ) : (
-          <div className="flex flex-col gap-3.5 px-3.5 py-4">
+          <div className="flex flex-col gap-5 px-4 py-4">
             {messages.map((msg, idx) => {
               const isLastAssistant = idx === messages.length - 1 && msg.role === 'assistant'
               const messageKey = `${idx}-${msg.role}-${msg.content}`
               return (
-                <MessageBubble
+                <Message
                   key={messageKey}
                   message={msg}
                   isStreaming={isStreaming && isLastAssistant && streamingText !== ''}
@@ -514,9 +514,9 @@ export function AIChatPanel({
               )
             })}
 
-            {/* The reply bubble before the store has appended the assistant message. */}
+            {/* The reply before the store has appended the assistant message. */}
             {isStreaming && messages[messages.length - 1]?.role === 'user' && (
-              <MessageBubble
+              <Message
                 message={{ role: 'assistant', content: streamingText }}
                 isStreaming
                 streamingText={streamingText}
@@ -526,14 +526,16 @@ export function AIChatPanel({
             {error && (
               <div
                 role="alert"
-                className="animate-fade-in rounded-[10px] border border-danger/20 bg-danger-subtle px-3 py-2.5 text-xs leading-normal text-danger"
+                className="flex animate-fade-in items-start gap-2 rounded-lg border border-danger/20 bg-danger-subtle px-3 py-2.5 text-xs leading-normal text-danger"
               >
-                <span className="font-semibold">错误：</span>
-                {error}
+                <p className="min-w-0 flex-1">
+                  <span className="font-semibold">出错了：</span>
+                  {error}
+                </p>
                 <button
                   type="button"
                   onClick={() => setError(null)}
-                  className="ml-2 text-xs text-danger underline"
+                  className="shrink-0 underline-offset-2 hover:underline"
                 >
                   关闭
                 </button>
@@ -545,57 +547,64 @@ export function AIChatPanel({
         )}
       </div>
 
-      {messages.length > 0 && (
-        <QuickActionBar
-          hasAnswer={answerVisible}
-          onAction={handleQuickAction}
-          disabled={isStreaming}
-        />
-      )}
-
-      <div
-        className={cn(
-          'flex flex-col gap-1.5 px-3 py-2.5',
-          messages.length === 0 && 'border-t border-line',
-        )}
-      >
-        <div className="flex items-end gap-2 rounded-xl border border-line-strong bg-subtle py-2 pr-2 pl-3 transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-ring/40">
+      <div className="shrink-0 px-3 pt-1 pb-3">
+        <div className="rounded-xl border border-line-strong bg-canvas transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-ring/40">
           <textarea
             ref={inputRef}
             value={input}
             onChange={(e) => {
               setInput(e.target.value)
               e.target.style.height = 'auto'
-              e.target.style.height = `${Math.min(e.target.scrollHeight, 120)}px`
+              e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`
             }}
             onKeyDown={handleKeyDown}
-            placeholder={isStreaming ? 'AI 正在回复…' : '输入问题，Enter 发送，Shift+Enter 换行'}
+            placeholder={isStreaming ? 'AI 正在回复…' : '问点什么… Enter 发送，Shift+Enter 换行'}
             aria-label="向 AI 提问"
             disabled={isStreaming}
-            rows={1}
-            className="max-h-[120px] min-h-6 flex-1 resize-none overflow-y-auto bg-transparent py-1 text-sm leading-normal text-fg outline-none placeholder:text-fg-subtle"
+            rows={2}
+            className="block max-h-40 min-h-12 w-full resize-none overflow-y-auto bg-transparent px-3.5 pt-3 pb-1 text-sm leading-normal text-fg outline-none placeholder:text-fg-subtle"
           />
-          <button
-            type="button"
-            onClick={isStreaming ? abortStream : () => void handleSend()}
-            disabled={!isStreaming && !canSend}
-            aria-label={isStreaming ? '停止生成' : '发送'}
-            className={cn(
-              'flex size-8 shrink-0 items-center justify-center rounded-lg transition-colors [&_svg]:size-3.5',
-              isStreaming
-                ? 'bg-danger text-white'
-                : canSend
-                  ? 'bg-accent text-accent-fg hover:bg-accent-hover'
-                  : 'bg-muted text-fg-subtle',
-            )}
-          >
-            {isStreaming ? <Square className="fill-current" /> : <Send />}
-          </button>
+          <div className="flex items-center gap-1 px-1.5 pb-1.5">
+            <QuickActionMenu
+              hasAnswer={answerVisible}
+              onAction={handleQuickAction}
+              disabled={isStreaming}
+            />
+            {hasMessages ? (
+              <Tooltip content="清空对话">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label="清空当前题目 AI 会话"
+                  className="text-fg-subtle hover:bg-danger-subtle hover:text-danger"
+                  onClick={handleClear}
+                >
+                  <Trash2 />
+                </Button>
+              </Tooltip>
+            ) : null}
+            <span className="ml-auto max-w-[45%] truncate px-1 font-mono text-2xs text-fg-subtle">
+              {config.model}
+            </span>
+            <button
+              type="button"
+              onClick={isStreaming ? abortStream : () => void handleSend()}
+              disabled={!isStreaming && !canSend}
+              aria-label={isStreaming ? '停止生成' : '发送'}
+              className={cn(
+                'flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors [&_svg]:size-4',
+                isStreaming
+                  ? 'bg-fg text-canvas'
+                  : canSend
+                    ? 'bg-accent text-accent-fg hover:bg-accent-hover'
+                    : 'bg-muted text-fg-subtle',
+              )}
+            >
+              {isStreaming ? <Square className="size-3! fill-current" /> : <ArrowUp />}
+            </button>
+          </div>
         </div>
-
-        <p className="text-center text-[10px] text-fg-subtle">
-          AI 回答仅供参考，请结合实际情况判断 · {config.model}
-        </p>
+        <p className="mt-1.5 text-center text-2xs text-fg-subtle">AI 回答仅供参考</p>
       </div>
     </div>
   )

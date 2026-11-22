@@ -9,7 +9,6 @@ import {
   List,
   ListTodo,
   type LucideIcon,
-  NotebookPen,
   PenLine,
   Quote,
   Table,
@@ -26,18 +25,9 @@ import {
   putQuestionNoteImage,
 } from '@/lib/db'
 import { formatReviewNoteTime } from '@/lib/feedbackNote'
-import type { Question, QuestionNote, QuestionNoteImage } from '@/types'
-import {
-  Button,
-  cn,
-  EmptyState,
-  Kbd,
-  SegmentedControl,
-  Sheet,
-  SheetContent,
-  Spinner,
-  Tooltip,
-} from '@/ui'
+import { recoverNoteDraft, stashNoteDraft } from '@/lib/noteDraft'
+import type { QuestionNote, QuestionNoteImage } from '@/types'
+import { Button, cn, Spinner, Tooltip } from '@/ui'
 import { appendSpeechTranscript } from './answerInput'
 
 // ─── Question Notes ──────────────────────────────────────────────────────────
@@ -247,25 +237,37 @@ export function QuestionNotes({
   const [noteImages, setNoteImages] = useState<Record<string, QuestionNoteImage>>({})
   const [loading, setLoading] = useState(true)
   const [saveStatus, setSaveStatus] = useState<NoteSaveStatus>('idle')
-  const [mode, setMode] = useState<'edit' | 'preview'>('preview')
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
   const [speechError, setSpeechError] = useState<string | null>(null)
   const [imageImportError, setImageImportError] = useState<string | null>(null)
 
   const loadedContentRef = useRef('')
   const saveTimerRef = useRef<number | null>(null)
   const statusTimerRef = useRef<number | null>(null)
+  /** Edit waiting for the autosave debounce; written immediately on question change / unmount. */
+  const pendingRef = useRef<QuestionNote | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
+  const onContentStateChangeRef = useRef(onContentStateChange)
+  onContentStateChangeRef.current = onContentStateChange
 
-  const focusEditor = useCallback(() => {
-    window.setTimeout(() => textareaRef.current?.focus(), 0)
+  const focusEditor = useCallback((cursor?: 'end') => {
+    window.setTimeout(() => {
+      const editor = textareaRef.current
+      if (!editor) return
+      editor.focus()
+      if (cursor === 'end') editor.setSelectionRange(editor.value.length, editor.value.length)
+    }, 0)
   }, [])
 
-  const handleNoteSpeechTranscript = useCallback((transcript: string) => {
-    setContent((prev) => appendSpeechTranscript(prev, transcript))
-    setSpeechError(null)
-    window.setTimeout(() => textareaRef.current?.focus(), 0)
-  }, [])
+  const handleNoteSpeechTranscript = useCallback(
+    (transcript: string) => {
+      setContent((prev) => appendSpeechTranscript(prev, transcript))
+      setSpeechError(null)
+      focusEditor('end')
+    },
+    [focusEditor],
+  )
 
   const speech = useSpeechRecognition({
     lang: 'zh-CN',
@@ -273,18 +275,34 @@ export function QuestionNotes({
     onError: setSpeechError,
   })
 
+  /** Write `note` and drop images it no longer references. */
+  const persist = useCallback(async (note: QuestionNote) => {
+    await putQuestionNote(note)
+    await deleteUnusedQuestionNoteImages(note.questionId, extractNoteImageIds(note.content))
+  }, [])
+
+  /** Save a pending edit right away instead of waiting for the debounce. */
+  const flushPending = useCallback(() => {
+    const pending = pendingRef.current
+    if (!pending) return
+    pendingRef.current = null
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current)
+    void persist(pending).catch(() => {})
+  }, [persist])
+
   // biome-ignore lint/correctness/useExhaustiveDependencies: refreshKey intentionally reloads the IndexedDB note after AI feedback is appended.
   useEffect(() => {
     let cancelled = false
 
-    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current)
+    flushPending()
     speech.stop()
     setLoading(true)
     setSaveStatus('idle')
     setSpeechError(null)
     setImageImportError(null)
 
-    Promise.all([getQuestionNote(questionId), getQuestionNoteImages(questionId)])
+    recoverNoteDraft()
+      .then(() => Promise.all([getQuestionNote(questionId), getQuestionNoteImages(questionId)]))
       .then(([note, images]: [QuestionNote | undefined, QuestionNoteImage[]]) => {
         if (cancelled) return
         const nextContent = note?.content ?? ''
@@ -293,7 +311,9 @@ export function QuestionNotes({
         setCreatedAt(note?.createdAt ?? null)
         setUpdatedAt(note?.updatedAt ?? null)
         setNoteImages(Object.fromEntries(images.map((image) => [image.id, image])))
-        onContentStateChange?.(nextContent.trim().length > 0)
+        // Existing notes open for reading; an empty note opens ready to type.
+        setMode(nextContent.trim() ? 'preview' : 'edit')
+        onContentStateChangeRef.current?.(nextContent.trim().length > 0)
         setLoading(false)
       })
       .catch(() => {
@@ -303,7 +323,8 @@ export function QuestionNotes({
         setCreatedAt(null)
         setUpdatedAt(null)
         setNoteImages({})
-        onContentStateChange?.(false)
+        setMode('edit')
+        onContentStateChangeRef.current?.(false)
         setSaveStatus('error')
         setLoading(false)
       })
@@ -311,19 +332,27 @@ export function QuestionNotes({
     return () => {
       cancelled = true
     }
-  }, [questionId, refreshKey, onContentStateChange, speech.stop])
+  }, [questionId, refreshKey, flushPending, speech.stop])
 
   useEffect(() => {
     if (!autoFocus || loading || mode !== 'edit') return
-    focusEditor()
+    focusEditor('end')
   }, [autoFocus, focusEditor, loading, mode])
 
   useEffect(() => {
+    // Reloads and tab closes don't unmount React, and an IndexedDB write started now may not
+    // finish, so also stash the pending edit synchronously for recovery on the next load.
+    const onPageHide = () => {
+      if (pendingRef.current) stashNoteDraft(pendingRef.current)
+      flushPending()
+    }
+    window.addEventListener('pagehide', onPageHide)
     return () => {
-      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current)
+      window.removeEventListener('pagehide', onPageHide)
+      flushPending()
       if (statusTimerRef.current) window.clearTimeout(statusTimerRef.current)
     }
-  }, [])
+  }, [flushPending])
 
   useEffect(() => {
     if (loading) return
@@ -333,24 +362,25 @@ export function QuestionNotes({
     if (statusTimerRef.current) window.clearTimeout(statusTimerRef.current)
 
     setSaveStatus('saving')
-    const nextContent = content
+    const now = Date.now()
+    const note: QuestionNote = {
+      questionId,
+      content,
+      createdAt: createdAt ?? now,
+      updatedAt: now,
+    }
+    pendingRef.current = note
 
     saveTimerRef.current = window.setTimeout(async () => {
-      const now = Date.now()
+      if (pendingRef.current !== note) return
+      pendingRef.current = null
       try {
-        await putQuestionNote({
-          questionId,
-          content: nextContent,
-          createdAt: createdAt ?? now,
-          updatedAt: now,
-        })
-        const keepImageIds = extractNoteImageIds(nextContent)
-        await deleteUnusedQuestionNoteImages(questionId, keepImageIds)
-
-        loadedContentRef.current = nextContent
-        if (nextContent.trim()) {
-          setCreatedAt((prev) => prev ?? now)
-          setUpdatedAt(now)
+        await persist(note)
+        loadedContentRef.current = note.content
+        if (note.content.trim()) {
+          const keepImageIds = extractNoteImageIds(note.content)
+          setCreatedAt((prev) => prev ?? note.createdAt)
+          setUpdatedAt(note.updatedAt)
           setNoteImages((prev) =>
             Object.fromEntries(keepImageIds.flatMap((id) => (prev[id] ? [[id, prev[id]]] : []))),
           )
@@ -359,23 +389,19 @@ export function QuestionNotes({
           setUpdatedAt(null)
           setNoteImages({})
         }
-        onContentStateChange?.(nextContent.trim().length > 0)
+        onContentStateChangeRef.current?.(note.content.trim().length > 0)
         setSaveStatus('saved')
         statusTimerRef.current = window.setTimeout(() => setSaveStatus('idle'), 1600)
       } catch {
         setSaveStatus('error')
       }
     }, 650)
+  }, [content, createdAt, loading, persist, questionId])
 
-    return () => {
-      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current)
-    }
-  }, [content, createdAt, loading, onContentStateChange, questionId])
-
-  const handleModeChange = useCallback(
+  const switchMode = useCallback(
     (nextMode: 'edit' | 'preview') => {
       setMode(nextMode)
-      if (nextMode === 'edit') focusEditor()
+      if (nextMode === 'edit') focusEditor('end')
     },
     [focusEditor],
   )
@@ -455,12 +481,17 @@ export function QuestionNotes({
 
   const handleNoteKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'b') {
+      const mod = event.metaKey || event.ctrlKey
+      if (mod && event.key.toLowerCase() === 'b') {
         event.preventDefault()
         handleApplyFormat('bold')
+      } else if (mod && event.key === 'Enter') {
+        // ⌘↵ finishes editing and shows the rendered note.
+        event.preventDefault()
+        if (content.trim()) switchMode('preview')
       }
     },
-    [handleApplyFormat],
+    [content, handleApplyFormat, switchMode],
   )
 
   const resolveNoteImageSrc = useCallback(
@@ -472,8 +503,7 @@ export function QuestionNotes({
     [noteImages],
   )
 
-  const noteLength = content.trim().length
-
+  const hasContent = content.trim().length > 0
   const statusText =
     saveStatus === 'saving'
       ? '保存中…'
@@ -482,169 +512,114 @@ export function QuestionNotes({
         : saveStatus === 'error'
           ? '保存失败'
           : updatedAt
-            ? `最后编辑 ${formatReviewNoteTime(updatedAt)}`
+            ? `编辑于 ${formatReviewNoteTime(updatedAt)}`
             : '自动保存'
+  const notice = speech.interimTranscript
+    ? `正在识别：${speech.interimTranscript}`
+    : speechError || imageImportError
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col">
-      <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-3 pb-2">
-        <SegmentedControl
-          size="sm"
-          label="笔记模式"
-          value={mode}
-          onValueChange={handleModeChange}
-          options={[
-            { value: 'preview', label: '预览', icon: <Eye /> },
-            { value: 'edit', label: '编辑', icon: <PenLine /> },
-          ]}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleImageFileChange}
+        className="hidden"
+      />
+
+      <div className="flex h-10 shrink-0 items-center gap-1 border-b border-line px-2">
+        {mode === 'edit' ? (
+          <div
+            role="toolbar"
+            aria-label="笔记格式"
+            className="flex min-w-0 flex-1 items-center overflow-x-auto [scrollbar-width:none]"
+          >
+            {NOTE_FORMAT_ACTIONS.map((action) => (
+              <NoteToolbarButton
+                key={action.id}
+                icon={NOTE_ACTION_ICONS[action.id]}
+                title={action.id === 'bold' ? `${action.title} ⌘B` : action.title}
+                disabled={loading}
+                onClick={() => handleApplyFormat(action.id)}
+              />
+            ))}
+            <NoteToolbarButton
+              icon={ImagePlus}
+              title="插入本地图片"
+              disabled={loading}
+              onClick={handlePickImage}
+            />
+          </div>
+        ) : (
+          <p className="min-w-0 flex-1 truncate px-1.5 text-xs text-fg-subtle">点击正文开始编辑</p>
+        )}
+        <Tooltip content={mode === 'edit' ? '预览 ⌘↵' : '编辑'}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="shrink-0 text-fg-muted"
+            disabled={loading || (mode === 'edit' && !hasContent)}
+            onClick={() => switchMode(mode === 'edit' ? 'preview' : 'edit')}
+          >
+            {mode === 'edit' ? <Eye /> : <PenLine />}
+            {mode === 'edit' ? '预览' : '编辑'}
+          </Button>
+        </Tooltip>
+      </div>
+
+      {loading ? (
+        <div className="flex flex-1 items-center justify-center text-fg-subtle">
+          <Spinner />
+        </div>
+      ) : mode === 'edit' ? (
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onKeyDown={handleNoteKeyDown}
+          placeholder={'记录自己的理解、易错点、面试时怎么说…\n\n支持 Markdown，⌘B 加粗，⌘↵ 预览'}
+          aria-label="题目笔记"
+          className="block min-h-0 w-full flex-1 resize-none overflow-y-auto overscroll-contain bg-transparent px-4 py-3.5 text-sm leading-[1.75] text-fg outline-none placeholder:text-fg-subtle"
         />
-        <span
+      ) : (
+        // biome-ignore lint/a11y/noStaticElementInteractions: click-to-edit shortcut on rendered text; the 编辑 button is the keyboard path
+        <div
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest('a, button, input, summary')) return
+            if (document.getSelection()?.toString()) return
+            switchMode('edit')
+          }}
+          className="prose min-h-0 min-w-0 flex-1 cursor-text overflow-y-auto overscroll-contain px-4 py-3.5 text-sm"
+        >
+          <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
+        </div>
+      )}
+
+      <div className="flex h-9 shrink-0 items-center gap-2 border-t border-line pr-1.5 pl-4 text-xs text-fg-subtle">
+        <output
           className={cn(
-            'inline-flex items-center gap-1.5 text-xs',
-            saveStatus === 'error' ? 'text-danger' : 'text-fg-subtle',
+            'inline-flex min-w-0 items-center gap-1.5',
+            saveStatus === 'error' && 'text-danger',
           )}
         >
           {saveStatus === 'saved' ? <Check className="size-3.5 text-success" /> : null}
           {saveStatus === 'saving' ? <Spinner className="size-3" /> : null}
-          {loading ? '加载中…' : statusText}
+          <span className="truncate">{notice ?? statusText}</span>
+        </output>
+        <span className="ml-auto shrink-0 tabular-nums">
+          {content.trim().length.toLocaleString()} 字
         </span>
-      </div>
-
-      {mode === 'edit' ? (
-        <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 pb-3">
-          <div className="overflow-hidden rounded-xl border border-line-strong bg-canvas transition-[border-color,box-shadow] focus-within:border-accent focus-within:ring-3 focus-within:ring-ring/40">
-            <input
-              ref={imageInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageFileChange}
-              className="hidden"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-1 border-b border-line px-1.5 py-1">
-              <div className="flex flex-wrap items-center">
-                {NOTE_FORMAT_ACTIONS.map((action) => (
-                  <NoteToolbarButton
-                    key={action.id}
-                    icon={NOTE_ACTION_ICONS[action.id]}
-                    title={action.id === 'bold' ? `${action.title} ⌘B` : action.title}
-                    disabled={loading}
-                    onClick={() => handleApplyFormat(action.id)}
-                  />
-                ))}
-                <NoteToolbarButton
-                  icon={ImagePlus}
-                  title="导入本地图片"
-                  disabled={loading}
-                  onClick={handlePickImage}
-                />
-              </div>
-              <div className="flex min-w-0 items-center gap-1.5">
-                {speech.interimTranscript || speechError || imageImportError ? (
-                  <span
-                    title={speech.interimTranscript || speechError || imageImportError || undefined}
-                    className={cn(
-                      'max-w-[180px] truncate text-xs',
-                      speechError || imageImportError ? 'text-danger' : 'text-accent',
-                    )}
-                  >
-                    {speech.interimTranscript
-                      ? `正在识别：${speech.interimTranscript}`
-                      : speechError || imageImportError}
-                  </span>
-                ) : null}
-                <SpeechInputButton
-                  supported={speech.supported}
-                  listening={speech.listening}
-                  disabled={loading}
-                  onToggle={speech.toggle}
-                />
-              </div>
-            </div>
-            <textarea
-              ref={textareaRef}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              onKeyDown={handleNoteKeyDown}
-              disabled={loading}
-              placeholder="记录自己的理解、易错点、面试表达、下次要追问的问题…"
-              aria-label="题目笔记"
-              rows={6}
-              className="block min-h-[min(34dvh,340px)] w-full resize-y bg-transparent px-3.5 py-3 text-base leading-relaxed text-fg outline-none placeholder:text-fg-subtle max-sm:text-[16px]"
-            />
-          </div>
-          {content.trim() ? (
-            <div className="min-w-0">
-              <p className="mb-1.5 text-2xs font-medium tracking-wide text-fg-subtle uppercase">
-                预览
-              </p>
-              <div className="prose min-w-0 text-sm">
-                <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
-              </div>
-            </div>
-          ) : null}
-        </div>
-      ) : content.trim() ? (
-        <div className="prose min-h-0 min-w-0 flex-1 overflow-y-auto px-4 pb-3 text-sm">
-          <MarkdownRenderer content={content} resolveImageSrc={resolveNoteImageSrc} />
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 px-4 pb-3">
-          <EmptyState
-            className="w-full border-0 pb-24"
-            icon={<NotebookPen />}
-            title="还没有笔记"
-            description="记录自己的理解、易错点和面试表达，复习时一眼就能看到。"
-            action={
-              <Button size="sm" variant="secondary" onClick={() => handleModeChange('edit')}>
-                <PenLine />
-                开始记录
-              </Button>
-            }
-          />
-        </div>
-      )}
-
-      <div className="flex shrink-0 items-center justify-between gap-2.5 border-t border-line px-4 py-2 text-xs text-fg-subtle">
-        <span>支持 Markdown</span>
-        <span className="tabular-nums">{noteLength.toLocaleString()} 字</span>
+        <SpeechInputButton
+          supported={speech.supported}
+          listening={speech.listening}
+          disabled={loading}
+          onToggle={() => {
+            setMode('edit')
+            speech.toggle()
+          }}
+        />
       </div>
     </div>
-  )
-}
-
-export interface NoteDrawerProps {
-  open: boolean
-  onClose: () => void
-  question: Question
-  refreshKey: number
-  onContentStateChange: (hasContent: boolean) => void
-}
-
-export function NoteDrawer({
-  open,
-  onClose,
-  question,
-  refreshKey,
-  onContentStateChange,
-}: NoteDrawerProps) {
-  return (
-    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
-      {open ? (
-        <SheetContent
-          title="题目笔记"
-          description={question.question}
-          headerAction={<Kbd className="max-sm:hidden">N</Kbd>}
-          bodyClassName="flex flex-col overflow-hidden"
-          onOpenAutoFocus={(event) => event.preventDefault()}
-        >
-          <QuestionNotes
-            questionId={question.id}
-            refreshKey={refreshKey}
-            autoFocus
-            onContentStateChange={onContentStateChange}
-          />
-        </SheetContent>
-      ) : null}
-    </Sheet>
   )
 }

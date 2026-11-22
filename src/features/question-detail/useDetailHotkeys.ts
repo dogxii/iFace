@@ -3,16 +3,15 @@ import type { StudyStatus } from '@/types'
 import { blurActiveControl, isEditableTarget } from './answerInput'
 
 interface Options {
-  /** Any overlay (settings, AI drawer, module drawer) owns the keyboard while open. */
+  /** A modal overlay (settings, module drawer, mobile side sheet) owns the keyboard while open. */
   overlayOpen: boolean
-  noteOpen: boolean
   /** True while a status change is being saved. */
   busy: () => boolean
   answerVisible: boolean
   /** In the learning-check tab only the arrow keys navigate. */
   checkView: boolean
   toggleNote: () => void
-  openAI: () => void
+  toggleAI: () => void
   openModule: () => void
   revealAnswer: () => void
   setStatus: (status: StudyStatus, key: '1' | '2' | '3') => void
@@ -23,7 +22,7 @@ interface Options {
 const plain = (e: KeyboardEvent) => !e.metaKey && !e.ctrlKey && !e.altKey
 
 /**
- * Detail page shortcuts: N note, A AI, L module list, Space reveal, 1/2/3 mark, ←/→ navigate.
+ * Detail page shortcuts: N notes panel, A AI panel, L module list, Space reveal, 1/2/3 mark, ←/→ navigate.
  */
 export function useDetailHotkeys(options: Options) {
   const latest = useRef(options)
@@ -40,10 +39,9 @@ export function useDetailHotkeys(options: Options) {
         o.toggleNote()
         return
       }
-      if (o.noteOpen) return
       if (plain(e) && key === 'a') {
         e.preventDefault()
-        o.openAI()
+        o.toggleAI()
         return
       }
       if (plain(e) && key === 'l') {

@@ -56,16 +56,16 @@ test('a question note is saved and survives a reload', async ({ page }) => {
   await expect(first).toBeVisible({ timeout: 20_000 })
   await first.click()
 
-  await page.getByRole('button', { name: /笔记/ }).first().click()
-  const notes = page.getByRole('dialog', { name: '题目笔记' })
-  await notes.getByRole('button', { name: '开始记录' }).click()
+  // Notes open in the docked side panel, ready to type.
+  await page.getByRole('button', { name: '笔记', exact: true }).click()
+  const notes = page.getByRole('complementary', { name: '笔记与 AI 助手' })
   await notes.getByRole('textbox', { name: '题目笔记' }).fill('闭包会捕获外部变量')
   await expect(notes.getByText('已保存')).toBeVisible({ timeout: 5_000 })
 
   await page.reload()
-  await page.getByRole('button', { name: /笔记/ }).first().click()
+  await page.getByRole('button', { name: '笔记', exact: true }).click()
   await expect(
-    page.getByRole('dialog', { name: '题目笔记' }).getByText('闭包会捕获外部变量'),
+    page.getByRole('complementary', { name: '笔记与 AI 助手' }).getByText('闭包会捕获外部变量'),
   ).toBeVisible({ timeout: 10_000 })
 })
 
@@ -170,4 +170,19 @@ test('first visit shows the onboarding guide once', async ({ page }) => {
   await page.reload()
   await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
   await expect(page.getByRole('dialog')).toHaveCount(0)
+})
+
+test('the sidebar collapses to an icon rail and remembers it', async ({ page }) => {
+  await page.goto('/')
+  const sidebar = page.getByRole('complementary', { name: '侧栏' })
+  await expect(sidebar).toBeVisible({ timeout: 20_000 })
+
+  await sidebar.getByRole('button', { name: '收起侧栏' }).click()
+  await expect(sidebar.getByRole('button', { name: '展开侧栏' })).toBeVisible()
+  await expect.poll(async () => (await sidebar.boundingBox())?.width).toBeLessThan(80)
+
+  await page.reload()
+  await expect(sidebar.getByRole('button', { name: '展开侧栏' })).toBeVisible({ timeout: 20_000 })
+  await page.keyboard.press('[')
+  await expect(sidebar.getByRole('button', { name: '收起侧栏' })).toBeVisible()
 })
