@@ -54,6 +54,7 @@ export {
   StepProgress,
   type StepState,
 } from './Progress'
+export { ResizeHandle, type ResizeHandleProps } from './ResizeHandle'
 export {
   Breadcrumb,
   PageHeader,

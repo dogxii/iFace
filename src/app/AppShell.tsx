@@ -1,9 +1,10 @@
-import { Menu, Moon, Search, Settings, Sun } from 'lucide-react'
-import { lazy, type ReactNode, Suspense, useEffect, useState } from 'react'
+import { Menu, Moon, PanelLeftClose, PanelLeftOpen, Search, Settings, Sun } from 'lucide-react'
+import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { CommandPalette } from '@/features/command-palette/CommandPalette'
 import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { useGistAutoSync } from '@/features/settings/useGistSync'
+import { isEditableTarget } from '@/lib/dom'
 import { preloadPath } from '@/lib/routePreload'
 import { useAuthState } from '@/store/useAuthStore'
 import { useStudyState } from '@/store/useStudyStore'
@@ -13,6 +14,8 @@ import {
   cn,
   Kbd,
   Progress,
+  ProgressRing,
+  ResizeHandle,
   Sheet,
   SheetContent,
   Sidebar,
@@ -20,24 +23,37 @@ import {
   SidebarItem,
   Tooltip,
 } from '@/ui'
+import { resolveSidebarDrag, SIDEBAR } from './layout'
 import { isNavItemActive, type NavItem, PRIMARY_NAV, TOOL_NAV } from './navigation'
 
-function Brand() {
+function Brand({ collapsed = false }: { collapsed?: boolean }) {
   return (
     <NavLink
       to="/"
+      aria-label={collapsed ? 'iFace 概览' : undefined}
       onPointerEnter={() => preloadPath('/')}
-      className="flex h-9 items-center gap-2 rounded-md px-2 text-md font-semibold tracking-tight text-fg outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        'flex h-9 min-w-0 items-center gap-2 rounded-md text-md font-semibold tracking-tight text-fg outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        collapsed ? 'justify-center px-0' : 'px-2',
+      )}
     >
-      <span className="flex size-5.5 items-center justify-center rounded-md bg-fg text-xs font-semibold text-canvas">
+      <span className="flex size-5.5 shrink-0 items-center justify-center rounded-md bg-fg text-xs font-semibold text-canvas">
         i
       </span>
-      iFace
+      {collapsed ? null : 'iFace'}
     </NavLink>
   )
 }
 
-function NavItems({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {
+function NavItems({
+  items,
+  collapsed = false,
+  onNavigate,
+}: {
+  items: NavItem[]
+  collapsed?: boolean
+  onNavigate?: () => void
+}) {
   const { pathname } = useLocation()
   const reviewCount = useStudyState((s) => s.statusCounts.review)
   return items.map((item) => {
@@ -50,6 +66,7 @@ function NavItems({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
         icon={<Icon />}
         active={isNavItemActive(item, pathname)}
         count={item.showReviewCount && reviewCount > 0 ? reviewCount : undefined}
+        collapsed={collapsed}
         onPointerEnter={() => preloadPath(item.path)}
         onFocus={() => preloadPath(item.path)}
         onClick={onNavigate}
@@ -60,15 +77,29 @@ function NavItems({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => 
   })
 }
 
-function TodayGoal() {
+function TodayGoal({ collapsed = false }: { collapsed?: boolean }) {
   const todayCount = useStudyState((s) => s.streak.todayCount)
   const dailyGoal = useStudyState((s) => s.dailyGoal)
+  const done = Math.min(todayCount, dailyGoal)
+  if (collapsed) {
+    return (
+      <Tooltip content={`今日目标 ${done} / ${dailyGoal}`} side="right">
+        <span
+          role="img"
+          aria-label={`今日目标 ${done} / ${dailyGoal}`}
+          className="mx-auto grid size-8 place-items-center"
+        >
+          <ProgressRing value={todayCount} max={dailyGoal} size={18} stroke={3} />
+        </span>
+      </Tooltip>
+    )
+  }
   return (
     <div className="px-2">
       <div className="flex justify-between text-xs text-fg-muted">
         <span>今日目标</span>
         <span className="font-medium tabular-nums text-fg">
-          {Math.min(todayCount, dailyGoal)} / {dailyGoal}
+          {done} / {dailyGoal}
         </span>
       </div>
       <Progress
@@ -82,12 +113,12 @@ function TodayGoal() {
   )
 }
 
-function ThemeButton() {
+function ThemeButton({ side }: { side?: 'top' | 'right' }) {
   const theme = useStudyState((s) => s.theme)
   const toggleTheme = useStudyState((s) => s.toggleTheme)
   const label = theme === 'dark' ? '切换亮色' : '切换暗色'
   return (
-    <Tooltip content={label}>
+    <Tooltip content={label} side={side}>
       <Button variant="ghost" size="icon-sm" aria-label={label} onClick={toggleTheme}>
         {theme === 'dark' ? <Sun /> : <Moon />}
       </Button>
@@ -95,19 +126,59 @@ function ThemeButton() {
   )
 }
 
-function UserRow() {
+function SidebarToggle({ collapsed }: { collapsed: boolean }) {
+  const toggleSidebar = useUIState((s) => s.toggleSidebar)
+  const label = collapsed ? '展开侧栏' : '收起侧栏'
+  return (
+    <Tooltip content={label} shortcut="[" side={collapsed ? 'right' : 'bottom'}>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label={label}
+        aria-expanded={!collapsed}
+        onClick={toggleSidebar}
+      >
+        {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
+      </Button>
+    </Tooltip>
+  )
+}
+
+function UserAvatar() {
+  const user = useAuthState((s) => s.user)
+  return user ? (
+    <img src={user.avatar_url} alt="" className="size-5.5 shrink-0 rounded-full" />
+  ) : (
+    <span className="size-5.5 shrink-0 rounded-full bg-gradient-to-br from-accent-subtle to-accent" />
+  )
+}
+
+function UserRow({ collapsed = false }: { collapsed?: boolean }) {
   const user = useAuthState((s) => s.user)
   const openSettings = useUIState((s) => s.openSettings)
+  const name = user ? (user.name ?? user.login) : '本地模式'
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <ThemeButton side="right" />
+        <Tooltip content="设置" side="right">
+          <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={() => openSettings()}>
+            <Settings />
+          </Button>
+        </Tooltip>
+        <SidebarToggle collapsed />
+        <Tooltip content={name} side="right">
+          <span role="img" aria-label={name} className="grid size-8 place-items-center">
+            <UserAvatar />
+          </span>
+        </Tooltip>
+      </div>
+    )
+  }
   return (
     <div className="flex items-center gap-1 pl-2">
-      {user ? (
-        <img src={user.avatar_url} alt="" className="size-5.5 rounded-full" />
-      ) : (
-        <span className="size-5.5 rounded-full bg-gradient-to-br from-accent-subtle to-accent" />
-      )}
-      <span className="ml-1.5 min-w-0 flex-1 truncate text-sm text-fg">
-        {user ? (user.name ?? user.login) : '本地模式'}
-      </span>
+      <UserAvatar />
+      <span className="ml-1.5 min-w-0 flex-1 truncate text-sm text-fg">{name}</span>
       <ThemeButton />
       <Tooltip content="设置">
         <Button variant="ghost" size="icon-sm" aria-label="设置" onClick={() => openSettings()}>
@@ -118,8 +189,23 @@ function UserRow() {
   )
 }
 
-function SearchButton() {
+function SearchButton({ collapsed = false }: { collapsed?: boolean }) {
   const setPaletteOpen = useUIState((s) => s.setPaletteOpen)
+  if (collapsed) {
+    return (
+      <Tooltip content="搜索" shortcut={PALETTE_SHORTCUT} side="right">
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="搜索"
+          className="mx-auto mb-2 size-8"
+          onClick={() => setPaletteOpen(true)}
+        >
+          <Search />
+        </Button>
+      </Tooltip>
+    )
+  }
   return (
     <button
       type="button"
@@ -133,20 +219,75 @@ function SearchButton() {
   )
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  collapsed = false,
+  onNavigate,
+}: {
+  collapsed?: boolean
+  onNavigate?: () => void
+}) {
   return (
     <>
-      <SearchButton />
-      <nav aria-label="主导航" className="flex flex-col gap-px">
-        <NavItems items={PRIMARY_NAV} onNavigate={onNavigate} />
-        <SidebarGroupLabel>工具</SidebarGroupLabel>
-        <NavItems items={TOOL_NAV} onNavigate={onNavigate} />
+      <SearchButton collapsed={collapsed} />
+      <nav
+        aria-label="主导航"
+        className="-mx-1 flex min-h-0 flex-col gap-px overflow-y-auto overscroll-contain px-1"
+      >
+        <NavItems items={PRIMARY_NAV} collapsed={collapsed} onNavigate={onNavigate} />
+        <SidebarGroupLabel collapsed={collapsed}>工具</SidebarGroupLabel>
+        <NavItems items={TOOL_NAV} collapsed={collapsed} onNavigate={onNavigate} />
       </nav>
       <div className="mt-auto flex flex-col gap-3 border-t border-line pt-3">
-        <TodayGoal />
-        <UserRow />
+        <TodayGoal collapsed={collapsed} />
+        <UserRow collapsed={collapsed} />
       </div>
     </>
+  )
+}
+
+/** Desktop sidebar: drag the right edge to resize, drag it far left (or press `[`) to collapse. */
+function DesktopSidebar({ width, collapsed }: { width: number; collapsed: boolean }) {
+  const setSidebarWidth = useUIState((s) => s.setSidebarWidth)
+  const setSidebarCollapsed = useUIState((s) => s.setSidebarCollapsed)
+  // Width before the current drag, restored when the drag ends in a collapse.
+  const widthBeforeDrag = useRef(width)
+
+  return (
+    <Sidebar
+      aria-label="侧栏"
+      style={{ width }}
+      className={cn(
+        'resize-animated fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 ease-out lg:flex',
+        collapsed ? 'px-2' : 'px-2.5',
+      )}
+    >
+      <div className={cn('mb-3 flex items-center gap-1', collapsed && 'justify-center')}>
+        <div className="min-w-0 flex-1">
+          <Brand collapsed={collapsed} />
+        </div>
+        {collapsed ? null : <SidebarToggle collapsed={false} />}
+      </div>
+      <SidebarContent collapsed={collapsed} />
+      <ResizeHandle
+        edge="right"
+        label="调整侧栏宽度"
+        value={width}
+        min={SIDEBAR.rail}
+        max={SIDEBAR.max}
+        onResizeStart={(start) => {
+          if (!collapsed) widthBeforeDrag.current = start
+        }}
+        onResize={(raw) => {
+          const next = resolveSidebarDrag(raw)
+          setSidebarCollapsed(next.collapsed)
+          setSidebarWidth(next.collapsed ? widthBeforeDrag.current : next.width)
+        }}
+        onReset={() => {
+          setSidebarCollapsed(false)
+          setSidebarWidth(SIDEBAR.default)
+        }}
+      />
+    </Sidebar>
   )
 }
 
@@ -197,6 +338,20 @@ function usePaletteHotkey() {
   }, [])
 }
 
+/** `[` toggles the desktop sidebar, like Linear. Ignored while typing. */
+function useSidebarHotkey() {
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.key !== '[' || event.metaKey || event.ctrlKey || event.altKey) return
+      if (event.repeat || isEditableTarget(event.target)) return
+      event.preventDefault()
+      useUIState.getState().toggleSidebar()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+}
+
 const loadSettingsDialog = () => import('@/features/settings/SettingsDialog')
 const SettingsDialog = lazy(() => loadSettingsDialog().then((m) => ({ default: m.SettingsDialog })))
 
@@ -227,17 +382,19 @@ function LazySettingsDialog() {
 export function AppShell({ children }: { children: ReactNode }) {
   useGistAutoSync()
   usePaletteHotkey()
+  useSidebarHotkey()
   const mobileNavOpen = useUIState((s) => s.mobileNavOpen)
   const setMobileNavOpen = useUIState((s) => s.setMobileNavOpen)
+  const sidebarWidth = useUIState((s) => s.sidebarWidth)
+  const sidebarCollapsed = useUIState((s) => s.sidebarCollapsed)
+  const shownSidebarWidth = sidebarCollapsed ? SIDEBAR.rail : sidebarWidth
 
   return (
-    <div className="min-h-dvh bg-canvas text-fg [--navbar-h:52px] lg:[--navbar-h:0px]">
-      <Sidebar className="fixed inset-y-0 left-0 z-30 hidden lg:flex">
-        <div className="mb-3">
-          <Brand />
-        </div>
-        <SidebarContent />
-      </Sidebar>
+    <div
+      style={{ '--sidebar-w': `${shownSidebarWidth}px` } as React.CSSProperties}
+      className="min-h-dvh bg-canvas text-fg [--navbar-h:52px] lg:[--navbar-h:0px]"
+    >
+      <DesktopSidebar width={shownSidebarWidth} collapsed={sidebarCollapsed} />
 
       <MobileTopBar />
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
@@ -248,7 +405,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         </SheetContent>
       </Sheet>
 
-      <div className="min-w-0 lg:pl-58">{children}</div>
+      <div className="resize-animated min-w-0 transition-[padding] duration-200 ease-out lg:pl-[var(--sidebar-w)]">
+        {children}
+      </div>
 
       <LazySettingsDialog />
       <CommandPalette />

@@ -11,6 +11,16 @@
   --navbar-h: 52px;
 }
 
+/*
+ * Radix dialogs lock scrolling via react-remove-scroll, which adds a right margin to <body> equal
+ * to the scrollbar width. `scrollbar-gutter: stable` already keeps that space, so the margin would
+ * shift the page sideways whenever a dialog opens.
+ */
+html body[data-scroll-locked] {
+  /* biome-ignore lint/complexity/noImportantStyles: must beat the library's injected !important rule */
+  margin-right: 0 !important;
+}
+
 /* Element-level defaults live in the base layer so Tailwind utilities can override them. */
 @layer base {
   /* ─── Reset ─────────────────────────────────────────────────────────────────── */
@@ -28,14 +38,9 @@
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
     scroll-behavior: smooth;
+    /* Reserve the scrollbar's space even on short pages, so routes don't shift sideways. */
     scrollbar-gutter: stable;
     text-size-adjust: 100%;
-  }
-
-  @media (min-width: 768px) {
-    html {
-      overflow-y: scroll;
-    }
   }
 
   body {
@@ -51,19 +56,28 @@
 
   /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
 
-  ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+  /* Standard properties (Chrome 121+, Firefox, Safari 18.2+); `scrollbar-color` inherits. */
+  :root {
+    scrollbar-color: var(--color-line-strong) transparent;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
+  * {
+    scrollbar-width: thin;
   }
-  ::-webkit-scrollbar-thumb {
-    background: var(--color-line-strong);
-    border-radius: 99px;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-fg-subtle);
+  /* Older WebKit fallback. */
+  @supports not (scrollbar-color: auto) {
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--color-line-strong);
+      border: 2px solid transparent;
+      background-clip: padding-box;
+      border-radius: 99px;
+    }
   }
 
   /* ─── Selection ─────────────────────────────────────────────────────────────── */
@@ -251,4 +265,17 @@
   color: var(--color-success);
   border-color: rgba(16, 185, 129, 0.3);
   opacity: 1;
+}
+
+/* While a panel edge is being dragged: keep the resize cursor everywhere and stop text selection. */
+html[data-resizing] {
+  cursor: col-resize;
+  user-select: none;
+}
+html[data-resizing] .resize-animated {
+  transition: none;
+}
+html[data-resizing] * {
+  /* biome-ignore lint/complexity/noImportantStyles: overrides per-element cursors during a drag */
+  cursor: col-resize !important;
 }

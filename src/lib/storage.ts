@@ -18,6 +18,10 @@ export const STORAGE_KEYS = {
   aiSessions: 'iface_ai_sessions',
   githubToken: 'iface_gh_token',
   onboardingDone: 'iface_onboarding_done_v1',
+  sidebarWidth: 'iface_sidebar_width',
+  sidebarCollapsed: 'iface_sidebar_collapsed',
+  sidePanelWidth: 'iface_side_panel_width',
+  noteDraft: 'iface_note_draft',
 } as const
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]

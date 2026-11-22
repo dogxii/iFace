@@ -1,12 +1,13 @@
 import type { HTMLAttributes, ReactNode } from 'react'
 import { cn } from './cn'
+import { Tooltip } from './Menu'
 
-/** Sidebar container (desktop). Pages render inside `AppMain`. */
+/** Sidebar container (desktop). Width is set by the owner (resizable / collapsible). */
 export function Sidebar({ className, ...props }: HTMLAttributes<HTMLElement>) {
   return (
     <aside
       className={cn(
-        'flex h-full w-58 shrink-0 flex-col gap-px border-r border-line bg-subtle px-2.5 py-3.5',
+        'flex h-full shrink-0 flex-col gap-px border-r border-line bg-subtle py-3.5',
         className,
       )}
       {...props}
@@ -14,14 +15,28 @@ export function Sidebar({ className, ...props }: HTMLAttributes<HTMLElement>) {
   )
 }
 
-export function SidebarGroupLabel({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('px-2 pt-4 pb-1.5 text-xs text-fg-subtle', className)} {...props} />
+export function SidebarGroupLabel({
+  collapsed,
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { collapsed?: boolean }) {
+  if (collapsed) {
+    return <div aria-hidden className={cn('mx-2 my-3 h-px bg-line', className)} />
+  }
+  return (
+    <div className={cn('px-2 pt-4 pb-1.5 text-xs text-fg-subtle', className)} {...props}>
+      {children}
+    </div>
+  )
 }
 
 export interface SidebarItemProps extends HTMLAttributes<HTMLElement> {
   icon?: ReactNode
   active?: boolean
   count?: ReactNode
+  /** Icon-only rail mode: the label becomes a tooltip and stays available to screen readers. */
+  collapsed?: boolean
   /** Render the item as the given element (e.g. a router `NavLink`). */
   as?: React.ElementType
   [key: string]: unknown
@@ -31,29 +46,40 @@ export function SidebarItem({
   icon,
   active,
   count,
+  collapsed = false,
   as: Comp = 'button',
   className,
   children,
   ...props
 }: SidebarItemProps) {
-  return (
+  const item = (
     <Comp
       aria-current={active ? 'page' : undefined}
       className={cn(
-        'flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm text-fg-muted transition-colors outline-none hover:bg-muted/70 hover:text-fg focus-visible:ring-2 focus-visible:ring-ring',
+        'relative flex h-8 w-full items-center gap-2.5 rounded-md px-2 text-left text-sm text-fg-muted transition-colors outline-none hover:bg-muted/70 hover:text-fg focus-visible:ring-2 focus-visible:ring-ring',
         '[&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-fg-subtle',
         active && 'bg-muted font-medium text-fg [&_svg]:text-fg',
+        collapsed && 'justify-center px-0',
         className,
       )}
       {...(Comp === 'button' ? { type: 'button' } : {})}
       {...props}
     >
       {icon}
-      <span className="min-w-0 flex-1 truncate">{children}</span>
-      {count !== undefined ? (
+      <span className={collapsed ? 'sr-only' : 'min-w-0 flex-1 truncate'}>{children}</span>
+      {count !== undefined && !collapsed ? (
         <span className="text-xs tabular-nums text-fg-subtle">{count}</span>
       ) : null}
+      {count !== undefined && collapsed ? (
+        <span aria-hidden className="absolute top-1.5 right-2 size-1.5 rounded-full bg-accent" />
+      ) : null}
     </Comp>
+  )
+  if (!collapsed) return item
+  return (
+    <Tooltip content={children} shortcut={count} side="right">
+      {item}
+    </Tooltip>
   )
 }
 
