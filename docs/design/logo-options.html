@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>iFace logo options</title>
+<style>
+  :root { font-family: Inter, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #f4f4f5; padding: 32px; color: #0a0a0a; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .lead { margin-top: 6px; color: #52525b; font-size: 14px; }
+  .grid { margin-top: 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card { border-radius: 16px; overflow: hidden; border: 1px solid #e4e4e7; display: grid; grid-template-columns: 1fr 1fr; }
+  .pane { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+  .light { background: #fff; }
+  .dark { background: #0a0a0b; color: #fafafa; }
+  .title { font-size: 15px; font-weight: 600; }
+  .desc { font-size: 12px; line-height: 18px; color: #71717a; margin-top: 2px; }
+  .dark .desc { color: #8b8b94; }
+  .row { display: flex; align-items: flex-end; gap: 16px; }
+  .row svg { display: block; }
+  .size { font-size: 10px; color: #a1a1aa; text-align: center; margin-top: 4px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; padding: 8px 10px; border-radius: 10px; }
+  .light .brand { background: #fafafa; border: 1px solid #ebebeb; }
+  .dark .brand { background: #111113; border: 1px solid #232326; }
+  .tab { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 10px; border-radius: 8px 8px 0 0; width: fit-content; }
+  .light .tab { background: #f4f4f5; }
+  .dark .tab { background: #1a1a1d; }
+</style>
+</head>
+<body>
+  <h1>iFace Logo 方案</h1>
+  <p class="lead">每个方案展示：App 图标（PWA / 桌面）、浏览器标签页 favicon、侧边栏品牌位，分别在浅色和深色下。</p>
+
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <!-- Shared sunglasses + smile geometry on a 64 grid -->
+      <g id="shades">
+        <rect x="11" y="23" width="42" height="3.5" rx="1.75" />
+        <path d="M13 24h17v6.5c0 4-3 7-7 7h-3c-4 0-7-3-7-7z" />
+        <path d="M34 24h17v6.5c0 4-3 7-7 7h-3c-4 0-7-3-7-7z" />
+      </g>
+      <path id="smile" d="M23.5 45.5q8.5 6.5 17 0" fill="none" stroke-width="3.6" stroke-linecap="round" />
+
+      <!-- A · 墨镜极简（主色） -->
+      <symbol id="logo-a" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#5e5ce6" />
+        <use href="#shades" fill="#fff" />
+        <use href="#smile" stroke="#fff" />
+      </symbol>
+      <!-- A2 · 墨镜极简（黑白） -->
+      <symbol id="logo-a-mono" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="currentColor" />
+        <g style="fill: var(--on, #fff); stroke: var(--on, #fff)">
+          <use href="#shades" />
+          <use href="#smile" />
+        </g>
+      </symbol>
+
+      <!-- B · 扁平小黄脸 -->
+      <symbol id="logo-b" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="29" fill="#fbbf24" />
+        <circle cx="32" cy="32" r="29" fill="none" stroke="#f59e0b" stroke-width="1.5" opacity=".6" />
+        <use href="#shades" fill="#18181b" />
+        <path d="M16.5 27.5l4.5-3.5M37.5 27.5l4.5-3.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+        <use href="#smile" stroke="#18181b" />
+      </symbol>
+
+      <!-- C · i 字脸 -->
+      <symbol id="logo-c" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="currentColor" />
+        <circle cx="23.5" cy="20" r="3.8" fill="#7c7aff" />
+        <circle cx="40.5" cy="20" r="3.8" fill="#7c7aff" />
+        <rect x="21" y="27" width="5" height="12" rx="2.5" style="fill: var(--on, #fff)" />
+        <rect x="38" y="27" width="5" height="12" rx="2.5" style="fill: var(--on, #fff)" />
+        <path d="M22 46q10 7.5 20 0" fill="none" stroke-width="4" stroke-linecap="round" style="stroke: var(--on, #fff)" />
+      </symbol>
+
+      <!-- D · 对话气泡 -->
+      <symbol id="logo-d" viewBox="0 0 64 64">
+        <path d="M18 5h28c7.7 0 13 5.3 13 13v19c0 7.7-5.3 13-13 13H27l-11 9v-9.4C9.7 48.6 5 43.9 5 37V18C5 10.3 10.3 5 18 5z" fill="#5e5ce6" />
+        <g transform="translate(32 27.5) scale(.82) translate(-32 -32)">
+          <use href="#shades" fill="#fff" />
+          <path d="M25 44q7 5 14 0" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" />
+        </g>
+      </symbol>
+      <!-- E · 墨镜 + 灵感 -->
+      <symbol id="logo-e" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#18181b" />
+        <g transform="translate(30 34) scale(.86) translate(-32 -32)">
+          <use href="#shades" fill="#fff" />
+          <use href="#smile" stroke="#fff" />
+        </g>
+        <path d="M50 6.5c.9 4.6 2.9 6.6 7.5 7.5-4.6.9-6.6 2.9-7.5 7.5-.9-4.6-2.9-6.6-7.5-7.5 4.6-.9 6.6-2.9 7.5-7.5z" fill="#facc15" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const options = [
+      { id: 'logo-a', title: 'A · 墨镜极简', desc: '把 😎 抽象成几何：主色方块 + 白色墨镜和微笑。保留老 logo 的记忆点，和现在的主色统一。' },
+      { id: 'logo-a-mono', title: 'A2 · 墨镜极简（黑白）', desc: '同 A 的黑白版本，Vercel 式克制；深色模式下自动反色。', mono: true },
+      { id: 'logo-b', title: 'B · 扁平小黄脸', desc: '最接近原来的 😎，去掉灯泡和立体光影，扁平化后在小尺寸下更清楚。' },
+      { id: 'logo-c', title: 'C · i 字脸', desc: '两个小写 i 当眼睛（主色点），下面一道微笑，拼成 “i-Face”。字形感强，偏工具气质。', mono: true },
+      { id: 'logo-e', title: 'E · 墨镜 + 灵感', desc: '保留原 logo 的两个元素：墨镜笑脸 + 灯泡（抽象成黄色闪光），深色底更沉稳。', },
+      { id: 'logo-d', title: 'D · 对话气泡', desc: '对话气泡里戴墨镜的笑脸，点出“面试 = 对话”。形状辨识度高，favicon 下也成立。' },
+    ]
+    const icon = (o, size, theme) => {
+      const fg = theme === 'dark' ? '#fafafa' : '#0a0a0a'
+      const on = theme === 'dark' ? '#0a0a0a' : '#ffffff'
+      const style = o.mono ? `color:${fg};--on:${on}` : ''
+      return `<svg width="${size}" height="${size}" style="${style}"><use href="#${o.id}"/></svg>`
+    }
+    const pane = (o, theme) => `
+      <div class="pane ${theme}">
+        ${theme === 'light' ? `<div><p class="title">${o.title}</p><p class="desc">${o.desc}</p></div>` : '<div style="height:0"></div>'}
+        <div class="row">
+          <div>${icon(o, 96, theme)}<p class="size">App</p></div>
+          <div>${icon(o, 48, theme)}<p class="size">48</p></div>
+          <div>${icon(o, 32, theme)}<p class="size">32</p></div>
+          <div>${icon(o, 16, theme)}<p class="size">16</p></div>
+        </div>
+        <div class="brand">${icon(o, 22, theme)}iFace</div>
+        <div class="tab">${icon(o, 14, theme)}iFace · 面试题库</div>
+      </div>`
+    document.getElementById('grid').innerHTML = options
+      .map((o) => `<div class="card">${pane(o, 'light')}${pane(o, 'dark')}</div>`)
+      .join('')
+  </script>
+</body>
+</html>
