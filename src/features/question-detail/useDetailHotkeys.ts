@@ -12,7 +12,7 @@ interface Options {
   checkView: boolean
   toggleNote: () => void
   toggleAI: () => void
-  openModule: () => void
+  toggleModule: () => void
   revealAnswer: () => void
   setStatus: (status: StudyStatus, key: '1' | '2' | '3') => void
   goPrev: () => void
@@ -46,7 +46,7 @@ export function useDetailHotkeys(options: Options) {
       }
       if (plain(e) && key === 'l') {
         e.preventDefault()
-        o.openModule()
+        o.toggleModule()
         return
       }
       if (o.busy()) return

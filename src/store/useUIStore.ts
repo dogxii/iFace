@@ -1,11 +1,13 @@
 import { create } from 'zustand'
-import { SIDE_PANEL, SIDEBAR } from '@/app/layout'
+import { MODULE_PANEL, SIDE_PANEL, SIDEBAR } from '@/app/layout'
 import { readBoolean, readInt, STORAGE_KEYS, writeBoolean, writeString } from '@/lib/storage'
 
 export type SettingsTab = 'study' | 'ai' | 'data' | 'sync'
 
 /** Tabs of the question detail side panel. */
 export type SidePanelTab = 'notes' | 'ai'
+
+export type ModuleStatusFilter = 'all' | 'unlearned' | 'review' | 'mastered'
 
 interface UIState {
   settingsOpen: boolean
@@ -18,6 +20,12 @@ interface UIState {
   /** Open tab of the detail side panel, or null when closed. Survives question navigation. */
   sidePanel: SidePanelTab | null
   sidePanelWidth: number
+  /** Whether the detail page's module question list stays docked on wide screens. */
+  modulePanelPinned: boolean
+  modulePanelWidth: number
+  /** Search and status filter of the module list; kept in memory across questions. */
+  moduleListQuery: string
+  moduleListStatus: ModuleStatusFilter
   /** Open the settings dialog, optionally on a specific tab. */
   openSettings: (tab?: SettingsTab) => void
   closeSettings: () => void
@@ -31,6 +39,10 @@ interface UIState {
   toggleSidePanel: (tab: SidePanelTab) => void
   setSidePanel: (tab: SidePanelTab | null) => void
   setSidePanelWidth: (width: number) => void
+  setModulePanelPinned: (pinned: boolean) => void
+  setModulePanelWidth: (width: number) => void
+  setModuleListQuery: (query: string) => void
+  setModuleListStatus: (status: ModuleStatusFilter) => void
 }
 
 /** App-shell UI state that several unrelated components need to drive. */
@@ -48,6 +60,15 @@ export const useUIState = create<UIState>()((set) => ({
     SIDE_PANEL.min,
     SIDE_PANEL.max,
   ),
+  modulePanelPinned: readBoolean(STORAGE_KEYS.modulePanelPinned, false),
+  modulePanelWidth: readInt(
+    STORAGE_KEYS.modulePanelWidth,
+    MODULE_PANEL.default,
+    MODULE_PANEL.min,
+    MODULE_PANEL.max,
+  ),
+  moduleListQuery: '',
+  moduleListStatus: 'all',
   openSettings: (tab) =>
     set((state) => ({
       settingsOpen: true,
@@ -64,6 +85,10 @@ export const useUIState = create<UIState>()((set) => ({
   toggleSidePanel: (tab) => set((state) => ({ sidePanel: state.sidePanel === tab ? null : tab })),
   setSidePanel: (sidePanel) => set({ sidePanel }),
   setSidePanelWidth: (sidePanelWidth) => set({ sidePanelWidth }),
+  setModulePanelPinned: (modulePanelPinned) => set({ modulePanelPinned }),
+  setModulePanelWidth: (modulePanelWidth) => set({ modulePanelWidth }),
+  setModuleListQuery: (moduleListQuery) => set({ moduleListQuery }),
+  setModuleListStatus: (moduleListStatus) => set({ moduleListStatus }),
 }))
 
 // Persist layout preferences, debounced so a drag doesn't write on every pointer move.
@@ -75,13 +100,17 @@ function writeLayoutPrefs() {
   writeString(STORAGE_KEYS.sidebarWidth, String(latest.sidebarWidth))
   writeBoolean(STORAGE_KEYS.sidebarCollapsed, latest.sidebarCollapsed)
   writeString(STORAGE_KEYS.sidePanelWidth, String(latest.sidePanelWidth))
+  writeBoolean(STORAGE_KEYS.modulePanelPinned, latest.modulePanelPinned)
+  writeString(STORAGE_KEYS.modulePanelWidth, String(latest.modulePanelWidth))
 }
 
 useUIState.subscribe((state, prev) => {
   if (
     state.sidebarWidth === prev.sidebarWidth &&
     state.sidebarCollapsed === prev.sidebarCollapsed &&
-    state.sidePanelWidth === prev.sidePanelWidth
+    state.sidePanelWidth === prev.sidePanelWidth &&
+    state.modulePanelPinned === prev.modulePanelPinned &&
+    state.modulePanelWidth === prev.modulePanelWidth
   ) {
     return
   }

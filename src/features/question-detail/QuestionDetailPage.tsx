@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { clamp, MODULE_PANEL } from '@/app/layout'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useQuestion, useQuestions } from '@/hooks/useQuestions'
 import { getQuestionFlag, getQuestionNote, setQuestionStarred } from '@/lib/db'
@@ -42,7 +43,7 @@ import {
 } from './answerPanel'
 import { DetailBreadcrumb, QuestionIntro, StatusDock } from './detailSections'
 import { LearningCheckPanel } from './learningCheck'
-import { ModuleQuestionDrawer } from './moduleDrawer'
+import { ModuleQuestionPanel } from './modulePanel'
 import { SessionCompletionCard, SessionProgress, ShortcutHints, StreakCelebration } from './session'
 import {
   adjacentInModule,
@@ -54,7 +55,7 @@ import {
   sessionSearchOf,
   summarizeSession,
 } from './sessionNav'
-import { DetailSidePanel, useSidePanelLayout } from './sidePanel'
+import { DetailSidePanel, useDetailLayout } from './sidePanel'
 import { AnswerTocRail } from './tocRail'
 import { useAnswerAnnotations } from './useAnswerAnnotations'
 import { useAnswerOverride } from './useAnswerOverride'
@@ -94,7 +95,9 @@ export default function QuestionDetail() {
   const sidePanel = useUIState((state) => state.sidePanel)
   const setSidePanel = useUIState((state) => state.setSidePanel)
   const toggleSidePanel = useUIState((state) => state.toggleSidePanel)
-  const panelLayout = useSidePanelLayout()
+  const panelLayout = useDetailLayout()
+  const setModulePanelPinned = useUIState((state) => state.setModulePanelPinned)
+  const setModulePanelWidth = useUIState((state) => state.setModulePanelWidth)
 
   const [answerVisible, setAnswerVisible] = useState(false)
   const [marking, setMarking] = useState(false)
@@ -106,7 +109,7 @@ export default function QuestionDetail() {
     text: string
   } | null>(null)
   const [answerPanelView, setAnswerPanelView] = useState<AnswerPanelView>('answer')
-  const [moduleDrawerOpen, setModuleDrawerOpen] = useState(false)
+  const [moduleSheetOpen, setModuleSheetOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
   const [starred, setStarred] = useState(false)
   const [celebrationStreak, setCelebrationStreak] = useState(0)
@@ -339,7 +342,7 @@ export default function QuestionDetail() {
 
   const handleModuleQuestionNavigate = useCallback(
     (targetId: string) => {
-      setModuleDrawerOpen(false)
+      setModuleSheetOpen(false)
       if (targetId === id) return
       navigate(`/questions/${targetId}${moduleQuestionNavigationSearch}`)
     },
@@ -381,15 +384,22 @@ export default function QuestionDetail() {
     answer.startEdit()
   }
 
+  // On wide screens the module list docks beside the page; elsewhere it is a sheet.
+  const toggleModule = () => {
+    if (panelLayout.moduleDocked) setModulePanelPinned(false)
+    else if (panelLayout.moduleCanDock) setModulePanelPinned(true)
+    else setModuleSheetOpen((open) => !open)
+  }
+
   useDetailHotkeys({
     // The docked panel is non-modal: page shortcuts keep working unless the mobile sheet is up.
-    overlayOpen: settingsOpen || moduleDrawerOpen || (sidePanel !== null && !panelLayout.desktop),
+    overlayOpen: settingsOpen || moduleSheetOpen || (sidePanel !== null && !panelLayout.desktop),
     busy: () => markingRef.current,
     answerVisible,
     checkView: answerPanelView === 'check',
     toggleNote: () => toggleSidePanel('notes'),
     toggleAI: () => toggleSidePanel('ai'),
-    openModule: () => setModuleDrawerOpen(true),
+    toggleModule,
     revealAnswer: handleRevealAnswer,
     setStatus: handleSetStatus,
     goPrev: () => navigateTo(prevId),
@@ -459,10 +469,16 @@ export default function QuestionDetail() {
 
   return (
     <div
-      style={{ '--panel-w': `${panelLayout.width}px` } as React.CSSProperties}
+      style={
+        {
+          '--panel-w': `${panelLayout.width}px`,
+          '--module-w': `${panelLayout.moduleWidth}px`,
+        } as React.CSSProperties
+      }
       className={cn(
         'resize-animated min-w-0 transition-[padding] duration-200 ease-out',
         panelLayout.docked && 'pr-[var(--panel-w)]',
+        panelLayout.moduleDocked && 'pl-[var(--module-w)]',
       )}
     >
       <PageHeader
@@ -470,8 +486,8 @@ export default function QuestionDetail() {
           <DetailBreadcrumb
             module={question.module}
             position={modulePosition}
-            moduleOpen={moduleDrawerOpen}
-            onOpenModule={() => setModuleDrawerOpen(true)}
+            moduleOpen={panelLayout.moduleDocked || moduleSheetOpen}
+            onOpenModule={toggleModule}
           />
         }
         actions={
@@ -752,9 +768,22 @@ export default function QuestionDetail() {
         </div>
       </div>
 
-      <ModuleQuestionDrawer
-        open={moduleDrawerOpen}
-        onClose={() => setModuleDrawerOpen(false)}
+      <ModuleQuestionPanel
+        docked={panelLayout.moduleDocked}
+        width={panelLayout.moduleWidth}
+        maxWidth={panelLayout.moduleMaxWidth}
+        onResize={(width) =>
+          setModulePanelWidth(
+            Math.round(clamp(width, MODULE_PANEL.min, panelLayout.moduleMaxWidth)),
+          )
+        }
+        sheetOpen={moduleSheetOpen && !panelLayout.moduleDocked}
+        onSheetOpenChange={setModuleSheetOpen}
+        canDock={panelLayout.moduleCanDock}
+        onPinnedChange={(pinned) => {
+          setModulePanelPinned(pinned)
+          if (pinned) setModuleSheetOpen(false)
+        }}
         question={question}
         questions={currentModuleQuestions}
         records={records}
@@ -762,6 +791,7 @@ export default function QuestionDetail() {
       />
 
       <DetailSidePanel
+        layout={panelLayout}
         question={{ ...question, answer: answer.displayedText }}
         answerVisible={answerVisible}
         noteRefreshKey={noteRefreshKey}

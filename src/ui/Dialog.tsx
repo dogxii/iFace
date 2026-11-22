@@ -66,7 +66,9 @@ export function DialogContent({
             </D.Close>
           )}
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">
+          {children}
+        </div>
         {footer ? (
           <div className="flex justify-end gap-2 border-t border-line bg-subtle/60 px-5 py-3 rounded-b-2xl">
             {footer}
@@ -84,7 +86,7 @@ export const SheetClose = D.Close
 export interface SheetContentProps extends Omit<D.DialogContentProps, 'title'> {
   title: ReactNode
   description?: ReactNode
-  side?: 'right' | 'bottom'
+  side?: 'left' | 'right' | 'bottom'
   width?: number
   headerAction?: ReactNode
   footer?: ReactNode
@@ -110,11 +112,13 @@ export function SheetContent({
     <D.Portal>
       <Overlay className="bg-overlay/60" />
       <D.Content
-        style={side === 'right' ? { width, ...style } : style}
+        style={side === 'bottom' ? style : { width, ...style }}
         className={cn(
           'fixed z-50 flex flex-col bg-elevated shadow-popover outline-none',
           side === 'right' &&
             'inset-y-0 right-0 max-w-[100vw] border-l border-line data-[state=open]:animate-slide-in-right',
+          side === 'left' &&
+            'inset-y-0 left-0 max-w-[calc(100vw-48px)] border-r border-line data-[state=open]:animate-slide-in-left',
           side === 'bottom' &&
             'inset-x-0 bottom-0 max-h-[90dvh] rounded-t-2xl border-t border-line data-[state=open]:animate-slide-in-bottom',
           'data-[state=closed]:animate-fade-out',
@@ -140,7 +144,9 @@ export function SheetContent({
             </Button>
           </D.Close>
         </div>
-        <div className={cn('min-h-0 flex-1 overflow-y-auto', bodyClassName)}>{children}</div>
+        <div className={cn('min-h-0 flex-1 overflow-y-auto overscroll-contain', bodyClassName)}>
+          {children}
+        </div>
         {footer ? <div className="shrink-0 border-t border-line p-3">{footer}</div> : null}
       </D.Content>
     </D.Portal>

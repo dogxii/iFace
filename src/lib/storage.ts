@@ -22,6 +22,8 @@ export const STORAGE_KEYS = {
   sidebarCollapsed: 'iface_sidebar_collapsed',
   sidePanelWidth: 'iface_side_panel_width',
   noteDraft: 'iface_note_draft',
+  modulePanelPinned: 'iface_module_panel_pinned',
+  modulePanelWidth: 'iface_module_panel_width',
 } as const
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS]
@@ -94,3 +96,4 @@ export function removeKey(key: StorageKey): void {
     store()?.removeItem(key)
   } catch {}
 }
+

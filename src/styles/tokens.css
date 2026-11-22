@@ -142,6 +142,7 @@
   --animate-scale-in: ds-scale-in 180ms var(--ease-out-expo);
   --animate-slide-in-right: ds-slide-in-right 260ms var(--ease-out-expo);
   --animate-slide-in-bottom: ds-slide-in-bottom 260ms var(--ease-out-expo);
+  --animate-slide-in-left: ds-slide-in-left 260ms var(--ease-out-expo);
 }
 
 @keyframes ds-fade-in {
@@ -163,6 +164,11 @@
 @keyframes ds-slide-in-right {
   from {
     transform: translateX(100%);
+  }
+}
+@keyframes ds-slide-in-left {
+  from {
+    transform: translateX(-100%);
   }
 }
 @keyframes ds-slide-in-bottom {

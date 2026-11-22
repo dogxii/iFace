@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   clamp,
   clampSidePanelWidth,
+  MODULE_PANEL,
   maxSidePanelWidth,
+  resolveDetailPanels,
   resolveSidebarDrag,
   SIDE_PANEL,
   SIDEBAR,
@@ -44,5 +46,40 @@ describe('side panel width', () => {
     expect(clampSidePanelWidth(200, 1440, 232)).toBe(SIDE_PANEL.min)
     expect(clampSidePanelWidth(500.4, 1440, 232)).toBe(500)
     expect(clampSidePanelWidth(900, 1440, 232)).toBe(1440 - 232 - SIDE_PANEL.minContent)
+  })
+})
+
+describe('resolveDetailPanels', () => {
+  const base = {
+    viewportWidth: 1440,
+    sidebarWidth: SIDEBAR.default,
+    modulePinned: true,
+    moduleWidth: MODULE_PANEL.default,
+    sidePanelOpen: false,
+    sidePanelWidth: SIDE_PANEL.default,
+  }
+
+  it('docks the module list when it is pinned and there is room', () => {
+    expect(resolveDetailPanels(base)).toMatchObject({
+      moduleDocked: true,
+      moduleWidth: MODULE_PANEL.default,
+    })
+    expect(resolveDetailPanels({ ...base, modulePinned: false }).moduleDocked).toBe(false)
+  })
+
+  it('narrows the side panel so both panels leave the page column usable', () => {
+    const layout = resolveDetailPanels({ ...base, sidePanelOpen: true })
+    expect(layout.moduleDocked).toBe(true)
+    const content =
+      base.viewportWidth - base.sidebarWidth - layout.moduleWidth - layout.sidePanelWidth
+    expect(content).toBeGreaterThanOrEqual(MODULE_PANEL.minContent)
+  })
+
+  it('shrinks, then undocks, the module list on narrow screens', () => {
+    const tight = resolveDetailPanels({ ...base, viewportWidth: 1100, sidePanelOpen: true })
+    expect(tight.moduleDocked).toBe(false)
+    const shrunk = resolveDetailPanels({ ...base, viewportWidth: 1000, moduleWidth: 400 })
+    expect(shrunk.moduleDocked).toBe(true)
+    expect(shrunk.moduleWidth).toBe(1000 - SIDEBAR.default - MODULE_PANEL.minContent)
   })
 })

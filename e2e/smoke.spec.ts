@@ -186,3 +186,21 @@ test('the sidebar collapses to an icon rail and remembers it', async ({ page }) 
   await page.keyboard.press('[')
   await expect(sidebar.getByRole('button', { name: '收起侧栏' })).toBeVisible()
 })
+
+test('the module question list docks beside the page and stays open', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.goto('/questions/code-001')
+  await page.getByRole('button', { name: /展开.*题目列表/ }).click({ timeout: 20_000 })
+  const list = page.getByRole('complementary', { name: '本模块题目' })
+  await expect(list).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+
+  await list.locator('button[data-module-item]').nth(1).click()
+  await expect(page).toHaveURL(/\/questions\/code-002/)
+  await expect(list).toBeVisible()
+
+  await page.reload()
+  await expect(list).toBeVisible({ timeout: 20_000 })
+  await list.getByRole('button', { name: '收起题目列表' }).click()
+  await expect(list).toHaveCount(0)
+})

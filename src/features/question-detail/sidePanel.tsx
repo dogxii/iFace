@@ -1,6 +1,13 @@
 import { NotebookPen, Sparkles, X } from 'lucide-react'
 import { type ReactNode, useEffect, useRef, useState } from 'react'
-import { clampSidePanelWidth, SIDE_PANEL, SIDEBAR } from '@/app/layout'
+import {
+  clampSidePanelWidth,
+  MODULE_PANEL,
+  resolveDetailPanels,
+  SIDE_PANEL,
+  SIDEBAR,
+} from '@/app/layout'
+import { useEnterAnimation } from '@/hooks/useEnterAnimation'
 import { useMediaQuery, useViewportWidth } from '@/hooks/useMediaQuery'
 import { isEditableTarget } from '@/lib/dom'
 import { type SidePanelTab, useUIState } from '@/store/useUIStore'
@@ -12,27 +19,57 @@ import { QuestionNotes } from './notes'
 const DESKTOP_QUERY = '(min-width: 1024px)'
 
 /**
- * Layout of the detail side panel: which tab is open, whether it docks beside the page
- * (desktop) or slides up as a sheet (mobile), and its effective width after clamping to
- * the current viewport.
+ * Layout of the detail page's docked panels: the side panel (notes / AI) on the right and the
+ * module question list on the left. On desktop both dock beside the page (the page reserves their
+ * width, so nothing is covered); on small screens they become sheets.
  */
-export function useSidePanelLayout() {
+export function useDetailLayout() {
   const tab = useUIState((s) => s.sidePanel)
   const storedWidth = useUIState((s) => s.sidePanelWidth)
   const sidebarCollapsed = useUIState((s) => s.sidebarCollapsed)
   const sidebarWidth = useUIState((s) => s.sidebarWidth)
+  const modulePinned = useUIState((s) => s.modulePanelPinned)
+  const storedModuleWidth = useUIState((s) => s.modulePanelWidth)
   const viewportWidth = useViewportWidth()
   const desktop = useMediaQuery(DESKTOP_QUERY)
   const shownSidebar = sidebarCollapsed ? SIDEBAR.rail : sidebarWidth
+  const input = {
+    viewportWidth,
+    sidebarWidth: shownSidebar,
+    modulePinned,
+    moduleWidth: storedModuleWidth,
+    sidePanelOpen: tab !== null,
+    sidePanelWidth: storedWidth,
+  }
+  const panels = resolveDetailPanels(input)
+  const moduleDocked = desktop && panels.moduleDocked
   return {
     tab,
     desktop,
     docked: desktop && tab !== null,
-    width: clampSidePanelWidth(storedWidth, viewportWidth, shownSidebar),
+    width: panels.sidePanelWidth,
     viewportWidth,
-    shownSidebar,
+    /** Width occupied left of the page: app sidebar plus the docked module list. */
+    leftWidth: shownSidebar + (moduleDocked ? panels.moduleWidth : 0),
+    moduleDocked,
+    moduleWidth: panels.moduleWidth,
+    /** Whether pinning the module list would dock it right now. */
+    moduleCanDock: desktop && resolveDetailPanels({ ...input, modulePinned: true }).moduleDocked,
+    /** Largest docked module list width at this viewport. */
+    moduleMaxWidth: Math.max(
+      MODULE_PANEL.min,
+      Math.min(
+        MODULE_PANEL.max,
+        viewportWidth -
+          shownSidebar -
+          (tab !== null ? SIDE_PANEL.min : 0) -
+          MODULE_PANEL.minContent,
+      ),
+    ),
   }
 }
+
+export type DetailLayout = ReturnType<typeof useDetailLayout>
 
 const TABS: { value: SidePanelTab; label: string; icon: ReactNode; key: string }[] = [
   { value: 'notes', label: '笔记', icon: <NotebookPen />, key: 'N' },
@@ -72,6 +109,7 @@ function PanelTabs({ tab }: { tab: SidePanelTab }) {
 }
 
 export interface DetailSidePanelProps {
+  layout: DetailLayout
   /** The question, with `answer` set to the answer currently displayed (custom or default). */
   question: Question
   answerVisible: boolean
@@ -88,6 +126,7 @@ export interface DetailSidePanelProps {
  * is a bottom sheet. Both tabs stay mounted once visited, so drafts and scroll survive switching.
  */
 export function DetailSidePanel({
+  layout,
   question,
   answerVisible,
   noteRefreshKey,
@@ -96,12 +135,12 @@ export function DetailSidePanel({
   onAIInitialPromptConsumed,
   onOpenAISettings,
 }: DetailSidePanelProps) {
-  const layout = useSidePanelLayout()
   const setSidePanel = useUIState((s) => s.setSidePanel)
   const setSidePanelWidth = useUIState((s) => s.setSidePanelWidth)
   const [visited, setVisited] = useState<Set<SidePanelTab>>(() => new Set())
   const panelRef = useRef<HTMLElement>(null)
   const tab = layout.tab
+  const animate = useEnterAnimation('side-panel', layout.docked)
 
   if (tab && !visited.has(tab)) setVisited(new Set(visited).add(tab))
 
@@ -191,7 +230,10 @@ export function DetailSidePanel({
       ref={panelRef}
       aria-label="笔记与 AI 助手"
       style={{ width: layout.width }}
-      className="fixed inset-y-0 right-0 z-30 flex animate-slide-in-right flex-col border-l border-line bg-canvas"
+      className={cn(
+        'fixed inset-y-0 right-0 z-30 flex flex-col border-l border-line bg-canvas',
+        animate && 'animate-slide-in-right',
+      )}
     >
       <ResizeHandle
         edge="left"
@@ -200,7 +242,7 @@ export function DetailSidePanel({
         min={SIDE_PANEL.min}
         max={SIDE_PANEL.max}
         onResize={(raw) =>
-          setSidePanelWidth(clampSidePanelWidth(raw, layout.viewportWidth, layout.shownSidebar))
+          setSidePanelWidth(clampSidePanelWidth(raw, layout.viewportWidth, layout.leftWidth))
         }
         onReset={() => setSidePanelWidth(SIDE_PANEL.default)}
       />

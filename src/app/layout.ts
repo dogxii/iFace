@@ -43,3 +43,48 @@ export function clampSidePanelWidth(
 ): number {
   return Math.round(clamp(raw, SIDE_PANEL.min, maxSidePanelWidth(viewportWidth, sidebarWidth)))
 }
+
+export const MODULE_PANEL = {
+  default: 288,
+  min: 240,
+  max: 420,
+  /** With the module list docked, the page column keeps at least this much room. */
+  minContent: 480,
+} as const
+
+export interface DetailPanelsInput {
+  viewportWidth: number
+  /** Width the app sidebar currently occupies (rail width when collapsed). */
+  sidebarWidth: number
+  /** Whether the user wants the module list docked. */
+  modulePinned: boolean
+  moduleWidth: number
+  sidePanelOpen: boolean
+  sidePanelWidth: number
+}
+
+export interface DetailPanelsLayout {
+  moduleDocked: boolean
+  moduleWidth: number
+  sidePanelWidth: number
+}
+
+/**
+ * Fit the docked module list (left) and side panel (right) around the detail page. The module
+ * list shrinks first and undocks when even its minimum width would squeeze the page column;
+ * the side panel then takes what is left, as it does on its own.
+ */
+export function resolveDetailPanels(input: DetailPanelsInput): DetailPanelsLayout {
+  const reserved = input.sidePanelOpen ? SIDE_PANEL.min : 0
+  const room = input.viewportWidth - input.sidebarWidth - reserved - MODULE_PANEL.minContent
+  const moduleDocked = input.modulePinned && room >= MODULE_PANEL.min
+  const moduleWidth = Math.round(
+    clamp(input.moduleWidth, MODULE_PANEL.min, Math.min(MODULE_PANEL.max, room)),
+  )
+  const leftWidth = input.sidebarWidth + (moduleDocked ? moduleWidth : 0)
+  return {
+    moduleDocked,
+    moduleWidth,
+    sidePanelWidth: clampSidePanelWidth(input.sidePanelWidth, input.viewportWidth, leftWidth),
+  }
+}
