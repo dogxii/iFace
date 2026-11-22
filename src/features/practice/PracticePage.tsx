@@ -1,6 +1,7 @@
 import { Check, Clock, Download, EyeOff, Play, RotateCcw, Shuffle, Sparkles } from 'lucide-react'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useDraft } from '@/hooks/useDraft'
 import { useQuestions } from '@/hooks/useQuestions'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
@@ -27,6 +28,7 @@ import {
 import {
   buildSession,
   DEFAULT_SESSION_OPTIONS,
+  parseSessionOptions,
   type SessionOptions,
   type SizeOption,
   type StatusFilter,
@@ -118,7 +120,12 @@ export default function PracticePage() {
   const dailyGoal = useStudyState((s) => s.dailyGoal)
   const openSettings = useUIState((s) => s.openSettings)
   const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
-  const [options, setOptions] = useState<SessionOptions>(DEFAULT_SESSION_OPTIONS)
+  // Remember the last combination so coming back to practice starts where you left off.
+  const [options, setOptions] = useDraft<SessionOptions>(
+    'practice:options',
+    DEFAULT_SESSION_OPTIONS,
+    parseSessionOptions,
+  )
   const [now] = useState(() => Date.now())
 
   // Old links (`/practice?ids=a,b`) jump straight into a session.
@@ -163,6 +170,17 @@ export default function PracticePage() {
     if (rest.length > 0) result.push({ name: '其他', modules: rest })
     return result
   }, [visibleQuestions, records, categoryMap, hiddenCategories])
+
+  // Drop remembered modules that no longer exist (deleted source, hidden category).
+  useEffect(() => {
+    if (groups.length === 0) return
+    const available = new Set(groups.flatMap((g) => g.modules.map((m) => m.module)))
+    setOptions((prev) =>
+      prev.modules.every((m) => available.has(m))
+        ? prev
+        : { ...prev, modules: prev.modules.filter((m) => available.has(m)) },
+    )
+  }, [groups, setOptions])
 
   const pool = useMemo(
     () => sessionPool(visibleQuestions, records, options, now),
@@ -290,7 +308,7 @@ export default function PracticePage() {
               />
             </div>
 
-            <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_320px]">
+            <div className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
               <div className="min-w-0">
                 <SectionHeader
                   title="选择模块"
@@ -441,7 +459,7 @@ export default function PracticePage() {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full"
+                    className="w-full max-lg:hidden"
                     disabled={pool.length === 0}
                     onClick={startConfigured}
                   >
@@ -450,6 +468,19 @@ export default function PracticePage() {
                   </Button>
                 </Box>
               </aside>
+            </div>
+
+            {/* On stacked layouts the start button would sit below every module: keep it in reach. */}
+            <div className="sticky bottom-0 z-10 -mx-4 mt-6 flex items-center gap-3 border-t border-line bg-canvas/90 px-4 pt-2.5 pb-[calc(10px+env(safe-area-inset-bottom))] backdrop-blur-md sm:-mx-8 sm:px-8 lg:hidden">
+              <p className="min-w-0 flex-1 truncate text-xs text-fg-muted">
+                {options.modules.length > 0 ? `${options.modules.length} 个模块 · ` : '全部模块 · '}
+                本次 <span className="font-semibold text-fg tabular-nums">{sessionIds.length}</span>{' '}
+                道
+              </p>
+              <Button variant="primary" disabled={pool.length === 0} onClick={startConfigured}>
+                <Play />
+                开始练习
+              </Button>
             </div>
           </>
         )}

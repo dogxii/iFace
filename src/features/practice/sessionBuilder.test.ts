@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Question, StudyRecordMap } from '@/types'
-import { buildSession, sessionPool } from './sessionBuilder'
+import {
+  buildSession,
+  DEFAULT_SESSION_OPTIONS,
+  parseSessionOptions,
+  sessionPool,
+} from './sessionBuilder'
 
 const DAY = 86_400_000
 const NOW = 100 * DAY
@@ -58,5 +63,23 @@ describe('buildSession', () => {
     const ids = buildSession(questions, records, { size: 2, shuffle: true }, () => 0)
     expect(ids).toHaveLength(2)
     expect(new Set(ids).size).toBe(2)
+  })
+})
+
+describe('parseSessionOptions', () => {
+  it('restores valid options and drops unknown values', () => {
+    expect(
+      parseSessionOptions({
+        modules: ['React', 3],
+        difficulty: 3,
+        status: 'due',
+        size: 'all',
+        shuffle: true,
+      }),
+    ).toEqual({ modules: ['React'], difficulty: 3, status: 'due', size: 'all', shuffle: true })
+    expect(parseSessionOptions({ difficulty: 'impossible', size: -1 })).toEqual(
+      DEFAULT_SESSION_OPTIONS,
+    )
+    expect(parseSessionOptions('nope')).toBeNull()
   })
 })

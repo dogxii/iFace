@@ -20,6 +20,36 @@ export const DEFAULT_SESSION_OPTIONS: SessionOptions = {
   shuffle: false,
 }
 
+const STATUS_FILTERS: readonly StatusFilter[] = [
+  'all',
+  'unmastered',
+  'due',
+  'unlearned',
+  'review',
+  'mastered',
+]
+const DIFFICULTIES: readonly (Difficulty | 'all')[] = ['all', 1, 2, 3]
+
+/** Restore remembered practice options, falling back field by field to the defaults. */
+export function parseSessionOptions(value: unknown): SessionOptions | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  const size = v.size === 'all' || (typeof v.size === 'number' && v.size > 0) ? v.size : null
+  return {
+    modules: Array.isArray(v.modules)
+      ? v.modules.filter((m): m is string => typeof m === 'string')
+      : [],
+    difficulty: DIFFICULTIES.includes(v.difficulty as Difficulty)
+      ? (v.difficulty as Difficulty | 'all')
+      : DEFAULT_SESSION_OPTIONS.difficulty,
+    status: STATUS_FILTERS.includes(v.status as StatusFilter)
+      ? (v.status as StatusFilter)
+      : DEFAULT_SESSION_OPTIONS.status,
+    size: (size as SizeOption | null) ?? DEFAULT_SESSION_OPTIONS.size,
+    shuffle: typeof v.shuffle === 'boolean' ? v.shuffle : DEFAULT_SESSION_OPTIONS.shuffle,
+  }
+}
+
 function matchesStatus(
   question: Question,
   records: StudyRecordMap,
