@@ -1,9 +1,9 @@
 import { Sparkles, X } from 'lucide-react'
 import { useEffect } from 'react'
-import { AIPanelWithStyles } from '@/components/ui/AIPanel'
 import type { useQuestion } from '@/hooks/useQuestions'
 import { useAIStore } from '@/store/useAIStore'
 import { Button, cn, Kbd } from '@/ui'
+import { AIChatPanel } from './aiChat'
 
 // ─── AI Drawer ────────────────────────────────────────────────────────────────
 // Non-modal on desktop: the question stays readable and scrollable beside it.
@@ -91,11 +91,10 @@ export function AIDrawer({
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <AIPanelWithStyles
+          <AIChatPanel
             question={question}
             answerVisible={answerVisible}
             onOpenSettings={onOpenSettings}
-            headless
             initialPrompt={initialPrompt}
             onInitialPromptConsumed={onInitialPromptConsumed}
           />

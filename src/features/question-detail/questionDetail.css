@@ -84,3 +84,24 @@
 .learning-check-markdown code {
   font-weight: 400;
 }
+
+/* Assistant replies in the AI drawer: Markdown inherits the bubble's compact type size. */
+.ai-chat-markdown p,
+.ai-chat-markdown li {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.ai-chat-markdown p {
+  margin-bottom: 0.6em;
+}
+
+.ai-chat-markdown h1,
+.ai-chat-markdown h2 {
+  font-size: 0.95rem;
+}
+
+.ai-chat-markdown h3,
+.ai-chat-markdown h4 {
+  font-size: inherit;
+}

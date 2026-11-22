@@ -7,7 +7,7 @@ iFace is a Vite React 19 + TypeScript app. Main code lives in `src/`:
 - `src/app/` holds the app shell (sidebar, mobile nav), error boundary and PWA update prompt.
 - `src/features/<feature>/` holds route screens and their logic, e.g. `dashboard/`, `question-list/`, `question-detail/`, `practice/`, `settings/`. Keep pure logic in a sibling `*.ts` module with a `*.test.ts` next to it, and keep the page component focused on layout.
 - `src/ui/` is the v1.5 component library (Radix primitives + Tailwind, variants via `cva`). Use it for all UI.
-- `src/components/ui/` holds Markdown rendering and the detail-page AI / learning-check panels that predate `src/ui`; do not add new components there.
+- `src/components/ui/` holds the Markdown renderer (element styles in `src/styles/markdown.css`) and the speech input button; do not add new components there.
 - `src/styles/tokens.css` defines design tokens (`bg-canvas`, `text-fg-muted`, `border-line`, `bg-accent`, …) for light and dark themes. Prefer tokens over inline `style={{}}` and raw colors.
 - `src/pages/DesignSystem.tsx` is the dev-only `/design` showcase.
 - `src/store/` contains app stores, and `src/hooks/` contains React hooks.

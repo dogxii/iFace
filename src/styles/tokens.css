@@ -3,8 +3,7 @@
  *
  * Raw values live in `--ds-*` custom properties so light / dark themes can swap them,
  * and `@theme inline` exposes them to Tailwind as utilities (`bg-canvas`, `text-fg-muted`, …).
- * Legacy variables in index.css (`--primary`, `--surface`, …) stay untouched until the
- * old pages are rebuilt.
+ * The pre-v1.5 aliases (`--primary`, `--surface`, …) have been removed; use these tokens.
  */
 
 @font-face {
