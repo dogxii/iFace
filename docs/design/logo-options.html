@@ -28,66 +28,95 @@
 </style>
 </head>
 <body>
-  <h1>iFace Logo 方案 · 第二轮（基于 B 发散）</h1>
-  <p class="lead">保留「黄色 + 墨镜 + 微笑」这几个元素，做减法、换构图。每个方案展示 App 图标、favicon、侧边栏品牌位，浅色 / 深色。</p>
+  <h1>iFace Logo 方案 · 第三轮（俏皮 / 大胆）</h1>
+  <p class="lead">不再端正戴墨镜：滑下来、推上去、歪着戴……每个都有一点小表情和小故事。</p>
 
   <svg width="0" height="0" style="position:absolute">
     <defs>
-      <!-- Classic D-shaped lenses: flat top, round bottom. -->
-      <g id="d-lenses">
-        <path d="M13 25h18v1.5a9 9 0 0 1-18 0z" />
-        <path d="M33 25h18v1.5a9 9 0 0 1-18 0z" />
-        <rect x="11" y="24" width="42" height="3.2" rx="1.6" />
-      </g>
+      <clipPath id="tile"><rect width="64" height="64" rx="16" /></clipPath>
 
-      <!-- B1 · 一体墨镜 -->
-      <symbol id="b1" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="30" fill="#ffc933" />
-        <path d="M12 24.5h40v4.5c0 5.2-4.2 9-9.2 9h-1.6c-3 0-5.6-1.6-7.2-4.2-1.6 2.6-4.2 4.2-7.2 4.2h-1.6c-5 0-9.2-3.8-9.2-9z" fill="#1c1917" />
-        <path d="M26 47q6 4 12 0" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
-      </symbol>
-
-      <!-- B2 · 只有墨镜 -->
-      <symbol id="b2" viewBox="0 0 64 64">
-        <rect width="64" height="64" rx="18" fill="#ffc933" />
-        <g transform="translate(0 4)" fill="#1c1917"><use href="#d-lenses" /></g>
-        <path d="M18 31.5l4-3" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55" />
-      </symbol>
-
-      <!-- B3 · 酷笑（斜嘴） -->
-      <symbol id="b3" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="30" fill="#ffc933" />
-        <g fill="#1c1917"><use href="#d-lenses" /></g>
-        <path d="M17.5 28.5l4-3M37.5 28.5l4-3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" opacity=".5" />
-        <path d="M27 46.5q7.5 3.5 13-2.5" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
-      </symbol>
-
-      <!-- B4 · 夜间（黄色镜片） -->
-      <symbol id="b4" viewBox="0 0 64 64">
-        <rect width="64" height="64" rx="16" fill="#1c1917" />
-        <g fill="#ffc933"><use href="#d-lenses" /></g>
-        <path d="M25 44q7 5 14 0" fill="none" stroke="#ffc933" stroke-width="3.4" stroke-linecap="round" />
-      </symbol>
-
-      <!-- B5 · 线条 -->
-      <symbol id="b5" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="30" fill="#ffc933" />
-        <g fill="none" stroke="#1c1917" stroke-width="2.8" stroke-linejoin="round" stroke-linecap="round">
-          <path d="M14 25.5h16v1a8 8 0 0 1-16 0zM34 25.5h16v1a8 8 0 0 1-16 0zM30 26.5q2-1.6 4 0" />
-          <path d="M25 44.5q7 5 14 0" />
-        </g>
-      </symbol>
-
-      <!-- B6 · 大墨镜方块 -->
-      <symbol id="b6" viewBox="0 0 64 64">
+      <!-- C1 · 墨镜滑落，眼睛偷看 -->
+      <symbol id="c1" viewBox="0 0 64 64">
         <rect width="64" height="64" rx="16" fill="#ffc933" />
-        <g fill="#1c1917">
-          <path d="M6 20h24v3a12 12 0 0 1-24 0z" />
-          <path d="M34 20h24v3a12 12 0 0 1-24 0z" />
-          <rect x="4" y="18.5" width="56" height="4" rx="2" />
+        <ellipse cx="22" cy="24" rx="6.5" ry="7.2" fill="#fff" />
+        <ellipse cx="42" cy="24" rx="6.5" ry="7.2" fill="#fff" />
+        <circle cx="24" cy="21.8" r="3.1" fill="#1c1917" />
+        <circle cx="44" cy="21.8" r="3.1" fill="#1c1917" />
+        <g transform="rotate(-7 32 34)" fill="#1c1917">
+          <path d="M11 29h19.5v1.5a9.75 9.75 0 0 1-19.5 0z" />
+          <path d="M33.5 29H53v1.5a9.75 9.75 0 0 1-19.5 0z" />
+          <rect x="8" y="27.4" width="48" height="3.4" rx="1.7" />
         </g>
-        <path d="M11 27l5-4M39 27l5-4" stroke="#fff" stroke-width="2.2" stroke-linecap="round" opacity=".5" />
-        <path d="M27 46q5 3.5 10 0" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
+        <path d="M14.5 34.5l3.5-3M37 32l3.5-3" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".5" />
+        <path d="M27.5 50.5q5.5 3 11-1.5" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
+      </symbol>
+
+      <!-- C2 · 墨镜推上头顶，眨眼 -->
+      <symbol id="c2" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <g transform="rotate(8 32 13)" fill="#1c1917">
+          <path d="M14 11h15v1a7.5 7.5 0 0 1-15 0z" />
+          <path d="M35 11h15v1a7.5 7.5 0 0 1-15 0z" />
+          <rect x="12" y="9.6" width="40" height="3" rx="1.5" />
+        </g>
+        <path d="M16.5 33q5-5 10 0" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
+        <ellipse cx="42" cy="31" rx="3.4" ry="4.4" fill="#1c1917" />
+        <path d="M21 41h22a11 11 0 0 1-22 0z" fill="#1c1917" />
+        <path d="M27.5 47.6a6 4 0 0 1 9 0 9.6 9.6 0 0 1-9 0z" fill="#fb7185" />
+      </symbol>
+
+      <!-- C3 · 面试官挑眉 -->
+      <symbol id="c3" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <path d="M37 14.5q6.5-4.5 13 0" fill="none" stroke="#1c1917" stroke-width="3.2" stroke-linecap="round" />
+        <ellipse cx="43.5" cy="24" rx="5.6" ry="6" fill="#fff" />
+        <circle cx="42.5" cy="25" r="2.8" fill="#1c1917" />
+        <g transform="rotate(14 32 30)" fill="#1c1917">
+          <path d="M11 28h19v1.5a9.5 9.5 0 0 1-19 0z" />
+          <path d="M34 28h19v1.5a9.5 9.5 0 0 1-19 0z" />
+          <rect x="9" y="26.4" width="46" height="3.4" rx="1.7" />
+        </g>
+        <path d="M14.5 31.5l3.5-3" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".5" />
+        <path d="M26 50l12-2.5" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
+      </symbol>
+
+      <!-- C4 · i 的点是一张脸 -->
+      <symbol id="c4" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#1c1917" />
+        <rect x="25.5" y="35" width="13" height="21" rx="6.5" fill="#fafafa" />
+        <circle cx="32" cy="19" r="13" fill="#ffc933" />
+        <g transform="rotate(-8 32 18)" fill="#1c1917">
+          <path d="M21.5 16h9v.8a4.5 4.5 0 0 1-9 0zM33.5 16h9v.8a4.5 4.5 0 0 1-9 0z" />
+          <rect x="20" y="15" width="24" height="2.2" rx="1.1" />
+        </g>
+        <path d="M28.5 25q3.5 2 7 0" fill="none" stroke="#1c1917" stroke-width="2.2" stroke-linecap="round" />
+      </symbol>
+
+      <!-- C5 · 从底下探头 -->
+      <symbol id="c5" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <circle cx="21" cy="25" r="7.5" fill="#fff" />
+        <circle cx="43" cy="25" r="7.5" fill="#fff" />
+        <circle cx="23" cy="22.5" r="3.6" fill="#1c1917" />
+        <circle cx="45" cy="22.5" r="3.6" fill="#1c1917" />
+        <path d="M8 33h48v3.5c0 6.4-5.1 11.5-11.5 11.5h-1.6c-4 0-7.4-2.2-8.9-5.6-1.5 3.4-4.9 5.6-8.9 5.6h-1.6C14.1 48 9 42.9 9 36.5z" fill="#1c1917" transform="rotate(-6 32 40)" />
+      </symbol>
+
+      <!-- C6 · 贴纸（歪头吐舌） -->
+      <symbol id="c6" viewBox="0 0 64 64">
+        <g transform="rotate(-12 32 32)">
+          <circle cx="32" cy="32" r="28" fill="#ffc933" stroke="#fff" stroke-width="3.5" />
+          <ellipse cx="22.5" cy="23.5" rx="5.6" ry="6" fill="#fff" />
+          <ellipse cx="41.5" cy="23.5" rx="5.6" ry="6" fill="#fff" />
+          <circle cx="23" cy="21.2" r="2.7" fill="#1c1917" />
+          <circle cx="42" cy="21.2" r="2.7" fill="#1c1917" />
+          <g transform="rotate(4 32 31)" fill="#1c1917">
+            <path d="M12 28.5h18v1a9 9 0 0 1-18 0zM34 28.5h18v1a9 9 0 0 1-18 0z" />
+            <rect x="10" y="27" width="44" height="3.3" rx="1.65" />
+          </g>
+          <path d="M24 45.5q8 5 16 0" fill="none" stroke="#1c1917" stroke-width="3.4" stroke-linecap="round" />
+          <path d="M33 47.6h6v2.4a3 3 0 0 1-6 0z" fill="#fb7185" />
+        </g>
       </symbol>
     </defs>
   </svg>
@@ -96,12 +125,12 @@
 
   <script>
     const options = [
-      { id: 'b1', title: 'B1 · 一体墨镜', desc: '两片镜片合成一整块护目镜轮廓，嘴巴缩成一道短弧。剪影最简洁，16px 也认得出。' },
-      { id: 'b2', title: 'B2 · 只有墨镜', desc: '去掉脸和嘴，只留一副墨镜放在黄色圆角方块上。最克制，像一个符号而不是表情。' },
-      { id: 'b3', title: 'B3 · 酷笑', desc: '经典 D 形镜片 + 一道微微上扬的斜嘴，多了一点“我早就会了”的从容。' },
-      { id: 'b4', title: 'B4 · 夜间', desc: '反过来：深色底，墨镜和笑容是黄色的，像镜片在发光。和暗色界面很搭。' },
-      { id: 'b5', title: 'B5 · 线条', desc: '黄色圆形里用等粗线条画出墨镜和微笑，更轻、更像精致的图标而不是 emoji。' },
-      { id: 'b6', title: 'B6 · 大墨镜', desc: '墨镜放大到几乎撑满方块，嘴巴很小。构图夸张，有海报感，辨识度最高。' },
+      { id: 'c1', title: 'C1 · 偷看', desc: '墨镜滑到鼻梁、歪一点，眼睛从镜框上方往外瞄——“这题我好像见过”。' },
+      { id: 'c2', title: 'C2 · 眨眼', desc: '墨镜推到头顶，一只眼眨一下，咧嘴露出舌头。最开朗，适合“轻松刷题”的气质。' },
+      { id: 'c3', title: 'C3 · 面试官挑眉', desc: '墨镜歪着挂，一边镜片滑下来，露出挑起的眉毛和眼睛，嘴角一撇——“嗯？再说说？”' },
+      { id: 'c4', title: 'C4 · i 的点', desc: '推翻方案：一个小写 i，上面的点是戴墨镜的小黄脸。图标即字母，品牌名一眼就有。' },
+      { id: 'c5', title: 'C5 · 偷看（极简）', desc: 'C1 的减法版：去掉嘴，只剩一块滑下来的一体墨镜和上方两只大眼睛。像一个符号，16px 也成立。' },
+      { id: 'c6', title: 'C6 · 贴纸', desc: '白边贴纸感，整张脸歪着，墨镜滑下来露出眼睛，吐一点舌头。最俏皮，像表情包。' },
     ]
     const icon = (o, size) => `<svg width="${size}" height="${size}"><use href="#${o.id}"/></svg>`
     const pane = (o, theme) => `
