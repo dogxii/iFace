@@ -3,7 +3,10 @@ import type { MockInterviewSession, MockInterviewTurn } from '@/types'
 import {
   cleanDimensionComment,
   currentQuestion,
+  DEFAULT_FORM,
   formFromSession,
+  parseAnswerDraft,
+  parseSetupDraft,
   scoreTone,
   sessionProgress,
   sortSessions,
@@ -68,5 +71,27 @@ describe('mock interview session helpers', () => {
     const older = { ...session, id: 'old', updatedAt: 0 }
     const newer = { ...session, id: 'new', updatedAt: 5 }
     expect(sortSessions([older, newer]).map((s) => s.id)).toEqual(['new', 'old'])
+  })
+})
+
+describe('parseSetupDraft', () => {
+  it('restores saved fields and falls back for invalid ones', () => {
+    expect(
+      parseSetupDraft({
+        roleTitle: 'Go 工程师',
+        level: 'senior',
+        durationMinutes: 7,
+        jdText: 'JD',
+      }),
+    ).toEqual({ ...DEFAULT_FORM, roleTitle: 'Go 工程师', level: 'senior', jdText: 'JD' })
+    expect(parseSetupDraft(null)).toBeNull()
+  })
+
+  it('ties an answer draft to its session', () => {
+    expect(parseAnswerDraft({ sessionId: 's1', text: '我的回答' })).toEqual({
+      sessionId: 's1',
+      text: '我的回答',
+    })
+    expect(parseAnswerDraft({ text: 'x' })).toBeNull()
   })
 })

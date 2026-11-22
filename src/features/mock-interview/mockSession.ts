@@ -34,6 +34,53 @@ export const DEFAULT_FORM: SetupForm = {
   resumeText: '',
 }
 
+const LEVELS: readonly MockInterviewLevel[] = ['junior', 'mid', 'senior']
+const TYPES: readonly MockInterviewType[] = ['technical', 'project', 'comprehensive']
+
+/** Restore a saved setup draft, falling back field by field to the defaults. */
+export function parseSetupDraft(value: unknown): SetupForm | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  const str = (key: keyof SetupForm, fallback: string) =>
+    typeof v[key] === 'string' ? (v[key] as string) : fallback
+  const num = (key: keyof SetupForm, allowed: number[], fallback: number) =>
+    allowed.includes(v[key] as number) ? (v[key] as number) : fallback
+  return {
+    roleTitle: str('roleTitle', DEFAULT_FORM.roleTitle),
+    level: LEVELS.includes(v.level as MockInterviewLevel)
+      ? (v.level as MockInterviewLevel)
+      : DEFAULT_FORM.level,
+    interviewType: TYPES.includes(v.interviewType as MockInterviewType)
+      ? (v.interviewType as MockInterviewType)
+      : DEFAULT_FORM.interviewType,
+    durationMinutes: num('durationMinutes', DURATION_OPTIONS, DEFAULT_FORM.durationMinutes),
+    targetQuestionCount: num(
+      'targetQuestionCount',
+      QUESTION_COUNT_OPTIONS,
+      DEFAULT_FORM.targetQuestionCount,
+    ),
+    jdText: str('jdText', ''),
+    resumeText: str('resumeText', ''),
+    ...(typeof v.resumeFileName === 'string' ? { resumeFileName: v.resumeFileName } : {}),
+  }
+}
+
+/** Unsent answer in the interview room, tied to the session it was typed for. */
+export interface AnswerDraft {
+  sessionId: string
+  text: string
+}
+
+export const EMPTY_ANSWER_DRAFT: AnswerDraft = { sessionId: '', text: '' }
+
+export function parseAnswerDraft(value: unknown): AnswerDraft | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  return typeof v.sessionId === 'string' && typeof v.text === 'string'
+    ? { sessionId: v.sessionId, text: v.text }
+    : null
+}
+
 export const DURATION_OPTIONS = [15, 30, 45, 60]
 export const QUESTION_COUNT_OPTIONS = [4, 6, 8, 10]
 

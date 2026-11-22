@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useDraft } from '@/hooks/useDraft'
 import { invalidateQuestionsCache, useQuestions } from '@/hooks/useQuestions'
 import {
   type CategoryEntry,
@@ -35,6 +36,7 @@ import {
   isMDFile,
   loadAllBuiltinModulesParallel,
 } from '@/lib/questionLoader'
+import { readDraft } from '@/lib/storage'
 import {
   Box,
   Breadcrumb,
@@ -91,7 +93,10 @@ async function loadLibrary(): Promise<Library> {
 
 export default function ImportPage() {
   const navigate = useNavigate()
-  const [mode, setMode] = useState<Mode>('file')
+  // Reopen on the paste tab when there is unsent pasted content.
+  const [mode, setMode] = useState<Mode>(() =>
+    parsePasteDraft(readDraft(PASTE_DRAFT))?.text.trim() ? 'paste' : 'file',
+  )
   const [busy, setBusy] = useState(false)
   const [results, setResults] = useState<CustomImportResult[]>([])
   const [library, setLibrary] = useState<Library>(EMPTY_LIBRARY)
@@ -372,6 +377,18 @@ function FileDrop({ busy, onFiles }: { busy: boolean; onFiles: (files: File[]) =
   )
 }
 
+const PASTE_DRAFT = 'import:paste'
+const EMPTY_PASTE = { text: '', source: '' }
+
+function parsePasteDraft(value: unknown): typeof EMPTY_PASTE | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  return {
+    text: typeof v.text === 'string' ? v.text : '',
+    source: typeof v.source === 'string' ? v.source : '',
+  }
+}
+
 function PastePanel({
   busy,
   onImport,
@@ -379,15 +396,17 @@ function PastePanel({
   busy: boolean
   onImport: (text: string, source: string, format: PasteFormat) => Promise<boolean>
 }) {
-  const [text, setText] = useState('')
-  const [source, setSource] = useState('')
+  const [draft, setDraft, clearDraft] = useDraft(PASTE_DRAFT, EMPTY_PASTE, parsePasteDraft)
+  const { text, source } = draft
+  const setText = (next: string) => setDraft((d) => ({ ...d, text: next }))
+  const setSource = (next: string) => setDraft((d) => ({ ...d, source: next }))
   const format = text.trim() ? detectPasteFormat(text) : null
   const preview = text.trim() ? parseImportText(text) : null
 
   const submit = async () => {
     if (!format || !source.trim()) return
     const ok = await onImport(text, source.trim(), format)
-    if (ok) setText('')
+    if (ok) clearDraft()
   }
 
   return (

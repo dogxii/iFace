@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useDraft } from '@/hooks/useDraft'
 import {
   Box,
   Breadcrumb,
@@ -78,13 +79,52 @@ const TIPS: { icon: LucideIcon; title: string; body: string }[] = [
   },
 ]
 
+interface PromptPrefs {
+  mode: Mode
+  presetId: string
+  module: string
+  count: number
+  mix: DifficultyMix
+  extra: string
+}
+
+const DEFAULT_PROMPT_PREFS: PromptPrefs = {
+  mode: 'preset',
+  presetId: PRESETS[0].id,
+  module: 'JS基础',
+  count: 60,
+  mix: 'standard',
+  extra: '',
+}
+
+function parsePromptPrefs(value: unknown): PromptPrefs | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  const d = DEFAULT_PROMPT_PREFS
+  return {
+    mode: v.mode === 'custom' ? 'custom' : 'preset',
+    presetId: PRESETS.some((p) => p.id === v.presetId) ? (v.presetId as string) : d.presetId,
+    module: typeof v.module === 'string' && v.module.trim() ? v.module : d.module,
+    count: COUNT_OPTIONS.includes(v.count as number) ? (v.count as number) : d.count,
+    mix: DIFFICULTY_MIXES.some((m) => m.value === v.mix) ? (v.mix as DifficultyMix) : d.mix,
+    extra: typeof v.extra === 'string' ? v.extra : '',
+  }
+}
+
 export default function PromptPage() {
-  const [mode, setMode] = useState<Mode>('preset')
-  const [presetId, setPresetId] = useState(PRESETS[0].id)
-  const [module, setModule] = useState('JS基础')
-  const [count, setCount] = useState(60)
-  const [mix, setMix] = useState<DifficultyMix>('standard')
-  const [extra, setExtra] = useState('')
+  // Remember the last choices (and any extra requirements typed) across visits.
+  const [prefs, setPrefs] = useDraft('prompt', DEFAULT_PROMPT_PREFS, parsePromptPrefs)
+  const { mode, presetId, module, count, mix, extra } = prefs
+  const update =
+    <K extends keyof PromptPrefs>(key: K) =>
+    (value: PromptPrefs[K]) =>
+      setPrefs((prev) => ({ ...prev, [key]: value }))
+  const setMode = update('mode')
+  const setPresetId = update('presetId')
+  const setModule = update('module')
+  const setCount = update('count')
+  const setMix = update('mix')
+  const setExtra = update('extra')
   const [copied, setCopied] = useState(false)
 
   const preset = PRESETS.find((p) => p.id === presetId) ?? PRESETS[0]

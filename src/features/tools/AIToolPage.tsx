@@ -1,8 +1,9 @@
-import { CircleAlert, Copy, FileText, Settings2, Sparkles, Square } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { CircleAlert, Copy, Eraser, FileText, Settings2, Sparkles, Square } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useBufferedText } from '@/hooks/useBufferedText'
+import { parseStringRecord, useDraft } from '@/hooks/useDraft'
 import { requestChatCompletionStream } from '@/lib/aiClient'
 import { useAIStore } from '@/store/useAIStore'
 import { useUIState } from '@/store/useUIStore'
@@ -21,43 +22,89 @@ import {
   Textarea,
   toast,
 } from '@/ui'
-import { buildMessages, createInitialValues, TOOL_MAP } from './toolConfigs'
+import { type AIToolConfig, buildMessages, createInitialValues, TOOL_MAP } from './toolConfigs'
+
+interface ToolDraft {
+  values: Record<string, string>
+  /** Last finished result, kept so leaving the page doesn't throw it away. */
+  result: string
+}
+
+function parseToolDraft(value: unknown): ToolDraft | null {
+  if (!value || typeof value !== 'object') return null
+  const draft = value as Partial<ToolDraft>
+  const values = parseStringRecord(draft.values)
+  if (!values) return null
+  return { values, result: typeof draft.result === 'string' ? draft.result : '' }
+}
 
 export default function AIToolPage() {
   const { toolId } = useParams()
-  const navigate = useNavigate()
   const tool = toolId ? TOOL_MAP.get(toolId) : undefined
+  // Remount per tool so each one restores its own draft.
+  return tool ? <AIToolView key={tool.id} tool={tool} /> : <UnknownTool />
+}
+
+function UnknownTool() {
+  const navigate = useNavigate()
+  return (
+    <>
+      <PageHeader
+        title={
+          <Breadcrumb
+            items={[
+              { label: 'AI 工具箱', onClick: () => navigate('/tools') },
+              { label: '未知工具' },
+            ]}
+          />
+        }
+      />
+      <div className="mx-auto max-w-[720px] px-4 py-16">
+        <EmptyState
+          icon={<CircleAlert />}
+          title="工具不存在"
+          description="返回工具箱选择一个可用工具。"
+          action={
+            <Button asChild variant="primary" size="sm">
+              <Link to="/tools">返回工具箱</Link>
+            </Button>
+          }
+        />
+      </div>
+    </>
+  )
+}
+
+function AIToolView({ tool }: { tool: AIToolConfig }) {
+  const navigate = useNavigate()
   const { config } = useAIStore()
   const openSettings = useUIState((s) => s.openSettings)
   const aiReady = config.enabled && config.apiKey.trim().length > 0
-  const [values, setValues] = useState<Record<string, string>>(() =>
-    tool ? createInitialValues(tool) : {},
+  const initialDraft = useMemo<ToolDraft>(
+    () => ({ values: createInitialValues(tool), result: '' }),
+    [tool],
   )
-  const [result, setResult] = useState('')
+  const [draft, setDraft, clearDraft] = useDraft(`tool:${tool.id}`, initialDraft, parseToolDraft)
+  const { values, result } = draft
+  const setValue = (id: string, value: string) =>
+    setDraft((d) => ({ ...d, values: { ...d.values, [id]: value } }))
+  const setResult = (next: string) => setDraft((d) => ({ ...d, result: next }))
   const { text: streamingText, appendText, resetText } = useBufferedText()
   const [generating, setGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
-
-  useEffect(() => {
-    if (!tool) return
-    setValues(createInitialValues(tool))
-    setResult('')
-    resetText('')
-    setError(null)
-  }, [resetText, tool])
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
   const displayResult = streamingText || result
 
   const missingRequired = useMemo(
-    () => tool?.fields.find((f) => f.required && !values[f.id]?.trim()) ?? null,
+    () => tool.fields.find((f) => f.required && !values[f.id]?.trim()) ?? null,
     [tool, values],
   )
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initialDraft)
 
-  const handleGenerate = useCallback(async () => {
-    if (!tool) return
+  const handleGenerate = async () => {
     if (!aiReady) return setError('请先在设置中启用 AI 并配置 API Key')
     if (missingRequired) return setError(`请填写「${missingRequired.label}」`)
 
@@ -92,7 +139,7 @@ export default function AIToolPage() {
       if (abortRef.current === controller) abortRef.current = null
       setGenerating(false)
     }
-  }, [aiReady, appendText, config, missingRequired, resetText, tool, values])
+  }
 
   const handleStop = () => {
     abortRef.current?.abort()
@@ -106,34 +153,28 @@ export default function AIToolPage() {
     toast.success('已复制 Markdown')
   }
 
-  const crumbs = [
-    { label: 'AI 工具箱', onClick: () => navigate('/tools') },
-    { label: tool?.title ?? '未知工具' },
-  ]
-
-  if (!tool) {
-    return (
-      <>
-        <PageHeader title={<Breadcrumb items={crumbs} />} />
-        <div className="mx-auto max-w-[720px] px-4 py-16">
-          <EmptyState
-            icon={<CircleAlert />}
-            title="工具不存在"
-            description="返回工具箱选择一个可用工具。"
-            action={
-              <Button asChild variant="primary" size="sm">
-                <Link to="/tools">返回工具箱</Link>
-              </Button>
-            }
-          />
-        </div>
-      </>
-    )
+  const handleClear = () => {
+    handleStop()
+    resetText('')
+    setError(null)
+    clearDraft()
   }
+
+  const crumbs = [{ label: 'AI 工具箱', onClick: () => navigate('/tools') }, { label: tool.title }]
 
   return (
     <>
-      <PageHeader title={<Breadcrumb items={crumbs} />} />
+      <PageHeader
+        title={<Breadcrumb items={crumbs} />}
+        actions={
+          dirty ? (
+            <Button variant="ghost" size="sm" onClick={handleClear}>
+              <Eraser />
+              清空
+            </Button>
+          ) : null
+        }
+      />
       <div className="mx-auto max-w-[1240px] px-4 py-8 sm:px-8 lg:px-12 lg:py-10">
         <PageTitle title={tool.title} description={tool.description} />
 
@@ -152,8 +193,8 @@ export default function AIToolPage() {
         ) : null}
 
         <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(320px,400px)_minmax(0,1fr)]">
-          <Box className="flex flex-col lg:sticky lg:top-[calc(var(--navbar-h,0px)+68px)]">
-            <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
+          <Box className="flex flex-col">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-4 py-3">
               <h2 className="text-sm font-semibold text-fg">输入材料</h2>
               {aiReady ? (
                 <Tag variant="soft" className="max-w-40 truncate font-mono text-2xs">
@@ -178,7 +219,7 @@ export default function AIToolPage() {
                       <Textarea
                         id={id}
                         value={values[field.id] ?? ''}
-                        onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
+                        onChange={(e) => setValue(field.id, e.target.value)}
                         placeholder={field.placeholder}
                         rows={field.rows ?? 5}
                         className="text-sm"
@@ -187,7 +228,7 @@ export default function AIToolPage() {
                       <Input
                         id={id}
                         value={values[field.id] ?? ''}
-                        onChange={(e) => setValues((v) => ({ ...v, [field.id]: e.target.value }))}
+                        onChange={(e) => setValue(field.id, e.target.value)}
                         placeholder={field.placeholder}
                         className="text-sm"
                       />
@@ -196,7 +237,7 @@ export default function AIToolPage() {
                 )
               })}
             </div>
-            <div className="flex gap-2 border-t border-line p-4">
+            <div className="flex shrink-0 gap-2 border-t border-line p-4">
               {generating ? (
                 <Button variant="secondary" className="flex-1" onClick={handleStop}>
                   <Square />

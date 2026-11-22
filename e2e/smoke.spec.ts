@@ -204,3 +204,11 @@ test('the module question list docks beside the page and stays open', async ({ p
   await list.getByRole('button', { name: '收起题目列表' }).click()
   await expect(list).toHaveCount(0)
 })
+
+test('form drafts survive leaving the page', async ({ page }) => {
+  await page.goto('/tools/jd-match')
+  await page.getByLabel('岗位 JD').fill('e2e 草稿 JD')
+  await page.goto('/')
+  await page.goto('/tools/jd-match')
+  await expect(page.getByLabel('岗位 JD')).toHaveValue('e2e 草稿 JD', { timeout: 20_000 })
+})

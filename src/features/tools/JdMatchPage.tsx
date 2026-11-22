@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import { ResumeInput, type ResumeValue } from '@/components/ResumeInput'
 import { MarkdownRenderer } from '@/components/ui/LazyMarkdownRenderer'
 import { useBufferedText } from '@/hooks/useBufferedText'
+import { useDraft } from '@/hooks/useDraft'
 import { requestChatCompletionStream } from '@/lib/aiClient'
 import { deleteJdMatchReport, getAllJdMatchReports, putJdMatchReport } from '@/lib/db'
 import { useAIStore } from '@/store/useAIStore'
@@ -46,6 +47,36 @@ import {
 } from './jdMatch'
 
 const EMPTY_RESUME: ResumeValue = { text: '', fileName: null }
+
+interface JdDraft {
+  roleTitle: string
+  jdText: string
+  resume: ResumeValue
+  /** Report shown when the page was left, restored from history on return. */
+  reportId: string | null
+}
+
+const EMPTY_DRAFT: JdDraft = {
+  roleTitle: DEFAULT_ROLE,
+  jdText: '',
+  resume: EMPTY_RESUME,
+  reportId: null,
+}
+
+function parseJdDraft(value: unknown): JdDraft | null {
+  if (!value || typeof value !== 'object') return null
+  const v = value as Record<string, unknown>
+  const resume = (v.resume ?? {}) as Record<string, unknown>
+  return {
+    roleTitle: typeof v.roleTitle === 'string' ? v.roleTitle : DEFAULT_ROLE,
+    jdText: typeof v.jdText === 'string' ? v.jdText : '',
+    resume: {
+      text: typeof resume.text === 'string' ? resume.text : '',
+      fileName: typeof resume.fileName === 'string' ? resume.fileName : null,
+    },
+    reportId: typeof v.reportId === 'string' ? v.reportId : null,
+  }
+}
 
 function sortReports(reports: JdMatchReport[]) {
   return [...reports].sort((a, b) => b.updatedAt - a.updatedAt)
@@ -85,13 +116,18 @@ export default function JdMatchPage() {
 
   const reportRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
-  const [roleTitle, setRoleTitle] = useState(DEFAULT_ROLE)
-  const [jdText, setJdText] = useState('')
-  const [resume, setResume] = useState<ResumeValue>(EMPTY_RESUME)
+  const [draft, setDraft] = useDraft('jd-match', EMPTY_DRAFT, parseJdDraft)
+  const { roleTitle, jdText, resume, reportId: activeReportId } = draft
+  const setRoleTitle = (roleTitle: string) => setDraft((d) => ({ ...d, roleTitle }))
+  const setJdText = (jdText: string) => setDraft((d) => ({ ...d, jdText }))
+  const setResume = (resume: ResumeValue) => setDraft((d) => ({ ...d, resume }))
+  const setActiveReportId = useCallback(
+    (reportId: string | null) => setDraft((d) => ({ ...d, reportId })),
+    [setDraft],
+  )
   const resumeText = resume.text
   const [report, setReport] = useState('')
   const [savedReports, setSavedReports] = useState<JdMatchReport[]>([])
-  const [activeReportId, setActiveReportId] = useState<string | null>(null)
   const { text: streamingText, appendText, resetText } = useBufferedText()
   const [error, setError] = useState<string | null>(null)
   const [analyzing, setAnalyzing] = useState(false)
@@ -100,8 +136,14 @@ export default function JdMatchPage() {
   const activeReport = savedReports.find((item) => item.id === activeReportId) ?? null
   const score = useMemo(() => (report ? extractMatchScore(report) : null), [report])
 
+  // Load history once, and bring back the report that was open when the page was left.
+  const restoreReportId = useRef(activeReportId)
   useEffect(() => {
-    getAllJdMatchReports().then((loaded) => setSavedReports(sortReports(loaded)))
+    getAllJdMatchReports().then((loaded) => {
+      setSavedReports(sortReports(loaded))
+      const restored = loaded.find((item) => item.id === restoreReportId.current)
+      if (restored) setReport(restored.markdown)
+    })
   }, [])
 
   useEffect(() => () => abortRef.current?.abort(), [])
@@ -166,7 +208,17 @@ export default function JdMatchPage() {
       if (abortRef.current === controller) abortRef.current = null
       setAnalyzing(false)
     }
-  }, [aiReady, appendText, config, jdText, resume.fileName, resumeText, roleTitle, resetText])
+  }, [
+    aiReady,
+    appendText,
+    config,
+    jdText,
+    resume.fileName,
+    resumeText,
+    roleTitle,
+    resetText,
+    setActiveReportId,
+  ])
 
   const handleStop = () => {
     abortRef.current?.abort()
@@ -175,13 +227,15 @@ export default function JdMatchPage() {
   }
 
   const handleSelectReport = (item: JdMatchReport) => {
-    setRoleTitle(item.roleTitle)
-    setJdText(item.jdText)
-    setResume({ text: item.resumeText, fileName: item.resumeFileName ?? null })
+    setDraft({
+      roleTitle: item.roleTitle,
+      jdText: item.jdText,
+      resume: { text: item.resumeText, fileName: item.resumeFileName ?? null },
+      reportId: item.id,
+    })
     setReport(item.markdown)
     resetText('')
     setError(null)
-    setActiveReportId(item.id)
     revealOnStackedLayout(reportRef.current)
   }
 
@@ -206,13 +260,24 @@ export default function JdMatchPage() {
 
   const handleNewDiagnosis = () => {
     handleStop()
-    setRoleTitle(DEFAULT_ROLE)
-    setJdText('')
-    setResume(EMPTY_RESUME)
+    const previous = { draft, report }
+    // Material that isn't tied to a saved report would be lost: offer to bring it back.
+    const unsaved = !draft.reportId && (draft.jdText.trim() || draft.resume.text.trim())
+    setDraft(EMPTY_DRAFT)
     setReport('')
     resetText('')
     setError(null)
-    setActiveReportId(null)
+    if (unsaved) {
+      toast('已清空诊断材料', {
+        action: {
+          label: '撤销',
+          onClick: () => {
+            setDraft(previous.draft)
+            setReport(previous.report)
+          },
+        },
+      })
+    }
   }
 
   const handleCopy = async () => {
@@ -338,7 +403,7 @@ export default function JdMatchPage() {
               {savedReports.length === 0 ? (
                 <p className="px-4 py-6 text-center text-sm text-fg-subtle">暂无诊断记录</p>
               ) : (
-                <ul className="flex max-h-[360px] flex-col gap-0.5 overflow-y-auto p-1.5">
+                <ul className="flex max-h-[360px] flex-col gap-0.5 overflow-y-auto overscroll-contain p-1.5">
                   {savedReports.map((item) => {
                     const active = item.id === activeReportId
                     const itemScore = extractMatchScore(item.markdown)

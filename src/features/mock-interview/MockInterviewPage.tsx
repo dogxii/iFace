@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { SpeechInputButton } from '@/components/ui/SpeechInputButton'
 import { useBufferedText } from '@/hooks/useBufferedText'
+import { useDraft } from '@/hooks/useDraft'
 import { useQuestions } from '@/hooks/useQuestions'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 import { type ChatCompletionMessage, requestChatCompletionStream } from '@/lib/aiClient'
@@ -39,8 +40,11 @@ import { Breadcrumb, Button, Callout, Composer, PageHeader, PageTitle, Tag, toas
 import {
   type BusyState,
   DEFAULT_FORM,
+  EMPTY_ANSWER_DRAFT,
   formatSessionTime,
   formFromSession,
+  parseAnswerDraft,
+  parseSetupDraft,
   type SetupForm,
   sessionProgress,
   sortSessions,
@@ -68,19 +72,49 @@ export default function MockInterviewPage() {
   const reportRef = useRef<HTMLDivElement>(null)
   const abortRef = useRef<AbortController | null>(null)
 
-  const [form, setForm] = useState<SetupForm>(DEFAULT_FORM)
+  // Setup, the open interview and the unsent answer all survive leaving the page.
+  const [form, setForm] = useDraft<SetupForm>('mock-interview:setup', DEFAULT_FORM, parseSetupDraft)
+  const [answerDraft, setAnswerDraft] = useDraft(
+    'mock-interview:answer',
+    EMPTY_ANSWER_DRAFT,
+    parseAnswerDraft,
+  )
   const [sessions, setSessions] = useState<MockInterviewSession[]>([])
   const [active, setActive] = useState<MockInterviewSession | null>(null)
+  const [openId, setOpenId] = useDraft<string | null>('mock-interview:open', null, (value) =>
+    typeof value === 'string' ? value : null,
+  )
   const { allQuestions: questions } = useQuestions()
-  const [draft, setDraft] = useState('')
+  const activeId = active?.id ?? null
+  const draft = answerDraft.sessionId === activeId ? answerDraft.text : ''
+  const setDraft = useCallback(
+    (next: string | ((prev: string) => string)) =>
+      setAnswerDraft((prev) => {
+        const prevText = prev.sessionId === activeId ? prev.text : ''
+        const text = typeof next === 'function' ? next(prevText) : next
+        return text ? { sessionId: activeId ?? '', text } : EMPTY_ANSWER_DRAFT
+      }),
+    [activeId, setAnswerDraft],
+  )
   const [busy, setBusy] = useState<BusyState>('idle')
   const [error, setError] = useState<string | null>(null)
   const { text: streamingText, appendText, resetText } = useBufferedText()
   const isBusy = busy !== 'idle'
 
+  // Reopen the interview that was showing when the page was left.
+  const restoreId = useRef(openId)
+  const restoreDone = useRef(false)
   useEffect(() => {
-    getAllMockInterviews().then((loaded) => setSessions(sortSessions(loaded)))
+    getAllMockInterviews().then((loaded) => {
+      setSessions(sortSessions(loaded))
+      const restored = loaded.find((item) => item.id === restoreId.current)
+      restoreDone.current = true
+      if (restored) setActive(restored)
+    })
   }, [])
+  useEffect(() => {
+    if (restoreDone.current) setOpenId(activeId)
+  }, [activeId, setOpenId])
 
   useEffect(() => () => abortRef.current?.abort(), [])
 
@@ -310,7 +344,6 @@ export default function MockInterviewPage() {
   const resetRoom = () => {
     abortRef.current?.abort()
     speech.stop()
-    setDraft('')
     setError(null)
     resetText('')
   }
@@ -324,7 +357,8 @@ export default function MockInterviewPage() {
   const handleSelect = (session: MockInterviewSession) => {
     resetRoom()
     setActive(session)
-    setForm(formFromSession(session))
+    // Prefill the next interview from this one, unless the user already started a setup.
+    if (JSON.stringify(form) === JSON.stringify(DEFAULT_FORM)) setForm(formFromSession(session))
     topRef.current?.scrollIntoView({ block: 'start' })
   }
 

@@ -48,15 +48,25 @@ async function testConnection(config: AIConfig): Promise<TestResult> {
   }
 }
 
+/**
+ * Unsaved edits, kept in memory while the settings dialog is closed or another tab is open, so
+ * switching away never silently discards a half-entered API key or model.
+ */
+let unsavedEdits: { local: AIConfig; customModel: string; customBaseUrl: string } | null = null
+
 export function AISettings() {
   const { config, sessions, updateConfig, resetConfig, clearAllSessions } = useAIStore()
-  const [local, setLocal] = useState<AIConfig>({ ...config })
-  const [customModel, setCustomModel] = useState('')
-  const [customBaseUrl, setCustomBaseUrl] = useState('')
-  const [dirty, setDirty] = useState(false)
+  const [local, setLocal] = useState<AIConfig>(() => unsavedEdits?.local ?? { ...config })
+  const [customModel, setCustomModel] = useState(() => unsavedEdits?.customModel ?? '')
+  const [customBaseUrl, setCustomBaseUrl] = useState(() => unsavedEdits?.customBaseUrl ?? '')
+  const [dirty, setDirty] = useState(() => unsavedEdits !== null)
   const [showKey, setShowKey] = useState(false)
   const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState<TestResult | null>(null)
+
+  useEffect(() => {
+    unsavedEdits = dirty ? { local, customModel, customBaseUrl } : null
+  }, [customBaseUrl, customModel, dirty, local])
 
   // Follow store changes (e.g. another tab) while there are no unsaved edits.
   useEffect(() => {
