@@ -3,22 +3,28 @@ import {
   ArrowRight,
   BookOpen,
   Check,
+  Command,
   Dumbbell,
+  type LucideIcon,
+  NotebookPen,
   Settings2,
-  Sparkles,
   Star,
   Target,
 } from 'lucide-react'
 import { Dialog as D } from 'radix-ui'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { ThemeSegmentedControl } from '@/app/themeOptions'
+import { BrandMark } from '@/components/BrandMark'
+import { HUE_CLASSES } from '@/components/ModuleMark'
+import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
+import type { ModuleHue } from '@/lib/moduleHue'
 import { BUILTIN_CATEGORIES } from '@/lib/questionLoader'
+import { readBoolean, STORAGE_KEYS, writeBoolean } from '@/lib/storage'
 import { useStudyState } from '@/store/useStudyStore'
 import { useUIState } from '@/store/useUIStore'
-import { Button, cn, StepProgress, Switch } from '@/ui'
-
-const ONBOARDING_DONE_KEY = 'iface_onboarding_done_v1'
+import { Button, cn, Kbd, StepProgress, Switch } from '@/ui'
 
 const STEPS = [
   { id: 'welcome', title: '欢迎来到 iFace！' },
@@ -26,59 +32,68 @@ const STEPS = [
   { id: 'start', title: '准备好了' },
 ] as const
 
-const FEATURES = [
+const FEATURES: { icon: LucideIcon; hue: ModuleHue; title: string; body: ReactNode }[] = [
   {
     icon: BookOpen,
-    title: '海量题库',
-    body: '从题库列表进入任意题目，先说出你的答案，再展开参考答案。',
+    hue: 'blue',
+    title: '题库',
+    body: (
+      <>
+        先说出你的答案，再按 <Kbd>Space</Kbd> 展开参考答案
+      </>
+    ),
   },
   {
     icon: Target,
-    title: '专项练习',
-    body: '练习页可以按模块、难度和学习状态组合，适合冲刺和查漏补缺。',
+    hue: 'orange',
+    title: '练习与复习',
+    body: (
+      <>
+        <Kbd>1</Kbd> <Kbd>2</Kbd> <Kbd>3</Kbd> 标记掌握程度，自动安排下次复习
+      </>
+    ),
   },
   {
-    icon: Sparkles,
-    title: 'AI 助手',
-    body: '在设置里的 AI 助手填入 API Key 后，题目详情页会出现分析和追问辅助。',
+    icon: NotebookPen,
+    hue: 'violet',
+    title: '笔记与 AI',
+    body: (
+      <>
+        <Kbd>N</Kbd> 写笔记，<Kbd>A</Kbd> 问 AI，在侧栏边看边记
+      </>
+    ),
+  },
+  {
+    icon: Command,
+    hue: 'green',
+    title: '命令面板',
+    body: (
+      <>
+        <Kbd>{PALETTE_SHORTCUT}</Kbd> 搜题、跳转页面、切换设置
+      </>
+    ),
   },
 ]
 
-function readDone(): boolean {
-  try {
-    return localStorage.getItem(ONBOARDING_DONE_KEY) === '1'
-  } catch {
-    return true
-  }
-}
-
-function markDone() {
-  try {
-    localStorage.setItem(ONBOARDING_DONE_KEY, '1')
-  } catch {
-    // Private mode: the guide simply shows again next time.
-  }
-}
-
-/** First-visit guide: a short welcome, choosing visible question banks, and where to start. */
+/**
+ * Welcome guide: opens by itself on the first visit and again from Settings → About.
+ * Choosing visible question banks and where to start; closing in any way marks it done.
+ */
 export function OnboardingDialog() {
   const { pathname } = useLocation()
-  const [open, setOpen] = useState(false)
-  const [stepIndex, setStepIndex] = useState(0)
+  const open = useUIState((s) => s.onboardingOpen)
+  const setOpen = useUIState((s) => s.setOnboardingOpen)
 
   useEffect(() => {
-    if (pathname === '/api/auth' || readDone()) return
+    if (pathname === '/api/auth' || readBoolean(STORAGE_KEYS.onboardingDone, false)) return
     const frame = requestAnimationFrame(() => setOpen(true))
     return () => cancelAnimationFrame(frame)
-  }, [pathname])
+  }, [pathname, setOpen])
 
   const close = () => {
-    markDone()
+    writeBoolean(STORAGE_KEYS.onboardingDone, true)
     setOpen(false)
   }
-
-  const step = STEPS[stepIndex]
-  const last = stepIndex === STEPS.length - 1
 
   return (
     <D.Root open={open} onOpenChange={(next) => (next ? setOpen(true) : close())}>
@@ -91,58 +106,70 @@ export function OnboardingDialog() {
             event.preventDefault()
             ;(event.currentTarget as HTMLElement).focus()
           }}
-          className="fixed top-1/2 left-1/2 z-50 flex max-h-[min(640px,calc(100dvh-24px))] sm:h-[552px] w-[min(600px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-line bg-elevated shadow-popover outline-none data-[state=open]:animate-scale-in"
+          className="fixed top-1/2 left-1/2 z-50 flex max-h-[min(640px,calc(100dvh-24px))] w-[min(600px,calc(100vw-24px))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-line bg-elevated shadow-popover outline-none data-[state=open]:animate-scale-in sm:h-[560px]"
         >
-          <div className="px-6 pt-6">
-            <StepProgress
-              label="引导进度"
-              steps={STEPS.map((_, i) =>
-                i < stepIndex ? 'done' : i === stepIndex ? 'current' : 'todo',
-              )}
-            />
-            <div className="mt-5 flex items-baseline justify-between gap-3">
-              <D.Title className="text-xl font-semibold tracking-tight text-fg">
-                {step.title}
-              </D.Title>
-              <span className="text-xs text-fg-subtle tabular-nums">
-                {stepIndex + 1} / {STEPS.length}
-              </span>
-            </div>
-          </div>
-
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-6">
-            {step.id === 'welcome' ? <WelcomeStep /> : null}
-            {step.id === 'banks' ? <BanksStep /> : null}
-            {step.id === 'start' ? <StartStep onLeave={close} /> : null}
-          </div>
-
-          <div className="flex items-center gap-2 border-t border-line bg-subtle/60 px-6 py-3">
-            <Button variant="ghost" size="sm" onClick={close}>
-              跳过引导
-            </Button>
-            <div className="ml-auto flex gap-2">
-              {stepIndex > 0 ? (
-                <Button variant="secondary" size="sm" onClick={() => setStepIndex((i) => i - 1)}>
-                  <ArrowLeft />
-                  上一步
-                </Button>
-              ) : null}
-              {last ? (
-                <Button variant="primary" size="sm" onClick={close}>
-                  <Check />
-                  完成引导
-                </Button>
-              ) : (
-                <Button variant="primary" size="sm" onClick={() => setStepIndex((i) => i + 1)}>
-                  下一步
-                  <ArrowRight />
-                </Button>
-              )}
-            </div>
-          </div>
+          <OnboardingSteps onClose={close} />
         </D.Content>
       </D.Portal>
     </D.Root>
+  )
+}
+
+/** Mounted with the dialog content, so reopening the guide starts from the first step. */
+function OnboardingSteps({ onClose }: { onClose: () => void }) {
+  const [stepIndex, setStepIndex] = useState(0)
+  const step = STEPS[stepIndex]
+  const last = stepIndex === STEPS.length - 1
+
+  return (
+    <>
+      <div className="px-6 pt-6">
+        <StepProgress
+          label="引导进度"
+          steps={STEPS.map((_, i) =>
+            i < stepIndex ? 'done' : i === stepIndex ? 'current' : 'todo',
+          )}
+        />
+        <div className="mt-5 flex items-center gap-2.5">
+          <BrandMark className="size-7" />
+          <D.Title className="text-xl font-semibold tracking-tight text-fg">{step.title}</D.Title>
+          <span className="ml-auto text-xs text-fg-subtle tabular-nums">
+            {stepIndex + 1} / {STEPS.length}
+          </span>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-4 pb-6">
+        {step.id === 'welcome' ? <WelcomeStep /> : null}
+        {step.id === 'banks' ? <BanksStep /> : null}
+        {step.id === 'start' ? <StartStep onLeave={onClose} /> : null}
+      </div>
+
+      <div className="flex items-center gap-2 border-t border-line bg-subtle/60 px-6 py-3">
+        <Button variant="ghost" size="sm" onClick={onClose}>
+          跳过引导
+        </Button>
+        <div className="ml-auto flex gap-2">
+          {stepIndex > 0 ? (
+            <Button variant="secondary" size="sm" onClick={() => setStepIndex((i) => i - 1)}>
+              <ArrowLeft />
+              上一步
+            </Button>
+          ) : null}
+          {last ? (
+            <Button variant="primary" size="sm" onClick={onClose}>
+              <Check />
+              完成引导
+            </Button>
+          ) : (
+            <Button variant="primary" size="sm" onClick={() => setStepIndex((i) => i + 1)}>
+              下一步
+              <ArrowRight />
+            </Button>
+          )}
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -163,7 +190,7 @@ function WelcomeStep() {
           👋
         </p>
         <p>很高兴你来到这里 🎉，这是一个永远开源免费的八股面试题网站！</p>
-        <p>iFace 拥有超多题目，以及下面三大功能，至于更多...我想你主动去发现会更有意思 👀</p>
+        <p>iFace 拥有超多题目，以及下面这些功能，至于更多...我想你主动去发现会更有意思 👀</p>
         <p>
           项目地址：
           <a
@@ -189,10 +216,17 @@ function WelcomeStep() {
           ，最后感谢大家的喜欢 ❤️！
         </p>
       </div>
-      <ul className="flex flex-col gap-2">
+      <ul className="grid gap-2 sm:grid-cols-2">
         {FEATURES.map((feature) => (
-          <li key={feature.title} className="flex gap-3 rounded-xl border border-line px-4 py-3">
-            <feature.icon className="mt-0.5 size-4 shrink-0 text-accent" />
+          <li key={feature.title} className="flex gap-3 rounded-xl border border-line p-3">
+            <span
+              className={cn(
+                'grid size-8 shrink-0 place-items-center rounded-lg',
+                HUE_CLASSES[feature.hue].mark,
+              )}
+            >
+              <feature.icon className="size-4" />
+            </span>
             <div className="min-w-0">
               <p className="text-sm font-medium text-fg">{feature.title}</p>
               <p className="mt-0.5 text-xs leading-relaxed text-fg-subtle">{feature.body}</p>
@@ -311,7 +345,7 @@ function StartStep({ onLeave }: { onLeave: () => void }) {
     {
       icon: Settings2,
       title: '打开设置',
-      body: '调整每日目标、主题和 AI 助手',
+      body: '每日目标、答题方式和 AI 助手',
       run: () => {
         onLeave()
         openSettings('study')
@@ -333,7 +367,16 @@ function StartStep({ onLeave }: { onLeave: () => void }) {
         <p>如果你不知道从哪里开始，推荐先打开设置，看看有什么可以调整</p>
         <p>然后，享受刷题！</p>
         <p>人再见，祝你生活愉快，面试顺利 🎉</p>
-        <p className="text-fg-subtle">ps: 本引导窗口只在首次进入页面时显示。</p>
+        <p className="text-fg-subtle">
+          ps: 本引导只在首次进入时自动弹出，之后可以在「设置 → 关于」里重新查看。
+        </p>
+      </div>
+      <div className="flex items-center justify-between gap-4 rounded-xl border border-line px-4 py-3 max-sm:flex-col max-sm:items-start max-sm:gap-2">
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-fg">外观</span>
+          <span className="block text-xs text-fg-subtle">之后也可以在「设置 → 偏好」里修改</span>
+        </span>
+        <ThemeSegmentedControl />
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
         {actions.map((action) => (
@@ -357,8 +400,13 @@ function StartStep({ onLeave }: { onLeave: () => void }) {
         rel="noreferrer"
         className="group flex items-center gap-3 rounded-xl border border-line px-4 py-3 transition-colors hover:border-line-strong hover:bg-subtle"
       >
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-fg text-canvas">
-          <Star className="size-4.5" />
+        <span
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-lg',
+            HUE_CLASSES.amber.mark,
+          )}
+        >
+          <Star className="size-4.5 fill-current" />
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-medium text-fg">本网站强烈推荐配合面经食用 🍜</span>

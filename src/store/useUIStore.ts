@@ -13,6 +13,7 @@ export type ModuleStatusFilter = 'all' | StudyStatus
 interface UIState {
   settingsOpen: boolean
   settingsTab: SettingsTab
+  onboardingOpen: boolean
   mobileNavOpen: boolean
   paletteOpen: boolean
   /** Expanded sidebar width in px (kept while collapsed so expanding restores it). */
@@ -31,6 +32,7 @@ interface UIState {
   openSettings: (tab?: SettingsTab) => void
   closeSettings: () => void
   setSettingsTab: (tab: SettingsTab) => void
+  setOnboardingOpen: (open: boolean) => void
   setMobileNavOpen: (open: boolean) => void
   setPaletteOpen: (open: boolean) => void
   setSidebarWidth: (width: number) => void
@@ -50,6 +52,7 @@ interface UIState {
 export const useUIState = create<UIState>()((set) => ({
   settingsOpen: false,
   settingsTab: 'study',
+  onboardingOpen: false,
   mobileNavOpen: false,
   paletteOpen: false,
   sidebarWidth: readInt(STORAGE_KEYS.sidebarWidth, SIDEBAR.default, SIDEBAR.min, SIDEBAR.max),
@@ -78,6 +81,7 @@ export const useUIState = create<UIState>()((set) => ({
     })),
   closeSettings: () => set({ settingsOpen: false }),
   setSettingsTab: (settingsTab) => set({ settingsTab }),
+  setOnboardingOpen: (onboardingOpen) => set({ onboardingOpen, settingsOpen: false }),
   setMobileNavOpen: (mobileNavOpen) => set({ mobileNavOpen }),
   setPaletteOpen: (paletteOpen) => set({ paletteOpen, mobileNavOpen: false }),
   setSidebarWidth: (sidebarWidth) => set({ sidebarWidth }),
