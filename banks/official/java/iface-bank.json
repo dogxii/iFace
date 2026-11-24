@@ -5,9 +5,7 @@
   "description": "Java 基础、并发、JVM、Spring、MySQL、Redis 与计算机网络",
   "version": "1.0.0",
   "license": "MIT",
-  "authors": [
-    "Dogxi"
-  ],
+  "authors": ["Dogxi"],
   "language": "zh-CN",
   "homepage": "https://github.com/dogxii/iFace",
   "modules": [

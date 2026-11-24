@@ -5,9 +5,7 @@
   "description": "LLM 基础、Prompt 工程、Agent 架构、RAG、工具调用、评测与 AI 工程化",
   "version": "1.0.0",
   "license": "MIT",
-  "authors": [
-    "Dogxi"
-  ],
+  "authors": ["Dogxi"],
   "language": "zh-CN",
   "homepage": "https://github.com/dogxii/iFace",
   "modules": [

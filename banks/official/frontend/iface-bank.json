@@ -5,9 +5,7 @@
   "description": "JavaScript、React、Vue、CSS、TypeScript、网络、性能优化、手写题与项目深挖",
   "version": "1.0.0",
   "license": "MIT",
-  "authors": [
-    "Dogxi"
-  ],
+  "authors": ["Dogxi"],
   "language": "zh-CN",
   "homepage": "https://github.com/dogxii/iFace",
   "modules": [

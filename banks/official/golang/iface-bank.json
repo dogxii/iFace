@@ -5,9 +5,7 @@
   "description": "Go 语言基础、并发编程、内存与 GC、工程化与 Web 开发",
   "version": "1.0.0",
   "license": "MIT",
-  "authors": [
-    "Dogxi"
-  ],
+  "authors": ["Dogxi"],
   "language": "zh-CN",
   "homepage": "https://github.com/dogxii/iFace",
   "modules": [
