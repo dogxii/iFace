@@ -2,6 +2,7 @@
  * Rendered Markdown (MarkdownRenderer adds `.markdown` to its wrapper).
  * Lives in the components layer, so Tailwind utilities on the wrapper and feature-level
  * overrides such as `.learning-check-markdown` win without !important.
+ * `--md-text` sets the body size (paragraphs and list items); the answer view raises it.
  */
 @layer components {
   .prose {
@@ -43,7 +44,7 @@
   }
 
   .markdown :where(p) {
-    font-size: 0.9375rem;
+    font-size: var(--md-text, 0.9375rem);
     color: var(--color-fg);
     line-height: 1.8;
     margin-bottom: 0.85em;
@@ -81,7 +82,7 @@
     list-style: decimal;
   }
   .markdown :where(li) {
-    font-size: 0.9375rem;
+    font-size: var(--md-text, 0.9375rem);
     line-height: 1.75;
     color: var(--color-fg);
     margin-bottom: 0.25em;
@@ -104,17 +105,19 @@
     margin: 1.4em 0;
   }
 
-  /* Inline code */
+  /* Inline code: a quiet chip in the text colour, so it doesn't compete with links. */
   .markdown :where(code:not(pre code)) {
     font-family: var(--font-mono);
-    font-size: 0.82em;
+    font-size: 0.85em;
     font-weight: 400;
+    font-variant-ligatures: none;
     background: var(--color-muted);
-    border: 1px solid var(--color-line);
     border-radius: 4px;
-    padding: 1px 5px;
-    color: var(--color-accent);
+    padding: 0.1em 0.35em;
+    color: var(--color-fg);
     word-break: break-word;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
   }
 
   /* Code blocks */
@@ -122,6 +125,8 @@
     font-family: var(--font-mono);
     font-size: 0.8125rem;
     font-weight: 400;
+    /* `===` and `!==` must read as typed, not as a ligature glyph. */
+    font-variant-ligatures: none;
     background: var(--color-subtle);
     border: 1px solid var(--color-line);
     border-radius: 10px;

@@ -251,7 +251,8 @@ html body[data-scroll-locked] {
   line-height: 1.4;
 }
 
-.code-block-wrap:hover .code-copy-btn {
+.code-block-wrap:hover .code-copy-btn,
+.code-copy-btn:focus-visible {
   opacity: 1;
 }
 

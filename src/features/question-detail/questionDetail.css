@@ -105,3 +105,21 @@
 .ai-chat-markdown h4 {
   font-size: inherit;
 }
+
+/* Answer reading view: 16px body with a clearer heading scale than the compact Markdown default. */
+.answer-annotation-content {
+  --md-text: 1rem;
+  font-size: 1rem;
+}
+.answer-annotation-content .markdown h1 {
+  font-size: 1.375rem;
+}
+.answer-annotation-content .markdown h2 {
+  font-size: 1.1875rem;
+}
+.answer-annotation-content .markdown h3 {
+  font-size: 1.0625rem;
+}
+.answer-annotation-content .markdown pre {
+  font-size: 0.84rem;
+}
