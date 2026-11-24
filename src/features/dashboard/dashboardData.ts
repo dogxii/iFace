@@ -91,6 +91,23 @@ export function moduleProgress(
   })
 }
 
+/**
+ * Question ids in the order modules are shown (category order, then module order), keeping
+ * each module's own order. Daily picks walk this list, so a new user starts at the first
+ * module of the first bank instead of whichever id sorts first.
+ */
+export function idsInModuleOrder(questions: Question[], moduleOrder: string[]): string[] {
+  const rank = new Map(moduleOrder.map((module, index) => [module, index]))
+  return questions
+    .map((question, index) => ({ question, index }))
+    .sort(
+      (a, b) =>
+        (rank.get(a.question.module) ?? moduleOrder.length) -
+          (rank.get(b.question.module) ?? moduleOrder.length) || a.index - b.index,
+    )
+    .map(({ question }) => question.id)
+}
+
 /** The question the user touched most recently, if it is still visible. */
 export function lastStudiedQuestion(
   questions: Question[],

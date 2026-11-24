@@ -4,6 +4,7 @@ import type { Question, StudyRecordMap } from '@/types'
 import {
   activityCalendar,
   greeting,
+  idsInModuleOrder,
   lastStudiedQuestion,
   moduleProgress,
   progressCounts,
@@ -29,6 +30,11 @@ const records: StudyRecordMap = {
 }
 
 describe('dashboard data', () => {
+  it('orders daily candidates by module display order, keeping order within a module', () => {
+    const mixed = [q('agent-1', 'Agent'), q('js-2', 'JS'), q('js-1', 'JS'), q('x', 'Custom')]
+    expect(idsInModuleOrder(mixed, ['JS', 'Agent'])).toEqual(['js-2', 'js-1', 'agent-1', 'x'])
+  })
+
   it('counts progress over visible questions only', () => {
     expect(progressCounts(questions, records, NOW)).toEqual({
       total: 4,

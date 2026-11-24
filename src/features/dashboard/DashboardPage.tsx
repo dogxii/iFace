@@ -48,6 +48,7 @@ import {
   activityCalendar,
   estimateMinutes,
   greeting,
+  idsInModuleOrder,
   lastStudiedQuestion,
   type ModuleProgress,
   moduleProgress,
@@ -158,7 +159,7 @@ function ContinueCard({
             <div className="mt-6 flex flex-wrap gap-2">
               <Button variant="primary" asChild>
                 <Link to={`/questions/${question.id}`}>
-                  继续
+                  {status === 'unlearned' ? '开始' : '继续'}
                   <ArrowRight />
                 </Link>
               </Button>
@@ -305,7 +306,15 @@ export default function DashboardPage() {
     () => filterVisibleQuestions(allQuestions, getHiddenModules(categoryMap, hiddenCategories)),
     [allQuestions, categoryMap, hiddenCategories],
   )
-  const visibleIds = useMemo(() => visibleQuestions.map((q) => q.id), [visibleQuestions])
+  const modules = useMemo(
+    () => moduleProgress(visibleQuestions, records, categoryMap, hiddenCategories),
+    [visibleQuestions, records, categoryMap, hiddenCategories],
+  )
+  const moduleOrderKey = modules.map((m) => m.module).join('\n')
+  const visibleIds = useMemo(
+    () => idsInModuleOrder(visibleQuestions, moduleOrderKey.split('\n')),
+    [visibleQuestions, moduleOrderKey],
+  )
   const questionById = useMemo(
     () => new Map(visibleQuestions.map((q) => [q.id, q])),
     [visibleQuestions],
@@ -333,10 +342,6 @@ export default function DashboardPage() {
   const counts = useMemo(
     () => progressCounts(visibleQuestions, records, now),
     [visibleQuestions, records, now],
-  )
-  const modules = useMemo(
-    () => moduleProgress(visibleQuestions, records, categoryMap, hiddenCategories),
-    [visibleQuestions, records, categoryMap, hiddenCategories],
   )
   const activity = useMemo(() => activityCalendar(records, notes, now), [records, notes, now])
   const recentNotes = useMemo(
