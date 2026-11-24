@@ -1,6 +1,6 @@
 # 题库开放计划（iFace 2.0）
 
-> 状态：方案已定，按阶段实施。分支 `feat/bank-market`。
+> 状态：方案已定，按阶段实施。分支 `feat/bank-market`。P0（格式规范、校验器、JSON Schema、`llms.txt`）已完成。
 > 兼容代码统一在 2027-06-30 后删除（见「兼容与迁移」）。
 
 ## 目标
@@ -83,7 +83,7 @@
 { "id": "basics", "name": "Go基础", "questions": "questions/basics.md" }
 ```
 
-Markdown 题目文件沿用现在导入页支持的写法（`## 题目` + 元信息 + 答案），对人和 Agent 都更好写。
+Markdown 题目文件每题以 `<!-- id: ...; difficulty: ... -->` 开头，下一行 `# 题目`，之后是答案（细节见 [bank-format.md](bank-format.md)）。注释在 GitHub 上不显示，读起来就是一篇普通文档。
 
 ### 字段
 
@@ -101,14 +101,15 @@ Markdown 题目文件沿用现在导入页支持的写法（`## 题目` + 元信
 | `modules[].id` / `name` | 是 | 见 ID 规则；`name` ≤ 20 字 |
 | `modules[].description` | 否 | |
 | `modules[].icon` | 否 | 图标名，限定在应用提供的一组 lucide 图标里，不认识的忽略 |
-| `modules[].color` | 否 | `blue` `violet` `green` `orange` `pink` `teal` `amber` `red` 之一，不填按名称哈希 |
+| `modules[].color` | 否 | `blue` `violet` `pink` `rose` `orange` `amber` `green` `teal` `cyan` 之一，不填按名称哈希 |
 | `modules[].questions` | 是 | 题目数组，或相对路径（`.json` / `.md`） |
 | `question.id` | 是 | 见 ID 规则 |
 | `question.difficulty` | 是 | 1 初级 / 2 中级 / 3 高级 |
-| `question.question` | 是 | 纯文本或 Markdown，≤ 500 字 |
+| `question.question` | 是 | 纯文本或 Markdown，≤ 2000 字（官方题里有附代码的题目） |
 | `question.answer` | 是 | Markdown，≤ 50,000 字 |
 | `question.tags` | 否 | |
-| `question.checks` | 否 | 学习检验题，格式与现有学习检验一致（单选 / 多选 / 判断 + 解析） |
+| `question.source` | 否 | 出处标签，如「高频」「字节跳动」 |
+| `question.checks` | 否 | 学习检验题，格式与现有学习检验一致（单选 / 多选 + 解析） |
 
 未知字段忽略（向前兼容）。
 

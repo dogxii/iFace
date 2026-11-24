@@ -1,0 +1,54 @@
+# iFace
+
+> iFace (https://face.dogxi.me) 是一个开源的面试八股题库与刷题工具，纯前端、数据只存在用户浏览器里。任何人都可以发布「题库包」：一个公开 GitHub 仓库，根目录放 `iface-bank.json`，加上 topic `iface-bank`，就会出现在 iFace 的题库市场。
+
+本文件写给 AI Agent。用户让你「做一个 iFace 题库」时，按下面的步骤来。
+
+## 做一个题库包
+
+1. 在仓库根目录创建 `iface-bank.json`，第一行字段写 `"$schema": "https://face.dogxi.me/schema/iface-bank-1.json"`，`"format": "iface-bank@1"`。
+2. 必填：`name`（≤40 字）、`version`（semver，如 `1.0.0`）、`license`（SPDX，如 `CC-BY-4.0`；不确定就问用户）、`modules`（1–50 个）。
+3. 每个模块：`id`、`name`（≤20 字），`questions` 写成题目数组，或指向 `questions/<模块>.md` 的相对路径。题目多时优先用 Markdown 文件。
+4. 每道题：`id`、`difficulty`（1 初级 / 2 中级 / 3 高级）、`question`、`answer`（Markdown），可选 `tags`、`source`、`checks`。
+5. 写完对照 JSON Schema 校验，修掉所有错误；告诉用户给仓库加 topic `iface-bank`。
+
+## 必须遵守
+
+- 所有 id 匹配 `^[a-z0-9][a-z0-9._-]{0,63}$`，题目 id 在整个题库内唯一。推荐 `<模块>-<三位序号>`，如 `basics-001`。
+- 已发布的题目 id 永远不要修改或复用：用户的学习记录和笔记挂在 id 上。新增题目往后编号。
+- 修改了任何内容就提升 `version`（改错字提补丁版本）。
+- 答案里不要用一级标题 `#`，从 `##` 开始；不要写原始 HTML；不要引用外链图片。
+- 只写你有把握正确的内容；代码块标注语言。
+- 上限：5 MB、3000 题、50 个文件、50 个模块；题目 ≤ 2000 字，答案 ≤ 50,000 字，每题标签 ≤ 10 个。
+
+## Markdown 题目文件格式
+
+```
+<!-- id: basics-001; difficulty: 1; tags: slice, 数组 -->
+# slice 和数组有什么区别？
+
+## 结论
+……答案……
+
+<!-- id: basics-002; difficulty: 2; tags: 字符串 -->
+# 以下代码输出什么？
+
+    fmt.Println(len("你好"))
+
+<!-- answer -->
+输出 6……
+```
+
+题目只有一行时，标题后面都是答案；题目需要多行（附代码）时，用 `<!-- answer -->` 分隔题目和答案。文件开头到第一个 `<!-- id: ... -->` 之前的内容会被忽略。
+
+## 难度与写作标准
+
+- 1：概念、定义、常用 API。2：原理、对比、常见场景和坑。3：底层实现、设计取舍、复杂问题排查。
+- 题目像面试官提问，具体、一句话说清。答案先结论后展开，2–3 分钟能讲完，结尾可补充追问方向。
+- 标签写 2–5 个具体知识点（如 `GMP`、`逃逸分析`），不要写 `面试` 这类泛词。
+
+## 参考
+
+- 完整规范：https://github.com/dogxii/iFace/blob/main/docs/bank-format.md
+- JSON Schema：https://face.dogxi.me/schema/iface-bank-1.json
+- 分享安装链接：https://face.dogxi.me/market/gh/<owner>/<repo>

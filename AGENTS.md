@@ -12,7 +12,7 @@ iFace is a Vite React 19 + TypeScript app. Main code lives in `src/`:
 - `src/pages/DesignSystem.tsx` is the dev-only `/design` showcase.
 - `src/store/` contains app stores, and `src/hooks/` contains React hooks. Use `useDraft` for form input that would hurt to lose (saved under `iface_draft:<scope>`).
 - `src/lib/` contains IndexedDB, question loading, and sync helpers.
-- `src/types/` and `src/data/` hold shared types and schemas.
+- `src/types/` and `src/data/` hold shared types and schemas. `src/data/bank/` is the `iface-bank@1` question bank package format (ids, zod schema, Markdown question files, validator); keep it free of app imports. After changing its schema run `bun run build:bank-schema` and commit `public/schema/iface-bank-1.json`. The spec for authors is `docs/bank-format.md`, the agent summary is `public/llms.txt`, and the 2.0 plan is `docs/BANK_MARKET.md`.
 - `public/questions/` stores bundled question JSON assets by category.
 - `api/auth.js` is the Vercel auth endpoint.
 
