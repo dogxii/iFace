@@ -210,7 +210,13 @@ export function AISettings() {
               autoComplete="off"
               spellCheck={false}
               value={local.apiKey}
-              onChange={(e) => patch({ apiKey: e.target.value })}
+              onChange={(e) => {
+                const apiKey = e.target.value
+                // Entering the first key switches AI on; forgetting the toggle is the usual
+                // reason a configured assistant still says "not configured".
+                const firstKey = !local.apiKey.trim() && apiKey.trim() && !local.enabled
+                patch(firstKey ? { apiKey, enabled: true } : { apiKey })
+              }}
               placeholder={provider.apiKeyPlaceholder}
               className="font-mono"
               trailing={
