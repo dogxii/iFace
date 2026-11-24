@@ -93,6 +93,13 @@ iFace 1.0.0 的目标不是堆更多页面，而是把现有刷题、笔记、AI
 - PWA 题库改为运行时缓存，入口 chunk 减半。
 - 详见 [REFACTOR_PLAN.md](REFACTOR_PLAN.md) 和 [RELEASE_NOTES_1.5.md](RELEASE_NOTES_1.5.md)。
 
+### 2.0.0：题库开放（进行中）
+
+- 题库改为可发布、可安装的题库包：公开 GitHub 仓库打上 topic `iface-bank` 即可上架题库市场，不需要中心仓库。
+- 官方题库、导入题目统一为题库包；分类体系由「题库 → 模块」取代，题目 ID 带题库命名空间。
+- 对 AI Agent 友好：JSON Schema、`llms.txt`、仓库模板与 `AGENTS.md`、`iface-bank` 校验命令。
+- 详见 [BANK_MARKET.md](BANK_MARKET.md)。
+
 ## 近期优先级
 
 1. 继续做练习页和题目详情页的真实使用细节：快捷键冲突、空状态、会话结束、语音输入边界。
