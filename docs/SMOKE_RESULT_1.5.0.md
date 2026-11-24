@@ -25,12 +25,12 @@
 - `bun run check:questions`：通过，1222 道题，29 个 JSON 文件。
 - `bun run check:sync`：通过，Gist v1-v8 解析、未来版本拒绝、双端合并和 mock GitHub API 读写路径正常。
 - `bun run check:ai`：通过。
-- `bun run build`：通过，无大 chunk 警告；PWA 预缓存 79 项（约 1.4 MB）。
+- `bun run build`：通过，无大 chunk 警告；PWA 预缓存 77 项（约 1.4 MB）。
 - `bun run check:pwa`：通过，题库 JSON 走运行时缓存、不进预缓存。
 
 额外：
 
-- `bun run test:e2e`：通过，14 个 Playwright smoke 用例。
+- `bun run test:e2e`：通过，15 个 Playwright smoke 用例（含一个手机视口用例）。
 
 ## 外部服务 Smoke（待补齐）
 
