@@ -1,15 +1,15 @@
 export const routeLoaders = {
-  dashboard: () => import('@/pages/Dashboard'),
-  questionList: () => import('@/pages/QuestionList'),
-  questionDetail: () => import('@/pages/QuestionDetail'),
-  practice: () => import('@/pages/Practice'),
-  mockInterview: () => import('@/pages/MockInterview'),
-  weakPoints: () => import('@/pages/WeakPoints'),
-  tools: () => import('@/pages/Tools'),
-  jdMatch: () => import('@/pages/JdMatch'),
-  aiTool: () => import('@/pages/AITool'),
-  importPage: () => import('@/pages/ImportPage'),
-  promptPage: () => import('@/pages/PromptPage'),
+  dashboard: () => import('@/features/dashboard/DashboardPage'),
+  questionList: () => import('@/features/question-list/QuestionListPage'),
+  questionDetail: () => import('@/features/question-detail/QuestionDetailPage'),
+  practice: () => import('@/features/practice/PracticePage'),
+  mockInterview: () => import('@/features/mock-interview/MockInterviewPage'),
+  weakPoints: () => import('@/features/weak-points/WeakPointsPage'),
+  tools: () => import('@/features/tools/ToolsPage'),
+  jdMatch: () => import('@/features/tools/JdMatchPage'),
+  aiTool: () => import('@/features/tools/AIToolPage'),
+  importPage: () => import('@/features/import/ImportPage'),
+  promptPage: () => import('@/features/prompt/PromptPage'),
 }
 
 export type RoutePreloadKey = keyof typeof routeLoaders

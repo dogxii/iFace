@@ -1,0 +1,201 @@
+/*
+ * Rendered Markdown (MarkdownRenderer adds `.markdown` to its wrapper).
+ * Lives in the components layer, so Tailwind utilities on the wrapper and feature-level
+ * overrides such as `.learning-check-markdown` win without !important.
+ * `--md-text` sets the body size (paragraphs and list items); the answer view raises it.
+ */
+@layer components {
+  .prose {
+    color: var(--color-fg);
+    font-size: 0.9375rem;
+    line-height: 1.8;
+  }
+
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+  .markdown > :last-child {
+    margin-bottom: 0;
+  }
+
+  .markdown :where(h1, h2, h3, h4) {
+    color: var(--color-fg);
+    font-weight: 600;
+    line-height: 1.35;
+  }
+  .markdown :where(h1) {
+    font-size: 1.25rem;
+    letter-spacing: -0.01em;
+    margin: 1.5em 0 0.6em;
+  }
+  .markdown :where(h2) {
+    font-size: 1.05rem;
+    margin: 1.4em 0 0.5em;
+  }
+  .markdown :where(h3) {
+    font-size: 0.9375rem;
+    line-height: 1.4;
+    margin: 1.2em 0 0.4em;
+  }
+  .markdown :where(h4) {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    margin: 1em 0 0.3em;
+  }
+
+  .markdown :where(p) {
+    font-size: var(--md-text, 0.9375rem);
+    color: var(--color-fg);
+    line-height: 1.8;
+    margin-bottom: 0.85em;
+  }
+
+  .markdown :where(strong) {
+    font-weight: 600;
+    color: var(--color-fg);
+  }
+  .markdown :where(em) {
+    font-style: italic;
+    color: var(--color-fg-muted);
+  }
+
+  .markdown :where(a) {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: color-mix(in oklab, var(--color-accent) 40%, transparent);
+    transition: text-decoration-color 0.15s;
+  }
+  .markdown :where(a:hover) {
+    text-decoration-color: var(--color-accent);
+  }
+
+  .markdown :where(ul, ol) {
+    padding-left: 1.4em;
+    margin-bottom: 0.85em;
+    color: var(--color-fg);
+  }
+  .markdown :where(ul) {
+    list-style: disc;
+  }
+  .markdown :where(ol) {
+    list-style: decimal;
+  }
+  .markdown :where(li) {
+    font-size: var(--md-text, 0.9375rem);
+    line-height: 1.75;
+    color: var(--color-fg);
+    margin-bottom: 0.25em;
+  }
+  .markdown :where(li > ul, li > ol) {
+    margin-top: 0.3em;
+  }
+
+  .markdown :where(blockquote) {
+    border-left: 3px solid var(--color-accent);
+    padding-left: 1em;
+    margin: 1.2em 0;
+    color: var(--color-fg-muted);
+    font-style: italic;
+  }
+
+  .markdown :where(hr) {
+    border: none;
+    border-top: 1px solid var(--color-line-strong);
+    margin: 1.4em 0;
+  }
+
+  /* Inline code: a quiet chip in the text colour, so it doesn't compete with links. */
+  .markdown :where(code:not(pre code)) {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    font-weight: 400;
+    font-variant-ligatures: none;
+    background: var(--color-muted);
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+    color: var(--color-fg);
+    word-break: break-word;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+  }
+
+  /* Code blocks */
+  .markdown :where(pre) {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 400;
+    /* `===` and `!==` must read as typed, not as a ligature glyph. */
+    font-variant-ligatures: none;
+    background: var(--color-subtle);
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 14px 0;
+    line-height: 1.65;
+  }
+  .markdown :where(pre code) {
+    font-size: inherit;
+    font-weight: 400;
+    color: var(--color-fg);
+    white-space: pre;
+    word-break: normal;
+  }
+
+  /* Tables: the wrapper scrolls and draws the outer border; cells draw the dividers. */
+  .markdown :where(.markdown-table) {
+    overflow-x: auto;
+    margin: 1em 0;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 10px;
+  }
+  .markdown :where(table) {
+    width: 100%;
+    font-size: 0.875rem;
+    border-collapse: collapse;
+  }
+  .markdown :where(thead) {
+    background: var(--color-subtle);
+  }
+  .markdown :where(tbody tr) {
+    border-top: 1px solid var(--color-line);
+  }
+  .markdown :where(th, td) {
+    padding: 8px 14px;
+    text-align: left;
+    color: var(--color-fg-muted);
+  }
+  .markdown :where(th + th, td + td) {
+    border-left: 1px solid var(--color-line);
+  }
+  .markdown :where(th) {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .markdown :where(td) {
+    font-size: 0.875rem;
+  }
+
+  .markdown :where(img) {
+    display: block;
+    max-width: 100%;
+    max-height: 520px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid var(--color-line);
+    margin: 12px 0;
+  }
+  .markdown :where(.markdown-image-missing) {
+    display: block;
+    margin: 12px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px dashed var(--color-line-strong);
+    color: var(--color-fg-subtle);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}

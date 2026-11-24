@@ -268,11 +268,20 @@ export function useQuestion(id: string | undefined): {
   question: Question | undefined
   loading: boolean
 } {
-  const [question, setQuestion] = useState<Question | undefined>(undefined)
-  const [loading, setLoading] = useState(true)
+  // Once the bank is in memory, resolve synchronously: switching questions must not flash a
+  // loading state.
+  const [question, setQuestion] = useState<Question | undefined>(() =>
+    _loaded && id ? _allQuestions.find((q) => q.id === id) : undefined,
+  )
+  const [loading, setLoading] = useState(() => Boolean(id) && !_loaded)
 
   useEffect(() => {
     if (!id) {
+      setLoading(false)
+      return
+    }
+    if (_loaded) {
+      setQuestion(_allQuestions.find((q) => q.id === id))
       setLoading(false)
       return
     }

@@ -93,8 +93,15 @@ if (existsSync(join(distDir, 'sw.js'))) {
   if (!sw.includes('precacheAndRoute') && !sw.includes('workbox')) {
     addFailure(join(distDir, 'sw.js'), 'Service Worker 不像有效 Workbox 产物')
   }
-  if (sw.includes('/api/')) {
+  const precacheUrls = [...sw.matchAll(/\burl:"([^"]+)"/g)].map((match) => match[1])
+  if (precacheUrls.length === 0) {
+    addFailure(join(distDir, 'sw.js'), 'Service Worker 未生成 precache 清单')
+  }
+  if (precacheUrls.some((url) => /^\/?api\//.test(url))) {
     addFailure(join(distDir, 'sw.js'), 'Service Worker precache 不应包含 /api/ 路径')
+  }
+  if (!sw.includes('.pathname.startsWith("/api/")') || !sw.includes('NetworkOnly')) {
+    addFailure(join(distDir, 'sw.js'), 'Service Worker 应让 /api/ 请求始终走网络（NetworkOnly）')
   }
 
   const publicQuestionFiles = listFiles(publicQuestionsDir, '.json').map((file) =>
@@ -125,10 +132,15 @@ if (existsSync(join(distDir, 'sw.js'))) {
     }
   }
 
+  // Question banks are copied into IndexedDB on first load, so they are runtime-cached
+  // (NetworkFirst) instead of precached.
   for (const precachePath of publicQuestionFiles) {
-    if (!sw.includes(precachePath)) {
-      addFailure(join(distDir, 'sw.js'), `Service Worker 未预缓存题库文件：${precachePath}`)
+    if (precacheUrls.includes(precachePath)) {
+      addFailure(join(distDir, 'sw.js'), `题库文件不应进入预缓存：${precachePath}`)
     }
+  }
+  if (!sw.includes('.pathname.startsWith("/questions/")') || !sw.includes('NetworkFirst')) {
+    addFailure(join(distDir, 'sw.js'), 'Service Worker 缺少题库 JSON 的运行时缓存路由')
   }
 }
 
@@ -168,8 +180,8 @@ if (existsSync(join(distDir, 'manifest.webmanifest'))) {
       const requiredIcons = [
         { src: '/icons/icon-192x192.png', purpose: 'any' },
         { src: '/icons/icon-512x512.png', purpose: 'any' },
-        { src: '/icons/icon-192x192.png', purpose: 'maskable' },
-        { src: '/icons/icon-512x512.png', purpose: 'maskable' },
+        { src: '/icons/icon-maskable-192x192.png', purpose: 'maskable' },
+        { src: '/icons/icon-maskable-512x512.png', purpose: 'maskable' },
       ]
 
       for (const requiredIcon of requiredIcons) {
@@ -202,6 +214,8 @@ const requiredIconFiles = [
   { file: 'icon-180x180.png', minBytes: 1024 },
   { file: 'icon-192x192.png', minBytes: 1024 },
   { file: 'icon-512x512.png', minBytes: 1024 },
+  { file: 'icon-maskable-192x192.png', minBytes: 1024 },
+  { file: 'icon-maskable-512x512.png', minBytes: 1024 },
 ]
 
 for (const icon of requiredIconFiles) {
@@ -216,4 +230,6 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
-console.log('PWA 产物检查通过：manifest、Service Worker、Workbox、图标资源和题库 JSON 预缓存正常')
+console.log(
+  'PWA 产物检查通过：manifest、Service Worker、Workbox、图标资源和题库 JSON 运行时缓存正常',
+)

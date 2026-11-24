@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>iFace v1.5 设计稿</title>
+<!-- 设计参考稿：静态 HTML，内容和数据均为示意。 -->
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-subtle: #fafafa;
+    --bg-muted: #f4f4f5;
+    --border: #ebebeb;
+    --border-strong: #e0e0e0;
+    --fg: #0a0a0a;
+    --fg-2: #52525b;
+    --fg-3: #a1a1aa;
+    --accent: #5e5ce6;
+    --accent-fg: #ffffff;
+    --accent-subtle: #f1f0fe;
+    --ok: #16a34a;
+    --warn: #d97706;
+    --bad: #dc2626;
+    --heat-0: #f1f1f3; --heat-1: #dcdbfb; --heat-2: #b4b2f5; --heat-3: #8785ee; --heat-4: #5e5ce6;
+  }
+  .dark {
+    --bg: #0a0a0b;
+    --bg-subtle: #111113;
+    --bg-muted: #18181b;
+    --border: #232326;
+    --border-strong: #2e2e32;
+    --fg: #fafafa;
+    --fg-2: #a1a1aa;
+    --fg-3: #63636b;
+    --accent: #7c7aff;
+    --accent-subtle: rgba(124,122,255,.12);
+    --ok: #22c55e; --warn: #f59e0b; --bad: #ef4444;
+    --heat-0: #1a1a1d; --heat-1: #2b2a55; --heat-2: #43418f; --heat-3: #615fd0; --heat-4: #7c7aff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #d4d4d4; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-feature-settings: 'cv11', 'ss01'; -webkit-font-smoothing: antialiased; }
+  .artboard { width: 1440px; min-height: 940px; background: var(--bg); color: var(--fg); display: grid; grid-template-columns: 232px 1fr; margin-bottom: 40px; }
+  svg.i { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  /* sidebar */
+  .sb { background: var(--bg-subtle); border-right: 1px solid var(--border); padding: 14px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .brand { display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 8px; margin-bottom: 14px; font-weight: 600; font-size: 14.5px; letter-spacing: -.2px; }
+  .brand .m { width: 22px; height: 22px; border-radius: 6px; background: var(--fg); color: var(--bg); display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+  .brand .ws { margin-left: auto; color: var(--fg-3); }
+  .nv { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 8px; border-radius: 7px; font-size: 13.5px; color: var(--fg-2); }
+  .nv svg { color: var(--fg-3); }
+  .nv.on { background: var(--bg-muted); color: var(--fg); font-weight: 500; }
+  .nv.on svg { color: var(--fg); }
+  .nv .c { margin-left: auto; font-size: 12px; color: var(--fg-3); }
+  .lbl { font-size: 12px; color: var(--fg-3); padding: 16px 8px 6px; }
+  .sb .foot { margin-top: auto; border-top: 1px solid var(--border); padding: 12px 8px 0; display: flex; flex-direction: column; gap: 12px; }
+  .goal-mini .r { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--fg-2); }
+  .goal-mini .r b { color: var(--fg); font-weight: 500; }
+  .track { height: 4px; border-radius: 2px; background: var(--border); margin-top: 8px; overflow: hidden; }
+  .track i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+  .user { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+  .user .av { width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(135deg, #c7c6f7, #5e5ce6); }
+  .user svg { margin-left: auto; color: var(--fg-3); }
+
+  /* header */
+  .main { min-width: 0; }
+  .hdr { height: 52px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 28px; gap: 10px; font-size: 13.5px; }
+  .hdr .crumb { display: flex; align-items: center; gap: 6px; color: var(--fg-3); }
+  .hdr .crumb b { color: var(--fg); font-weight: 500; }
+  .hdr .r { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .search { width: 260px; height: 32px; border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: var(--fg-3); font-size: 13px; background: var(--bg); }
+  .kbd { font-size: 11px; color: var(--fg-3); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; line-height: 17px; font-family: 'Inter'; margin-left: auto; background: var(--bg-subtle); }
+  .ib { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: var(--fg-2); }
+  .ib.b { border: 1px solid var(--border); }
+
+  .btn { display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .btn.p { background: var(--fg); color: var(--bg); }
+  .btn.a { background: var(--accent); color: #fff; }
+  .btn.o { border: 1px solid var(--border-strong); color: var(--fg); background: var(--bg); }
+  .btn.g { color: var(--fg-2); }
+  .btn.lg { height: 38px; padding: 0 16px; font-size: 14px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex: none; }
+  .tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; color: var(--fg-2); }
+
+  .page { padding: 40px 48px 56px; max-width: 1160px; }
+  h1.t { font-size: 26px; font-weight: 600; letter-spacing: -.5px; }
+  .sub { color: var(--fg-2); font-size: 14px; margin-top: 6px; }
+  .box { border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+  .sec { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .sec h2 { font-size: 14px; font-weight: 600; }
+  .sec a { font-size: 13px; color: var(--fg-3); display: flex; align-items: center; gap: 2px; }
+
+  /* dashboard */
+  .head { display: flex; align-items: flex-end; justify-content: space-between; }
+  .cont { margin-top: 28px; display: grid; grid-template-columns: 1fr 300px; }
+  .cont .l { padding: 24px 28px; border-right: 1px solid var(--border); }
+  .cont .l small { font-size: 12.5px; color: var(--fg-3); display: flex; align-items: center; gap: 8px; }
+  .cont .l h3 { font-size: 19px; font-weight: 600; letter-spacing: -.2px; margin-top: 10px; line-height: 1.5; }
+  .cont .l .m { display: flex; gap: 8px; margin-top: 12px; }
+  .cont .l .acts { display: flex; gap: 8px; margin-top: 22px; }
+  .cont .r { padding: 24px 28px; display: flex; flex-direction: column; }
+  .cont .r .n { font-size: 32px; font-weight: 600; letter-spacing: -1px; }
+  .cont .r .n span { font-size: 15px; color: var(--fg-3); font-weight: 400; letter-spacing: 0; }
+  .segs { display: flex; gap: 3px; margin-top: 12px; }
+  .segs i { flex: 1; height: 6px; border-radius: 2px; background: var(--border); }
+  .segs i.f { background: var(--accent); }
+  .cont .r p { font-size: 13px; color: var(--fg-2); margin-top: 12px; }
+  .cont .r .wk { margin-top: auto; display: flex; justify-content: space-between; padding-top: 18px; }
+  .wk div { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; color: var(--fg-3); }
+  .wk i { width: 22px; height: 22px; border-radius: 6px; background: var(--bg-muted); display: grid; place-items: center; }
+  .wk i.d { background: var(--accent); }
+  .wk i.d::after { content: ''; width: 8px; height: 5px; border-left: 1.6px solid #fff; border-bottom: 1.6px solid #fff; transform: rotate(-45deg) translate(1px,-1px); }
+  .wk .today { color: var(--fg); font-weight: 500; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 16px; }
+  .stats > div { padding: 18px 22px; }
+  .stats > div + div { border-left: 1px solid var(--border); }
+  .stats .k { font-size: 12.5px; color: var(--fg-2); display: flex; align-items: center; gap: 7px; }
+  .stats .v { font-size: 24px; font-weight: 600; letter-spacing: -.6px; margin-top: 8px; }
+  .stats .v span { font-size: 13px; color: var(--fg-3); font-weight: 400; letter-spacing: 0; margin-left: 2px; }
+  .stats .d { font-size: 12px; color: var(--ok); margin-top: 2px; }
+  .stats .d.n { color: var(--fg-3); }
+
+  .two { display: grid; grid-template-columns: 1fr 360px; gap: 32px; margin-top: 40px; }
+  .list .row { display: grid; grid-template-columns: 1fr 120px 64px; align-items: center; gap: 16px; height: 46px; padding: 0 16px; font-size: 13.5px; }
+  .list .row + .row { border-top: 1px solid var(--border); }
+  .list .row .q { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .list .row .q span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list .row .mo { color: var(--fg-3); font-size: 12.5px; }
+  .list .row .st { font-size: 12.5px; display: flex; align-items: center; gap: 6px; color: var(--fg-2); justify-content: flex-end; }
+  .heat { display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column; grid-auto-columns: 10px; gap: 3px; }
+  .heat i { border-radius: 2px; }
+  .heatbox { padding: 18px; }
+  .heatbox .f { display: flex; justify-content: space-between; margin-top: 12px; font-size: 12px; color: var(--fg-3); }
+  .mods .row { display: grid; grid-template-columns: 96px 1fr 52px; gap: 14px; align-items: center; height: 36px; font-size: 13.5px; }
+  .mods .bar { height: 4px; border-radius: 2px; background: var(--bg-muted); overflow: hidden; display: flex; }
+  .mods .bar i { display: block; height: 100%; }
+  .mods .row span { text-align: right; font-size: 12.5px; color: var(--fg-3); }
+
+  /* detail */
+  .det { display: grid; grid-template-columns: 1fr 240px; gap: 56px; padding: 44px 56px 120px 96px; position: relative; }
+  .det article { max-width: 720px; }
+  .det .tags { display: flex; gap: 6px; align-items: center; }
+  .det h1 { font-size: 28px; font-weight: 600; letter-spacing: -.5px; line-height: 1.45; margin-top: 16px; }
+  .det .meta { display: flex; gap: 16px; font-size: 13px; color: var(--fg-3); margin-top: 12px; }
+  .det .meta span { display: flex; align-items: center; gap: 5px; }
+  .composer { margin-top: 32px; border: 1px solid var(--border-strong); border-radius: 12px; }
+  .composer .ph { padding: 16px 16px 8px; font-size: 14.5px; color: var(--fg-3); min-height: 76px; }
+  .composer .bar { display: flex; align-items: center; gap: 6px; padding: 8px; border-top: 1px solid var(--border); }
+  .divider { display: flex; align-items: center; gap: 12px; margin: 40px 0 8px; font-size: 12.5px; color: var(--fg-3); }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .prose h2 { font-size: 17px; font-weight: 600; letter-spacing: -.2px; margin: 32px 0 10px; }
+  .prose p, .prose li { font-size: 15.5px; line-height: 1.9; color: var(--fg); }
+  .prose ol { padding-left: 20px; }
+  .prose li::marker { color: var(--fg-3); }
+  .prose code { font: 13px 'Inter', ui-monospace, monospace; background: var(--bg-muted); border: 1px solid var(--border); padding: 1px 5px; border-radius: 5px; }
+  .prose mark { background: var(--accent-subtle); color: inherit; border-bottom: 1.5px solid var(--accent); padding: 0 1px; }
+  .prose pre { margin-top: 14px; border: 1px solid var(--border); background: var(--bg-subtle); border-radius: 10px; padding: 14px 16px; font: 13px/1.75 ui-monospace, Menlo, monospace; color: var(--fg); position: relative; }
+  .prose pre .k { color: var(--accent); } .prose pre .c { color: var(--fg-3); } .prose pre .f { color: #0e7490; }
+  .dark .prose pre .f { color: #67e8f9; }
+  .prose pre .lang { position: absolute; right: 12px; top: 10px; font: 11px 'Inter'; color: var(--fg-3); }
+  .prose blockquote { margin-top: 12px; border-left: 2px solid var(--fg); padding: 2px 0 2px 16px; }
+  .prose blockquote p { font-size: 15.5px; }
+  .aside { position: relative; }
+  .aside .blk + .blk { margin-top: 28px; }
+  .aside h4 { font-size: 12px; color: var(--fg-3); font-weight: 500; margin-bottom: 10px; }
+  .toc a { display: block; font-size: 13px; color: var(--fg-3); padding: 4px 0 4px 12px; border-left: 1px solid var(--border); }
+  .toc a.on { color: var(--fg); border-color: var(--fg); }
+  .aside .act { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--fg-2); padding: 6px 0; }
+  .aside .act svg { color: var(--fg-3); }
+  .aside .act .kbd { margin-left: auto; }
+  .note { font-size: 13px; color: var(--fg-2); line-height: 1.75; border: 1px solid var(--border); border-radius: 10px; padding: 12px; background: var(--bg-subtle); }
+  .dock { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 14px; background: var(--bg); border: 1px solid var(--border-strong); box-shadow: 0 8px 30px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04); }
+  .dock .sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+  .dock .opt { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 9px; font-size: 13px; color: var(--fg-2); }
+  .dock .opt.on { background: var(--bg-muted); color: var(--fg); font-weight: 500; }
+
+  /* practice */
+  .px { grid-template-columns: 1fr; }
+  .px .wrap { display: flex; flex-direction: column; min-height: 940px; }
+  .ptop { height: 56px; display: flex; align-items: center; gap: 16px; padding: 0 24px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .ptop .pg { flex: 1; max-width: 520px; margin: 0 auto; display: flex; gap: 4px; }
+  .ptop .pg i { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+  .ptop .pg i.ok { background: var(--ok); } .ptop .pg i.mid { background: var(--warn); } .ptop .pg i.cur { background: var(--fg); }
+  .pc { flex: 1; width: 720px; margin: 0 auto; padding-top: 88px; }
+  .pc .lab { font-size: 13px; color: var(--fg-3); display: flex; align-items: center; gap: 8px; }
+  .pc h1 { font-size: 32px; font-weight: 600; letter-spacing: -.6px; line-height: 1.45; margin-top: 16px; }
+  .hidden-ans { margin-top: 16px; height: 120px; border-radius: 12px; border: 1px dashed var(--border-strong); display: grid; place-items: center; color: var(--fg-3); font-size: 13.5px; }
+  .pfoot { border-top: 1px solid var(--border); height: 72px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .judge { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--border-strong); font-size: 13.5px; font-weight: 500; min-width: 150px; }
+  .judge .kbd { margin-left: auto; }
+
+  /* library */
+  .lib { display: grid; grid-template-columns: 228px 1fr; min-height: 888px; }
+  .cats { border-right: 1px solid var(--border); padding: 20px 12px; }
+  .cats .g { font-size: 12px; color: var(--fg-3); padding: 14px 8px 6px; display: flex; justify-content: space-between; }
+  .cats .g:first-child { padding-top: 0; }
+  .cats a { display: flex; align-items: center; gap: 10px; height: 30px; padding: 0 8px; border-radius: 7px; font-size: 13px; color: var(--fg-2); }
+  .cats a .cnt { margin-left: auto; font-size: 12px; color: var(--fg-3); }
+  .cats a.on { background: var(--bg-muted); color: var(--fg); font-weight: 500; }
+  .ring-s { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .ring-s::after { content: ''; display: block; width: 8px; height: 8px; margin: 3px; border-radius: 50%; background: var(--bg-subtle); }
+  .cats a.on .ring-s::after { background: var(--bg-muted); }
+  .libmain { padding: 28px 36px 40px; min-width: 0; }
+  .lh { display: flex; align-items: flex-end; justify-content: space-between; }
+  .lh h1 { font-size: 22px; font-weight: 600; letter-spacing: -.4px; }
+  .lh p { font-size: 13.5px; color: var(--fg-2); margin-top: 4px; }
+  .fbar { display: flex; align-items: center; gap: 8px; margin-top: 20px; }
+  .fbar .search { width: 320px; }
+  .dd { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; color: var(--fg-2); }
+  .dd svg.i { width: 14px; height: 14px; color: var(--fg-3); }
+  .dd.on { border-color: var(--fg); color: var(--fg); }
+  .dd b { font-weight: 500; color: var(--fg); }
+  .chips2 { display: flex; gap: 6px; margin-top: 12px; align-items: center; font-size: 12.5px; color: var(--fg-3); }
+  .fchip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px 0 10px; border-radius: 99px; background: var(--bg-muted); color: var(--fg); font-size: 12.5px; }
+  .fchip svg.i { width: 12px; height: 12px; color: var(--fg-3); }
+  .tbl { margin-top: 16px; }
+  .tr { display: grid; grid-template-columns: 28px 1fr 110px 84px 96px 56px; align-items: center; gap: 12px; padding: 0 16px; min-height: 56px; font-size: 13.5px; }
+  .tr + .tr { border-top: 1px solid var(--border); }
+  .tr.th { min-height: 38px; font-size: 12px; color: var(--fg-3); background: var(--bg-subtle); border-radius: 12px 12px 0 0; }
+  .tr .tt { min-width: 0; padding: 10px 0; }
+  .tr .tt div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+  .tr .tt small { display: flex; gap: 8px; margin-top: 3px; font-size: 12px; color: var(--fg-3); }
+  .tr .hit { margin-top: 6px; font-size: 12.5px; color: var(--fg-2); background: var(--accent-subtle); border-radius: 6px; padding: 4px 8px; display: inline-flex; gap: 6px; align-items: center; }
+  .tr .hit b { font-weight: 500; color: var(--accent); }
+  .tr .mo { color: var(--fg-2); font-size: 13px; }
+  .diff { display: inline-flex; gap: 2px; align-items: flex-end; height: 12px; margin-right: 6px; }
+  .diff i { width: 3px; border-radius: 1px; background: var(--border-strong); }
+  .diff i:nth-child(1) { height: 5px; } .diff i:nth-child(2) { height: 8px; } .diff i:nth-child(3) { height: 12px; }
+  .diff i.f { background: var(--fg); }
+  .tr .lt2 { color: var(--fg-3); font-size: 12.5px; }
+  .tr .ops { display: flex; gap: 8px; justify-content: flex-end; color: var(--fg-3); }
+  .tr .ops .s { color: #eab308; fill: #eab308; }
+  .tr.sel { background: var(--bg-subtle); }
+  .pager { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 12.5px; color: var(--fg-3); }
+
+  /* practice v2 */
+  .px2 { grid-template-columns: 1fr; background: var(--bg-subtle); }
+  .px2 .wrap { display: flex; flex-direction: column; min-height: 960px; }
+  .ptop2 { height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 20px; background: var(--bg); border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .ptop2 .ttl b { font-weight: 500; } .ptop2 .ttl span { color: var(--fg-3); }
+  .ptop2 .mid { margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .ptop2 .pg { display: flex; gap: 4px; width: 360px; }
+  .ptop2 .pg i { flex: 1; height: 4px; border-radius: 2px; background: var(--border); }
+  .ptop2 .pg i.ok { background: var(--ok); } .ptop2 .pg i.mi { background: var(--warn); } .ptop2 .pg i.cu { background: var(--fg); }
+  .ptop2 .r2 { display: flex; align-items: center; gap: 8px; }
+  .timer { display: flex; align-items: center; gap: 6px; color: var(--fg-2); font-variant-numeric: tabular-nums; padding: 0 8px; }
+  .pbody { flex: 1; display: grid; grid-template-columns: 260px 1fr 260px; gap: 32px; padding: 32px 32px 0; }
+  .plist h4, .pstat h4 { font-size: 12px; color: var(--fg-3); font-weight: 500; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .plist a { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: var(--fg-2); line-height: 1.5; }
+  .plist a .n { width: 18px; flex: none; color: var(--fg-3); font-size: 12px; padding-top: 1px; font-variant-numeric: tabular-nums; }
+  .plist a .tx { flex: 1; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .plist a .dot { margin-top: 7px; }
+  .plist a.on { background: var(--bg); color: var(--fg); font-weight: 500; box-shadow: 0 0 0 1px var(--border); }
+  .qwrap { max-width: 720px; width: 100%; margin: 0 auto; }
+  .qcard3 { background: var(--bg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 12px 32px -12px rgba(0,0,0,.08); }
+  .qcard3 .hd { display: flex; align-items: center; gap: 8px; padding: 18px 28px; border-bottom: 1px solid var(--border); font-size: 12.5px; color: var(--fg-3); }
+  .qcard3 .hd .no { color: var(--fg); font-weight: 500; }
+  .qcard3 .hd .last { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .qcard3 .bd { padding: 28px 28px 24px; }
+  .qcard3 h1 { font-size: 26px; font-weight: 600; letter-spacing: -.5px; line-height: 1.5; }
+  .qcard3 .kw { display: flex; gap: 6px; margin-top: 14px; }
+  .qcard3 .composer { margin-top: 24px; }
+  .blurans { position: relative; margin-top: 16px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .blurans .txt { padding: 18px 20px; filter: blur(3.5px); opacity: .7; user-select: none; }
+  .blurans .txt b { display: block; font-size: 15px; margin-bottom: 6px; }
+  .blurans .txt p { font-size: 14.5px; line-height: 1.8; }
+  .blurans .ov { position: absolute; inset: 0; display: grid; place-items: center; background: linear-gradient(180deg, transparent, var(--bg) 85%); }
+  .blurans .ov a { box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+  .pstat .nums { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+  .pstat .nums div { padding: 12px 14px; }
+  .pstat .nums div + div { border-left: 1px solid var(--border); }
+  .pstat .nums b { display: block; font-size: 20px; font-weight: 600; letter-spacing: -.4px; font-variant-numeric: tabular-nums; }
+  .pstat .nums span { font-size: 12px; color: var(--fg-3); display: flex; align-items: center; gap: 5px; }
+  .pstat .tools { margin-top: 24px; }
+  .pstat .tools a { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 8px; font-size: 13px; color: var(--fg-2); }
+  .pstat .tools a svg { color: var(--fg-3); }
+  .pstat .tools a .kbd { margin-left: auto; }
+  .pstat .tip { margin-top: 24px; font-size: 12.5px; color: var(--fg-3); line-height: 1.7; border-top: 1px solid var(--border); padding-top: 16px; }
+  .pfoot2 { margin-top: 32px; background: var(--bg); border-top: 1px solid var(--border); padding: 14px 0; }
+  .pfoot2 .in { width: 720px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .jd { border: 1px solid var(--border-strong); border-radius: 12px; padding: 10px 14px; display: grid; grid-template-columns: auto 1fr auto; column-gap: 10px; align-items: center; background: var(--bg); }
+  .jd b { font-size: 14px; font-weight: 500; }
+  .jd small { grid-column: 2; font-size: 12px; color: var(--fg-3); }
+  .jd .dot { grid-row: span 2; width: 8px; height: 8px; }
+  .jd .kbd { grid-row: span 2; }
+  .jd.pri { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .jd.pri small { color: inherit; opacity: .55; }
+  .jd.pri .kbd { background: transparent; color: inherit; border-color: rgba(127,127,127,.5); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></symbol>
+  <symbol id="pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></symbol>
+  <symbol id="target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="mic" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5"/></symbol>
+  <symbol id="import" viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></symbol>
+  <symbol id="flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/><path d="M7 15h10"/></symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><path d="M12 3l1.8 4.7L18.5 9.5 13.8 11.3 12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></symbol>
+  <symbol id="note" viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+  <symbol id="moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></symbol>
+  <symbol id="arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></symbol>
+  <symbol id="refresh" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 4v5h-5"/></symbol>
+  <symbol id="flame" viewBox="0 0 24 24"><path d="M12 22c4 0 7-2.7 7-6.5 0-4.5-4-6.5-4.5-10.5C11 7 9.5 9.5 10 12c-1.5-.5-2.5-2-2.5-3.5C6 10 5 12.5 5 15.5 5 19.3 8 22 12 22z"/></symbol>
+  <symbol id="help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></symbol>
+  <symbol id="x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6m0-6-6 6"/></symbol>
+  <symbol id="bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></symbol>
+  <symbol id="send" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></symbol>
+  <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="layers" viewBox="0 0 24 24"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.2l1.1-6.2L3 9.6l6.2-.9z"/></symbol>
+  <symbol id="filter" viewBox="0 0 24 24"><path d="M3 5h18M6 12h12M10 19h4"/></symbol>
+  <symbol id="sort" viewBox="0 0 24 24"><path d="M7 4v16m0 0-3-3m3 3 3-3M17 20V4m0 0-3 3m3-3 3 3"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="timer" viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></symbol>
+  <symbol id="grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+</svg>
+
+<template id="sidebar">
+  <aside class="sb">
+    <div class="brand"><div class="m">i</div>iFace<svg class="i ws"><use href="#right"/></svg></div>
+    <a class="nv" data-k="概览"><svg class="i"><use href="#home"/></svg>概览</a>
+    <a class="nv" data-k="题库"><svg class="i"><use href="#book"/></svg>题库<span class="c tnum">865</span></a>
+    <a class="nv" data-k="练习"><svg class="i"><use href="#pen"/></svg>练习<span class="c tnum">5</span></a>
+    <a class="nv" data-k="薄弱点"><svg class="i"><use href="#target"/></svg>薄弱点</a>
+    <a class="nv" data-k="笔记"><svg class="i"><use href="#note"/></svg>笔记</a>
+    <a class="nv" data-k="模拟面试"><svg class="i"><use href="#mic"/></svg>模拟面试</a>
+    <div class="lbl">工具</div>
+    <a class="nv"><svg class="i"><use href="#spark"/></svg>AI 工具箱</a>
+    <a class="nv"><svg class="i"><use href="#flask"/></svg>出题</a>
+    <a class="nv"><svg class="i"><use href="#import"/></svg>导入</a>
+    <div class="foot">
+      <div class="goal-mini"><div class="r"><span>今日目标</span><b class="tnum">6 / 10</b></div><div class="track"><i style="width:60%"></i></div></div>
+      <div class="user"><div class="av"></div>Dogxi<svg class="i"><use href="#gear"/></svg></div>
+    </div>
+  </aside>
+</template>
+
+<template id="dash">
+  <div class="main">
+    <div class="hdr">
+      <div class="crumb"><b>概览</b></div>
+      <div class="r"><div class="search"><svg class="i"><use href="#search"/></svg>搜索<span class="kbd">⌘K</span></div><div class="ib b theme"><svg class="i"><use href="#moon"/></svg></div></div>
+    </div>
+    <div class="page">
+      <div class="head">
+        <div><h1 class="t">早上好，Dogxi</h1><p class="sub">今天有 5 道题到期复习，预计 15 分钟。</p></div>
+        <div style="display:flex;gap:8px"><a class="btn o lg">随机一题</a><a class="btn p lg">开始练习<span class="kbd" style="background:transparent;border-color:rgba(127,127,127,.4);color:inherit;opacity:.7">↵</span></a></div>
+      </div>
+
+      <div class="box cont">
+        <div class="l">
+          <small><svg class="i" style="width:14px;height:14px"><use href="#clock"/></svg>继续上次 · 2 小时前</small>
+          <h3>React 中 useEffect 与 useLayoutEffect 的执行时机有什么区别？</h3>
+          <div class="m"><span class="tag">React</span><span class="tag">中级</span><span class="tag"><span class="dot" style="background:var(--warn)"></span>模糊</span></div>
+          <div class="acts"><a class="btn p">继续<svg class="i"><use href="#arrow"/></svg></a><a class="btn o">练习 React 模块</a></div>
+        </div>
+        <div class="r">
+          <div style="font-size:12.5px;color:var(--fg-3)">今日目标</div>
+          <div class="n tnum" style="margin-top:6px">6<span> / 10</span></div>
+          <div class="segs"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i><i></i></div>
+          <div class="wk">
+            <div><i class="d"></i>一</div><div><i class="d"></i>二</div><div><i class="d"></i>三</div><div><i class="d"></i>四</div><div class="today"><i style="box-shadow:inset 0 0 0 1.5px var(--accent)"></i>五</div><div><i></i>六</div><div><i></i>日</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="box stats">
+        <div><div class="k"><span class="dot" style="background:var(--ok)"></span>已掌握</div><div class="v tnum">128<span>/ 865</span></div><div class="d">+23 本周</div></div>
+        <div><div class="k"><span class="dot" style="background:var(--warn)"></span>待复习</div><div class="v tnum">17</div><div class="d n">今日到期 5</div></div>
+        <div><div class="k"><span class="dot" style="background:var(--fg-3)"></span>笔记</div><div class="v tnum">42</div><div class="d">+4 本周</div></div>
+        <div><div class="k"><span class="dot" style="background:var(--accent)"></span>连续学习</div><div class="v tnum">6<span>天</span></div><div class="d n">最长 14 天</div></div>
+      </div>
+
+      <div class="two">
+        <div>
+          <div class="sec"><h2>今日复习</h2><a>查看全部<svg class="i" style="width:14px;height:14px"><use href="#right"/></svg></a></div>
+          <div class="box list">
+            <div class="row"><div class="q"><span class="dot" style="background:var(--warn)"></span><span>React 中 useEffect 与 useLayoutEffect 的执行时机区别</span></div><span class="mo">React · 中级</span><span class="st">模糊</span></div>
+            <div class="row"><div class="q"><span class="dot" style="background:var(--bad)"></span><span>HTTP 强缓存与协商缓存分别如何生效？</span></div><span class="mo">网络 · 中级</span><span class="st">不会</span></div>
+            <div class="row"><div class="q"><span class="dot" style="background:var(--warn)"></span><span>闭包是什么？为什么可能导致内存泄漏？</span></div><span class="mo">JS 基础 · 初级</span><span class="st">模糊</span></div>
+            <div class="row"><div class="q"><span class="dot" style="background:var(--fg-3)"></span><span>RAG 系统中如何评估检索质量？</span></div><span class="mo">RAG · 高级</span><span class="st">新题</span></div>
+            <div class="row"><div class="q"><span class="dot" style="background:var(--fg-3)"></span><span>Go 中 channel 的底层结构是怎样的？</span></div><span class="mo">Go 并发 · 高级</span><span class="st">新题</span></div>
+          </div>
+        </div>
+        <div>
+          <div class="sec"><h2>活跃度</h2><a>近 6 个月</a></div>
+          <div class="box heatbox"><div class="heat"></div><div class="f"><span class="tnum">96 天 · 1,284 次作答</span><span>少 → 多</span></div></div>
+          <div class="sec" style="margin-top:28px"><h2>模块</h2><a>全部 12 个<svg class="i" style="width:14px;height:14px"><use href="#right"/></svg></a></div>
+          <div class="mods">
+            <div class="row">React<div class="bar"><i style="width:81%;background:var(--fg)"></i><i style="width:6%;background:var(--warn)"></i></div><span class="tnum">53/65</span></div>
+            <div class="row">JS 基础<div class="bar"><i style="width:63%;background:var(--fg)"></i><i style="width:9%;background:var(--warn)"></i></div><span class="tnum">41/65</span></div>
+            <div class="row">Go 并发<div class="bar"><i style="width:35%;background:var(--fg)"></i><i style="width:8%;background:var(--warn)"></i></div><span class="tnum">14/40</span></div>
+            <div class="row">CSS<div class="bar"><i style="width:22%;background:var(--fg)"></i><i style="width:11%;background:var(--warn)"></i></div><span class="tnum">12/55</span></div>
+            <div class="row">TypeScript<div class="bar"><i style="width:16%;background:var(--fg)"></i><i style="width:5%;background:var(--warn)"></i></div><span class="tnum">9/55</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<section class="artboard" id="dashboard" data-on="概览" data-tpl="dash"></section>
+
+<section class="artboard" id="detail" data-on="题库">
+  <div class="main" style="position:relative">
+    <div class="hdr">
+      <div class="crumb">题库<svg class="i" style="width:14px;height:14px"><use href="#right"/></svg>Agent 架构<svg class="i" style="width:14px;height:14px"><use href="#right"/></svg><b>3 / 48</b></div>
+      <div class="r">
+        <div class="ib b"><svg class="i"><use href="#left"/></svg></div><div class="ib b"><svg class="i"><use href="#right"/></svg></div>
+        <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+        <a class="btn o"><svg class="i"><use href="#spark"/></svg>问 AI<span class="kbd" style="margin-left:4px">A</span></a>
+      </div>
+    </div>
+    <div class="det">
+      <article>
+        <div class="tags"><span class="tag">Agent 架构</span><span class="tag"><span class="dot" style="background:var(--ok)"></span>初级</span><span class="tag">高频</span></div>
+        <h1>什么是 AI Agent？它和普通聊天机器人最大的区别是什么？</h1>
+        <div class="meta"><span><svg class="i" style="width:14px;height:14px"><use href="#refresh"/></svg>复习 3 次</span><span><svg class="i" style="width:14px;height:14px"><use href="#clock"/></svg>2 天前</span><span>#Agent #定义 #架构基础</span></div>
+        <div class="composer">
+          <div class="ph">先用自己的话写下理解，不用完整……</div>
+          <div class="bar"><a class="btn g"><svg class="i"><use href="#mic"/></svg>语音</a><span style="margin-left:auto;font-size:12px;color:var(--fg-3)">⌘↵ 提交</span><a class="btn p">获取 AI 点评</a></div>
+        </div>
+        <div class="divider">参考答案 · 约 2 分钟</div>
+        <div class="prose">
+          <h2>核心结论</h2>
+          <p>AI Agent 是能够基于目标进行感知、推理、决策并执行动作的智能体；与普通聊天机器人相比，它<mark>不仅“会回答”，还能“会行动、会调用工具、会管理状态”</mark>。</p>
+          <h2>关键点</h2>
+          <ol>
+            <li>普通聊天机器人通常以单轮或多轮对话问答为主。</li>
+            <li>Agent 更强调目标驱动和任务完成，而不仅是语言回复。</li>
+            <li>Agent 往往具备 <code>tool calling</code>、状态管理、任务分解和结果验证能力。</li>
+          </ol>
+<pre><span class="lang">ts</span><span class="k">while</span> (!done) {
+  <span class="k">const</span> step = <span class="k">await</span> llm.<span class="f">plan</span>(goal, memory)
+  <span class="k">const</span> result = <span class="k">await</span> tools[step.tool].<span class="f">run</span>(step.args)
+  memory.<span class="f">push</span>({ step, result })
+}</pre>
+          <h2>面试表达</h2>
+          <blockquote><p>聊天机器人主要解决“说什么”，Agent 进一步解决“怎么做、做完没有、下一步是什么”。</p></blockquote>
+        </div>
+      </article>
+      <div class="aside">
+        <div class="blk toc"><h4>目录</h4><a>我的作答</a><a class="on">核心结论</a><a>关键点</a><a>面试表达</a><a>追问点</a></div>
+        <div class="blk"><h4>操作</h4>
+          <div class="act"><svg class="i"><use href="#spark"/></svg>分析考点<span class="kbd">A</span></div>
+          <div class="act"><svg class="i"><use href="#mic"/></svg>模拟追问</div>
+          <div class="act"><svg class="i"><use href="#note"/></svg>写笔记<span class="kbd">N</span></div>
+          <div class="act"><svg class="i"><use href="#layers"/></svg>学习检查 · 4</div>
+        </div>
+        <div class="blk"><h4>我的笔记</h4><div class="note">Agent = LLM + 工具 + 记忆 + 规划。先给定义，再对比，最后举例。</div></div>
+      </div>
+    </div>
+    <div class="dock">
+      <span style="font-size:12.5px;color:var(--fg-3);padding:0 8px">掌握程度</span>
+      <div class="opt"><span class="dot" style="background:var(--bad)"></span>不会<span class="kbd">3</span></div>
+      <div class="opt"><span class="dot" style="background:var(--warn)"></span>模糊<span class="kbd">2</span></div>
+      <div class="opt on"><span class="dot" style="background:var(--ok)"></span>掌握<span class="kbd">1</span></div>
+      <div class="sep"></div>
+      <a class="btn p">下一题<svg class="i"><use href="#arrow"/></svg></a>
+    </div>
+  </div>
+</section>
+
+
+<section class="artboard" id="library" data-on="题库">
+  <div class="main">
+    <div class="hdr">
+      <div class="crumb"><b>题库</b></div>
+      <div class="r"><a class="btn g"><svg class="i"><use href="#import"/></svg>导入</a><div class="ib b"><svg class="i"><use href="#moon"/></svg></div></div>
+    </div>
+    <div class="lib">
+      <div class="cats" style="background:var(--bg)">
+        <div class="g"><span>全部</span></div>
+        <a><svg class="i" style="color:var(--fg-3)"><use href="#grid"/></svg>全部题目<span class="cnt tnum">865</span></a>
+        <a><svg class="i" style="color:#eab308"><use href="#star"/></svg>重点题<span class="cnt tnum">24</span></a>
+        <a><svg class="i" style="color:var(--fg-3)"><use href="#note"/></svg>有笔记<span class="cnt tnum">42</span></a>
+        <div class="g"><span>AI Agent</span><span class="tnum">5 / 320</span></div>
+        <a class="on"><span class="ring-s" style="background:conic-gradient(var(--accent) 0 10%, var(--border) 0)"></span>Agent 架构<span class="cnt tnum">48</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 4%, var(--border) 0)"></span>RAG<span class="cnt tnum">42</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 0%, var(--border) 0)"></span>Prompt 工程<span class="cnt tnum">36</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 0%, var(--border) 0)"></span>工具调用<span class="cnt tnum">40</span></a>
+        <div class="g"><span>前端</span><span class="tnum">115 / 465</span></div>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 63%, var(--border) 0)"></span>JS 基础<span class="cnt tnum">65</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 81%, var(--border) 0)"></span>React<span class="cnt tnum">65</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 22%, var(--border) 0)"></span>CSS<span class="cnt tnum">55</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 16%, var(--border) 0)"></span>TypeScript<span class="cnt tnum">55</span></a>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 13%, var(--border) 0)"></span>网络<span class="cnt tnum">60</span></a>
+        <div class="g"><span>Golang</span><span class="tnum">14 / 80</span></div>
+        <a><span class="ring-s" style="background:conic-gradient(var(--accent) 0 35%, var(--border) 0)"></span>并发<span class="cnt tnum">40</span></a>
+        <div class="g"><span>Java</span><span class="tnum">0 / 0</span></div>
+        <a style="color:var(--fg-3)">未启用 · 去设置开启</a>
+      </div>
+      <div class="libmain">
+        <div class="lh">
+          <div><h1>Agent 架构</h1><p>48 道题 · 已掌握 5 · 待复习 3 · 未学 40</p></div>
+          <a class="btn p lg"><svg class="i"><use href="#play"/></svg>练习这 12 道</a>
+        </div>
+        <div class="fbar">
+          <div class="search"><svg class="i"><use href="#search"/></svg>记忆<span class="kbd">/</span></div>
+          <span class="dd on">状态 <b>未掌握</b><svg class="i"><use href="#down"/></svg></span>
+          <span class="dd">难度<svg class="i"><use href="#down"/></svg></span>
+          <span class="dd">标签<svg class="i"><use href="#down"/></svg></span>
+          <span class="dd" style="margin-left:auto"><svg class="i"><use href="#sort"/></svg>默认排序</span>
+        </div>
+        <div class="chips2">12 个结果<span style="width:8px"></span><span class="fchip">状态：未掌握<svg class="i"><use href="#close"/></svg></span><span class="fchip">搜索：记忆<svg class="i"><use href="#close"/></svg></span><a style="margin-left:4px">清除全部</a></div>
+        <div class="box tbl">
+          <div class="tr th"><span></span><span>题目</span><span>模块</span><span>难度</span><span>上次复习</span><span></span></div>
+          <div class="tr"><span class="dot" style="background:var(--warn)"></span><div class="tt"><div>Agent 的「记忆」通常分为哪几类？各自适合用什么方式实现？</div><small><span>#记忆</span><span>#向量库</span><span>#上下文</span></small></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i class="f"></i><i></i></span>中级</span><span class="lt2">3 天前</span><span class="ops"><svg class="i s"><use href="#star"/></svg><svg class="i"><use href="#note"/></svg></span></div>
+          <div class="tr sel"><span class="dot" style="background:var(--fg-3)"></span><div class="tt"><div>如何设计 Agent 的长期记忆与短期记忆的切换策略？</div><span class="hit"><svg class="i" style="width:13px;height:13px"><use href="#note"/></svg>笔记命中：短期<b>记忆</b>放在上下文窗口，长期写入向量库…</span></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i class="f"></i><i class="f"></i></span>高级</span><span class="lt2">—</span><span class="ops"><svg class="i"><use href="#star"/></svg><svg class="i" style="color:var(--fg)"><use href="#note"/></svg></span></div>
+          <div class="tr"><span class="dot" style="background:var(--bad)"></span><div class="tt"><div>上下文窗口不够用时，Agent 有哪些常见的<b style="background:var(--accent-subtle);font-weight:500">记忆</b>压缩方法？</div><small><span>#上下文</span><span>#摘要</span></small></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i class="f"></i><i></i></span>中级</span><span class="lt2">昨天</span><span class="ops"><svg class="i"><use href="#star"/></svg><svg class="i"><use href="#note"/></svg></span></div>
+          <div class="tr"><span class="dot" style="background:var(--fg-3)"></span><div class="tt"><div>ReAct 模式中，观察结果如何写回到 Agent 的工作<b style="background:var(--accent-subtle);font-weight:500">记忆</b>里？</div><small><span>#ReAct</span><span>#推理</span></small></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i></i><i></i></span>初级</span><span class="lt2">—</span><span class="ops"><svg class="i"><use href="#star"/></svg><svg class="i"><use href="#note"/></svg></span></div>
+          <div class="tr"><span class="dot" style="background:var(--warn)"></span><div class="tt"><div>多 Agent 协作时如何共享<b style="background:var(--accent-subtle);font-weight:500">记忆</b>，又避免状态互相污染？</div><small><span>#多 Agent</span><span>#状态</span></small></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i class="f"></i><i class="f"></i></span>高级</span><span class="lt2">5 天前</span><span class="ops"><svg class="i s"><use href="#star"/></svg><svg class="i"><use href="#note"/></svg></span></div>
+          <div class="tr"><span class="dot" style="background:var(--fg-3)"></span><div class="tt"><div>Memory 和 RAG 有什么区别？什么时候该用哪个？</div><small><span>#RAG</span><span>#对比</span></small></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i class="f"></i><i></i></span>中级</span><span class="lt2">—</span><span class="ops"><svg class="i"><use href="#star"/></svg><svg class="i"><use href="#note"/></svg></span></div>
+          <div class="tr"><span class="dot" style="background:var(--fg-3)"></span><div class="tt"><div>如何评估一个 Agent 的记忆模块是否有效？</div><small><span>#评估</span></small></div><span class="mo">Agent 架构</span><span class="lt2"><span class="diff"><i class="f"></i><i class="f"></i><i class="f"></i></span>高级</span><span class="lt2">—</span><span class="ops"><svg class="i"><use href="#star"/></svg><svg class="i"><use href="#note"/></svg></span></div>
+        </div>
+        <div class="pager"><span>显示 7 / 12</span><a class="btn o">加载更多</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="artboard px2" id="practice">
+  <div class="wrap">
+    <div class="ptop2">
+      <div class="ib b"><svg class="i"><use href="#close"/></svg></div>
+      <div class="ttl"><b>今日练习</b><span> · 到期复习 + 新题</span></div>
+      <div class="mid"><div class="pg"><i class="ok"></i><i class="mi"></i><i class="cu"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="tnum" style="color:var(--fg-2)">3 / 10</span></div>
+      <div class="r2"><span class="timer"><svg class="i"><use href="#timer"/></svg>06:42</span><a class="btn o"><svg class="i"><use href="#spark"/></svg>AI 教练<span class="kbd" style="margin-left:4px">A</span></a></div>
+    </div>
+    <div class="pbody">
+      <div class="plist">
+        <h4><span>本轮题目</span><span class="tnum">10</span></h4>
+        <a><span class="n">1</span><span class="tx">闭包是什么？为什么可能导致内存泄漏？</span><span class="dot" style="background:var(--ok)"></span></a>
+        <a><span class="n">2</span><span class="tx">HTTP 强缓存与协商缓存分别如何生效？</span><span class="dot" style="background:var(--warn)"></span></a>
+        <a class="on"><span class="n">3</span><span class="tx">Agent 的「记忆」通常分为哪几类？</span><span class="dot" style="background:var(--fg)"></span></a>
+        <a><span class="n">4</span><span class="tx">React 中 useEffect 与 useLayoutEffect 的区别</span></a>
+        <a><span class="n">5</span><span class="tx">RAG 系统中如何评估检索质量？</span></a>
+        <a><span class="n">6</span><span class="tx">Go 中 channel 的底层结构是怎样的？</span></a>
+        <a><span class="n">7</span><span class="tx">TypeScript 中 infer 关键字怎么用？</span></a>
+        <a><span class="n">8</span><span class="tx">浏览器渲染流程与重排重绘</span></a>
+        <a><span class="n">9</span><span class="tx">Prompt 注入有哪些防御手段？</span></a>
+        <a><span class="n">10</span><span class="tx">CSS 层叠上下文是怎么形成的？</span></a>
+      </div>
+      <div class="qwrap">
+        <div class="qcard3">
+          <div class="hd"><span class="no">第 3 题</span><span>·</span><span>Agent 架构</span><span>·</span><span><span class="diff"><i class="f"></i><i class="f"></i><i></i></span>中级</span><span class="last"><span class="dot" style="background:var(--warn)"></span>3 天前标记为模糊</span></div>
+          <div class="bd">
+            <h1>Agent 的「记忆」通常分为哪几类？各自适合用什么方式实现？</h1>
+            <div class="kw"><span class="tag">#记忆</span><span class="tag">#向量库</span><span class="tag">#上下文</span></div>
+            <div class="composer"><div class="ph" style="min-height:112px">先写下你的思路，写完再对照答案……</div><div class="bar"><a class="btn g"><svg class="i"><use href="#mic"/></svg>语音</a><a class="btn g"><svg class="i"><use href="#bulb"/></svg>给点提示</a><span style="margin-left:auto;font-size:12px;color:var(--fg-3)">⌘↵ 提交并让 AI 点评</span></div></div>
+            <div class="blurans">
+              <div class="txt"><b>核心结论</b><p>Agent 的记忆通常分为短期记忆（上下文窗口内的对话与中间状态）、长期记忆（写入向量库或数据库的经验与事实）以及工作记忆（当前任务的计划与执行进度）……</p></div>
+              <div class="ov"><a class="btn o lg"><svg class="i"><use href="#eye"/></svg>显示参考答案<span class="kbd" style="margin-left:4px">Space</span></a></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pstat">
+        <h4>本轮进度</h4>
+        <div class="nums"><div><b>1</b><span><span class="dot" style="background:var(--ok)"></span>掌握</span></div><div><b>1</b><span><span class="dot" style="background:var(--warn)"></span>模糊</span></div><div><b>0</b><span><span class="dot" style="background:var(--bad)"></span>不会</span></div></div>
+        <div class="tools">
+          <h4>需要帮助？</h4>
+          <a><svg class="i"><use href="#bulb"/></svg>给我一点提示<span class="kbd">H</span></a>
+          <a><svg class="i"><use href="#layers"/></svg>告诉我答题框架</a>
+          <a><svg class="i"><use href="#mic"/></svg>模拟面试官追问</a>
+          <a><svg class="i"><use href="#note"/></svg>写笔记<span class="kbd">N</span></a>
+        </div>
+        <div class="tip">使用提示不会影响掌握度记录。按 ← → 切换题目，Esc 退出练习，进度会自动保存。</div>
+      </div>
+    </div>
+    <div class="pfoot2"><div class="in">
+      <div class="jd"><span class="dot" style="background:var(--bad)"></span><b>不会</b><span class="kbd">3</span><small>今天稍后再练</small></div>
+      <div class="jd"><span class="dot" style="background:var(--warn)"></span><b>模糊</b><span class="kbd">2</span><small>明天复习</small></div>
+      <div class="jd pri"><span class="dot" style="background:var(--ok)"></span><b>掌握</b><span class="kbd">1</span><small>7 天后复习</small></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="artboard dark" id="dashboard-dark" data-on="概览" data-tpl="dash"></section>
+
+<script>
+  ;(() => {
+    const side = document.getElementById('sidebar').content
+    document.querySelectorAll('section[data-tpl]').forEach((s) => s.appendChild(document.getElementById(s.dataset.tpl).content.cloneNode(true)))
+    document.querySelectorAll('section[data-on]').forEach((s) => {
+      const sb = side.cloneNode(true)
+      sb.querySelectorAll('.nv').forEach((a) => a.dataset.k === s.dataset.on && a.classList.add('on'))
+      s.prepend(sb)
+      if (s.classList.contains('dark')) s.querySelector('.theme use').setAttribute('href', '#sun')
+    })
+    document.querySelectorAll('.heat').forEach((h) => {
+      let seed = 11
+      const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280)
+      for (let i = 0; i < 24 * 7; i++) {
+        const el = document.createElement('i')
+        const r = rnd(), rec = i / 168
+        let lv = r < 0.42 - rec * 0.25 ? 0 : Math.min(4, Math.floor(r * 2.6 + rec * 2))
+        if (i > 163) lv = i === 167 ? 0 : 3
+        el.style.background = `var(--heat-${lv})`
+        h.appendChild(el)
+      }
+    })
+  })()
+</script>
+</body>
+</html>

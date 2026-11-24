@@ -1,13 +1,15 @@
 import { Analytics } from '@vercel/analytics/react'
-import { lazy, Suspense, useEffect, useLayoutEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
-import { Navbar } from '@/components/layout/Navbar'
-import { OnboardingGuide } from '@/components/layout/OnboardingGuide'
-import { Spinner } from '@/components/ui'
-import { AppErrorBoundary } from '@/components/ui/AppErrorBoundary'
-import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
+import { AppErrorBoundary } from '@/app/AppErrorBoundary'
+import { AppShell } from '@/app/AppShell'
+import { PWAUpdatePrompt } from '@/app/PWAUpdatePrompt'
+import { ScrollManager } from '@/app/ScrollManager'
+import { OnboardingDialog } from '@/features/onboarding/OnboardingDialog'
+import { useDelayedFlag } from '@/hooks/useDelayedFlag'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
+import { Spinner, Toaster, TooltipProvider } from '@/ui'
 
 const Dashboard = lazy(routeLoaders.dashboard)
 const QuestionList = lazy(routeLoaders.questionList)
@@ -20,13 +22,17 @@ const JdMatch = lazy(routeLoaders.jdMatch)
 const AITool = lazy(routeLoaders.aiTool)
 const ImportPage = lazy(routeLoaders.importPage)
 const PromptPage = lazy(routeLoaders.promptPage)
+// Component showcase — only bundled in development builds.
+const DesignSystem = import.meta.env.DEV ? lazy(() => import('@/pages/DesignSystem')) : null
 
 function PageLoader() {
+  // Route chunks are usually preloaded on hover; only show the spinner if loading is slow.
+  const visible = useDelayedFlag(true, 300)
   return (
     <div className="flex items-center justify-center min-h-[60dvh]">
-      <div className="flex flex-col items-center gap-3">
-        <Spinner size="lg" className="text-[var(--primary)]" />
-        <p className="text-sm text-[var(--text-3)]">加载中…</p>
+      <div className={visible ? 'flex flex-col items-center gap-3' : 'invisible'}>
+        <Spinner size="lg" className="text-fg-subtle" />
+        <p className="text-sm text-fg-subtle">加载中…</p>
       </div>
     </div>
   )
@@ -63,28 +69,6 @@ function QuestionDetailRoute() {
   return <QuestionDetail key={id ?? 'question'} />
 }
 
-function ScrollToTop() {
-  const { pathname } = useLocation()
-
-  useEffect(() => {
-    const previous = window.history.scrollRestoration
-    window.history.scrollRestoration = 'manual'
-    return () => {
-      window.history.scrollRestoration = previous
-    }
-  }, [])
-
-  useLayoutEffect(() => {
-    if (!pathname) return
-    const previousScrollBehavior = document.documentElement.style.scrollBehavior
-    document.documentElement.style.scrollBehavior = 'auto'
-    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    document.documentElement.style.scrollBehavior = previousScrollBehavior
-  }, [pathname])
-
-  return null
-}
-
 function AppRoutes() {
   const location = useLocation()
   const resetKey = `${location.pathname}${location.search}`
@@ -113,20 +97,40 @@ function AppRoutes() {
   )
 }
 
+function AppLayout() {
+  return (
+    <AppShell>
+      <AppRecoveryHandlers />
+      <ScrollManager />
+      <main>
+        <AppRoutes />
+      </main>
+      <OnboardingDialog />
+      <PWAUpdatePrompt />
+      <Analytics />
+    </AppShell>
+  )
+}
+
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="min-h-dvh bg-[var(--surface)]">
-        <AppRecoveryHandlers />
-        <ScrollToTop />
-        <Navbar />
-        <main>
-          <AppRoutes />
-        </main>
-        <OnboardingGuide />
-        <PWAUpdatePrompt />
-        <Analytics />
-      </div>
-    </BrowserRouter>
+    <TooltipProvider delayDuration={400}>
+      <BrowserRouter>
+        <Routes>
+          {DesignSystem ? (
+            <Route
+              path="/design"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <DesignSystem />
+                </Suspense>
+              }
+            />
+          ) : null}
+          <Route path="*" element={<AppLayout />} />
+        </Routes>
+      </BrowserRouter>
+      <Toaster />
+    </TooltipProvider>
   )
 }

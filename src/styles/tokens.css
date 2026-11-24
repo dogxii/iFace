@@ -1,0 +1,244 @@
+/*
+ * iFace design tokens (v1.5).
+ *
+ * Raw values live in `--ds-*` custom properties so light / dark themes can swap them,
+ * and `@theme inline` exposes them to Tailwind as utilities (`bg-canvas`, `text-fg-muted`, …).
+ * The pre-v1.5 aliases (`--primary`, `--surface`, …) have been removed; use these tokens.
+ */
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2")
+    format("woff2-variations");
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --ds-canvas: #ffffff;
+  --ds-subtle: #fafafa;
+  --ds-muted: #f4f4f5;
+  --ds-elevated: #ffffff;
+  --ds-border: #ebebeb;
+  --ds-border-strong: #dcdcdf;
+  --ds-fg: #0a0a0a;
+  --ds-fg-muted: #52525b;
+  --ds-fg-subtle: #8b8b94;
+  --ds-accent: #5e5ce6;
+  --ds-accent-hover: #4f4dd8;
+  --ds-accent-subtle: #f1f0fe;
+  --ds-accent-fg: #ffffff;
+  --ds-success: #16a34a;
+  --ds-success-subtle: #ecfdf3;
+  --ds-warning: #d97706;
+  --ds-warning-subtle: #fff8eb;
+  --ds-danger: #dc2626;
+  --ds-danger-subtle: #fef2f2;
+  --ds-highlight: #fef3c7;
+  --ds-overlay: rgb(10 10 10 / 0.32);
+  --ds-ring: rgb(94 92 230 / 0.45);
+  --ds-shadow-popover: 0 0 0 1px rgb(0 0 0 / 0.04), 0 8px 24px -4px rgb(0 0 0 / 0.1);
+  --ds-shadow-raised: 0 1px 2px rgb(0 0 0 / 0.03), 0 12px 32px -12px rgb(0 0 0 / 0.08);
+  --ds-heat-0: #f1f1f3;
+  --ds-heat-1: #dcdbfb;
+  --ds-heat-2: #b4b2f5;
+  --ds-heat-3: #8785ee;
+  --ds-heat-4: #5e5ce6;
+  /* Categorical hues for modules: text/icon colour + a soft background. */
+  --ds-hue-blue: #2563eb;
+  --ds-hue-blue-subtle: #eef4ff;
+  --ds-hue-violet: #7c3aed;
+  --ds-hue-violet-subtle: #f4f0ff;
+  --ds-hue-pink: #db2777;
+  --ds-hue-pink-subtle: #fdf0f7;
+  --ds-hue-rose: #e11d48;
+  --ds-hue-rose-subtle: #fff0f3;
+  --ds-hue-orange: #ea580c;
+  --ds-hue-orange-subtle: #fff4ec;
+  --ds-hue-amber: #b45309;
+  --ds-hue-amber-subtle: #fef6e4;
+  --ds-hue-green: #16a34a;
+  --ds-hue-green-subtle: #edfbf2;
+  --ds-hue-teal: #0d9488;
+  --ds-hue-teal-subtle: #ebfaf8;
+  --ds-hue-cyan: #0891b2;
+  --ds-hue-cyan-subtle: #e9f8fc;
+}
+
+.dark {
+  --ds-canvas: #0a0a0b;
+  --ds-subtle: #111113;
+  --ds-muted: #1a1a1d;
+  --ds-elevated: #151517;
+  --ds-border: #232326;
+  --ds-border-strong: #313136;
+  --ds-fg: #fafafa;
+  --ds-fg-muted: #a1a1aa;
+  --ds-fg-subtle: #6b6b74;
+  --ds-accent: #7c7aff;
+  --ds-accent-hover: #918fff;
+  --ds-accent-subtle: rgb(124 122 255 / 0.13);
+  --ds-accent-fg: #ffffff;
+  --ds-success: #22c55e;
+  --ds-success-subtle: rgb(34 197 94 / 0.12);
+  --ds-warning: #f59e0b;
+  --ds-warning-subtle: rgb(245 158 11 / 0.12);
+  --ds-danger: #ef4444;
+  --ds-danger-subtle: rgb(239 68 68 / 0.12);
+  --ds-highlight: rgb(250 204 21 / 0.2);
+  --ds-overlay: rgb(0 0 0 / 0.6);
+  --ds-ring: rgb(124 122 255 / 0.55);
+  --ds-shadow-popover: 0 0 0 1px rgb(255 255 255 / 0.06), 0 12px 32px -4px rgb(0 0 0 / 0.6);
+  --ds-shadow-raised: 0 0 0 1px rgb(255 255 255 / 0.03), 0 16px 40px -12px rgb(0 0 0 / 0.6);
+  --ds-heat-0: #1a1a1d;
+  --ds-heat-1: #2b2a55;
+  --ds-heat-2: #43418f;
+  --ds-heat-3: #615fd0;
+  --ds-heat-4: #7c7aff;
+  --ds-hue-blue: #6aa5ff;
+  --ds-hue-blue-subtle: rgb(96 165 250 / 0.14);
+  --ds-hue-violet: #a78bfa;
+  --ds-hue-violet-subtle: rgb(167 139 250 / 0.14);
+  --ds-hue-pink: #f472b6;
+  --ds-hue-pink-subtle: rgb(244 114 182 / 0.14);
+  --ds-hue-rose: #fb7185;
+  --ds-hue-rose-subtle: rgb(251 113 133 / 0.14);
+  --ds-hue-orange: #fb923c;
+  --ds-hue-orange-subtle: rgb(251 146 60 / 0.14);
+  --ds-hue-amber: #fbbf24;
+  --ds-hue-amber-subtle: rgb(251 191 36 / 0.14);
+  --ds-hue-green: #4ade80;
+  --ds-hue-green-subtle: rgb(74 222 128 / 0.13);
+  --ds-hue-teal: #2dd4bf;
+  --ds-hue-teal-subtle: rgb(45 212 191 / 0.13);
+  --ds-hue-cyan: #22d3ee;
+  --ds-hue-cyan-subtle: rgb(34 211 238 / 0.13);
+}
+
+@theme inline {
+  --font-sans:
+    "Inter Variable", -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+    "Microsoft YaHei", "Noto Sans SC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, monospace;
+
+  --color-canvas: var(--ds-canvas);
+  --color-subtle: var(--ds-subtle);
+  --color-muted: var(--ds-muted);
+  --color-elevated: var(--ds-elevated);
+  --color-line: var(--ds-border);
+  --color-line-strong: var(--ds-border-strong);
+  --color-fg: var(--ds-fg);
+  --color-fg-muted: var(--ds-fg-muted);
+  --color-fg-subtle: var(--ds-fg-subtle);
+  --color-accent: var(--ds-accent);
+  --color-accent-hover: var(--ds-accent-hover);
+  --color-accent-subtle: var(--ds-accent-subtle);
+  --color-accent-fg: var(--ds-accent-fg);
+  --color-success: var(--ds-success);
+  --color-success-subtle: var(--ds-success-subtle);
+  --color-warning: var(--ds-warning);
+  --color-warning-subtle: var(--ds-warning-subtle);
+  --color-danger: var(--ds-danger);
+  --color-danger-subtle: var(--ds-danger-subtle);
+  --color-highlight: var(--ds-highlight);
+  --color-overlay: var(--ds-overlay);
+  --color-ring: var(--ds-ring);
+  --color-hue-blue: var(--ds-hue-blue);
+  --color-hue-blue-subtle: var(--ds-hue-blue-subtle);
+  --color-hue-violet: var(--ds-hue-violet);
+  --color-hue-violet-subtle: var(--ds-hue-violet-subtle);
+  --color-hue-pink: var(--ds-hue-pink);
+  --color-hue-pink-subtle: var(--ds-hue-pink-subtle);
+  --color-hue-rose: var(--ds-hue-rose);
+  --color-hue-rose-subtle: var(--ds-hue-rose-subtle);
+  --color-hue-orange: var(--ds-hue-orange);
+  --color-hue-orange-subtle: var(--ds-hue-orange-subtle);
+  --color-hue-amber: var(--ds-hue-amber);
+  --color-hue-amber-subtle: var(--ds-hue-amber-subtle);
+  --color-hue-green: var(--ds-hue-green);
+  --color-hue-green-subtle: var(--ds-hue-green-subtle);
+  --color-hue-teal: var(--ds-hue-teal);
+  --color-hue-teal-subtle: var(--ds-hue-teal-subtle);
+  --color-hue-cyan: var(--ds-hue-cyan);
+  --color-hue-cyan-subtle: var(--ds-hue-cyan-subtle);
+
+  --shadow-popover: var(--ds-shadow-popover);
+  --shadow-raised: var(--ds-shadow-raised);
+
+  --text-2xs: 11px;
+  --text-2xs--line-height: 16px;
+  --text-xs: 12px;
+  --text-xs--line-height: 18px;
+  --text-sm: 13px;
+  --text-sm--line-height: 20px;
+  --text-base: 14px;
+  --text-base--line-height: 22px;
+  --text-md: 15px;
+  --text-md--line-height: 24px;
+  --text-lg: 17px;
+  --text-lg--line-height: 26px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 28px;
+  --text-3xl--line-height: 38px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-in: ds-fade-in 120ms var(--ease-out-expo);
+  --animate-fade-out: ds-fade-out 100ms ease-in;
+  --animate-scale-in: ds-scale-in 140ms var(--ease-out-expo);
+  --animate-slide-in-right: ds-slide-in-right 200ms var(--ease-out-expo);
+  --animate-slide-in-bottom: ds-slide-in-bottom 200ms var(--ease-out-expo);
+  --animate-slide-in-left: ds-slide-in-left 200ms var(--ease-out-expo);
+}
+
+@keyframes ds-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ds-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes ds-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(4px);
+  }
+}
+@keyframes ds-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes ds-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes ds-slide-in-bottom {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over component animations */
+    animation-duration: 1ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over component transitions */
+    transition-duration: 1ms !important;
+  }
+}

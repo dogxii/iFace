@@ -15,6 +15,7 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: [
         'favicon.ico',
+        'favicon.svg',
         'favicon-16x16.png',
         'favicon-32x32.png',
         'apple-touch-icon.png',
@@ -45,13 +46,13 @@ export default defineConfig({
             purpose: 'any',
           },
           {
-            src: '/icons/icon-512x512.png',
+            src: '/icons/icon-maskable-512x512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
           },
           {
-            src: '/icons/icon-192x192.png',
+            src: '/icons/icon-maskable-192x192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable',
@@ -64,18 +65,35 @@ export default defineConfig({
           '**/assets/pdf.worker-*.mjs',
           '**/assets/pdf-*.js',
           '**/assets/mammoth.browser-*.js',
+          // Question banks are copied into IndexedDB on first load and learning checks are
+          // fetched per module, so both are cached at runtime instead of precached (~4.6 MB).
+          '**/questions/**',
+          '**/learning-checks/**',
         ],
         // Never let the Service Worker intercept /api/* requests —
         // those must always reach the Vercel serverless functions via the network.
         navigateFallbackDenylist: [/^\/api\//],
+        // RegExp patterns are matched against the full URL, so same-origin routes match on
+        // the pathname instead.
         runtimeCaching: [
           {
-            // Force all /api/* fetches through the network — no caching ever.
-            urlPattern: /^\/api\/.*/i,
+            urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
             handler: 'NetworkOnly',
           },
           {
-            urlPattern: /^\/assets\/(?:pdf|pdf\.worker|mammoth\.browser)-.*\.(?:js|mjs)$/i,
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith('/questions/') ||
+              url.pathname.startsWith('/learning-checks/'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'question-data',
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 120 },
+            },
+          },
+          {
+            urlPattern: ({ url }) =>
+              /^\/assets\/(?:pdf|pdf\.worker|mammoth\.browser)-.*\.(?:js|mjs)$/i.test(url.pathname),
             handler: 'CacheFirst',
             options: {
               cacheName: 'document-parser-chunks',
@@ -100,6 +118,19 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        // React and the router change far less often than app code, so they get their own
+        // long-lived chunk.
+        manualChunks(id) {
+          if (/[\\/]node_modules[\\/](react|react-dom|react-router|scheduler)[\\/]/.test(id)) {
+            return 'react'
+          }
+        },
+      },
+    },
+  },
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },

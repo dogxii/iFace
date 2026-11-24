@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>iFace logo options · round 4</title>
+<style>
+  :root { font-family: Inter, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: #f4f4f5; padding: 32px; color: #0a0a0a; }
+  h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .lead { margin-top: 6px; color: #52525b; font-size: 14px; }
+  .grid { margin-top: 24px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .card { border-radius: 16px; overflow: hidden; border: 1px solid #e4e4e7; display: grid; grid-template-columns: 1fr 1fr; }
+  .pane { padding: 22px; display: flex; flex-direction: column; gap: 18px; }
+  .light { background: #fff; }
+  .dark { background: #0a0a0b; color: #fafafa; }
+  .title { font-size: 15px; font-weight: 600; }
+  .desc { font-size: 12px; line-height: 18px; color: #71717a; margin-top: 2px; min-height: 36px; }
+  .row { display: flex; align-items: flex-end; gap: 16px; }
+  .row svg { display: block; }
+  .size { font-size: 10px; color: #a1a1aa; text-align: center; margin-top: 4px; }
+  .brand { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; padding: 8px 10px; border-radius: 10px; }
+  .light .brand { background: #fafafa; border: 1px solid #ebebeb; }
+  .dark .brand { background: #111113; border: 1px solid #232326; }
+  .tab { display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 6px 10px; border-radius: 8px 8px 0 0; width: fit-content; }
+  .light .tab { background: #f4f4f5; }
+  .dark .tab { background: #1a1a1d; }
+</style>
+</head>
+<body>
+  <h1>iFace Logo 方案 · 第四轮（去掉墨镜，基于 C2 的眨眼）</h1>
+  <p class="lead">只留下一个眨眼的笑：一道弧、一个点、一张嘴。做减法，调比例和线条，追求小尺寸下也干净。</p>
+
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <!-- Shared wink features on a 64 grid: closed left eye, open right eye. -->
+      <g id="wink-eyes">
+        <path d="M17.5 27.5q4.75-5 9.5 0" fill="none" stroke-width="3.6" stroke-linecap="round" />
+        <ellipse cx="41.5" cy="25.5" rx="3.4" ry="4.4" stroke="none" />
+      </g>
+
+      <!-- D1 · 眨眼微笑 -->
+      <symbol id="d1" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <g fill="#1c1917" stroke="#1c1917"><use href="#wink-eyes" /></g>
+        <path d="M21 39q11 9.5 22 0" fill="none" stroke="#1c1917" stroke-width="3.6" stroke-linecap="round" />
+      </symbol>
+
+      <!-- D2 · 眨眼大笑 -->
+      <symbol id="d2" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <g fill="#1c1917" stroke="#1c1917"><use href="#wink-eyes" /></g>
+        <path d="M20.5 37.5h23a11.5 11.5 0 0 1-23 0z" fill="#1c1917" />
+      </symbol>
+
+      <!-- D3 · 圆脸 -->
+      <symbol id="d3" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="30" fill="#ffc933" />
+        <g fill="#1c1917" stroke="#1c1917"><use href="#wink-eyes" /></g>
+        <path d="M21 39q11 9.5 22 0" fill="none" stroke="#1c1917" stroke-width="3.6" stroke-linecap="round" />
+      </symbol>
+
+      <!-- D4 · 夜色 -->
+      <symbol id="d4" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#1c1917" />
+        <g fill="#ffc933" stroke="#ffc933"><use href="#wink-eyes" /></g>
+        <path d="M21 39q11 9.5 22 0" fill="none" stroke="#ffc933" stroke-width="3.6" stroke-linecap="round" />
+      </symbol>
+
+      <!-- D5 · 暗藏 i -->
+      <symbol id="d5" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <path d="M17.5 30q4.75-5 9.5 0" fill="none" stroke="#1c1917" stroke-width="3.6" stroke-linecap="round" />
+        <circle cx="41.5" cy="17.5" r="2.6" fill="#1c1917" />
+        <rect x="38.6" y="23" width="5.8" height="10" rx="2.9" fill="#1c1917" />
+        <path d="M21 41q11 9.5 22 0" fill="none" stroke="#1c1917" stroke-width="3.6" stroke-linecap="round" />
+      </symbol>
+
+      <!-- D6 · 歪嘴笑 -->
+      <symbol id="d6" viewBox="0 0 64 64">
+        <rect width="64" height="64" rx="16" fill="#ffc933" />
+        <g fill="#1c1917" stroke="#1c1917"><use href="#wink-eyes" /></g>
+        <path d="M24 41.5q9.5 6 19-3" fill="none" stroke="#1c1917" stroke-width="3.6" stroke-linecap="round" />
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="grid" id="grid"></div>
+
+  <script>
+    const options = [
+      { id: 'd1', title: 'D1 · 眨眼', desc: '一道弧、一个点、一道笑。最纯粹的版本，圆角方块，和系统 App 图标同一语言。' },
+      { id: 'd2', title: 'D2 · 眨眼大笑', desc: '嘴巴是实心半圆，更开心、更有分量，小尺寸下比线条嘴更稳。' },
+      { id: 'd3', title: 'D3 · 圆脸', desc: '同 D1 的五官放在圆形里，更像一张脸，轮廓更柔和。' },
+      { id: 'd4', title: 'D4 · 夜色', desc: '反色：深色底 + 黄色五官，安静、高级，和暗色界面一体。' },
+      { id: 'd5', title: 'D5 · 暗藏 i', desc: '睁着的那只眼睛是一个小写 i（点 + 竖），眨眼的同时写出了 iFace 的 i。' },
+      { id: 'd6', title: 'D6 · 歪嘴笑', desc: '嘴角向睁眼那侧上扬，表情更“机灵”，有一点得意。' },
+    ]
+    const icon = (o, size) => `<svg width="${size}" height="${size}"><use href="#${o.id}"/></svg>`
+    const pane = (o, theme) => `
+      <div class="pane ${theme}">
+        ${theme === 'light' ? `<div><p class="title">${o.title}</p><p class="desc">${o.desc}</p></div>` : '<div style="height:0"></div>'}
+        <div class="row">
+          <div>${icon(o, 96)}<p class="size">App</p></div>
+          <div>${icon(o, 48)}<p class="size">48</p></div>
+          <div>${icon(o, 32)}<p class="size">32</p></div>
+          <div>${icon(o, 16)}<p class="size">16</p></div>
+        </div>
+        <div class="brand">${icon(o, 22)}iFace</div>
+        <div class="tab">${icon(o, 14)}iFace · 面试题库</div>
+      </div>`
+    document.getElementById('grid').innerHTML = options
+      .map((o) => `<div class="card">${pane(o, 'light')}${pane(o, 'dark')}</div>`)
+      .join('')
+  </script>
+</body>
+</html>

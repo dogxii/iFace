@@ -1,5 +1,6 @@
 import { normalizeQuestionsForImport, validateQuestions } from '../data/schema'
 import type { Question } from '../types'
+import { toDateKey } from './date'
 import {
   addCustomSource,
   bulkPutQuestionAnswerOverrides,
@@ -241,24 +242,35 @@ function normalizeQuestionText(value: string): string {
     .replace(/\s+/g, '')
 }
 
-function findBuiltinReplacementId(
+/**
+ * Find the built-in question a custom question duplicates (e.g. a built-in file that was
+ * once imported as a custom source), so its study data can be merged and the copy removed.
+ *
+ * An id-suffix match alone is not enough: Markdown imports auto-generate ids such as
+ * `js-001` that collide with built-in ids while holding completely different questions.
+ * A match therefore also needs the same module and the same question or answer text.
+ */
+export function findBuiltinReplacementId(
   question: Question,
   builtinQuestionsById: Map<string, Question>,
   builtinIdsByLength: string[],
   builtinIdsByModuleAndQuestion: Map<string, string>,
 ): string | null {
+  const questionText = normalizeQuestionText(question.question)
+  const answerText = normalizeQuestionText(question.answer ?? '')
   for (const builtinId of builtinIdsByLength) {
+    if (!question.id.endsWith(`_${builtinId}`)) continue
     const builtinQuestion = builtinQuestionsById.get(builtinId)
-    if (question.id.endsWith(`_${builtinId}`) && builtinQuestion?.module === question.module) {
+    if (!builtinQuestion || builtinQuestion.module !== question.module) continue
+    if (
+      normalizeQuestionText(builtinQuestion.question) === questionText ||
+      (answerText.length > 0 && normalizeQuestionText(builtinQuestion.answer ?? '') === answerText)
+    ) {
       return builtinId
     }
   }
 
-  return (
-    builtinIdsByModuleAndQuestion.get(
-      `${question.module}\u0000${normalizeQuestionText(question.question)}`,
-    ) ?? null
-  )
+  return builtinIdsByModuleAndQuestion.get(`${question.module}\u0000${questionText}`) ?? null
 }
 
 function mergeStudyRecord(
@@ -600,17 +612,13 @@ interface DailyCache {
   ids: string[]
 }
 
-function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export async function getDailyRecommendations(
   allIds: string[],
   recordMap: Record<string, { status: string; lastUpdated: number }>,
   count = 10,
 ): Promise<string[]> {
   const cached = await getMeta<DailyCache>(META_KEYS.DAILY_RECS)
-  if (cached && cached.date === todayString()) {
+  if (cached && cached.date === toDateKey()) {
     const allIdSet = new Set(allIds)
     const valid = cached.ids.filter((id) => allIdSet.has(id))
     const targetCount = Math.min(count, allIds.length)
@@ -633,7 +641,7 @@ export async function getDailyRecommendations(
     }
   }
 
-  await setMeta(META_KEYS.DAILY_RECS, { date: todayString(), ids: result })
+  await setMeta(META_KEYS.DAILY_RECS, { date: toDateKey(), ids: result })
   return result
 }
 

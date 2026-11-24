@@ -1,6 +1,6 @@
 # iFace 1.0 Roadmap
 
-当前版本：`1.4.2`
+当前版本：`1.5.0`
 
 iFace 1.0.0 的目标不是堆更多页面，而是把现有刷题、笔记、AI 反馈、数据备份这几条核心链路打磨到稳定可日用。
 
@@ -71,7 +71,7 @@ iFace 1.0.0 的目标不是堆更多页面，而是把现有刷题、笔记、AI
    - 其中 `check:docs` 覆盖 README/docs 本地链接、License 和截图资源。
    - 其中 `check:backup` 覆盖本地备份导入解析、旧备份兼容推导和错误输入拒绝。
    - 其中 `check:ai` 额外覆盖模型预设、AI Prompt、作答反馈上下文和流式解析。
-   - 其中 `check:pwa` 在生产构建后覆盖 manifest、Service Worker、Workbox、图标资源和内置题库 JSON 预缓存。
+   - 其中 `check:pwa` 在生产构建后覆盖 manifest、Service Worker、Workbox、图标资源和题库 JSON 的运行时缓存策略（1.5.0 起不再预缓存）。
 2. 核心路径人工验证通过：
    - 导入内置题库
    - 题库筛选、搜索、按笔记筛选
@@ -83,6 +83,15 @@ iFace 1.0.0 的目标不是堆更多页面，而是把现有刷题、笔记、AI
 3. 无已知数据丢失风险。
 4. 桌面和移动端主要页面无明显布局错位。
 5. README、截图、版本号、Release notes 与实际功能一致。
+
+### 1.5.0：界面重构
+
+- 全新的极简界面：侧边栏外壳、设计 token、亮 / 暗色主题，所有页面用 `src/ui` 组件库重建。
+- 状态层改用 zustand，数据访问收敛到可替换的 data source 接口（为后续 QFace 后端预留）。
+- 练习页支持到期复习；间隔复习由现有学习记录推算，不改存储。
+- 题目详情页拆分为 hooks 和分区组件，长答案提供右侧目录栏。
+- PWA 题库改为运行时缓存，入口 chunk 减半。
+- 详见 [REFACTOR_PLAN.md](REFACTOR_PLAN.md) 和 [RELEASE_NOTES_1.5.md](RELEASE_NOTES_1.5.md)。
 
 ## 近期优先级
 
@@ -97,3 +106,5 @@ iFace 1.0.0 的目标不是堆更多页面，而是把现有刷题、笔记、AI
 - 1.0 验收记录：[SMOKE_RESULT_2026-05-05.md](SMOKE_RESULT_2026-05-05.md)
 - 1.0 发版审计清单：[RELEASE_AUDIT_1.0.md](RELEASE_AUDIT_1.0.md)
 - 1.0 发布说明：[RELEASE_NOTES_1.0.md](RELEASE_NOTES_1.0.md)
+- 1.5.0 验收记录（待维护者补齐）：[SMOKE_RESULT_1.5.0.md](SMOKE_RESULT_1.5.0.md)
+- 1.5.0 发布说明：[RELEASE_NOTES_1.5.md](RELEASE_NOTES_1.5.md)

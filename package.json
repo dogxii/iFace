@@ -1,7 +1,7 @@
 {
   "name": "iface",
   "private": true,
-  "version": "1.4.2",
+  "version": "1.5.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,6 +10,9 @@
     "lint": "biome check --write .",
     "format": "biome format --write .",
     "check": "biome check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
     "build:learning-checks": "bun scripts/buildLearningChecks.ts",
     "check:ai": "bun scripts/checkAI.ts",
     "check:backup": "bun scripts/checkBackup.ts",
@@ -24,33 +27,43 @@
     "check:release": "bun scripts/checkReleaseReadiness.ts",
     "check:sync": "bun scripts/checkGistSync.ts",
     "check:version": "bun scripts/checkVersionSync.ts",
-    "check:all": "bun run check && bun run check:version && bun run check:release && bun run check:quality-gate && bun run check:docs && bun run check:external-records && bun run check:backup && bun run check:questions && bun run check:sync && bun run check:ai && bun run build && bun run check:pwa"
+    "check:all": "bun run check && bun run test && bun run check:version && bun run check:release && bun run check:quality-gate && bun run check:docs && bun run check:external-records && bun run check:backup && bun run check:questions && bun run check:sync && bun run check:ai && bun run build && bun run check:pwa"
   },
   "dependencies": {
+    "@fontsource-variable/inter": "^5.3.0",
     "@vercel/analytics": "^2.0.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "idb": "^8.0.3",
+    "lucide-react": "^1.77.0",
     "mammoth": "^1.12.0",
     "pdfjs-dist": "^5.7.284",
+    "radix-ui": "^1.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.13.1",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.7.1",
     "uuid": "^13.0.0",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "zustand": "^5.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.6",
+    "@playwright/test": "1.63.0",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^25.3.5",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^11.0.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "happy-dom": "^21.0.4",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.9.3",
     "vite": "^7.3.1",
-    "vite-plugin-pwa": "^1.2.0"
+    "vite-plugin-pwa": "^1.2.0",
+    "vitest": "^5.1.1"
   }
 }

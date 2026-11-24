@@ -1,4 +1,5 @@
-import type { CSSProperties } from 'react'
+import { Mic } from 'lucide-react'
+import { cn } from '@/ui'
 
 interface SpeechInputButtonProps {
   supported: boolean
@@ -6,7 +7,7 @@ interface SpeechInputButtonProps {
   disabled?: boolean
   onToggle: () => void
   showLabel?: boolean
-  style?: CSSProperties
+  className?: string
 }
 
 export function SpeechInputButton({
@@ -15,10 +16,9 @@ export function SpeechInputButton({
   disabled = false,
   onToggle,
   showLabel = false,
-  style,
+  className,
 }: SpeechInputButtonProps) {
   const unavailable = disabled || !supported
-  const label = listening ? '停止' : '语音输入'
   const title = supported
     ? listening
       ? '停止语音输入'
@@ -33,72 +33,23 @@ export function SpeechInputButton({
       title={title}
       disabled={unavailable}
       onClick={onToggle}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: showLabel ? 5 : 0,
-        width: showLabel ? 'auto' : 26,
-        height: 26,
-        minHeight: 26,
-        padding: showLabel ? '3px 8px' : 0,
-        borderRadius: 7,
-        border: '1px solid',
-        borderColor: listening ? 'rgba(var(--primary-rgb), 0.3)' : 'transparent',
-        background: listening ? 'var(--primary-light)' : 'transparent',
-        color: listening ? 'var(--primary)' : 'var(--text-3)',
-        fontSize: 11,
-        fontWeight: 500,
-        cursor: unavailable ? 'default' : 'pointer',
-        opacity: unavailable ? 0.52 : 1,
-        transition: 'background 0.15s, border-color 0.15s, color 0.15s',
-        whiteSpace: 'nowrap',
-        ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (unavailable || listening) return
-        e.currentTarget.style.background = 'var(--surface-2)'
-        e.currentTarget.style.borderColor = 'var(--border-subtle)'
-        e.currentTarget.style.color = 'var(--primary)'
-      }}
-      onMouseLeave={(e) => {
-        if (unavailable || listening) return
-        e.currentTarget.style.background = 'transparent'
-        e.currentTarget.style.borderColor = 'transparent'
-        e.currentTarget.style.color = 'var(--text-3)'
-      }}
+      className={cn(
+        'inline-flex h-7 shrink-0 items-center justify-center gap-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors',
+        'disabled:cursor-default disabled:opacity-50',
+        showLabel ? 'px-2' : 'w-7',
+        listening
+          ? 'bg-accent-subtle text-accent'
+          : 'text-fg-subtle enabled:hover:bg-muted enabled:hover:text-accent',
+        className,
+      )}
     >
-      <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z" />
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-          <line x1="12" y1="19" x2="12" y2="22" />
-          <line x1="8" y1="22" x2="16" y2="22" />
-        </svg>
-        {listening && (
-          <span
-            style={{
-              position: 'absolute',
-              right: -3,
-              top: -3,
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              background: 'var(--danger)',
-            }}
-          />
-        )}
+      <span className="relative inline-flex">
+        <Mic className="size-3.5" />
+        {listening ? (
+          <span className="absolute -top-0.5 -right-0.5 size-1.5 animate-pulse rounded-full bg-danger" />
+        ) : null}
       </span>
-      {showLabel && label}
+      {showLabel ? (listening ? '停止' : '语音输入') : null}
     </button>
   )
 }

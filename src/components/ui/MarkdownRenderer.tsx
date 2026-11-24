@@ -97,345 +97,31 @@ function extractText(children: React.ReactNode): string {
 
 // ─── Components ───────────────────────────────────────────────────────────────
 
+// Element styles live in src/styles/markdown.css (`.markdown`); components here only add
+// behaviour: copy buttons, links opening in a new tab, scrollable tables, local images.
 const components: Components = {
-  // Code blocks
   pre({ children, ...props }) {
-    // Extract raw text for the copy button
-    const codeText = extractText(children)
-
     return (
       <div className="code-block-wrap">
-        <pre
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.8125rem',
-            fontWeight: 400,
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 10,
-            padding: '14px 16px',
-            overflowX: 'auto',
-            margin: '14px 0',
-            lineHeight: 1.65,
-          }}
-          {...props}
-        >
-          {children}
-        </pre>
-        <CopyButton code={codeText} />
+        <pre {...props}>{children}</pre>
+        <CopyButton code={extractText(children)} />
       </div>
     )
   },
 
-  code({ className, children, ...props }) {
-    const isInline = !className
-    if (isInline) {
-      return (
-        <code
-          style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.82em',
-            fontWeight: 400,
-            background: 'var(--surface-3)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 4,
-            padding: '1px 5px',
-            color: 'var(--primary)',
-            wordBreak: 'break-word',
-          }}
-          {...props}
-        >
-          {children}
-        </code>
-      )
-    }
-    return (
-      <code
-        className={className ?? ''}
-        style={{ color: 'var(--text)', fontWeight: 400 }}
-        {...props}
-      >
-        {children}
-      </code>
-    )
-  },
-
-  // Headings
-  h1({ children, ...props }) {
-    return (
-      <h1
-        style={{
-          fontSize: '1.25rem',
-          fontWeight: 600,
-          color: 'var(--text)',
-          marginTop: '1.5em',
-          marginBottom: '0.6em',
-          lineHeight: 1.35,
-        }}
-        {...props}
-      >
-        {children}
-      </h1>
-    )
-  },
-  h2({ children, ...props }) {
-    return (
-      <h2
-        style={{
-          fontSize: '1.05rem',
-          fontWeight: 600,
-          color: 'var(--text)',
-          marginTop: '1.4em',
-          marginBottom: '0.5em',
-          lineHeight: 1.35,
-        }}
-        {...props}
-      >
-        {children}
-      </h2>
-    )
-  },
-  h3({ children, ...props }) {
-    return (
-      <h3
-        style={{
-          fontSize: '0.9375rem',
-          fontWeight: 600,
-          color: 'var(--text)',
-          marginTop: '1.2em',
-          marginBottom: '0.4em',
-          lineHeight: 1.4,
-        }}
-        {...props}
-      >
-        {children}
-      </h3>
-    )
-  },
-  h4({ children, ...props }) {
-    return (
-      <h4
-        style={{
-          fontSize: '0.9375rem',
-          fontWeight: 500,
-          color: 'var(--text)',
-          marginTop: '1em',
-          marginBottom: '0.3em',
-        }}
-        {...props}
-      >
-        {children}
-      </h4>
-    )
-  },
-
-  // Paragraph
-  p({ children, ...props }) {
-    return (
-      <p
-        style={{
-          fontSize: '0.9375rem',
-          color: 'var(--text)',
-          lineHeight: 1.8,
-          marginBottom: '0.85em',
-        }}
-        {...props}
-      >
-        {children}
-      </p>
-    )
-  },
-
-  // Lists
-  ul({ children, ...props }) {
-    return (
-      <ul
-        style={{
-          listStyle: 'disc',
-          paddingLeft: '1.4em',
-          marginBottom: '0.85em',
-          color: 'var(--text)',
-        }}
-        {...props}
-      >
-        {children}
-      </ul>
-    )
-  },
-  ol({ children, ...props }) {
-    return (
-      <ol
-        style={{
-          listStyle: 'decimal',
-          paddingLeft: '1.4em',
-          marginBottom: '0.85em',
-          color: 'var(--text)',
-        }}
-        {...props}
-      >
-        {children}
-      </ol>
-    )
-  },
-  li({ children, ...props }) {
-    return (
-      <li
-        style={{
-          fontSize: '0.9375rem',
-          lineHeight: 1.75,
-          color: 'var(--text)',
-          marginBottom: '0.25em',
-        }}
-        {...props}
-      >
-        {children}
-      </li>
-    )
-  },
-
-  // Blockquote
-  blockquote({ children, ...props }) {
-    return (
-      <blockquote
-        style={{
-          borderLeft: '3px solid var(--primary)',
-          paddingLeft: '1em',
-          margin: '1.2em 0',
-          color: 'var(--text-2)',
-          fontStyle: 'italic',
-        }}
-        {...props}
-      >
-        {children}
-      </blockquote>
-    )
-  },
-
-  // Horizontal rule
-  hr({ ...props }) {
-    return (
-      <hr
-        style={{
-          border: 'none',
-          borderTop: '1px solid var(--border)',
-          margin: '1.4em 0',
-        }}
-        {...props}
-      />
-    )
-  },
-
-  // Strong / Em
-  strong({ children, ...props }) {
-    return (
-      <strong style={{ fontWeight: 600, color: 'var(--text)' }} {...props}>
-        {children}
-      </strong>
-    )
-  },
-  em({ children, ...props }) {
-    return (
-      <em style={{ fontStyle: 'italic', color: 'var(--text-2)' }} {...props}>
-        {children}
-      </em>
-    )
-  },
-
-  // Link
   a({ children, href, ...props }) {
     return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{
-          color: 'var(--primary)',
-          textDecoration: 'underline',
-          textUnderlineOffset: 2,
-          textDecorationColor: 'rgba(var(--primary-rgb), 0.4)',
-          transition: 'text-decoration-color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          ;(e.currentTarget as HTMLElement).style.textDecorationColor = 'var(--primary)'
-        }}
-        onMouseLeave={(e) => {
-          ;(e.currentTarget as HTMLElement).style.textDecorationColor =
-            'rgba(var(--primary-rgb), 0.4)'
-        }}
-        {...props}
-      >
+      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
         {children}
       </a>
     )
   },
 
-  // Table
   table({ children, ...props }) {
     return (
-      <div
-        style={{
-          overflowX: 'auto',
-          margin: '1em 0',
-          borderRadius: 10,
-          border: '1px solid var(--border)',
-        }}
-      >
-        <table
-          style={{ width: '100%', fontSize: '0.875rem', borderCollapse: 'collapse' }}
-          {...props}
-        >
-          {children}
-        </table>
+      <div className="markdown-table">
+        <table {...props}>{children}</table>
       </div>
-    )
-  },
-  thead({ children, ...props }) {
-    return (
-      <thead style={{ background: 'var(--surface-2)' }} {...props}>
-        {children}
-      </thead>
-    )
-  },
-  tbody({ children, ...props }) {
-    return <tbody {...props}>{children}</tbody>
-  },
-  tr({ children, ...props }) {
-    return (
-      <tr style={{ borderTop: '1px solid var(--border-subtle)' }} {...props}>
-        {children}
-      </tr>
-    )
-  },
-  th({ children, ...props }) {
-    return (
-      <th
-        style={{
-          padding: '8px 14px',
-          textAlign: 'left',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          color: 'var(--text-2)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-        }}
-        {...props}
-      >
-        {children}
-      </th>
-    )
-  },
-  td({ children, ...props }) {
-    return (
-      <td
-        style={{
-          padding: '8px 14px',
-          color: 'var(--text-2)',
-          fontSize: '0.875rem',
-        }}
-        {...props}
-      >
-        {children}
-      </td>
     )
   },
 }
@@ -460,46 +146,15 @@ export function MarkdownRenderer({
       const resolvedSrc = resolvedByResolver ?? rawSrc
 
       if (missingLocalImage) {
-        return (
-          <span
-            style={{
-              display: 'block',
-              margin: '12px 0',
-              padding: '10px 12px',
-              borderRadius: 8,
-              border: '1px dashed var(--border)',
-              color: 'var(--text-3)',
-              fontSize: 12,
-              lineHeight: 1.5,
-            }}
-          >
-            本地图片不可用
-          </span>
-        )
+        return <span className="markdown-image-missing">本地图片不可用</span>
       }
 
-      return (
-        <img
-          src={resolvedSrc}
-          alt={alt ?? ''}
-          loading="lazy"
-          style={{
-            display: 'block',
-            maxWidth: '100%',
-            maxHeight: 520,
-            objectFit: 'contain',
-            borderRadius: 8,
-            border: '1px solid var(--border-subtle)',
-            margin: '12px 0',
-          }}
-          {...props}
-        />
-      )
+      return <img src={resolvedSrc} alt={alt ?? ''} loading="lazy" {...props} />
     },
   }
 
   return (
-    <div className={`min-w-0 ${className}`}>
+    <div className={`markdown min-w-0 ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}

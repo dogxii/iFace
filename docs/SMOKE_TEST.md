@@ -17,6 +17,7 @@
 - 这两个外部 smoke 记录不含密钥，并会写入当时的 `packageVersion`；正式 1.0 发版检查会读取它们作为证据，且要求记录在 7 天内生成。
 - 单项排查命令：
   - `bun run check`
+  - `bun run test`
   - `bun run check:version`
   - `bun run check:release`
   - `bun run check:quality-gate`
@@ -105,7 +106,7 @@
 - 桌面宽度下检查概览、题库、练习、薄弱点、导入、出题、题目详情。
 - 移动宽度下检查题目详情、笔记抽屉、设置页、导入页。
 - 生产预览下确认 PWA manifest 与 Service Worker 正常生成，离线可用 / 新版本提示不遮挡主操作。
-- `bun run check:pwa` 应在 `bun run build` 后确认 manifest、Service Worker、Workbox、图标资源和内置题库 JSON 预缓存正常。
+- `bun run check:pwa` 应在 `bun run build` 后确认 manifest、Service Worker、Workbox、图标资源和内置题库 JSON 走运行时缓存（不进预缓存）正常。
 - `bun run check:docs` 应确认 README/docs 本地链接、`.env.example`、License 和截图资源都存在且截图文件有效。
 - `bun run check:quality-gate` 应确认 `check:all` 包含完整子门禁，且发版脚本和文档门禁列表没有漏掉关键检查。
 - 所有主要按钮文字不应溢出或重叠。

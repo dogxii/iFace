@@ -1,7 +1,12 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.4.6/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
   "files": {
-    "includes": ["**", "!dist"]
+    "includes": ["**", "!dist", "!docs/design"]
   },
   "linter": {
     "enabled": true,
@@ -42,6 +47,11 @@
   "json": {
     "formatter": {
       "trailingCommas": "none"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   }
 }
