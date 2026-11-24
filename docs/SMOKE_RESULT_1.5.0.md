@@ -14,8 +14,8 @@
 
 `bun run check:all` 中各子门禁的结果：
 
-- `bun run check`：通过，Biome 检查 233 个文件无错误。
-- `bun run test`：通过，Vitest 29 个文件、142 个用例。
+- `bun run check`：通过，Biome 检查 235 个文件无错误。
+- `bun run test`：通过，Vitest 30 个文件、144 个用例。
 - `bun run check:version`：通过，`package.json`、README 徽章、Roadmap、本记录和设置页版本展示一致。
 - `bun run check:release`：通过。
 - `bun run check:quality-gate`：通过，`check:all` 子门禁顺序、发版脚本和本记录的门禁列表一致。
@@ -30,7 +30,7 @@
 
 额外：
 
-- `bun run test:e2e`：通过，15 个 Playwright smoke 用例（含一个手机视口用例）。
+- `bun run test:e2e`：通过，16 个 Playwright smoke 用例（含一个手机视口用例）。
 
 ## 外部服务 Smoke（待补齐）
 
