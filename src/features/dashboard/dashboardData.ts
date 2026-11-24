@@ -1,3 +1,4 @@
+import { toDateKey } from '@/lib/date'
 import type { CategoryMap } from '@/lib/db'
 import type { Question, QuestionNote, StudyRecordMap } from '@/types'
 
@@ -112,11 +113,6 @@ export interface ActivityDay {
   level: 0 | 1 | 2 | 3 | 4
 }
 
-function localDateKey(time: number): string {
-  const d = new Date(time)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
 /**
  * Activity per day for the last `weeks` weeks, ending today, oldest first.
  * iFace stores only the latest mark per question, so this counts each question's most recent
@@ -130,7 +126,7 @@ export function activityCalendar(
 ): ActivityDay[] {
   const counts = new Map<string, number>()
   const bump = (time: number) => {
-    const key = localDateKey(time)
+    const key = toDateKey(time)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
   for (const record of Object.values(records)) bump(record.lastUpdated)
@@ -144,7 +140,7 @@ export function activityCalendar(
   const result: ActivityDay[] = []
   const max = Math.max(1, ...counts.values())
   for (let i = days - 1; i >= 0; i--) {
-    const date = localDateKey(today.getTime() - i * DAY)
+    const date = toDateKey(today.getTime() - i * DAY)
     const count = counts.get(date) ?? 0
     const level =
       count === 0 ? 0 : (Math.min(4, Math.ceil((count / max) * 4)) as ActivityDay['level'])

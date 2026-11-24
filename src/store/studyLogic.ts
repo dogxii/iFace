@@ -2,6 +2,8 @@
  * Pure study-state logic shared by the study store. No storage, no React, no dates
  * other than the ones passed in — so every rule here is unit-testable.
  */
+
+import { toDateKey } from '@/lib/date'
 import type { StudyRecord, StudyRecordMap, StudyStatus } from '@/types'
 
 export interface StreakData {
@@ -15,9 +17,7 @@ export const DAILY_GOAL_MIN = 5
 export const DAILY_GOAL_MAX = 50
 export const DAILY_GOAL_DEFAULT = 10
 
-export function toDateKey(now: number = Date.now()): string {
-  return new Date(now).toISOString().slice(0, 10)
-}
+export { toDateKey }
 
 export function emptyStreak(today: string): StreakData {
   return { currentStreak: 0, bestStreak: 0, todayCount: 0, lastActivityDate: today }

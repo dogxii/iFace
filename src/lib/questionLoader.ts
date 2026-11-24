@@ -1,5 +1,6 @@
 import { normalizeQuestionsForImport, validateQuestions } from '../data/schema'
 import type { Question } from '../types'
+import { toDateKey } from './date'
 import {
   addCustomSource,
   bulkPutQuestionAnswerOverrides,
@@ -611,17 +612,13 @@ interface DailyCache {
   ids: string[]
 }
 
-function todayString(): string {
-  return new Date().toISOString().slice(0, 10)
-}
-
 export async function getDailyRecommendations(
   allIds: string[],
   recordMap: Record<string, { status: string; lastUpdated: number }>,
   count = 10,
 ): Promise<string[]> {
   const cached = await getMeta<DailyCache>(META_KEYS.DAILY_RECS)
-  if (cached && cached.date === todayString()) {
+  if (cached && cached.date === toDateKey()) {
     const allIdSet = new Set(allIds)
     const valid = cached.ids.filter((id) => allIdSet.has(id))
     const targetCount = Math.min(count, allIds.length)
@@ -644,7 +641,7 @@ export async function getDailyRecommendations(
     }
   }
 
-  await setMeta(META_KEYS.DAILY_RECS, { date: todayString(), ids: result })
+  await setMeta(META_KEYS.DAILY_RECS, { date: toDateKey(), ids: result })
   return result
 }
 

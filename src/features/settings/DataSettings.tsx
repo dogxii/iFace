@@ -1,6 +1,7 @@
 import { Download, FileJson, TriangleAlert, Upload } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { invalidateQuestionsCache } from '@/hooks/useQuestions'
+import { toDateKey } from '@/lib/date'
 import {
   bulkPutJdMatchReports,
   bulkPutMockInterviews,
@@ -79,10 +80,7 @@ export function DataSettings() {
     try {
       const data = await exportAllData()
       const aiSessions = Object.values(sessions)
-      downloadJson(
-        { ...data, aiSessions },
-        `iface-backup-${new Date().toISOString().slice(0, 10)}.json`,
-      )
+      downloadJson({ ...data, aiSessions }, `iface-backup-${toDateKey()}.json`)
       toast.success(
         `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记等全部数据`,
       )
