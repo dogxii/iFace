@@ -205,7 +205,7 @@ export function StudySettings() {
           <SwitchRow
             id="mobile-ai-fab"
             label="AI 助手悬浮按钮"
-            description="在题目页右下角显示 AI 助手入口"
+            description="平板和手机的题目页右下角显示 AI 入口（开启底部切题按钮时不显示）"
             checked={aiFabVisible}
             onCheckedChange={setAiFabVisible}
           />

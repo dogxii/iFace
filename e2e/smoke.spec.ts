@@ -269,3 +269,15 @@ test('phones rate from the bottom bar, which is the only prev / next', async ({ 
   await mastered.click()
   await expect(mastered).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('keyboard shortcuts work as soon as a question opens', async ({ page }) => {
+  await page.goto('/questions/js-001')
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 })
+  // The answer box must not grab focus, or Space would type into it.
+  await page.keyboard.press('Space')
+  await expect(page.getByRole('region', { name: '掌握程度' })).toBeVisible()
+  await page.keyboard.press('3')
+  await expect(
+    page.getByRole('region', { name: '掌握程度' }).getByRole('button', { name: /完全掌握/ }),
+  ).toHaveAttribute('aria-pressed', 'true')
+})

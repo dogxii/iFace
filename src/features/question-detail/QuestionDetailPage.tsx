@@ -104,6 +104,7 @@ export default function QuestionDetail() {
   const [noteRefreshKey, setNoteRefreshKey] = useState(0)
   const [learningChecks, setLearningChecks] = useState<LearningCheckQuestion[]>([])
   const markingRef = useRef(false)
+  const summaryRef = useRef<HTMLDivElement>(null)
 
   // ── Session & navigation ─────────────────────────────────────────────────
   // A session comes from ?ids=... or a larger ?session=... stored in sessionStorage.
@@ -287,6 +288,17 @@ export default function QuestionDetail() {
     ],
   )
 
+  // Rating the last question ends the round; bring the summary into view instead of leaving
+  // it below a long answer where it is easy to miss.
+  useEffect(() => {
+    if (!sessionFinished) return
+    const frame = requestAnimationFrame(() => {
+      const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      summaryRef.current?.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' })
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [sessionFinished])
+
   const handleRevealAnswer = useCallback(() => {
     setAnswerVisible(true)
     setJustMarked(null)
@@ -428,8 +440,10 @@ export default function QuestionDetail() {
     marking,
     onMark: handleSetStatus,
   }
-  // The answer card has its own AI button; hide the FAB then so it never covers the answer or rating.
-  const showMobileAiFab = aiFabVisible && sidePanel === null && !answerVisible
+  // The FAB floats over content, so it only shows when nothing else offers AI: not once the
+  // answer card (with its own AI button) is open, and not above the phone bottom bar.
+  const showMobileAiFab =
+    aiFabVisible && sidePanel === null && !answerVisible && !showMobileQuestionNav
   const modulePosition = isInSession
     ? `${sessionCurrent} / ${sessionIds.length}`
     : `${Math.max(1, currentModuleQuestions.findIndex((item) => item.id === question.id) + 1)} / ${currentModuleQuestions.length}`
@@ -558,7 +572,7 @@ export default function QuestionDetail() {
             <MyAnswerInput
               key={`answer-above-${questionId}`}
               {...answerInputProps}
-              autoFocus={answerNavigationMode !== 'check'}
+              collapseWhenEmpty={answerVisible}
             />
           )}
 
@@ -687,16 +701,18 @@ export default function QuestionDetail() {
           )}
 
           {showSessionSummary && (
-            <SessionCompletionCard
-              mastered={sessionStats.mastered}
-              review={sessionStats.review}
-              unlearned={sessionStats.unlearned}
-              total={sessionStats.total}
-              retryCount={sessionStats.retryIds.length}
-              onRetry={handleRetrySession}
-              onBackToPractice={() => navigate('/practice')}
-              onDashboard={() => navigate('/')}
-            />
+            <div ref={summaryRef}>
+              <SessionCompletionCard
+                mastered={sessionStats.mastered}
+                review={sessionStats.review}
+                unlearned={sessionStats.unlearned}
+                total={sessionStats.total}
+                retryCount={sessionStats.retryIds.length}
+                onRetry={handleRetrySession}
+                onBackToPractice={() => navigate('/practice')}
+                onDashboard={() => navigate('/')}
+              />
+            </div>
           )}
 
           {streak.currentStreak >= 2 && (
@@ -784,12 +800,7 @@ export default function QuestionDetail() {
             type="button"
             onClick={() => setSidePanel('ai')}
             aria-label="打开 AI 助手"
-            className={cn(
-              'fixed right-4 z-[36] grid size-12 place-items-center rounded-full border border-line bg-elevated text-accent shadow-raised transition-transform hover:scale-105 active:scale-95 lg:hidden',
-              showMobileQuestionNav
-                ? 'bottom-[calc(64px+env(safe-area-inset-bottom))]'
-                : 'bottom-[calc(16px+env(safe-area-inset-bottom))]',
-            )}
+            className="fixed right-4 bottom-[calc(16px+env(safe-area-inset-bottom))] z-[36] grid size-12 place-items-center rounded-full border border-line bg-elevated text-accent shadow-raised transition-transform hover:scale-105 active:scale-95 lg:hidden"
           >
             <Sparkles className="size-5" />
           </button>

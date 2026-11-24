@@ -185,11 +185,9 @@ export interface MyAnswerInputProps {
   onNoteSaved?: () => void
   /** When true the component is in "compact / inside answer card" mode */
   compact?: boolean
-  autoFocus?: boolean
+  /** Collapse to one line when this turns true and nothing was written (answer revealed). */
+  collapseWhenEmpty?: boolean
 }
-
-const COARSE_POINTER =
-  typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
 
 export function MyAnswerInput({
   questionId,
@@ -200,13 +198,14 @@ export function MyAnswerInput({
   isAiEnabled,
   onNoteSaved,
   compact = false,
-  autoFocus = true,
+  collapseWhenEmpty = false,
 }: MyAnswerInputProps) {
   const { sendMessage, streaming, streamingQuestionId } = useAIStore()
 
-  // Always start expanded — no collapsed gate
   const [collapsed, setCollapsed] = useState(false)
   const [text, setText] = useState(() => loadMyAnswerDraft(questionId))
+  const textRef = useRef(text)
+  textRef.current = text
   const [feedback, setFeedback] = useState<string | null>(null)
   const [streamingFeedback, setStreamingFeedback] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -239,19 +238,15 @@ export function MyAnswerInput({
     setNoteSaved(false)
   }, [questionId, speech.stop])
 
+  // Once the answer is revealed an empty box only pushes it down; fold it away.
+  useEffect(() => {
+    if (collapseWhenEmpty && !textRef.current.trim()) setCollapsed(true)
+  }, [collapseWhenEmpty])
+
   useEffect(() => {
     if (feedback || streamingFeedback) return
     saveMyAnswerDraft(questionId, text)
   }, [feedback, questionId, streamingFeedback, text])
-
-  // Auto-focus only in answer-first mode. In answer-alongside mode the input
-  // mounts after pressing Space, so focusing it would unexpectedly scroll down.
-  useEffect(() => {
-    // Not on touch screens: focusing would pop up the keyboard on every question.
-    if (autoFocus && !compact && !collapsed && !feedback && !COARSE_POINTER) {
-      setTimeout(() => textareaRef.current?.focus(), 80)
-    }
-  }, [autoFocus, collapsed, compact, feedback])
 
   const handleSubmit = useCallback(async () => {
     if (!text.trim() || isStreaming) return
@@ -290,6 +285,9 @@ export function MyAnswerInput({
       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         handleSubmit()
+      } else if (e.key === 'Escape') {
+        // Leave the box so Space / 1 / 2 / 3 / arrows work again.
+        e.currentTarget.blur()
       }
     },
     [handleSubmit],
@@ -356,7 +354,7 @@ export function MyAnswerInput({
           )}
         >
           <PenLine className="size-3.5" />
-          我的作答已收起，点击展开…
+          {text.trim() ? '我的作答已收起，点击展开…' : '写下自己的作答…'}
         </button>
       </div>
     )

@@ -22,6 +22,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     items: [
       { keys: [PALETTE_SHORTCUT], label: '命令面板' },
       { keys: ['['], label: '收起 / 展开侧边栏' },
+      { keys: ['Esc'], label: '离开输入框 / 关闭面板' },
     ],
   },
   {

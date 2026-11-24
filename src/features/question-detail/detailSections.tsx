@@ -135,7 +135,7 @@ export function QuestionIntro({
         >
           <Eye className="size-4" />
           查看参考答案
-          <Kbd>Space</Kbd>
+          <Kbd className="max-sm:hidden">Space</Kbd>
         </button>
       )}
     </header>
