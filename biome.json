@@ -6,7 +6,7 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!dist", "!docs/design"]
+    "includes": ["**", "!dist", "!docs/design", "!public/schema"]
   },
   "linter": {
     "enabled": true,

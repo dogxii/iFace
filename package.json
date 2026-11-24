@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "lint": "biome check --write .",
     "format": "biome format --write .",
+    "build:bank-schema": "bun scripts/buildBankSchema.ts",
     "check": "biome check .",
     "test": "vitest run",
     "test:watch": "vitest",

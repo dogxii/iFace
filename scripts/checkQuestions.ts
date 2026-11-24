@@ -10,6 +10,7 @@ import {
   type Difficulty,
   type Question,
 } from '../src/types'
+import { BANK_SCHEMA_FILE, bankSchemaIsCurrent } from './buildBankSchema.ts'
 
 interface QuestionWithFile extends Question {
   file: string
@@ -262,6 +263,13 @@ for (const module of defaultBuiltinModules) {
       message: `BUILTIN_MODULE_CATEGORY 缺少内置模块 ${module}`,
     })
   }
+}
+
+if (!bankSchemaIsCurrent()) {
+  failures.push({
+    file: BANK_SCHEMA_FILE,
+    message: '题库包 JSON Schema 已过期，运行 bun run build:bank-schema 后提交',
+  })
 }
 
 if (failures.length > 0) {
