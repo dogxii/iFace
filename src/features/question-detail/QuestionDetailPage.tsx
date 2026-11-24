@@ -2,9 +2,7 @@ import {
   BookOpenCheck,
   ChevronLeft,
   ChevronRight,
-  CircleHelp,
   Flame,
-  Lightbulb,
   NotebookPen,
   PenLine,
   SearchX,
@@ -62,12 +60,6 @@ import { useAnswerAnnotations } from './useAnswerAnnotations'
 import { useAnswerOverride } from './useAnswerOverride'
 import { useDetailHotkeys } from './useDetailHotkeys'
 
-const AI_PRESET_PROMPTS = {
-  question:
-    '请围绕这道题做一次面试题讲解：先拆解题目在问什么，再指出考察点，最后给出适合口述的答题思路。',
-  concept: '请讲解这道题背后的核心知识点：按知识框架、关键机制、常见误区和面试延展来组织。',
-} as const
-
 const STREAK_MILESTONES = [3, 5, 10, 20, 50]
 
 export default function QuestionDetail() {
@@ -103,11 +95,6 @@ export default function QuestionDetail() {
   const [marking, setMarking] = useState(false)
   const [justMarked, setJustMarked] = useState<StudyStatus | null>(null)
   const [lastPressedKey, setLastPressedKey] = useState<MasteryKey | null>(null)
-  const [aiInitialPrompt, setAiInitialPrompt] = useState<{
-    id: string
-    questionId: string
-    text: string
-  } | null>(null)
   const [answerPanelView, setAnswerPanelView] = useState<AnswerPanelView>('answer')
   const [moduleSheetOpen, setModuleSheetOpen] = useState(false)
   const [hasNote, setHasNote] = useState(false)
@@ -189,7 +176,6 @@ export default function QuestionDetail() {
     setAnswerVisible(shouldAutoRevealAnswer || checkSearchParam === '1')
     setJustMarked(null)
     setLastPressedKey(null)
-    setAiInitialPrompt(null)
     setAnswerPanelView('answer')
     setSessionFinished(false)
     window.scrollTo({ top: 0, behavior: 'auto' })
@@ -265,23 +251,6 @@ export default function QuestionDetail() {
   const reviewCount = (id ? getRecord(id) : undefined)?.reviewCount ?? 0
 
   // ── Actions ──────────────────────────────────────────────────────────────
-  const openAIWithPreset = useCallback(
-    (preset: keyof typeof AI_PRESET_PROMPTS) => {
-      if (!question) return
-      setAiInitialPrompt({
-        id: `${preset}-${question.id}-${Date.now()}`,
-        questionId: question.id,
-        text: AI_PRESET_PROMPTS[preset],
-      })
-      setSidePanel('ai')
-    },
-    [question, setSidePanel],
-  )
-
-  const handleAIInitialPromptConsumed = useCallback((promptId: string) => {
-    setAiInitialPrompt((current) => (current?.id === promptId ? null : current))
-  }, [])
-
   const handleSetStatus = useCallback(
     async (status: StudyStatus, key?: MasteryKey) => {
       if (!id || markingRef.current) return
@@ -358,7 +327,6 @@ export default function QuestionDetail() {
     setAnswerVisible(shouldAutoRevealAnswer)
     setJustMarked(null)
     setLastPressedKey(null)
-    setAiInitialPrompt(null)
     setSessionFinished(false)
     window.scrollTo({ top: 0, behavior: 'auto' })
     navigate(createPracticeSessionPath(sessionStats.retryIds[0], sessionStats.retryIds))
@@ -633,18 +601,6 @@ export default function QuestionDetail() {
                     <PenLine />
                   </AnswerAIButton>
                   <AnswerAIButton
-                    title={isAiEnabled ? '讲解题目' : '讲解题目（请先配置 AI）'}
-                    onClick={() => openAIWithPreset('question')}
-                  >
-                    <CircleHelp />
-                  </AnswerAIButton>
-                  <AnswerAIButton
-                    title={isAiEnabled ? '讲解知识点' : '讲解知识点（请先配置 AI）'}
-                    onClick={() => openAIWithPreset('concept')}
-                  >
-                    <Lightbulb />
-                  </AnswerAIButton>
-                  <AnswerAIButton
                     title={isAiEnabled ? '打开 AI 助手（A）' : 'AI 助手（请先配置，快捷键 A）'}
                     active={sidePanel === 'ai'}
                     onClick={() => setSidePanel('ai')}
@@ -795,8 +751,6 @@ export default function QuestionDetail() {
         answerVisible={answerVisible}
         noteRefreshKey={noteRefreshKey}
         onNoteContentChange={setHasNote}
-        aiInitialPrompt={aiInitialPrompt}
-        onAIInitialPromptConsumed={handleAIInitialPromptConsumed}
         onOpenAISettings={() => openSettings('ai')}
       />
 

@@ -272,18 +272,10 @@ export interface AIChatPanelProps {
   question: Question
   answerVisible: boolean
   onOpenSettings: () => void
-  initialPrompt?: { id: string; questionId: string; text: string } | null
-  onInitialPromptConsumed?: (id: string) => void
 }
 
 /** Per-question AI chat, rendered inside the detail page's AI drawer (which owns the header). */
-export function AIChatPanel({
-  question,
-  answerVisible,
-  onOpenSettings,
-  initialPrompt = null,
-  onInitialPromptConsumed,
-}: AIChatPanelProps) {
+export function AIChatPanel({ question, answerVisible, onOpenSettings }: AIChatPanelProps) {
   const {
     config,
     streaming,
@@ -313,7 +305,6 @@ export function AIChatPanel({
   const inputRef = useRef<HTMLTextAreaElement>(null)
   // Set when the user scrolls up during a reply, so auto-scroll stops fighting them.
   const userScrolledUp = useRef(false)
-  const lastInitialPromptIdRef = useRef<string | null>(null)
   const isStreamingRef = useRef(isStreaming)
   isStreamingRef.current = isStreaming
 
@@ -462,16 +453,6 @@ export function AIChatPanel({
   )
 
   const handleQuickAction = useCallback((prompt: string) => void handleSend(prompt), [handleSend])
-
-  useEffect(() => {
-    if (!initialPrompt || lastInitialPromptIdRef.current === initialPrompt.id) return
-    if (initialPrompt.questionId !== questionId) return
-    if (!isReady || isStreaming) return
-
-    lastInitialPromptIdRef.current = initialPrompt.id
-    void handleSend(initialPrompt.text)
-    onInitialPromptConsumed?.(initialPrompt.id)
-  }, [handleSend, initialPrompt, isReady, isStreaming, onInitialPromptConsumed, questionId])
 
   if (!isReady) {
     return (

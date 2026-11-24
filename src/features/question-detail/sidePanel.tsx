@@ -97,8 +97,6 @@ export interface DetailSidePanelProps {
   answerVisible: boolean
   noteRefreshKey: number
   onNoteContentChange: (hasContent: boolean) => void
-  aiInitialPrompt: { id: string; questionId: string; text: string } | null
-  onAIInitialPromptConsumed: (id: string) => void
   onOpenAISettings: () => void
 }
 
@@ -113,8 +111,6 @@ export function DetailSidePanel({
   answerVisible,
   noteRefreshKey,
   onNoteContentChange,
-  aiInitialPrompt,
-  onAIInitialPromptConsumed,
   onOpenAISettings,
 }: DetailSidePanelProps) {
   const setSidePanel = useUIState((s) => s.setSidePanel)
@@ -172,8 +168,6 @@ export function DetailSidePanel({
           <AIChatPanel
             question={question}
             answerVisible={answerVisible}
-            initialPrompt={aiInitialPrompt}
-            onInitialPromptConsumed={onAIInitialPromptConsumed}
             onOpenSettings={onOpenAISettings}
           />
         </div>
