@@ -96,7 +96,7 @@ function loadPreferences(): Preferences {
     theme: parseThemePreference(readString(STORAGE_KEYS.theme)),
     studyMode: readEnum(STORAGE_KEYS.studyMode, STUDY_MODES, 'answer-first'),
     answerNavigationMode: readEnum(STORAGE_KEYS.answerNavigationMode, ANSWER_NAV_MODES, 'answer'),
-    mobileQuestionNavEnabled: readBoolean(STORAGE_KEYS.mobileQuestionNav, false),
+    mobileQuestionNavEnabled: readBoolean(STORAGE_KEYS.mobileQuestionNav, true),
     aiFabVisible: readBoolean(STORAGE_KEYS.aiFabVisible, true),
     streak: rollStreakToToday(
       readJSON(STORAGE_KEYS.streak, parseStreak, emptyStreak(today)),

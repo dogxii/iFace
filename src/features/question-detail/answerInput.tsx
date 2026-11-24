@@ -188,6 +188,9 @@ export interface MyAnswerInputProps {
   autoFocus?: boolean
 }
 
+const COARSE_POINTER =
+  typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches
+
 export function MyAnswerInput({
   questionId,
   questionText,
@@ -244,7 +247,8 @@ export function MyAnswerInput({
   // Auto-focus only in answer-first mode. In answer-alongside mode the input
   // mounts after pressing Space, so focusing it would unexpectedly scroll down.
   useEffect(() => {
-    if (autoFocus && !compact && !collapsed && !feedback) {
+    // Not on touch screens: focusing would pop up the keyboard on every question.
+    if (autoFocus && !compact && !collapsed && !feedback && !COARSE_POINTER) {
       setTimeout(() => textareaRef.current?.focus(), 80)
     }
   }, [autoFocus, collapsed, compact, feedback])

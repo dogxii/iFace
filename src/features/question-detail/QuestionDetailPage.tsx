@@ -420,6 +420,8 @@ export default function QuestionDetail() {
   const showSessionSummary =
     isInSession && !nextId && answerVisible && (sessionFinished || currentStatus !== 'unlearned')
   const showMobileQuestionNav = mobileQuestionNavEnabled
+  // With the bottom bar on, it is the only prev / next on phones.
+  const hideOnPhone = showMobileQuestionNav ? 'max-sm:hidden' : undefined
   const mastery = {
     activeKey: activeMasteryKey(currentStatus, justMarked, lastPressedKey),
     reviewCount,
@@ -473,6 +475,7 @@ export default function QuestionDetail() {
                 size="icon"
                 aria-label="上一题"
                 disabled={!prevId}
+                className={hideOnPhone}
                 onClick={() => navigateTo(prevId)}
               >
                 <ChevronLeft />
@@ -484,6 +487,7 @@ export default function QuestionDetail() {
                 size="icon"
                 aria-label="下一题"
                 disabled={!nextId}
+                className={hideOnPhone}
                 onClick={() => navigateTo(nextId)}
               >
                 <ChevronRight />
@@ -559,7 +563,8 @@ export default function QuestionDetail() {
           )}
 
           {answerVisible && (
-            <div className="relative flex flex-col gap-5 rounded-2xl border border-line bg-canvas p-5 sm:p-6">
+            // On phones the answer drops its card chrome so text and code get the full width.
+            <div className="relative flex flex-col gap-5 sm:rounded-2xl sm:border sm:border-line sm:bg-canvas sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-3.5">
                 <div className="flex min-w-0 flex-auto flex-wrap items-center gap-2.5">
                   {hasLearningCheck ? (
@@ -710,7 +715,10 @@ export default function QuestionDetail() {
 
           <nav
             aria-label="题目导航"
-            className="flex items-center justify-between border-t border-line pt-4"
+            className={cn(
+              'flex items-center justify-between border-t border-line pt-4',
+              hideOnPhone,
+            )}
           >
             <UIButton variant="ghost" disabled={!prevId} onClick={goPrev}>
               <ChevronLeft />

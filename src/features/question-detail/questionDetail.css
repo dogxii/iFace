@@ -123,3 +123,16 @@
 .answer-annotation-content .markdown pre {
   font-size: 0.84rem;
 }
+
+/* Phones: the answer has no card, so code and tables run edge to edge and keep more columns. */
+@media (max-width: 639.98px) {
+  .answer-annotation-content .code-block-wrap,
+  .answer-annotation-content .markdown-table {
+    margin-inline: -1rem;
+  }
+  .answer-annotation-content .markdown pre,
+  .answer-annotation-content .markdown-table {
+    border-inline: 0;
+    border-radius: 0;
+  }
+}

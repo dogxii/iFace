@@ -8,7 +8,6 @@
 :root {
   --font-mono: "SF Mono", ui-monospace, "Cascadia Code", "Fira Code", Menlo, Courier, monospace;
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --navbar-h: 52px;
 }
 
 /*

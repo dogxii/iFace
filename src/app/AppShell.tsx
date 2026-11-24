@@ -398,8 +398,8 @@ function LazySettingsDialog() {
 
 /**
  * Application frame: sidebar on desktop, top bar + slide-out menu on mobile.
- * Pages render inside `children`. `--navbar-h` is the height of the sticky mobile top bar
- * (0 on desktop) so page headers and legacy sticky elements can sit just below it.
+ * Pages render inside `children`. Below `lg` only the top bar sticks; page headers scroll
+ * away with the content so reading keeps most of a phone screen.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   useGistAutoSync()
@@ -414,7 +414,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div
       style={{ '--sidebar-w': `${shownSidebarWidth}px` } as React.CSSProperties}
-      className="min-h-dvh bg-canvas text-fg [--navbar-h:52px] lg:[--navbar-h:0px]"
+      className="min-h-dvh bg-canvas text-fg"
     >
       <DesktopSidebar width={shownSidebarWidth} collapsed={sidebarCollapsed} />
 

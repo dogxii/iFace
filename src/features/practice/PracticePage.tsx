@@ -62,7 +62,7 @@ function PresetCard({
       type="button"
       onClick={onStart}
       disabled={count === 0}
-      className="group flex flex-col items-start rounded-xl border border-line bg-canvas p-4 text-left transition-colors outline-none hover:border-line-strong hover:bg-subtle/60 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+      className="group flex flex-col items-start rounded-xl border border-line bg-canvas p-3.5 text-left sm:p-4 transition-colors outline-none hover:border-line-strong hover:bg-subtle/60 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span
         className={cn(
@@ -73,7 +73,7 @@ function PresetCard({
         {icon}
       </span>
       <span className="mt-3 text-base font-medium text-fg">{title}</span>
-      <span className="mt-0.5 text-xs text-fg-muted">{description}</span>
+      <span className="mt-0.5 text-xs text-fg-muted max-sm:hidden">{description}</span>
       <span className="mt-3 text-xs text-fg-subtle tabular-nums">
         {count > 0 ? (
           <>
@@ -111,7 +111,7 @@ function ModuleToggle({
     >
       <ModuleMark module={info.module} />
       <span className="min-w-0 flex-1 truncate">{info.module}</span>
-      <span className="text-xs tabular-nums text-fg-subtle">
+      <span className="text-xs tabular-nums text-fg-subtle max-sm:hidden">
         {info.mastered}/{info.total}
       </span>
       <span
@@ -279,7 +279,7 @@ export default function PracticePage() {
           <>
             <PageTitle title="练习" description="选一个快速开始，或自由组合模块、难度和状态。" />
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
               <PresetCard
                 icon={<Clock />}
                 hue="rose"
@@ -362,7 +362,7 @@ export default function PracticePage() {
                             {allSelected ? '取消全选' : '全选'}
                           </button>
                         </div>
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
                           {group.modules.map((info) => (
                             <ModuleToggle
                               key={info.module}

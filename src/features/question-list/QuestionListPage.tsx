@@ -268,7 +268,7 @@ function QuestionRow({
       <div className="min-w-0">
         <Link
           to={`/questions/${question.id}${noteHit ? '?note=1' : ''}`}
-          className="block truncate text-base font-medium text-fg after:absolute after:inset-0"
+          className="line-clamp-2 text-base font-medium text-fg after:absolute after:inset-0 md:block md:truncate"
         >
           <Highlight text={question.question} keyword={keyword} />
         </Link>
@@ -603,7 +603,7 @@ export default function QuestionListPage() {
             }
           />
 
-          <div className="mt-5 flex flex-wrap items-center gap-2 bg-canvas md:sticky md:top-[calc(var(--navbar-h,0px)+52px)] md:z-20 md:-mx-2 md:px-2 md:py-2.5">
+          <div className="mt-5 flex flex-wrap items-center gap-2 bg-canvas md:sticky md:top-13 md:z-20 md:-mx-2 md:px-2 md:py-2.5">
             <Input
               ref={searchRef}
               className="w-full sm:w-80"

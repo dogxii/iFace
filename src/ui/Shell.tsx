@@ -96,7 +96,7 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        'sticky top-[var(--navbar-h,0px)] z-30 flex h-13 shrink-0 items-center gap-2 border-b border-line bg-canvas/85 px-6 backdrop-blur-md',
+        'z-30 flex h-13 shrink-0 items-center gap-2 border-b border-line bg-canvas/85 px-4 backdrop-blur-md sm:px-6 lg:sticky lg:top-0',
         className,
       )}
     >

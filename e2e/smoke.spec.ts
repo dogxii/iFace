@@ -255,3 +255,17 @@ test('going back to the question list restores the scroll position', async ({ pa
   await page.goBack()
   await expect.poll(() => page.evaluate<number>('window.scrollY')).toBeGreaterThan(before - 10)
 })
+
+test('phones rate from the bottom bar, which is the only prev / next', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/questions')
+  await page.locator('a[href^="/questions/"]').first().click()
+  const bar = page.getByRole('navigation', { name: '题目切换' })
+  await expect(bar).toBeVisible({ timeout: 20_000 })
+  await expect(page.getByRole('navigation', { name: '题目导航' })).toBeHidden()
+
+  await bar.getByRole('button', { name: '查看答案' }).click()
+  const mastered = bar.getByRole('button', { name: '掌握', exact: true })
+  await mastered.click()
+  await expect(mastered).toHaveAttribute('aria-pressed', 'true')
+})
