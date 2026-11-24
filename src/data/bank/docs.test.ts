@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { parseChecksMarkdown } from './checksMarkdown'
 import { parseMarkdownQuestions } from './markdown'
 import { bankIsValid, resolveBank } from './validate'
 
@@ -14,7 +15,7 @@ function fencedBlocks(md: string, lang: string): string[] {
 
 describe('docs/bank-format.md', () => {
   const doc = read('docs/bank-format.md')
-  const markdownExample = fencedBlocks(doc, 'markdown')[0]
+  const [markdownExample, checksExample] = fencedBlocks(doc, 'markdown')
   const jsonExamples = fencedBlocks(doc, 'json')
 
   it('has a Markdown question file example that parses', () => {
@@ -28,9 +29,12 @@ describe('docs/bank-format.md', () => {
     const manifests = jsonExamples.filter((text) => text.includes('"format"'))
     expect(manifests.length).toBe(2)
     for (const text of manifests) {
-      // Give every referenced file its own ids so modules do not collide.
-      const readFile = async (path: string) =>
-        markdownExample.replaceAll('basics-', `${path.replace(/\W/g, '')}-`)
+      // Every module gets the example file with its own ids, so modules do not collide.
+      const readFile = async (path: string) => {
+        const name = path.split('/').pop()?.replace('.md', '')
+        const example = path.startsWith('checks/') ? checksExample : markdownExample
+        return example.replaceAll('basics-', `${name}-`)
+      }
       const result = await resolveBank(text, readFile)
       expect(result.issues).toEqual([])
       expect(bankIsValid(result)).toBe(true)
@@ -38,7 +42,7 @@ describe('docs/bank-format.md', () => {
   })
 
   it('has a learning check example that validates', async () => {
-    const question = JSON.parse(jsonExamples.find((text) => text.includes('"checks"')) ?? '')
+    const question = JSON.parse(jsonExamples.find((text) => text.includes('"answerIds"')) ?? '')
     const manifest = {
       format: 'iface-bank@1',
       name: 'x',
@@ -48,6 +52,12 @@ describe('docs/bank-format.md', () => {
     }
     const result = await resolveBank(JSON.stringify(manifest))
     expect(result.issues).toEqual([])
+  })
+
+  it('has a checks file example that parses', () => {
+    const { byQuestion, issues } = parseChecksMarkdown(checksExample)
+    expect(issues).toEqual([])
+    expect(byQuestion.get('basics-001')?.checks).toHaveLength(2)
   })
 })
 

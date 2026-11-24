@@ -41,6 +41,8 @@ iface-bank.json
 questions/
   basics.md
   concurrency.md
+checks/              # 可选：学习检验
+  basics.md
 README.md
 AGENTS.md            # 可选：给 AI Agent 的写作约定
 ```
@@ -56,7 +58,7 @@ AGENTS.md            # 可选：给 AI Agent 的写作约定
   "authors": ["your-github-name"],
   "tags": ["go", "backend"],
   "modules": [
-    { "id": "basics", "name": "Go基础", "icon": "terminal", "color": "cyan", "questions": "questions/basics.md" },
+    { "id": "basics", "name": "Go基础", "icon": "terminal", "color": "cyan", "questions": "questions/basics.md", "checks": "checks/basics.md" },
     { "id": "concurrency", "name": "并发编程", "icon": "split", "questions": "questions/concurrency.md" }
   ]
 }
@@ -88,6 +90,7 @@ AGENTS.md            # 可选：给 AI Agent 的写作约定
 | `icon` | 否 | 下列图标之一，不认识的会被忽略：`atom` `bot` `braces` `brain` `chart-line` `coffee` `cog` `cpu` `database` `database-zap` `file-code` `folder-search` `gauge` `globe` `leaf` `library` `memory-stick` `message-square-text` `network` `palette` `pen-line` `server` `shield` `smartphone` `sparkles` `split` `terminal` `triangle` `workflow` `wrench` |
 | `color` | 否 | `blue` `violet` `pink` `rose` `orange` `amber` `green` `teal` `cyan` 之一，不填按名称自动分配 |
 | `questions` | 是 | 题目数组；或包内相对路径，指向 `.json`（题目数组）或 `.md`（见下文） |
+| `checks` | 否 | 本模块题目的学习检验，包内 `.md` 文件的相对路径（见「学习检验」） |
 
 ### 题目
 
@@ -150,7 +153,44 @@ fmt.Println(len("你好"))
 
 ## 学习检验
 
-题目可以附带选择题，用来检验是否真的理解。目前只能写在 JSON 里（清单内联或 `.json` 题目文件）：
+题目可以附带选择题，用来检验是否真的理解。推荐给模块写一个 Markdown 文件，在模块上用 `checks` 引用：
+
+```json
+{ "id": "basics", "name": "Go基础", "questions": "questions/basics.md", "checks": "checks/basics.md" }
+```
+
+````markdown
+# Go 基础 · 学习检验（第一个 ## 之前的内容会被忽略）
+
+## basics-001
+
+### Q1 single | 数组类型
+
+`[3]int` 和 `[4]int` 是同一种类型吗？
+
+- [ ] A. 是，长度不是类型的一部分
+- [x] B. 不是，长度是数组类型的一部分
+
+**解释**：数组长度是类型的一部分，所以两者不能互相赋值。
+
+### Q2 multiple | 切片
+
+关于 slice，哪些说法正确？
+
+- [x] A. 底层引用一个数组
+- [x] B. `append` 可能触发扩容
+- [ ] C. `len` 永远等于 `cap`
+
+**解释**：扩容时会分配新的底层数组；`len` 小于等于 `cap`。
+````
+
+- `## <题目 id>` 指定下面的检验属于哪道题，题目必须在同一个模块里。
+- `### Q<序号> single|multiple | <考察点>`：`single` 单选（恰好一个正确项），`multiple` 多选。考察点可省略。
+- 选项写成 `- [x] A. 文本`（正确）或 `- [ ] B. 文本`，字母 A–H，2–8 个。
+- `**解释**：` 之后到下一道检验之前都是解释。
+- 检验 id 自动生成为 `<题目 id>-check-<两位序号>`，所以同一道题里序号不能重复。
+
+也可以直接写在 JSON 题目里（同一道题只能选一种写法）：
 
 ```json
 {
@@ -175,9 +215,7 @@ fmt.Println(len("你好"))
 }
 ```
 
-- `kind`：`single`（单选，恰好一个答案）或 `multiple`（多选）。
-- `options`：2–8 个，选项 `id` 为 1–8 个小写字母或数字，不能重复。
-- `answerIds` 里的每一项都必须是某个选项的 `id`。
+- 每道题最多 10 道检验；选项 `id` 为 1–8 个小写字母或数字，不能重复；`answerIds` 里的每一项都必须是某个选项的 `id`。
 
 ## 限制
 

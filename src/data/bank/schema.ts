@@ -89,6 +89,8 @@ const SEMVER_PATTERN =
 /** Relative path to a question file inside the package: no leading slash, no `..`. */
 export const BANK_FILE_PATH_PATTERN = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[\w.\-/]+\.(?:json|md)$/
 
+const BANK_CHECKS_PATH_PATTERN = /^(?!\/)(?!.*(?:^|\/)\.\.(?:\/|$))[\w.\-/]+\.md$/
+
 const trimmed = (max: number) => z.string().trim().min(1).max(max)
 
 const localId = z
@@ -156,6 +158,11 @@ export const BankModuleSchema = z.object({
     z.string().regex(BANK_FILE_PATH_PATTERN, '必须是包内的相对路径，以 .json 或 .md 结尾'),
     BankQuestionListSchema,
   ]),
+  /** Optional learning checks for this module's questions, as a `.md` file in the package. */
+  checks: z
+    .string()
+    .regex(BANK_CHECKS_PATH_PATTERN, '必须是包内的相对路径，以 .md 结尾')
+    .optional(),
 })
 
 export const BankManifestSchema = z.object({

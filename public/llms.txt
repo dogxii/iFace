@@ -9,7 +9,8 @@
 1. 在仓库根目录创建 `iface-bank.json`，第一行字段写 `"$schema": "https://face.dogxi.me/schema/iface-bank-1.json"`，`"format": "iface-bank@1"`。
 2. 必填：`name`（≤40 字）、`version`（semver，如 `1.0.0`）、`license`（SPDX，如 `CC-BY-4.0`；不确定就问用户）、`modules`（1–50 个）。
 3. 每个模块：`id`、`name`（≤20 字），`questions` 写成题目数组，或指向 `questions/<模块>.md` 的相对路径。题目多时优先用 Markdown 文件。
-4. 每道题：`id`、`difficulty`（1 初级 / 2 中级 / 3 高级）、`question`、`answer`（Markdown），可选 `tags`、`source`、`checks`。
+4. 每道题：`id`、`difficulty`（1 初级 / 2 中级 / 3 高级）、`question`、`answer`（Markdown），可选 `tags`、`source`。
+   可选的学习检验（选择题）写在 `checks/<模块>.md`，模块上加 `"checks": "checks/<模块>.md"`，格式见完整规范。
 5. 写完对照 JSON Schema 校验，修掉所有错误；告诉用户给仓库加 topic `iface-bank`。
 
 ## 必须遵守

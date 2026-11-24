@@ -1,3 +1,4 @@
+export * from './checksMarkdown'
 export * from './ids'
 export * from './markdown'
 export * from './schema'
