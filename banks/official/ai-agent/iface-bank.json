@@ -1,0 +1,79 @@
+{
+  "$schema": "https://face.dogxi.me/schema/iface-bank-1.json",
+  "format": "iface-bank@1",
+  "name": "AI Agent",
+  "description": "LLM 基础、Prompt 工程、Agent 架构、RAG、工具调用、评测与 AI 工程化",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": [
+    "Dogxi"
+  ],
+  "language": "zh-CN",
+  "homepage": "https://github.com/dogxii/iFace",
+  "modules": [
+    {
+      "id": "llm",
+      "name": "LLM基础",
+      "icon": "brain",
+      "color": "violet",
+      "questions": "questions/llm.md",
+      "checks": "checks/llm.md"
+    },
+    {
+      "id": "prompt",
+      "name": "Prompt工程",
+      "icon": "message-square-text",
+      "color": "pink",
+      "questions": "questions/prompt.md",
+      "checks": "checks/prompt.md"
+    },
+    {
+      "id": "agent",
+      "name": "Agent架构",
+      "icon": "bot",
+      "color": "blue",
+      "questions": "questions/agent.md",
+      "checks": "checks/agent.md"
+    },
+    {
+      "id": "rag",
+      "name": "RAG与知识库",
+      "icon": "library",
+      "color": "teal",
+      "questions": "questions/rag.md",
+      "checks": "checks/rag.md"
+    },
+    {
+      "id": "tools",
+      "name": "工具调用与工作流",
+      "icon": "workflow",
+      "color": "orange",
+      "questions": "questions/tools.md",
+      "checks": "checks/tools.md"
+    },
+    {
+      "id": "evaluation",
+      "name": "评测与线上优化",
+      "icon": "chart-line",
+      "color": "green",
+      "questions": "questions/evaluation.md",
+      "checks": "checks/evaluation.md"
+    },
+    {
+      "id": "engineering",
+      "name": "AI工程化",
+      "icon": "cog",
+      "color": "cyan",
+      "questions": "questions/engineering.md",
+      "checks": "checks/engineering.md"
+    },
+    {
+      "id": "application",
+      "name": "AI应用实践",
+      "icon": "sparkles",
+      "color": "amber",
+      "questions": "questions/application.md",
+      "checks": "checks/application.md"
+    }
+  ]
+}

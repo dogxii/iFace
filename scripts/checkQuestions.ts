@@ -11,6 +11,7 @@ import {
   type Question,
 } from '../src/types'
 import { BANK_SCHEMA_FILE, bankSchemaIsCurrent } from './buildBankSchema.ts'
+import { buildOfficialBanks } from './officialBanks.ts'
 
 interface QuestionWithFile extends Question {
   file: string
@@ -262,6 +263,22 @@ for (const module of defaultBuiltinModules) {
       file: 'src/types/index.ts',
       message: `BUILTIN_MODULE_CATEGORY 缺少内置模块 ${module}`,
     })
+  }
+}
+
+const officialBuild = await buildOfficialBanks(repoRoot)
+for (const failure of officialBuild.failures) {
+  failures.push({ file: 'banks/official', message: failure })
+}
+for (const [file, content] of officialBuild.outputs) {
+  let current = ''
+  try {
+    current = readFileSync(join(repoRoot, file), 'utf8')
+  } catch {
+    // Reported below.
+  }
+  if (current !== content) {
+    failures.push({ file, message: '官方题库生成文件已过期，运行 bun run build:banks 后提交' })
   }
 }
 

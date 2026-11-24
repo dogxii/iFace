@@ -1,0 +1,64 @@
+{
+  "$schema": "https://face.dogxi.me/schema/iface-bank-1.json",
+  "format": "iface-bank@1",
+  "name": "Java",
+  "description": "Java 基础、并发、JVM、Spring、MySQL、Redis 与计算机网络",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": [
+    "Dogxi"
+  ],
+  "language": "zh-CN",
+  "homepage": "https://github.com/dogxii/iFace",
+  "modules": [
+    {
+      "id": "basics",
+      "name": "Java基础",
+      "icon": "coffee",
+      "color": "orange",
+      "questions": "questions/basics.md"
+    },
+    {
+      "id": "concurrency",
+      "name": "Java并发",
+      "icon": "split",
+      "color": "violet",
+      "questions": "questions/concurrency.md"
+    },
+    {
+      "id": "jvm",
+      "name": "JVM",
+      "icon": "cpu",
+      "color": "amber",
+      "questions": "questions/jvm.md"
+    },
+    {
+      "id": "spring",
+      "name": "Spring框架",
+      "icon": "leaf",
+      "color": "green",
+      "questions": "questions/spring.md"
+    },
+    {
+      "id": "network",
+      "name": "计算机网络",
+      "icon": "network",
+      "color": "teal",
+      "questions": "questions/network.md"
+    },
+    {
+      "id": "mysql",
+      "name": "MySQL",
+      "icon": "database",
+      "color": "blue",
+      "questions": "questions/mysql.md"
+    },
+    {
+      "id": "redis",
+      "name": "Redis",
+      "icon": "database-zap",
+      "color": "rose",
+      "questions": "questions/redis.md"
+    }
+  ]
+}

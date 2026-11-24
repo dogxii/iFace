@@ -1,0 +1,40 @@
+{
+  "banks": [
+    {
+      "id": "iface.frontend",
+      "name": "前端",
+      "description": "JavaScript、React、Vue、CSS、TypeScript、网络、性能优化、手写题与项目深挖",
+      "version": "1.0.0",
+      "hash": "6f9f155265cbf454",
+      "file": "/banks/iface.frontend.json",
+      "questionCount": 515
+    },
+    {
+      "id": "iface.golang",
+      "name": "Golang",
+      "description": "Go 语言基础、并发编程、内存与 GC、工程化与 Web 开发",
+      "version": "1.0.0",
+      "hash": "38452d8cac4cc218",
+      "file": "/banks/iface.golang.json",
+      "questionCount": 175
+    },
+    {
+      "id": "iface.ai-agent",
+      "name": "AI Agent",
+      "description": "LLM 基础、Prompt 工程、Agent 架构、RAG、工具调用、评测与 AI 工程化",
+      "version": "1.0.0",
+      "hash": "e3afaf22a2ab616f",
+      "file": "/banks/iface.ai-agent.json",
+      "questionCount": 280
+    },
+    {
+      "id": "iface.java",
+      "name": "Java",
+      "description": "Java 基础、并发、JVM、Spring、MySQL、Redis 与计算机网络",
+      "version": "1.0.0",
+      "hash": "698cc7cb80fd8a52",
+      "file": "/banks/iface.java.json",
+      "questionCount": 252
+    }
+  ]
+}

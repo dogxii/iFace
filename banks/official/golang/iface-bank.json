@@ -1,0 +1,50 @@
+{
+  "$schema": "https://face.dogxi.me/schema/iface-bank-1.json",
+  "format": "iface-bank@1",
+  "name": "Golang",
+  "description": "Go 语言基础、并发编程、内存与 GC、工程化与 Web 开发",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": [
+    "Dogxi"
+  ],
+  "language": "zh-CN",
+  "homepage": "https://github.com/dogxii/iFace",
+  "modules": [
+    {
+      "id": "basics",
+      "name": "Go基础",
+      "icon": "terminal",
+      "color": "cyan",
+      "questions": "questions/basics.md"
+    },
+    {
+      "id": "concurrency",
+      "name": "并发编程",
+      "icon": "split",
+      "color": "violet",
+      "questions": "questions/concurrency.md"
+    },
+    {
+      "id": "memory",
+      "name": "内存与GC",
+      "icon": "memory-stick",
+      "color": "green",
+      "questions": "questions/memory.md"
+    },
+    {
+      "id": "engineering",
+      "name": "工程化",
+      "icon": "wrench",
+      "color": "orange",
+      "questions": "questions/engineering.md"
+    },
+    {
+      "id": "web",
+      "name": "Web开发",
+      "icon": "server",
+      "color": "blue",
+      "questions": "questions/web.md"
+    }
+  ]
+}

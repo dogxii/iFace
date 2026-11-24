@@ -1,0 +1,87 @@
+{
+  "$schema": "https://face.dogxi.me/schema/iface-bank-1.json",
+  "format": "iface-bank@1",
+  "name": "前端",
+  "description": "JavaScript、React、Vue、CSS、TypeScript、网络、性能优化、手写题与项目深挖",
+  "version": "1.0.0",
+  "license": "MIT",
+  "authors": [
+    "Dogxi"
+  ],
+  "language": "zh-CN",
+  "homepage": "https://github.com/dogxii/iFace",
+  "modules": [
+    {
+      "id": "js",
+      "name": "JS基础",
+      "icon": "braces",
+      "color": "amber",
+      "questions": "questions/js.md",
+      "checks": "checks/js.md"
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "icon": "atom",
+      "color": "cyan",
+      "questions": "questions/react.md",
+      "checks": "checks/react.md"
+    },
+    {
+      "id": "vue",
+      "name": "Vue",
+      "icon": "triangle",
+      "color": "green",
+      "questions": "questions/vue.md",
+      "checks": "checks/vue.md"
+    },
+    {
+      "id": "css",
+      "name": "CSS",
+      "icon": "palette",
+      "color": "pink",
+      "questions": "questions/css.md",
+      "checks": "checks/css.md"
+    },
+    {
+      "id": "typescript",
+      "name": "TypeScript",
+      "icon": "file-code",
+      "color": "blue",
+      "questions": "questions/typescript.md",
+      "checks": "checks/typescript.md"
+    },
+    {
+      "id": "network",
+      "name": "网络",
+      "icon": "globe",
+      "color": "teal",
+      "questions": "questions/network.md",
+      "checks": "checks/network.md"
+    },
+    {
+      "id": "performance",
+      "name": "性能优化",
+      "icon": "gauge",
+      "color": "orange",
+      "questions": "questions/performance.md",
+      "checks": "checks/performance.md"
+    },
+    {
+      "id": "algorithm",
+      "name": "手写题",
+      "icon": "pen-line",
+      "color": "violet",
+      "questions": "questions/algorithm.md",
+      "checks": "checks/algorithm.md"
+    },
+    {
+      "id": "project",
+      "name": "项目深挖",
+      "icon": "folder-search",
+      "color": "rose",
+      "questions": "questions/project.md",
+      "checks": "checks/project.md"
+    }
+  ]
+}
