@@ -1,6 +1,6 @@
 # 题库开放计划（iFace 2.0）
 
-> 状态：方案已定，按阶段实施。分支 `feat/bank-market`。P0（格式规范、校验器、JSON Schema、`llms.txt`）已完成。
+> 状态：方案已定，按阶段实施。分支 `feat/bank-market`。P0（格式规范、校验器、JSON Schema、`llms.txt`）和 P1（数据层、官方题库、1.5 数据迁移、本地题库、备份 v9 / Gist v9）已完成。
 > 兼容代码统一在 2027-06-30 后删除（见「兼容与迁移」）。
 
 ## 目标
@@ -200,7 +200,7 @@ interface Question {
 
 ## 官方题库
 
-- 内容搬到 `banks/official/<name>/`（源文件，Markdown 优先，方便审阅），构建脚本生成 `public/banks/iface.<name>.json`（单文件，合并题目和学习检验），随 PWA 预缓存。
+- 内容搬到 `banks/official/<name>/`（源文件，Markdown 优先，方便审阅），构建脚本生成 `public/banks/iface.<name>.json`（单文件，合并题目和学习检验）和索引 `public/banks/official.json`。题库文件不进 PWA 预缓存，走 NetworkFirst 运行时缓存（`bank-data`）；启动时按索引里的 hash 安装或更新到 IndexedDB，离线照常可用。
 - 官方题库就是格式的参考实现，`scripts/checkQuestions.ts` 改成用同一套校验器校验它们。
 - 应用版本更新带来新的官方题库版本时，自动按「更新」流程处理（不弹确认，只有在会删除带学习数据的题目时才提示）。
 
@@ -212,8 +212,8 @@ interface Question {
 
 ## 备份与同步
 
-- 备份 v9：记录已安装题库列表（来源 + 版本 + SHA + 启用状态），GitHub / 官方题库只存引用不存内容，本地题库存完整内容。恢复时自动重新安装引用的题库（装不上的列出来，学习数据照样保留，题库装回来后自动对上）。
-- Gist 同步：写到新文件 `iface-sync-v4.json`，内容同上。旧文件 `iface-sync.json` 不再写入，只在首次同步时读一次做迁移，这样还没升级的设备不会读到看不懂的新格式，旧设备之间照常互相同步。
+- 备份 v9（已实现）：本地题库存完整内容（`banks`，题库包快照），官方 / GitHub 题库只存启用状态和排序（`bankStates`）。学习数据都按带题库前缀的 ID 保存。恢复本地题库前用同一套校验器检查，不合格的列出来，学习数据照样恢复。P2 起 `bankStates` 再带上来源和版本，恢复时自动重装 GitHub 题库。
+- Gist 同步 v9（已实现）：仍写 `iface-backup.json`，内容是学习数据加本地题库快照。1.x 设备读到 v9 会按「未来版本」拒绝并提示升级，不会把数据写坏；2.0 读到 v1–v8 时自动升级（自定义题变成本地题库，ID 换成新格式）。没有另开新文件，避免两份云端数据分叉。
 
 ## Agent 友好
 
@@ -269,11 +269,11 @@ interface Question {
 | 阶段 | 内容 | 验证 |
 |---|---|---|
 | P0 规范 | 题库包 zod schema、校验器（JSON + Markdown 题目文件）、JSON Schema 生成、`docs/bank-format.md`、`llms.txt` | 单元测试覆盖所有字段和限制 |
-| P1 数据层 | IndexedDB v9、`banks` store、新 ID、官方题库改造和构建脚本、`compat/legacy15` 迁移、删除分类体系，全站改用题库 / moduleKey | 迁移单元测试；e2e 预置 1.5 数据升级 |
-| P2 安装 | 从 GitHub / URL / 文件安装、更新差异、停用、卸载、本地题库、导出、备份 v9、Gist v4 | 单元测试 + e2e（用 Playwright 拦截网络模拟仓库） |
+| P1 数据层 ✅ | IndexedDB v9、`banks` store、新 ID、官方题库改造和构建脚本、`compat/legacy15` 迁移、删除分类体系，全站改用题库 / moduleKey；本地题库导入 / 导出 / 卸载、备份 v9、Gist v9、旧链接跳转、`check:compat` | 迁移单元测试；e2e 预置 1.5 数据升级 |
+| P2 安装 | 从 GitHub / URL 安装、更新差异、备份里的 GitHub 题库自动重装 | 单元测试 + e2e（用 Playwright 拦截网络模拟仓库） |
 | P3 市场 | `api/market.js`、`curation.json`、市场页、详情页、分享链接、外链图片拦截 | 函数单元测试；e2e 模拟接口 |
 | P4 Agent 工具 | `templates/bank/`、`iface-bank` CLI、发布页 Agent 提示词、AI 出题「交给 Agent」 | CLI 测试；用模板生成一个示例题库跑通校验 |
-| P5 收尾 | 文档、发布说明、截图、smoke 清单、兼容到期检查 | `check:all` |
+| P5 收尾 | 文档、发布说明、截图、smoke 清单 | `check:all` |
 
 ## 需要维护者在仓库外操作的事
 
