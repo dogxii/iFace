@@ -1,5 +1,52 @@
 import { expect, type Page, test } from '@playwright/test'
 
+/**
+ * Writes a minimal 1.5 database (IndexedDB v8): one imported question, a study record on an
+ * official question and a note on the imported one. A string so the e2e tsconfig needs no DOM.
+ */
+const SEED_15_DATABASE = `new Promise((resolve, reject) => {
+  const request = indexedDB.open('iface_db', 8)
+  request.onupgradeneeded = () => {
+    const db = request.result
+    db.createObjectStore('questions', { keyPath: 'id' })
+    db.createObjectStore('study_records', { keyPath: 'questionId' })
+    db.createObjectStore('question_notes', { keyPath: 'questionId' })
+    db.createObjectStore('meta', { keyPath: 'key' })
+  }
+  request.onerror = () => reject(request.error)
+  request.onsuccess = () => {
+    const db = request.result
+    const tx = db.transaction(['questions', 'study_records', 'question_notes'], 'readwrite')
+    const now = Date.now()
+    tx.objectStore('questions').put({
+      id: 'custom_e2e_q1',
+      module: 'E2E 模块',
+      difficulty: 2,
+      question: 'e2e 迁移来的自定义题',
+      answer: '迁移后应在本地题库里。',
+      tags: [],
+      source: 'e2e',
+    })
+    tx.objectStore('study_records').put({
+      questionId: 'js-001',
+      status: 'mastered',
+      lastUpdated: now,
+      reviewCount: 1,
+    })
+    tx.objectStore('question_notes').put({
+      questionId: 'custom_e2e_q1',
+      content: 'e2e 迁移笔记',
+      createdAt: now,
+      updatedAt: now,
+    })
+    tx.oncomplete = () => {
+      db.close()
+      resolve()
+    }
+    tx.onerror = () => reject(tx.error)
+  }
+})`
+
 async function skipOnboarding(page: Page) {
   await page.addInitScript(() => localStorage.setItem('iface_onboarding_done_v1', '1'))
 }
@@ -83,7 +130,7 @@ test('a question note is saved and survives a reload', async ({ page }) => {
   ).toBeVisible({ timeout: 10_000 })
 })
 
-test('settings exports a JSON backup of the question bank', async ({ page }) => {
+test('settings exports a JSON backup', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
   await page.getByRole('button', { name: '设置' }).first().click()
@@ -100,8 +147,10 @@ test('settings exports a JSON backup of the question bank', async ({ page }) => 
   const path = await download.path()
   const { readFile } = await import('node:fs/promises')
   const backup = JSON.parse(await readFile(path, 'utf8'))
-  expect(Array.isArray(backup.questions)).toBe(true)
-  expect(backup.questions.length).toBeGreaterThan(0)
+  expect(backup.formatVersion).toBe(9)
+  // Official banks are not copied, only their enabled / order state.
+  expect(Array.isArray(backup.banks)).toBe(true)
+  expect(backup.bankStates.map((state: { id: string }) => state.id)).toContain('iface.frontend')
   expect(JSON.stringify(backup)).not.toContain('apiKey')
 })
 
@@ -149,22 +198,46 @@ test('a weak point can be marked mastered and the change undone', async ({ page 
   })
 })
 
-test('pasted Markdown questions are imported into the bank', async ({ page }) => {
+test('pasted Markdown questions are imported into a new local bank', async ({ page }) => {
   await page.goto('/import')
   await page.getByRole('radio', { name: /粘贴内容/ }).click()
-  await page.getByLabel('来源名称').fill('e2e整理')
+  await page.getByLabel('名称', { exact: true }).fill('e2e整理')
   await page
     .getByLabel('题目内容')
     .fill('## Q: e2e 独有的闭包题\n**模块**: js\n**难度**: 中级\n\n闭包是函数和词法环境的组合。')
   await expect(page.getByText('识别到 1 道题')).toBeVisible()
   await page.getByRole('button', { name: '导入', exact: true }).click()
-  await expect(page.getByText('成功导入 1 道题')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText('导入 1 道新题')).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByRole('button', { name: '移除 e2e整理' })).toBeVisible()
 
   await page.goto('/')
   await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
   await page.keyboard.press('Control+k')
   await page.getByRole('combobox', { name: '搜索题目或命令' }).fill('e2e 独有')
-  await expect(page.getByRole('option', { name: /e2e 独有的闭包题/ })).toBeVisible()
+  await page.getByRole('option', { name: /e2e 独有的闭包题/ }).click()
+  await expect(page).toHaveURL(/\/questions\/local\.[^/]+$/)
+})
+
+test('1.5 data is upgraded to banks on first start', async ({ page }) => {
+  // Any same-origin page that does not run the app, to write the 1.5 database first.
+  await page.goto('/banks/official.json')
+  await page.evaluate(SEED_15_DATABASE)
+
+  await page.goto('/')
+  await expect(page.getByText(/已掌握 1 道/)).toBeVisible({ timeout: 20_000 })
+
+  // Old links still open the same question.
+  await page.goto('/questions/js-001')
+  await expect(page).toHaveURL(/\/questions\/iface\.frontend:js-001$/, { timeout: 20_000 })
+
+  await page.keyboard.press('Control+k')
+  await page.getByRole('combobox', { name: '搜索题目或命令' }).fill('e2e 迁移来的')
+  await page.getByRole('option', { name: /e2e 迁移来的自定义题/ }).click()
+  await expect(page).toHaveURL(/\/questions\/local\.[^/]+$/)
+  await page.getByRole('button', { name: '笔记', exact: true }).click()
+  await expect(
+    page.getByRole('complementary', { name: '笔记与 AI 助手' }).getByText('e2e 迁移笔记'),
+  ).toBeVisible({ timeout: 10_000 })
 })
 
 test('first visit shows the onboarding guide once', async ({ page }) => {
@@ -182,7 +255,7 @@ test('first visit shows the onboarding guide once', async ({ page }) => {
   const golang = page.getByRole('switch', { name: /Golang/ })
   await golang.click()
   await expect(golang).not.toBeChecked()
-  await page.getByRole('button', { name: '全部显示' }).click()
+  await page.getByRole('button', { name: '全部启用' }).click()
   await expect(golang).toBeChecked()
   await page.getByRole('button', { name: '下一步' }).click()
   await page.getByRole('button', { name: '完成引导' }).click()
@@ -218,14 +291,14 @@ test('the sidebar collapses to an icon rail and remembers it', async ({ page }) 
 
 test('the module question list docks beside the page and stays open', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
-  await page.goto('/questions/code-001')
+  await page.goto('/questions/iface.frontend:code-001')
   await page.getByRole('button', { name: /展开.*题目列表/ }).click({ timeout: 20_000 })
   const list = page.getByRole('complementary', { name: '本模块题目' })
   await expect(list).toBeVisible()
   await expect(page.getByRole('dialog')).toHaveCount(0)
 
   await list.locator('button[data-module-item]').nth(1).click()
-  await expect(page).toHaveURL(/\/questions\/code-002/)
+  await expect(page).toHaveURL(/\/questions\/iface\.frontend:code-002/)
   await expect(list).toBeVisible()
 
   await page.reload()
@@ -271,7 +344,7 @@ test('phones rate from the bottom bar, which is the only prev / next', async ({ 
 })
 
 test('keyboard shortcuts work as soon as a question opens', async ({ page }) => {
-  await page.goto('/questions/js-001')
+  await page.goto('/questions/iface.frontend:js-001')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible({ timeout: 20_000 })
   // The answer box must not grab focus, or Space would type into it.
   await page.keyboard.press('Space')
