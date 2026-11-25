@@ -1,5 +1,6 @@
 import { type IDBPDatabase, openDB } from 'idb'
 import type {
+  InstalledBank,
   JdMatchReport,
   MockInterviewSession,
   Question,
@@ -8,11 +9,12 @@ import type {
   QuestionFlag,
   QuestionNote,
   QuestionNoteImage,
+  StoredLearningChecks,
   StudyRecord,
 } from '../types'
 
 const DB_NAME = 'iface_db'
-const DB_VERSION = 8
+const DB_VERSION = 9
 
 export const STORES = {
   QUESTIONS: 'questions',
@@ -24,28 +26,10 @@ export const STORES = {
   QUESTION_FLAGS: 'question_flags',
   MOCK_INTERVIEWS: 'mock_interviews',
   JD_MATCH_REPORTS: 'jd_match_reports',
+  BANKS: 'banks',
+  LEARNING_CHECKS: 'learning_checks',
   META: 'meta',
 } as const
-
-// ─── Category types ───────────────────────────────────────────────────────────
-
-/**
- * A category groups one or more modules under a display label.
- * Built-in categories (e.g. "前端") are seeded automatically.
- * Users can create custom ones (e.g. "Go", "Java") when importing.
- */
-export interface CategoryEntry {
-  /** Display name, e.g. "前端", "Go", "Java" */
-  name: string
-  /** Ordered list of module strings that belong to this category */
-  modules: string[]
-  /** true = shipped with the app; false = created by user import */
-  builtin: boolean
-  /** Display order (lower = shown first) */
-  order: number
-}
-
-export type CategoryMap = Record<string, CategoryEntry>
 
 export interface MetaEntry {
   key: string
@@ -54,16 +38,32 @@ export interface MetaEntry {
 
 let dbPromise: Promise<IDBPDatabase> | null = null
 
-function getDB(): Promise<IDBPDatabase> {
+/** Raw database handle, for migrations that need to touch several stores at once. */
+export function getDB(): Promise<IDBPDatabase> {
   if (!dbPromise) {
     dbPromise = openDB(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, _oldVersion, _newVersion, tx) {
         // Questions store
         if (!db.objectStoreNames.contains(STORES.QUESTIONS)) {
           const qs = db.createObjectStore(STORES.QUESTIONS, { keyPath: 'id' })
           qs.createIndex('module', 'module', { unique: false })
           qs.createIndex('difficulty', 'difficulty', { unique: false })
           qs.createIndex('source', 'source', { unique: false })
+        }
+        // v9: questions belong to banks.
+        const questionStore = tx.objectStore(STORES.QUESTIONS)
+        if (!questionStore.indexNames.contains('bankId')) {
+          questionStore.createIndex('bankId', 'bankId', { unique: false })
+        }
+        if (!questionStore.indexNames.contains('moduleKey')) {
+          questionStore.createIndex('moduleKey', 'moduleKey', { unique: false })
+        }
+        if (!db.objectStoreNames.contains(STORES.BANKS)) {
+          db.createObjectStore(STORES.BANKS, { keyPath: 'id' })
+        }
+        if (!db.objectStoreNames.contains(STORES.LEARNING_CHECKS)) {
+          const checks = db.createObjectStore(STORES.LEARNING_CHECKS, { keyPath: 'questionId' })
+          checks.createIndex('bankId', 'bankId', { unique: false })
         }
 
         // Study records store
@@ -148,12 +148,6 @@ function getDB(): Promise<IDBPDatabase> {
 
 // ─── Questions ────────────────────────────────────────────────────────────────
 
-export async function bulkPutQuestions(questions: Question[]): Promise<void> {
-  const db = await getDB()
-  const tx = db.transaction(STORES.QUESTIONS, 'readwrite')
-  await Promise.all([...questions.map((q) => tx.store.put(q)), tx.done])
-}
-
 export async function getAllQuestions(): Promise<Question[]> {
   const db = await getDB()
   return db.getAll(STORES.QUESTIONS)
@@ -164,60 +158,122 @@ export async function getQuestionById(id: string): Promise<Question | undefined>
   return db.get(STORES.QUESTIONS, id)
 }
 
-export async function getQuestionsByModule(module: string): Promise<Question[]> {
+/** Deletes everything users attached to these questions: records, notes, highlights, flags. */
+export async function deleteQuestionUserData(questionIds: string[]): Promise<void> {
+  if (questionIds.length === 0) return
   const db = await getDB()
-  return db.getAllFromIndex(STORES.QUESTIONS, 'module', module)
-}
-
-export async function getQuestionCount(): Promise<number> {
-  const db = await getDB()
-  return db.count(STORES.QUESTIONS)
-}
-
-export async function deleteQuestionsBySource(source: string): Promise<void> {
-  const db = await getDB()
-  const deletedIds: string[] = []
-  const tx = db.transaction(STORES.QUESTIONS, 'readwrite')
-  const index = tx.store.index('source')
-  let cursor = await index.openCursor(source)
-  while (cursor) {
-    deletedIds.push(cursor.value.id)
-    await cursor.delete()
-    cursor = await cursor.continue()
-  }
-  await tx.done
-
-  if (deletedIds.length > 0) {
-    const recordTx = db.transaction(STORES.STUDY_RECORDS, 'readwrite')
-    const noteTx = db.transaction(STORES.QUESTION_NOTES, 'readwrite')
-    const answerOverrideTx = db.transaction(STORES.QUESTION_ANSWER_OVERRIDES, 'readwrite')
-    const flagTx = db.transaction(STORES.QUESTION_FLAGS, 'readwrite')
-    await Promise.all([
-      ...deletedIds.map((id) => recordTx.store.delete(id)),
-      recordTx.done,
-      ...deletedIds.map((id) => noteTx.store.delete(id)),
-      noteTx.done,
-      ...deletedIds.map((id) => deleteQuestionAnswerAnnotationsByQuestionId(id)),
-      ...deletedIds.map((id) => answerOverrideTx.store.delete(id)),
-      answerOverrideTx.done,
-      ...deletedIds.map((id) => flagTx.store.delete(id)),
-      flagTx.done,
-    ])
-    await Promise.all(deletedIds.map((id) => deleteQuestionNoteImagesByQuestionId(id)))
-  }
-}
-
-export async function deleteQuestionById(id: string): Promise<void> {
-  const db = await getDB()
+  const tx = db.transaction(
+    [
+      STORES.STUDY_RECORDS,
+      STORES.QUESTION_NOTES,
+      STORES.QUESTION_ANSWER_OVERRIDES,
+      STORES.QUESTION_FLAGS,
+    ],
+    'readwrite',
+  )
   await Promise.all([
-    db.delete(STORES.QUESTIONS, id),
-    db.delete(STORES.STUDY_RECORDS, id),
-    db.delete(STORES.QUESTION_NOTES, id),
-    deleteQuestionNoteImagesByQuestionId(id),
-    deleteQuestionAnswerAnnotationsByQuestionId(id),
-    db.delete(STORES.QUESTION_ANSWER_OVERRIDES, id),
-    db.delete(STORES.QUESTION_FLAGS, id),
+    ...questionIds.flatMap((id) => [
+      tx.objectStore(STORES.STUDY_RECORDS).delete(id),
+      tx.objectStore(STORES.QUESTION_NOTES).delete(id),
+      tx.objectStore(STORES.QUESTION_ANSWER_OVERRIDES).delete(id),
+      tx.objectStore(STORES.QUESTION_FLAGS).delete(id),
+    ]),
+    tx.done,
   ])
+  for (const id of questionIds) {
+    await deleteQuestionAnswerAnnotationsByQuestionId(id)
+    await deleteQuestionNoteImagesByQuestionId(id)
+  }
+}
+
+// ─── Banks ────────────────────────────────────────────────────────────────────
+
+export async function getAllBanks(): Promise<InstalledBank[]> {
+  const db = await getDB()
+  return db.getAll(STORES.BANKS)
+}
+
+export async function getBank(id: string): Promise<InstalledBank | undefined> {
+  const db = await getDB()
+  return db.get(STORES.BANKS, id)
+}
+
+export async function putBank(bank: InstalledBank): Promise<void> {
+  const db = await getDB()
+  await db.put(STORES.BANKS, bank)
+}
+
+export async function getQuestionsByBank(bankId: string): Promise<Question[]> {
+  const db = await getDB()
+  return db.getAllFromIndex(STORES.QUESTIONS, 'bankId', bankId)
+}
+
+export async function getLearningChecksByBank(bankId: string): Promise<StoredLearningChecks[]> {
+  const db = await getDB()
+  return db.getAllFromIndex(STORES.LEARNING_CHECKS, 'bankId', bankId)
+}
+
+export async function getQuestionIdsByBank(bankId: string): Promise<string[]> {
+  const db = await getDB()
+  return (await db.getAllKeysFromIndex(STORES.QUESTIONS, 'bankId', bankId)) as string[]
+}
+
+/**
+ * Installs or updates a bank in one transaction: writes the bank record and replaces its
+ * questions and learning checks. Returns the ids the new version no longer has; their study
+ * data is left alone so callers can decide (see `deleteQuestionUserData`).
+ */
+export async function writeBank(
+  bank: InstalledBank,
+  questions: Question[],
+  checks: StoredLearningChecks[],
+): Promise<{ removedIds: string[] }> {
+  const db = await getDB()
+  const tx = db.transaction([STORES.BANKS, STORES.QUESTIONS, STORES.LEARNING_CHECKS], 'readwrite')
+  const questionStore = tx.objectStore(STORES.QUESTIONS)
+  const checkStore = tx.objectStore(STORES.LEARNING_CHECKS)
+  const nextIds = new Set(questions.map((question) => question.id))
+  const previousIds = (await questionStore.index('bankId').getAllKeys(bank.id)) as string[]
+  const previousCheckIds = (await checkStore.index('bankId').getAllKeys(bank.id)) as string[]
+  const removedIds = previousIds.filter((id) => !nextIds.has(id))
+
+  await Promise.all([
+    ...removedIds.map((id) => questionStore.delete(id)),
+    ...previousCheckIds.map((id) => checkStore.delete(id)),
+    ...questions.map((question) => questionStore.put(question)),
+    ...checks.map((entry) => checkStore.put(entry)),
+    tx.objectStore(STORES.BANKS).put(bank),
+    tx.done,
+  ])
+  return { removedIds }
+}
+
+/** Removes a bank, its questions and checks. Study data goes too when `purgeData` is set. */
+export async function deleteBank(bankId: string, purgeData: boolean): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction([STORES.BANKS, STORES.QUESTIONS, STORES.LEARNING_CHECKS], 'readwrite')
+  const questionIds = (await tx
+    .objectStore(STORES.QUESTIONS)
+    .index('bankId')
+    .getAllKeys(bankId)) as string[]
+  const checkIds = (await tx
+    .objectStore(STORES.LEARNING_CHECKS)
+    .index('bankId')
+    .getAllKeys(bankId)) as string[]
+  await Promise.all([
+    ...questionIds.map((id) => tx.objectStore(STORES.QUESTIONS).delete(id)),
+    ...checkIds.map((id) => tx.objectStore(STORES.LEARNING_CHECKS).delete(id)),
+    tx.objectStore(STORES.BANKS).delete(bankId),
+    tx.done,
+  ])
+  if (purgeData) await deleteQuestionUserData(questionIds)
+}
+
+export async function getLearningChecks(
+  questionId: string,
+): Promise<StoredLearningChecks | undefined> {
+  const db = await getDB()
+  return db.get(STORES.LEARNING_CHECKS, questionId)
 }
 
 // ─── Study Records ────────────────────────────────────────────────────────────
@@ -613,291 +669,14 @@ export async function deleteMeta(key: string): Promise<void> {
   await db.delete(STORES.META, key)
 }
 
-// ─── Meta Keys ────────────────────────────────────────────────────────────────
-
-export const META_KEYS = {
-  LOADED_MODULES: 'loaded_modules', // string[] — which JSON modules are loaded
-  CUSTOM_SOURCES: 'custom_sources', // string[] — user-imported source names
-  DAILY_RECS: 'daily_recommendations', // { date, ids }
-  SCHEMA_VERSION: 'schema_version',
-  BUILTIN_QUESTIONS_VERSION: 'builtin_questions_version',
-  BUILTIN_REPLACEMENT_MIGRATION: 'builtin_replacement_migration',
-  CATEGORY_MAP: 'category_map', // CategoryMap — user-defined category → modules mapping
-} as const
-
-// ─── Default built-in category map ───────────────────────────────────────────
-
-export const DEFAULT_CATEGORY_MAP: CategoryMap = {
-  前端: {
-    name: '前端',
-    modules: [
-      'JS基础',
-      'React',
-      'Vue',
-      'CSS',
-      'TypeScript',
-      '性能优化',
-      '网络',
-      '手写题',
-      '项目深挖',
-    ],
-    builtin: true,
-    order: 0,
-  },
-  Golang: {
-    name: 'Golang',
-    modules: ['Go基础', '并发编程', '内存与GC', '工程化', 'Web开发'],
-    builtin: true,
-    order: 1,
-  },
-  'AI Agent': {
-    name: 'AI Agent',
-    modules: [
-      'LLM基础',
-      'Prompt工程',
-      'Agent架构',
-      'RAG与知识库',
-      '工具调用与工作流',
-      '评测与线上优化',
-      'AI工程化',
-      'AI应用实践',
-    ],
-    builtin: true,
-    order: 2,
-  },
-  Java: {
-    name: 'Java',
-    modules: ['Java基础', 'Java并发', 'JVM', 'Spring框架', '计算机网络', 'MySQL', 'Redis'],
-    builtin: true,
-    order: 3,
-  },
-}
-
-// ─── Category map ─────────────────────────────────────────────────────────────
-
-const LEGACY_JAVA_CATEGORY_NAMES = new Set(['Java 后端', '计算机网络', 'Redis', 'MySQL'])
-
-export async function getCategoryMap(): Promise<CategoryMap> {
-  const stored = await getMeta<CategoryMap>(META_KEYS.CATEGORY_MAP)
-  if (!stored || Object.keys(stored).length === 0) return { ...DEFAULT_CATEGORY_MAP }
-
-  const merged: CategoryMap = { ...DEFAULT_CATEGORY_MAP }
-
-  for (const [key, entry] of Object.entries(stored)) {
-    const builtin = DEFAULT_CATEGORY_MAP[key]
-
-    if (entry.builtin && LEGACY_JAVA_CATEGORY_NAMES.has(key)) {
-      continue
-    }
-
-    if (!builtin) {
-      merged[key] = entry
-      continue
-    }
-
-    const modules = [...builtin.modules]
-    for (const module of entry.modules) {
-      if (!modules.includes(module)) modules.push(module)
-    }
-
-    merged[key] = {
-      ...builtin,
-      modules,
-    }
-  }
-
-  return merged
-}
-
-export async function saveCategoryMap(map: CategoryMap): Promise<void> {
-  await setMeta(META_KEYS.CATEGORY_MAP, map)
-}
-
-/**
- * Ensure a module is registered under a category.
- * If the category doesn't exist, it is created.
- * If the module is already in the category, this is a no-op.
- */
-export async function registerModuleInCategory(
-  categoryName: string,
-  moduleName: string,
-): Promise<void> {
-  const map = await getCategoryMap()
-  if (!map[categoryName]) {
-    map[categoryName] = {
-      name: categoryName,
-      modules: [],
-      builtin: false,
-      order: Object.keys(map).length,
-    }
-  }
-  if (!map[categoryName].modules.includes(moduleName)) {
-    map[categoryName].modules.push(moduleName)
-  }
-  await saveCategoryMap(map)
-}
-
-/**
- * Register multiple modules under a category in one write.
- */
-export async function registerModulesInCategory(
-  categoryName: string,
-  moduleNames: string[],
-): Promise<void> {
-  const map = await getCategoryMap()
-  if (!map[categoryName]) {
-    map[categoryName] = {
-      name: categoryName,
-      modules: [],
-      builtin: false,
-      order: Object.keys(map).length,
-    }
-  }
-  for (const m of moduleNames) {
-    if (!map[categoryName].modules.includes(m)) {
-      map[categoryName].modules.push(m)
-    }
-  }
-  await saveCategoryMap(map)
-}
-
-/**
- * Remove a module from all categories (call when source is deleted).
- */
-export async function unregisterModuleFromCategories(moduleName: string): Promise<void> {
-  const map = await getCategoryMap()
-  let changed = false
-  for (const cat of Object.values(map)) {
-    const idx = cat.modules.indexOf(moduleName)
-    if (idx !== -1) {
-      cat.modules.splice(idx, 1)
-      changed = true
-    }
-  }
-  if (changed) await saveCategoryMap(map)
-}
-
-/**
- * Delete an entire custom category (builtin categories cannot be deleted).
- */
-export async function deleteCategory(categoryName: string): Promise<void> {
-  const map = await getCategoryMap()
-  if (map[categoryName] && !map[categoryName].builtin) {
-    delete map[categoryName]
-    await saveCategoryMap(map)
-  }
-}
-
-/**
- * Rename a category (builtin categories cannot be renamed).
- */
-export async function renameCategory(oldName: string, newName: string): Promise<void> {
-  if (oldName === newName) return
-  const map = await getCategoryMap()
-  if (!map[oldName] || map[oldName].builtin) return
-  map[newName] = { ...map[oldName], name: newName }
-  delete map[oldName]
-  await saveCategoryMap(map)
-}
-
-// ─── Module loader tracking ───────────────────────────────────────────────────
-
-export async function getLoadedModules(): Promise<string[]> {
-  return (await getMeta<string[]>(META_KEYS.LOADED_MODULES)) ?? []
-}
-
-export async function markModuleLoaded(moduleFile: string): Promise<void> {
-  const current = await getLoadedModules()
-  if (!current.includes(moduleFile)) {
-    await setMeta(META_KEYS.LOADED_MODULES, [...current, moduleFile])
-  }
-}
-
-export async function getCustomSources(): Promise<string[]> {
-  return (await getMeta<string[]>(META_KEYS.CUSTOM_SOURCES)) ?? []
-}
-
-export async function addCustomSource(source: string): Promise<void> {
-  const current = await getCustomSources()
-  if (!current.includes(source)) {
-    await setMeta(META_KEYS.CUSTOM_SOURCES, [...current, source])
-  }
-}
-
-export async function removeCustomSource(source: string): Promise<void> {
-  const current = await getCustomSources()
-  await setMeta(
-    META_KEYS.CUSTOM_SOURCES,
-    current.filter((s) => s !== source),
-  )
-}
-
-// ─── Export all data (for backup) ────────────────────────────────────────────
-
-export async function exportAllData(): Promise<{
-  formatVersion: 8
-  exportedAt: string
-  questions: Question[]
-  studyRecords: StudyRecord[]
-  questionNotes: QuestionNote[]
-  questionAnswerAnnotations: QuestionAnswerAnnotation[]
-  questionAnswerOverrides: QuestionAnswerOverride[]
-  questionFlags: QuestionFlag[]
-  mockInterviews: MockInterviewSession[]
-  jdMatchReports: JdMatchReport[]
-  customSources: string[]
-  customCategories: CategoryMap
-}> {
-  const [
-    questions,
-    studyRecords,
-    questionNotes,
-    questionAnswerAnnotations,
-    questionAnswerOverrides,
-    questionFlags,
-    mockInterviews,
-    jdMatchReports,
-    customSources,
-    categoryMap,
-  ] = await Promise.all([
-    getAllQuestions(),
-    getAllStudyRecords(),
-    getAllQuestionNotes(),
-    getAllQuestionAnswerAnnotations(),
-    getAllQuestionAnswerOverrides(),
-    getAllQuestionFlags(),
-    getAllMockInterviews(),
-    getAllJdMatchReports(),
-    getCustomSources(),
-    getCategoryMap(),
-  ])
-  const customCategories: CategoryMap = {}
-  for (const [key, entry] of Object.entries(categoryMap)) {
-    if (!entry.builtin) customCategories[key] = entry
-  }
-
-  return {
-    formatVersion: 8,
-    exportedAt: new Date().toISOString(),
-    questions,
-    studyRecords,
-    questionNotes,
-    questionAnswerAnnotations,
-    questionAnswerOverrides,
-    questionFlags,
-    mockInterviews,
-    jdMatchReports,
-    customSources,
-    customCategories,
-  }
-}
-
 // ─── Reset DB ─────────────────────────────────────────────────────────────────
 
 export async function resetDatabase(): Promise<void> {
   const db = await getDB()
   await Promise.all([
     db.clear(STORES.QUESTIONS),
+    db.clear(STORES.BANKS),
+    db.clear(STORES.LEARNING_CHECKS),
     db.clear(STORES.STUDY_RECORDS),
     db.clear(STORES.QUESTION_NOTES),
     db.clear(STORES.QUESTION_NOTE_IMAGES),
@@ -909,13 +688,4 @@ export async function resetDatabase(): Promise<void> {
     db.clear(STORES.META),
   ])
   dbPromise = null
-}
-
-/**
- * Get all unique module names that actually have questions in DB.
- * Used to keep the category map in sync with real data.
- */
-export async function getActiveModules(): Promise<string[]> {
-  const all = await getAllQuestions()
-  return [...new Set(all.map((q) => q.module))]
 }

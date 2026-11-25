@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { type DataSource, localDataSource, setDataSource } from '@/data/source'
 import type { StudyRecord } from '@/types'
 
-vi.mock('@/lib/questionLoader', () => ({ invalidateDailyCache: vi.fn(async () => {}) }))
+vi.mock('@/lib/dailyRecommendations', () => ({ invalidateDailyCache: vi.fn(async () => {}) }))
 
 const { useStudyState, clearSessionReview } = await import('./useStudyStore')
 
@@ -56,13 +56,5 @@ describe('study store', () => {
     await useStudyState.getState().resetAll()
     expect(useStudyState.getState().records).toEqual({})
     expect(map.size).toBe(0)
-  })
-
-  it('toggles category visibility', () => {
-    const { toggleCategoryVisibility } = useStudyState.getState()
-    toggleCategoryVisibility('Java')
-    expect(useStudyState.getState().isCategoryHidden('Java')).toBe(true)
-    toggleCategoryVisibility('Java')
-    expect(useStudyState.getState().isCategoryHidden('Java')).toBe(false)
   })
 })

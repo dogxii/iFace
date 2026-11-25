@@ -24,6 +24,7 @@ import {
 import { type ReactNode, useEffect, useState } from 'react'
 import { BrandMark } from '@/components/BrandMark'
 import { ModuleMark } from '@/components/ModuleMark'
+import { initLibraryStore, useLibraryState } from '@/store/useLibraryStore'
 import {
   Box,
   BoxHeader,
@@ -146,6 +147,11 @@ export default function DesignSystem() {
   const [mastery, setMastery] = useState<'danger' | 'warning' | 'success'>('success')
   const [toggles, setToggles] = useState({ voice: true, fab: false })
   const [showHidden, setShowHidden] = useState(true)
+  const modules = useLibraryState((s) => s.modules)
+  const moduleKeys = useLibraryState((s) => s.moduleOrder)
+  useEffect(() => {
+    void initLibraryStore()
+  }, [])
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
@@ -299,14 +305,12 @@ export default function DesignSystem() {
               )}
             </Row>
             <Row label="模块标识">
-              {['JS基础', 'React', 'Vue', 'CSS', 'Go基础', 'Redis', 'Agent架构', '自定义模块'].map(
-                (module) => (
-                  <span key={module} className="flex items-center gap-2 text-sm text-fg">
-                    <ModuleMark module={module} />
-                    {module}
-                  </span>
-                ),
-              )}
+              {[...moduleKeys.slice(0, 8), 'local.demo/自定义模块'].map((key) => (
+                <span key={key} className="flex items-center gap-2 text-sm text-fg">
+                  <ModuleMark moduleKey={key} />
+                  {modules.get(key)?.name ?? '自定义模块'}
+                </span>
+              ))}
             </Row>
             <Row label="快捷键">
               <Kbd>⌘K</Kbd>

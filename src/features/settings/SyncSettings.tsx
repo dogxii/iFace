@@ -12,7 +12,6 @@ import {
   X,
 } from 'lucide-react'
 import { type ReactNode, useState } from 'react'
-import { invalidateQuestionsCache } from '@/hooks/useQuestions'
 import { deleteBackupGist, pullFromGist, pushToGist } from '@/lib/gistSync'
 import { useAIStore } from '@/store/useAIStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -79,7 +78,6 @@ export function SyncSettings() {
       const result = await pushToGist(token, Object.values(sessions))
       if (result.ok) {
         if (result.aiSessions?.length) upsertSessions(result.aiSessions)
-        if (result.mergedRemoteQuestionCount) invalidateQuestionsCache()
         setLastResult({
           ok: true,
           message: formatSyncSummary('已备份', result),
@@ -108,7 +106,6 @@ export function SyncSettings() {
       if (result === null) {
         setLastResult({ ok: false, message: '云端暂无备份，请先执行「备份到云端」' })
       } else if (result.ok) {
-        invalidateQuestionsCache()
         if (result.aiSessions?.length) upsertSessions(result.aiSessions)
         setLastResult({
           ok: true,

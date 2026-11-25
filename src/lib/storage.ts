@@ -11,7 +11,6 @@ export const STORAGE_KEYS = {
   answerNavigationMode: 'iface_answer_navigation_mode',
   mobileQuestionNav: 'iface_mobile_question_nav_enabled',
   aiFabVisible: 'iface_ai_fab_visible',
-  hiddenCategories: 'iface_hidden_categories',
   streak: 'iface_streak',
   dailyGoal: 'iface_daily_goal',
   aiConfig: 'iface_ai_config',

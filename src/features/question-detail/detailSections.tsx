@@ -6,11 +6,14 @@ import { DIFFICULTY_LABELS, type Question, type StudyStatus } from '@/types'
 import { Kbd, Tag, Tooltip, Button as UIButton } from '@/ui'
 
 export function DetailBreadcrumb({
+  moduleKey,
   module,
   position,
   moduleOpen,
   onOpenModule,
 }: {
+  moduleKey: string
+  /** Display name. */
   module: string
   /** e.g. "3 / 20" */
   position: string
@@ -31,7 +34,7 @@ export function DetailBreadcrumb({
         title="展开本模块题目列表（L）"
         className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-md px-1.5 hover:bg-muted hover:text-fg"
       >
-        <ModuleMark module={module} size="sm" />
+        <ModuleMark moduleKey={moduleKey} size="sm" />
         <span className="truncate">{module}</span>
         <ChevronDown className="size-3.5 shrink-0" />
       </button>
@@ -69,7 +72,7 @@ export function QuestionIntro({
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-1.5">
         <Tag className="pl-1">
-          <ModuleMark module={question.module} size="sm" />
+          <ModuleMark moduleKey={question.moduleKey} size="sm" />
           {question.module}
         </Tag>
         <Tag dot={DIFFICULTY_TONE[question.difficulty]}>

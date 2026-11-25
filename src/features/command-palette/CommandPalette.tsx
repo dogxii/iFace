@@ -12,8 +12,6 @@ import { useNavigate } from 'react-router-dom'
 import { isNavItemActive, PRIMARY_NAV, TOOL_NAV } from '@/app/navigation'
 import { THEME_OPTIONS } from '@/app/themeOptions'
 import { useQuestions } from '@/hooks/useQuestions'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
-import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { useStudyState } from '@/store/useStudyStore'
 import { type SettingsTab, useUIState } from '@/store/useUIStore'
 import { cn, Kbd } from '@/ui'
@@ -27,7 +25,11 @@ interface PaletteItem extends PaletteCommand {
 }
 
 const SETTINGS_COMMANDS: { tab: SettingsTab; label: string; keywords: string[] }[] = [
-  { tab: 'study', label: '设置：偏好', keywords: ['settings', '外观', '每日目标', '题库展示'] },
+  {
+    tab: 'study',
+    label: '设置：偏好',
+    keywords: ['settings', '外观', '每日目标', '题库', '启用', '停用'],
+  },
   { tab: 'ai', label: '设置：AI 助手', keywords: ['settings', 'api key', '模型'] },
   { tab: 'data', label: '设置：数据管理', keywords: ['settings', '导出', '备份', 'export'] },
   { tab: 'sync', label: '设置：云同步', keywords: ['settings', 'github', 'gist'] },
@@ -59,21 +61,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   const openSettings = useUIState((s) => s.openSettings)
   const theme = useStudyState((s) => s.theme)
   const setTheme = useStudyState((s) => s.setTheme)
-  const hiddenCategories = useStudyState((s) => s.hiddenCategories)
   const { allQuestions } = useQuestions()
-  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
   const [query, setQuery] = useState('')
   const [active, setActive] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    getCategoryMap().then(setCategoryMap)
-  }, [])
-
-  const visibleQuestions = useMemo(
-    () => filterVisibleQuestions(allQuestions, getHiddenModules(categoryMap, hiddenCategories)),
-    [allQuestions, categoryMap, hiddenCategories],
-  )
+  const visibleQuestions = allQuestions
 
   const items = useMemo<PaletteItem[]>(() => {
     const go = (path: string) => () => {

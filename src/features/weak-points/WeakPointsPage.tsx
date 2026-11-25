@@ -53,12 +53,12 @@ export default function WeakPointsPage() {
   )
   const modules = useMemo(() => countByModule(items), [items])
   const stats = useMemo(() => weakStats(items), [items])
-  const activeModule = module && modules.some((m) => m.module === module) ? module : null
+  const activeModule = module && modules.some((m) => m.moduleKey === module) ? module : null
 
   const displayItems = useMemo(
     () =>
       sortWeakItems(
-        activeModule ? items.filter((i) => i.question.module === activeModule) : items,
+        activeModule ? items.filter((i) => i.question.moduleKey === activeModule) : items,
         sort,
       ),
     [activeModule, items, sort],
@@ -179,12 +179,12 @@ export default function WeakPointsPage() {
                 />
                 {modules.map((m) => (
                   <ModuleChip
-                    key={m.module}
-                    module={m.module}
+                    key={m.moduleKey}
+                    moduleKey={m.moduleKey}
                     label={m.module}
                     count={m.count}
-                    active={activeModule === m.module}
-                    onClick={() => setModule(activeModule === m.module ? null : m.module)}
+                    active={activeModule === m.moduleKey}
+                    onClick={() => setModule(activeModule === m.moduleKey ? null : m.moduleKey)}
                   />
                 ))}
               </div>
@@ -237,13 +237,13 @@ export default function WeakPointsPage() {
 }
 
 function ModuleChip({
-  module,
+  moduleKey,
   label,
   count,
   active,
   onClick,
 }: {
-  module?: string
+  moduleKey?: string
   label: string
   count: number
   active: boolean
@@ -261,7 +261,7 @@ function ModuleChip({
           : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
       )}
     >
-      {module ? <ModuleDot module={module} /> : null}
+      {moduleKey ? <ModuleDot moduleKey={moduleKey} /> : null}
       {label}
       <span className={cn('tabular-nums', active ? 'text-accent' : 'text-fg-subtle')}>{count}</span>
     </button>
@@ -306,7 +306,7 @@ function WeakRow({
         </Link>
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-fg-subtle">
           <span className="inline-flex items-center gap-1.5 text-fg-muted">
-            <ModuleDot module={question.module} />
+            <ModuleDot moduleKey={question.moduleKey} />
             {question.module}
           </span>
           <span className="inline-flex items-center">

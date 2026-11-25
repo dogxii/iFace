@@ -31,14 +31,23 @@ export function buildWeakItems(
   return items
 }
 
-export function countByModule(items: WeakItem[]): { module: string; count: number }[] {
-  const counts = new Map<string, number>()
+export function countByModule(
+  items: WeakItem[],
+): { moduleKey: string; module: string; count: number }[] {
+  const counts = new Map<string, { moduleKey: string; module: string; count: number }>()
   for (const { question } of items) {
-    counts.set(question.module, (counts.get(question.module) ?? 0) + 1)
+    const entry = counts.get(question.moduleKey)
+    if (entry) entry.count++
+    else
+      counts.set(question.moduleKey, {
+        moduleKey: question.moduleKey,
+        module: question.module,
+        count: 1,
+      })
   }
-  return [...counts]
-    .map(([module, count]) => ({ module, count }))
-    .sort((a, b) => b.count - a.count || a.module.localeCompare(b.module, 'zh-CN'))
+  return [...counts.values()].sort(
+    (a, b) => b.count - a.count || a.module.localeCompare(b.module, 'zh-CN'),
+  )
 }
 
 export function sortWeakItems(items: WeakItem[], sort: WeakSort): WeakItem[] {

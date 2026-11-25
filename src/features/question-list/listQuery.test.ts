@@ -6,6 +6,7 @@ import {
   noteSnippet,
   parseListQuery,
   relativeTime,
+  resolveModuleParams,
   runListQuery,
 } from './listQuery'
 
@@ -17,7 +18,10 @@ const q = (
   tags: string[] = [],
 ): Question => ({
   id,
+  bankId: 'b',
+  moduleKey: module,
   module,
+  position: 0,
   difficulty,
   question,
   answer: '',
@@ -114,5 +118,25 @@ describe('helpers', () => {
     expect(relativeTime(now - 30 * 3_600_000, now)).toBe('昨天')
     expect(relativeTime(now - 5 * 86_400_000, now)).toBe('5 天前')
     expect(relativeTime(new Date(2026, 9, 2).getTime(), now)).toBe('10月2日')
+  })
+})
+
+describe('resolveModuleParams', () => {
+  const modules = new Map([
+    ['iface.frontend/react', { name: 'React' }],
+    ['local.x/react', { name: 'React' }],
+    ['iface.golang/basics', { name: 'Go基础' }],
+  ])
+
+  it('leaves module keys alone', () => {
+    expect(resolveModuleParams(['iface.frontend/react'], modules)).toBeNull()
+    expect(resolveModuleParams([], modules)).toBeNull()
+  })
+
+  it('maps pre-2.0 module names to the first matching key and drops unknown values', () => {
+    expect(resolveModuleParams(['React', 'Go基础', 'Nope'], modules)).toEqual([
+      'iface.frontend/react',
+      'iface.golang/basics',
+    ])
   })
 })

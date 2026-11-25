@@ -12,17 +12,15 @@ import {
   Target,
 } from 'lucide-react'
 import { Dialog as D } from 'radix-ui'
-import { type ReactNode, useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { ThemeSegmentedControl } from '@/app/themeOptions'
 import { BrandMark } from '@/components/BrandMark'
 import { HUE_CLASSES } from '@/components/ModuleMark'
 import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import type { ModuleHue } from '@/lib/moduleHue'
-import { BUILTIN_CATEGORIES } from '@/lib/questionLoader'
 import { readBoolean, STORAGE_KEYS, writeBoolean } from '@/lib/storage'
-import { useStudyState } from '@/store/useStudyStore'
+import { useLibraryState } from '@/store/useLibraryStore'
 import { useUIState } from '@/store/useUIStore'
 import { Button, cn, Kbd, StepProgress, Switch } from '@/ui'
 
@@ -239,71 +237,65 @@ function WelcomeStep() {
 }
 
 function BanksStep() {
-  const hidden = useStudyState((s) => s.hiddenCategories)
-  const setHidden = useStudyState((s) => s.setHiddenCategories)
-  const toggle = useStudyState((s) => s.toggleCategoryVisibility)
-  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
-
-  useEffect(() => {
-    getCategoryMap().then(setCategoryMap)
-  }, [])
-
-  const categories = useMemo(
-    () =>
-      Object.entries(categoryMap).sort(([, a], [, b]) =>
-        a.builtin !== b.builtin ? (a.builtin ? -1 : 1) : (a.order ?? 99) - (b.order ?? 99),
-      ),
-    [categoryMap],
-  )
-  const visibleCount = categories.filter(([key]) => !hidden.has(key)).length
+  const banks = useLibraryState((s) => s.banks)
+  const setBankEnabled = useLibraryState((s) => s.setBankEnabled)
+  const setEnabledBanks = useLibraryState((s) => s.setEnabledBanks)
+  const enabledCount = banks.filter((bank) => bank.enabled).length
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1 text-sm leading-relaxed text-fg-muted">
-        <p>⚙️ 这里是题库设置，你可以关闭你不需要的题目分类，</p>
-        <p>不要有任何顾虑！题目关闭之后仍然可以在设置页面重新打开 ✅</p>
-        <p className="text-fg-subtle">（未来 iFace 仍会添加更多且高质量的题目！）</p>
+        <p>⚙️ 这里是题库设置，你可以停用暂时不需要的题库，</p>
+        <p>不要有任何顾虑！停用之后仍然可以在设置页面重新启用 ✅</p>
+        <p className="text-fg-subtle">（之后还可以导入自己的题目，或安装社区分享的题库）</p>
       </div>
 
       <div className="flex flex-wrap gap-1.5">
-        <QuickChip active={visibleCount === categories.length} onClick={() => setHidden([])}>
-          全部显示
+        <QuickChip
+          active={enabledCount === banks.length}
+          onClick={() => void setEnabledBanks(banks.map((bank) => bank.id))}
+        >
+          全部启用
         </QuickChip>
-        {categories.slice(0, 4).map(([key, category]) => (
+        {banks.slice(0, 4).map((bank) => (
           <QuickChip
-            key={key}
-            active={visibleCount === 1 && !hidden.has(key)}
-            onClick={() => setHidden(categories.filter(([k]) => k !== key).map(([k]) => k))}
+            key={bank.id}
+            active={enabledCount === 1 && bank.enabled}
+            onClick={() => void setEnabledBanks([bank.id])}
           >
-            只看{category.name}
+            只看{bank.name}
           </QuickChip>
         ))}
       </div>
 
       <ul className="flex flex-col divide-y divide-line rounded-xl border border-line">
-        {categories.map(([key, category]) => {
-          const enabled = !hidden.has(key)
-          const files = BUILTIN_CATEGORIES.find((c) => c.category === key)?.files.length ?? 0
-          const id = `onboarding-bank-${key}`
+        {banks.map((bank) => {
+          const id = `onboarding-bank-${bank.id}`
           return (
-            <li key={key} className="flex items-center gap-3 px-4 py-3">
+            <li key={bank.id} className="flex items-center gap-3 px-4 py-3">
               <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
                 <span
                   className={cn(
                     'block text-sm font-medium',
-                    enabled ? 'text-fg' : 'text-fg-subtle',
+                    bank.enabled ? 'text-fg' : 'text-fg-subtle',
                   )}
                 >
-                  {category.name}
+                  {bank.name}
                 </span>
                 <span className="block truncate text-xs text-fg-subtle">
-                  {category.modules.length} 个模块
-                  {files > 0 ? ` · ${files} 个文件` : ''} ·{' '}
-                  {category.modules.slice(0, 4).join('、')}
-                  {category.modules.length > 4 ? '…' : ''}
+                  {bank.questionCount} 题 · {bank.modules.length} 个模块 ·{' '}
+                  {bank.modules
+                    .slice(0, 4)
+                    .map((mod) => mod.name)
+                    .join('、')}
+                  {bank.modules.length > 4 ? '…' : ''}
                 </span>
               </label>
-              <Switch id={id} checked={enabled} onCheckedChange={() => toggle(key)} />
+              <Switch
+                id={id}
+                checked={bank.enabled}
+                onCheckedChange={(enabled) => void setBankEnabled(bank.id, enabled)}
+              />
             </li>
           )
         })}

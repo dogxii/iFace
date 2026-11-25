@@ -3,40 +3,33 @@ import {
   CircleAlert,
   CircleCheck,
   ClipboardPaste,
-  Database,
+  Download,
   FileUp,
   FlaskConical,
   Play,
-  RefreshCw,
+  RotateCcw,
   Trash2,
   TriangleAlert,
   Upload,
   X,
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { resolveBank } from '@/data/bank/validate'
 import { useDraft } from '@/hooks/useDraft'
-import { invalidateQuestionsCache, useQuestions } from '@/hooks/useQuestions'
 import {
-  type CategoryEntry,
-  deleteQuestionsBySource,
-  getActiveModules,
-  getAllQuestions,
-  getCategoryMap,
-  getCustomSources,
-  removeCustomSource,
-  unregisterModuleFromCategories,
-} from '@/lib/db'
-import {
-  BUILTIN_MODULE_FILES,
-  BUILTIN_QUESTIONS_VERSION,
-  type CustomImportResult,
-  importCustomQuestions,
-  isJSONFile,
-  isMDFile,
-  loadAllBuiltinModulesParallel,
-} from '@/lib/questionLoader'
+  exportBankPackage,
+  type ImportTarget,
+  importQuestions,
+  installLocalPackage,
+  removeBank,
+  restoreOfficialBank,
+} from '@/lib/banks/local'
+import type { ImportIssue, ImportQuestion } from '@/lib/banks/localImport'
+import { type OfficialBankEntry, uninstalledOfficialBanks } from '@/lib/banks/official'
 import { readDraft } from '@/lib/storage'
+import { initLibraryStore, useLibraryState } from '@/store/useLibraryStore'
+import type { InstalledBank } from '@/types'
 import {
   Box,
   Breadcrumb,
@@ -50,14 +43,16 @@ import {
   PageHeader,
   PageTitle,
   SegmentedControl,
+  Select,
   Spinner,
   Tag,
   Textarea,
   toast,
 } from '@/ui'
 import {
-  countBySource,
   detectPasteFormat,
+  isImportableFile,
+  isMarkdownFile,
   type PasteFormat,
   parseImportText,
   sourceNameFromFile,
@@ -66,29 +61,33 @@ import { SchemaGuide } from './SchemaGuide'
 
 type Mode = 'file' | 'paste'
 
-interface Library {
-  builtinCount: number | null
-  categories: CategoryEntry[]
-  sources: string[]
-  sourceCounts: Record<string, number>
+interface ImportResult {
+  source: string
+  bankName?: string
+  added: number
+  updated: number
+  errors: string[]
+  warnings: string[]
 }
 
-const EMPTY_LIBRARY: Library = { builtinCount: null, categories: [], sources: [], sourceCounts: {} }
+const NEW_BANK = '__new__'
+const ORIGIN_LABEL: Record<InstalledBank['origin']['kind'], string> = {
+  bundled: '官方',
+  github: 'GitHub',
+  url: '链接',
+  local: '本地',
+}
 
-async function loadLibrary(): Promise<Library> {
-  const [questions, categoryMap, sources] = await Promise.all([
-    getAllQuestions(),
-    getCategoryMap(),
-    getCustomSources(),
-  ])
-  return {
-    builtinCount: questions.filter((q) => !q.id.startsWith('custom_')).length,
-    categories: Object.values(categoryMap).sort((a, b) =>
-      a.builtin !== b.builtin ? (a.builtin ? -1 : 1) : a.name.localeCompare(b.name, 'zh-CN'),
-    ),
-    sources,
-    sourceCounts: countBySource(questions, sources),
-  }
+const issueText = (issue: ImportIssue) => `第 ${issue.index + 1} 题：${issue.message}`
+
+function downloadJSON(fileName: string, data: unknown): void {
+  const blob = new Blob([`${JSON.stringify(data, null, 2)}\n`], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 export default function ImportPage() {
@@ -98,98 +97,97 @@ export default function ImportPage() {
     parsePasteDraft(readDraft(PASTE_DRAFT))?.text.trim() ? 'paste' : 'file',
   )
   const [busy, setBusy] = useState(false)
-  const [results, setResults] = useState<CustomImportResult[]>([])
-  const [library, setLibrary] = useState<Library>(EMPTY_LIBRARY)
-  const [category, setCategory] = useState('')
+  const [results, setResults] = useState<ImportResult[]>([])
+  const [targetId, setTargetId] = useState(NEW_BANK)
+  const banks = useLibraryState((s) => s.banks)
+  const localBanks = banks.filter((bank) => bank.origin.kind === 'local')
+  const target = localBanks.some((bank) => bank.id === targetId) ? targetId : NEW_BANK
 
-  const { allQuestions } = useQuestions()
-  const refresh = useCallback(async () => setLibrary(await loadLibrary()), [])
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-read when the bank changes size, e.g. when the bundled import finishes in the background
   useEffect(() => {
-    refresh()
-  }, [allQuestions.length, refresh])
+    void initLibraryStore()
+  }, [])
 
-  const pushResult = (result: CustomImportResult) => setResults((prev) => [result, ...prev])
+  const pushResult = (result: ImportResult) => setResults((prev) => [result, ...prev])
 
-  const importData = async (data: unknown, source: string, skipped: string[] = []) => {
-    const result = await importCustomQuestions(data, source, category.trim() || undefined)
+  /** Imports one parsed input. `name` names a new bank and the fallback module. */
+  const importParsed = async (input: string, format: PasteFormat, name: string) => {
+    const parsed = parseImportText(input, format, name)
+    if (!parsed.ok) {
+      pushResult({ source: name, added: 0, updated: 0, errors: parsed.errors, warnings: [] })
+      return false
+    }
+    if (parsed.kind === 'package') {
+      const { bank, issues } = await resolveBank(parsed.text)
+      const errors = issues.filter((issue) => issue.level === 'error').map((issue) => issue.message)
+      const warnings = issues
+        .filter((issue) => issue.level === 'warning')
+        .map((issue) => issue.message)
+      if (!bank) {
+        pushResult({ source: name, added: 0, updated: 0, errors, warnings })
+        return false
+      }
+      const installed = await installLocalPackage(bank)
+      pushResult({
+        source: name,
+        bankName: installed.name,
+        added: installed.questionCount,
+        updated: 0,
+        errors,
+        warnings,
+      })
+      return true
+    }
+    const importTarget: ImportTarget =
+      target === NEW_BANK ? { kind: 'new', name } : { kind: 'existing', bankId: target }
+    const outcome = await importQuestions(importTarget, parsed.questions as ImportQuestion[])
     pushResult({
-      ...result,
-      warnings: [...skipped.map((m) => `已跳过：${m}`), ...result.warnings],
+      source: name,
+      bankName: outcome.bankId ? outcome.bankName : undefined,
+      added: outcome.added,
+      updated: outcome.updated,
+      errors: outcome.errors.map(issueText),
+      warnings: [...parsed.skipped.map((m) => `已跳过：${m}`), ...outcome.warnings.map(issueText)],
     })
-    if (result.loaded > 0) invalidateQuestionsCache()
-    return result
+    // Further files of the same batch go into the bank this one created.
+    if (target === NEW_BANK && outcome.bankId) setTargetId(outcome.bankId)
+    return outcome.added + outcome.updated > 0
   }
 
-  const handleFiles = async (files: File[]) => {
-    const usable = files.filter((f) => isJSONFile(f) || isMDFile(f))
+  const run = async <T,>(task: () => Promise<T>): Promise<T | undefined> => {
+    setBusy(true)
+    try {
+      return await task()
+    } catch (error) {
+      toast.error('导入失败', {
+        description: error instanceof Error ? error.message : String(error),
+      })
+      return undefined
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleFiles = (files: File[]) => {
+    const usable = files.filter(isImportableFile)
     if (usable.length === 0) {
       toast.error('只支持 .json 和 .md 文件')
       return
     }
-    setBusy(true)
-    try {
+    void run(async () => {
       for (const file of usable) {
-        const parsed = parseImportText(await file.text(), isMDFile(file) ? 'markdown' : 'json')
-        if (!parsed.ok) {
-          pushResult({
-            source: file.name,
-            loaded: 0,
-            errors: parsed.errors.map((message) => ({ index: -1, message })),
-            warnings: [],
-          })
-          continue
-        }
-        await importData(parsed.data, sourceNameFromFile(file.name), parsed.skipped)
+        await importParsed(
+          await file.text(),
+          isMarkdownFile(file) ? 'markdown' : 'json',
+          sourceNameFromFile(file.name),
+        )
       }
-      await refresh()
-    } finally {
-      setBusy(false)
-    }
+    })
   }
 
-  const handlePaste = async (text: string, source: string, format: PasteFormat) => {
-    const parsed = parseImportText(text, format)
-    if (!parsed.ok) {
-      pushResult({
-        source,
-        loaded: 0,
-        errors: parsed.errors.map((message) => ({ index: -1, message })),
-        warnings: [],
-      })
-      return false
-    }
-    setBusy(true)
-    try {
-      const result = await importData(parsed.data, source, parsed.skipped)
-      await refresh()
-      return result.loaded > 0
-    } finally {
-      setBusy(false)
-    }
-  }
+  const handlePaste = async (text: string, source: string, format: PasteFormat) =>
+    (await run(() => importParsed(text, format, source || '粘贴的题目'))) ?? false
 
-  const handleRemoveSource = async (source: string) => {
-    const all = await getAllQuestions()
-    const affected = [
-      ...new Set(
-        all
-          .filter((q) => q.source === `custom_${source}` || q.source === source)
-          .map((q) => q.module),
-      ),
-    ]
-    await deleteQuestionsBySource(source)
-    await removeCustomSource(source)
-    const remaining = await getActiveModules()
-    for (const module of affected) {
-      if (!remaining.includes(module)) await unregisterModuleFromCategories(module)
-    }
-    invalidateQuestionsCache()
-    await refresh()
-    toast.success(`已删除来源「${source}」`)
-  }
-
-  const imported = results.reduce((sum, r) => sum + r.loaded, 0)
+  const imported = results.reduce((sum, r) => sum + r.added + r.updated, 0)
 
   return (
     <>
@@ -206,7 +204,7 @@ export default function ImportPage() {
       <div className="mx-auto max-w-[1160px] px-4 py-8 sm:px-8 lg:px-12 lg:py-10">
         <PageTitle
           title="导入题库"
-          description="导入 JSON 或 Markdown 格式的题目，所有数据只保存在本地浏览器。"
+          description="把 JSON、Markdown 或 iface-bank 题库包导入为本地题库，数据只保存在本地浏览器。"
         />
 
         <div className="mt-6 grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -223,10 +221,16 @@ export default function ImportPage() {
                     { value: 'paste', label: '粘贴内容', icon: <ClipboardPaste /> },
                   ]}
                 />
-                <CategoryInput
-                  value={category}
-                  onChange={setCategory}
-                  categories={library.categories}
+                <Select
+                  size="sm"
+                  label="导入到"
+                  prefix="导入到"
+                  value={target}
+                  onValueChange={setTargetId}
+                  options={[
+                    { value: NEW_BANK, label: '新建本地题库' },
+                    ...localBanks.map((bank) => ({ value: bank.id, label: bank.name })),
+                  ]}
                 />
               </div>
               <div className="p-4">
@@ -273,13 +277,8 @@ export default function ImportPage() {
           </div>
 
           <aside className="flex min-w-0 flex-col gap-5">
-            <BuiltinLibrary count={library.builtinCount} onLoaded={refresh} />
-            <SourcesList
-              sources={library.sources}
-              counts={library.sourceCounts}
-              onRemove={handleRemoveSource}
-            />
-            <CategoriesList categories={library.categories} />
+            <InstalledBanks banks={banks} />
+            <RemovedOfficialBanks installedCount={banks.length} />
           </aside>
         </div>
       </div>
@@ -288,37 +287,6 @@ export default function ImportPage() {
 }
 
 // ─── Inputs ─────────────────────────────────────────────────────────────────────
-
-function CategoryInput({
-  value,
-  onChange,
-  categories,
-}: {
-  value: string
-  onChange: (value: string) => void
-  categories: CategoryEntry[]
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <label htmlFor="import-category" className="text-xs whitespace-nowrap text-fg-muted">
-        归入分类
-      </label>
-      <Input
-        id="import-category"
-        list="import-category-options"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="自动（按模块）"
-        className="h-8 w-40 text-sm"
-      />
-      <datalist id="import-category-options">
-        {categories.map((c) => (
-          <option key={c.name} value={c.name} />
-        ))}
-      </datalist>
-    </div>
-  )
-}
 
 function FileDrop({ busy, onFiles }: { busy: boolean; onFiles: (files: File[]) => void }) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -370,7 +338,7 @@ function FileDrop({ busy, onFiles }: { busy: boolean; onFiles: (files: File[]) =
           {busy ? '正在导入…' : dragging ? '松开即可导入' : '拖入文件，或点击选择'}
         </span>
         <span className="text-sm text-fg-subtle">
-          支持多个 .json / .md 文件，文件名会作为来源名称
+          支持多个 .json / .md 文件；iface-bank 题库包会作为独立题库安装
         </span>
       </button>
     </>
@@ -401,17 +369,21 @@ function PastePanel({
   const setText = (next: string) => setDraft((d) => ({ ...d, text: next }))
   const setSource = (next: string) => setDraft((d) => ({ ...d, source: next }))
   const format = text.trim() ? detectPasteFormat(text) : null
-  const preview = text.trim() ? parseImportText(text) : null
+  const preview = text.trim() ? parseImportText(text, format ?? undefined, source.trim()) : null
 
   const submit = async () => {
-    if (!format || !source.trim()) return
+    if (!format) return
     const ok = await onImport(text, source.trim(), format)
     if (ok) setDraft(EMPTY_PASTE)
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <Field label="来源名称" htmlFor="import-source" hint="用于在题库中筛选和整体删除">
+      <Field
+        label="名称"
+        htmlFor="import-source"
+        hint="新建题库时作为题库名；没写模块的题目也会放进同名模块"
+      >
         <Input
           id="import-source"
           value={source}
@@ -429,9 +401,9 @@ function PastePanel({
             <span className="flex items-center gap-2 text-xs text-fg-subtle">
               <Tag variant="soft">{format === 'json' ? 'JSON' : 'Markdown'}</Tag>
               {preview?.ok
-                ? preview.count !== null
-                  ? `识别到 ${preview.count} 道题`
-                  : '格式正确'
+                ? preview.kind === 'package'
+                  ? `题库包「${preview.name}」· ${preview.count} 道题`
+                  : `识别到 ${preview.count} 道题`
                 : null}
             </span>
           ) : null}
@@ -440,7 +412,9 @@ function PastePanel({
           id="import-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={'粘贴 JSON 数组，或 AI 生成的 Markdown（每题以 ## 开头，用 --- 分隔）'}
+          placeholder={
+            '粘贴 JSON 题目数组、iface-bank 题库包，或 AI 生成的 Markdown（每题以 ## 开头，用 --- 分隔）'
+          }
           rows={12}
           spellCheck={false}
           className="font-mono text-xs leading-relaxed"
@@ -456,7 +430,7 @@ function PastePanel({
         <Button
           variant="primary"
           loading={busy}
-          disabled={!preview?.ok || !source.trim()}
+          disabled={!preview?.ok || (preview.kind === 'questions' && !source.trim())}
           onClick={submit}
         >
           <Upload />
@@ -469,8 +443,8 @@ function PastePanel({
 
 // ─── Results ────────────────────────────────────────────────────────────────────
 
-function ResultCard({ result, onDismiss }: { result: CustomImportResult; onDismiss: () => void }) {
-  const success = result.loaded > 0
+function ResultCard({ result, onDismiss }: { result: ImportResult; onDismiss: () => void }) {
+  const success = result.added + result.updated > 0
   const Icon = success ? CircleCheck : CircleAlert
   return (
     <Box className="overflow-hidden">
@@ -478,9 +452,14 @@ function ResultCard({ result, onDismiss }: { result: CustomImportResult; onDismi
         <Icon className={cn('mt-0.5 size-4 shrink-0', success ? 'text-success' : 'text-danger')} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-fg">
-            {success ? `成功导入 ${result.loaded} 道题` : '导入失败，没有有效题目'}
+            {success
+              ? `导入 ${result.added} 道新题${result.updated > 0 ? `，更新 ${result.updated} 道` : ''}`
+              : '导入失败，没有有效题目'}
           </p>
-          <p className="truncate text-xs text-fg-subtle">来源：{result.source}</p>
+          <p className="truncate text-xs text-fg-subtle">
+            {result.source}
+            {result.bankName ? ` → ${result.bankName}` : ''}
+          </p>
         </div>
         <Button variant="ghost" size="icon-sm" aria-label="关闭" onClick={onDismiss}>
           <X />
@@ -497,9 +476,7 @@ function ResultCard({ result, onDismiss }: { result: CustomImportResult; onDismi
         <IssueList
           tone="danger"
           title={`${result.errors.length} 条题目无效`}
-          items={result.errors.map((e) =>
-            e.index >= 0 ? `第 ${e.index + 1} 题：${e.message}` : e.message,
-          )}
+          items={result.errors}
         />
       ) : null}
     </Box>
@@ -541,82 +518,25 @@ function IssueList({
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────────
 
-function BuiltinLibrary({ count, onLoaded }: { count: number | null; onLoaded: () => void }) {
-  const [loading, setLoading] = useState(false)
-  const hasBuiltin = Boolean(count && count > 0)
-
-  const load = async () => {
-    setLoading(true)
-    try {
-      const results = await loadAllBuiltinModulesParallel(hasBuiltin)
-      const loaded = results.reduce((sum, r) => sum + r.loaded, 0)
-      const failed = results.filter((r) => r.loaded === 0 && r.errors.some((e) => e.index === -1))
-      invalidateQuestionsCache()
-      onLoaded()
-      if (failed.length > 0) {
-        toast.error(`有 ${failed.length} 个内置题库文件加载失败`, {
-          description: '请检查网络后重试。',
-        })
-      } else {
-        toast.success(
-          `${hasBuiltin ? '已重新加载' : '已加载'}内置题库，共 ${loaded.toLocaleString()} 道题`,
-        )
-      }
-    } catch (err) {
-      toast.error('内置题库加载失败', {
-        description: err instanceof Error ? err.message : String(err),
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Box padding="md" className="flex flex-col gap-3">
-      <div className="flex items-center gap-2.5">
-        <span className="flex size-8 items-center justify-center rounded-lg border border-line bg-subtle text-fg-muted">
-          <Database className="size-4" />
-        </span>
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-fg">内置题库</h2>
-          <p className="text-xs text-fg-subtle">版本 {BUILTIN_QUESTIONS_VERSION}</p>
-        </div>
-      </div>
-      <p className="text-sm text-fg-muted">
-        {count === null
-          ? '正在读取本地题库…'
-          : `本地已有 ${count.toLocaleString()} 道内置题，来自 ${BUILTIN_MODULE_FILES.length} 个题库文件。`}
-      </p>
-      <Button
-        variant={hasBuiltin ? 'secondary' : 'primary'}
-        size="sm"
-        loading={loading}
-        onClick={load}
-      >
-        <RefreshCw />
-        {hasBuiltin ? '重新加载内置题库' : '加载内置题库'}
-      </Button>
-    </Box>
-  )
-}
-
-function SourcesList({
-  sources,
-  counts,
-  onRemove,
-}: {
-  sources: string[]
-  counts: Record<string, number>
-  onRemove: (source: string) => Promise<void>
-}) {
-  const [pending, setPending] = useState<string | null>(null)
+function InstalledBanks({ banks }: { banks: InstalledBank[] }) {
+  const [pending, setPending] = useState<InstalledBank | null>(null)
   const [removing, setRemoving] = useState(false)
+
+  const exportBank = async (bank: InstalledBank) => {
+    const pkg = await exportBankPackage(bank.id)
+    if (!pkg) return
+    downloadJSON(`${bank.id}.iface-bank.json`, pkg)
+    toast.success(`已导出「${bank.name}」`, {
+      description: '可以直接导入，或放进 GitHub 仓库分享。',
+    })
+  }
 
   const confirm = async () => {
     if (!pending) return
     setRemoving(true)
     try {
-      await onRemove(pending)
+      await removeBank(pending)
+      toast.success(`已移除「${pending.name}」`)
       setPending(null)
     } finally {
       setRemoving(false)
@@ -626,31 +546,49 @@ function SourcesList({
   return (
     <Box>
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-fg">自定义来源</h2>
-        <span className="text-xs text-fg-subtle tabular-nums">{sources.length}</span>
+        <h2 className="text-sm font-semibold text-fg">已安装的题库</h2>
+        <span className="text-xs text-fg-subtle tabular-nums">{banks.length}</span>
       </div>
-      {sources.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-fg-subtle">导入题目后会在这里显示</p>
+      {banks.length === 0 ? (
+        <p className="px-4 py-6 text-center text-sm text-fg-subtle">还没有题库</p>
       ) : (
         <ul className="flex flex-col gap-0.5 p-1.5">
-          {sources.map((source) => (
+          {banks.map((bank) => (
             <li
-              key={source}
+              key={bank.id}
               className="group flex items-center gap-2 rounded-lg py-1.5 pr-1 pl-2.5 hover:bg-subtle"
             >
-              <span className="min-w-0 flex-1 truncate text-sm text-fg">{source}</span>
-              <span className="shrink-0 text-xs text-fg-subtle tabular-nums">
-                {counts[source] ?? 0} 题
-              </span>
-              <Button
-                variant="danger-ghost"
-                size="icon-sm"
-                aria-label={`删除来源 ${source}`}
-                onClick={() => setPending(source)}
-                className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 max-sm:opacity-100"
-              >
-                <Trash2 />
-              </Button>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-1.5 text-sm text-fg">
+                  <span className="truncate">{bank.name}</span>
+                  <Tag variant="soft" className="shrink-0">
+                    {ORIGIN_LABEL[bank.origin.kind]}
+                  </Tag>
+                </p>
+                <p className="text-xs text-fg-subtle tabular-nums">
+                  {bank.modules.length} 个模块 · {bank.questionCount} 题
+                  {bank.enabled ? '' : ' · 已停用'}
+                </p>
+              </div>
+              <div className="flex shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-sm:opacity-100">
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`导出 ${bank.name}`}
+                  title="导出为题库包"
+                  onClick={() => void exportBank(bank)}
+                >
+                  <Download />
+                </Button>
+                <Button
+                  variant="danger-ghost"
+                  size="icon-sm"
+                  aria-label={`移除 ${bank.name}`}
+                  onClick={() => setPending(bank)}
+                >
+                  <Trash2 />
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
@@ -659,10 +597,12 @@ function SourcesList({
       <Dialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
         <DialogContent
           size="sm"
-          title="删除这个来源？"
+          title="移除这个题库？"
           description={
             pending
-              ? `将删除「${pending}」的 ${counts[pending] ?? 0} 道题，相关的学习记录不会再显示。此操作不可撤销。`
+              ? pending.origin.kind === 'local'
+                ? `将删除「${pending.name}」的 ${pending.questionCount} 道题。学习记录和笔记会保留，但不会再显示；需要时可以先导出备份。此操作不可撤销。`
+                : `将移除「${pending.name}」。学习记录和笔记会保留，重新安装后恢复显示。`
               : undefined
           }
           footer={
@@ -673,7 +613,7 @@ function SourcesList({
                 </Button>
               </DialogClose>
               <Button variant="danger" size="sm" loading={removing} onClick={confirm}>
-                删除
+                移除
               </Button>
             </>
           }
@@ -683,24 +623,58 @@ function SourcesList({
   )
 }
 
-function CategoriesList({ categories }: { categories: CategoryEntry[] }) {
-  if (categories.length === 0) return null
+function RemovedOfficialBanks({ installedCount }: { installedCount: number }) {
+  const [removed, setRemoved] = useState<OfficialBankEntry[]>([])
+  const [restoring, setRestoring] = useState<string | null>(null)
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-read when banks are added or removed
+  useEffect(() => {
+    let cancelled = false
+    uninstalledOfficialBanks()
+      .then((list) => !cancelled && setRemoved(list))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [installedCount])
+
+  if (removed.length === 0) return null
+
+  const restore = async (entry: OfficialBankEntry) => {
+    setRestoring(entry.id)
+    try {
+      await restoreOfficialBank(entry.id)
+      toast.success(`已重新安装「${entry.name}」`)
+    } catch (error) {
+      toast.error('安装失败', {
+        description: error instanceof Error ? error.message : String(error),
+      })
+    } finally {
+      setRestoring(null)
+    }
+  }
+
   return (
     <Box>
       <div className="border-b border-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-fg">分类</h2>
+        <h2 className="text-sm font-semibold text-fg">已移除的官方题库</h2>
       </div>
-      <ul className="flex flex-col divide-y divide-line">
-        {categories.map((c) => (
-          <li key={c.name} className="px-4 py-2.5">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-fg">{c.name}</span>
-              {c.builtin ? <Tag variant="outline">内置</Tag> : <Tag variant="accent">自定义</Tag>}
-              <span className="ml-auto text-xs text-fg-subtle tabular-nums">
-                {c.modules.length} 个模块
-              </span>
-            </div>
-            <p className="mt-1 line-clamp-2 text-xs text-fg-subtle">{c.modules.join('、')}</p>
+      <ul className="flex flex-col gap-0.5 p-1.5">
+        {removed.map((entry) => (
+          <li key={entry.id} className="flex items-center gap-2 rounded-lg py-1.5 pr-1 pl-2.5">
+            <span className="min-w-0 flex-1 truncate text-sm text-fg">{entry.name}</span>
+            <span className="shrink-0 text-xs text-fg-subtle tabular-nums">
+              {entry.questionCount} 题
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              loading={restoring === entry.id}
+              onClick={() => void restore(entry)}
+            >
+              {restoring === entry.id ? null : <RotateCcw />}
+              安装
+            </Button>
           </li>
         ))}
       </ul>

@@ -65,10 +65,10 @@ export default defineConfig({
           '**/assets/pdf.worker-*.mjs',
           '**/assets/pdf-*.js',
           '**/assets/mammoth.browser-*.js',
-          // Question banks are copied into IndexedDB on first load and learning checks are
-          // fetched per module, so both are cached at runtime instead of precached (~4.6 MB).
-          '**/questions/**',
-          '**/learning-checks/**',
+          // Official banks are copied into IndexedDB on first load, so they are cached at
+          // runtime instead of precached (~5 MB). The JSON Schema is only for bank authors.
+          '**/banks/**',
+          '**/schema/**',
         ],
         // Never let the Service Worker intercept /api/* requests —
         // those must always reach the Vercel serverless functions via the network.
@@ -81,12 +81,10 @@ export default defineConfig({
             handler: 'NetworkOnly',
           },
           {
-            urlPattern: ({ url }) =>
-              url.pathname.startsWith('/questions/') ||
-              url.pathname.startsWith('/learning-checks/'),
+            urlPattern: ({ url }) => url.pathname.startsWith('/banks/'),
             handler: 'NetworkFirst',
             options: {
-              cacheName: 'question-data',
+              cacheName: 'bank-data',
               networkTimeoutSeconds: 4,
               expiration: { maxEntries: 120 },
             },

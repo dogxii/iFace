@@ -16,11 +16,10 @@ import { ModuleDot, ModuleMark } from '@/components/ModuleMark'
 import { dataSource } from '@/data/source'
 import { PALETTE_SHORTCUT } from '@/features/command-palette/shortcut'
 import { useQuestions } from '@/hooks/useQuestions'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
-import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { preloadPath } from '@/lib/routePreload'
 import { useAuthState } from '@/store/useAuthStore'
+import { useLibraryState } from '@/store/useLibraryStore'
 import { useStudyState } from '@/store/useStudyStore'
 import { useUIState } from '@/store/useUIStore'
 import { DIFFICULTY_LABELS, type Question, type QuestionNote, type StudyStatus } from '@/types'
@@ -48,7 +47,6 @@ import {
   activityCalendar,
   estimateMinutes,
   greeting,
-  idsInModuleOrder,
   lastStudiedQuestion,
   type ModuleProgress,
   moduleProgress,
@@ -64,14 +62,6 @@ const STATUS_TEXT: Record<StudyStatus, string> = {
   mastered: '已掌握',
   review: '待复习',
   unlearned: '新题',
-}
-
-function useCategoryMap(): CategoryMap {
-  const [map, setMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
-  useEffect(() => {
-    void getCategoryMap().then(setMap)
-  }, [])
-  return map
 }
 
 function useNotes(): QuestionNote[] {
@@ -146,7 +136,7 @@ function ContinueCard({
             </h3>
             <div className="mt-3 flex flex-wrap gap-1.5">
               <Tag className="pl-1">
-                <ModuleMark module={question.module} size="sm" />
+                <ModuleMark moduleKey={question.moduleKey} size="sm" />
                 {question.module}
               </Tag>
               <Tag dot={DIFFICULTY_TONE[question.difficulty]}>
@@ -164,7 +154,7 @@ function ContinueCard({
                 </Link>
               </Button>
               <Button asChild>
-                <Link to={`/questions?module=${encodeURIComponent(question.module)}`}>
+                <Link to={`/questions?module=${encodeURIComponent(question.moduleKey)}`}>
                   练习 {question.module} 模块
                 </Link>
               </Button>
@@ -248,12 +238,12 @@ function ModuleList({ modules }: { modules: ModuleProgress[] }) {
     <div className="flex flex-col">
       {modules.map((m) => (
         <Link
-          key={m.module}
-          to={`/questions?module=${encodeURIComponent(m.module)}`}
+          key={m.moduleKey}
+          to={`/questions?module=${encodeURIComponent(m.moduleKey)}`}
           className="-mx-2 grid grid-cols-[132px_1fr_52px] items-center gap-3 rounded-md px-2 py-2 text-sm hover:bg-subtle"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <ModuleMark module={m.module} />
+            <ModuleMark moduleKey={m.moduleKey} />
             <span className="truncate text-fg">{m.module}</span>
           </span>
           <Progress
@@ -292,29 +282,22 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const { allQuestions, loading, initializing, getDailyIds } = useQuestions()
   const records = useStudyState((s) => s.records)
-  const hiddenCategories = useStudyState((s) => s.hiddenCategories)
   const dailyGoal = useStudyState((s) => s.dailyGoal)
   const todayCount = useStudyState((s) => s.streak.todayCount)
   const user = useAuthState((s) => s.user)
   const openSettings = useUIState((s) => s.openSettings)
-  const categoryMap = useCategoryMap()
+  const hasDisabledBanks = useLibraryState((s) => s.banks.some((bank) => !bank.enabled))
   const notes = useNotes()
   const navigate = useNavigate()
   const [now] = useState(() => Date.now())
 
-  const visibleQuestions = useMemo(
-    () => filterVisibleQuestions(allQuestions, getHiddenModules(categoryMap, hiddenCategories)),
-    [allQuestions, categoryMap, hiddenCategories],
-  )
+  // The library already leaves out disabled banks and orders questions by module.
+  const visibleQuestions = allQuestions
   const modules = useMemo(
-    () => moduleProgress(visibleQuestions, records, categoryMap, hiddenCategories),
-    [visibleQuestions, records, categoryMap, hiddenCategories],
+    () => moduleProgress(visibleQuestions, records),
+    [visibleQuestions, records],
   )
-  const moduleOrderKey = modules.map((m) => m.module).join('\n')
-  const visibleIds = useMemo(
-    () => idsInModuleOrder(visibleQuestions, moduleOrderKey.split('\n')),
-    [visibleQuestions, moduleOrderKey],
-  )
+  const visibleIds = useMemo(() => visibleQuestions.map((q) => q.id), [visibleQuestions])
   const questionById = useMemo(
     () => new Map(visibleQuestions.map((q) => [q.id, q])),
     [visibleQuestions],
@@ -370,8 +353,8 @@ export default function DashboardPage() {
       ? `有 ${counts.review} 道题待复习，今日推荐 ${dailyQuestions.length} 道，约 ${estimateMinutes(dailyQuestions.length)} 分钟。`
       : `共 ${counts.total} 道题，已掌握 ${counts.mastered} 道。今天从推荐的 ${dailyQuestions.length} 道题开始吧。`
 
-  const hasNoQuestions = !loading && !initializing && allQuestions.length === 0
-  const allHidden = allQuestions.length > 0 && visibleQuestions.length === 0
+  const allHidden = !loading && allQuestions.length === 0 && hasDisabledBanks
+  const hasNoQuestions = !loading && !initializing && allQuestions.length === 0 && !allHidden
 
   return (
     <>
@@ -383,7 +366,7 @@ export default function DashboardPage() {
           <EmptyState
             icon={<Download />}
             title="题库为空"
-            description="导入内置题库或自定义 JSON 文件后即可开始练习。"
+            description="导入题库文件后即可开始练习。"
             action={
               <Button variant="primary" asChild>
                 <Link to="/import">前往导入</Link>
@@ -394,7 +377,7 @@ export default function DashboardPage() {
           <EmptyState
             icon={<EyeOff />}
             title="所有题库都已隐藏"
-            description="在设置的「偏好 → 题库展示」中重新开启需要练习的分类。"
+            description="在设置的「偏好 → 题库」中重新启用需要练习的题库。"
             action={<Button onClick={() => openSettings('study')}>打开设置</Button>}
           />
         ) : (
@@ -482,7 +465,7 @@ export default function DashboardPage() {
                           <StatusDot tone={STATUS_TONE[status]} />
                           <span className="truncate text-fg">{question.question}</span>
                           <span className="hidden min-w-0 items-center gap-1.5 text-xs text-fg-subtle sm:flex">
-                            <ModuleDot module={question.module} />
+                            <ModuleDot moduleKey={question.moduleKey} />
                             <span className="truncate">
                               {question.module} · {DIFFICULTY_LABELS[question.difficulty]}
                             </span>

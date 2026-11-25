@@ -37,10 +37,10 @@ describe('session source', () => {
 
 describe('adjacent questions', () => {
   const questions = [
-    { id: 'js-1', module: 'JS' },
-    { id: 'css-1', module: 'CSS' },
-    { id: 'js-2', module: 'JS' },
-    { id: 'js-3', module: 'JS' },
+    { id: 'js-1', moduleKey: 'JS' },
+    { id: 'css-1', moduleKey: 'CSS' },
+    { id: 'js-2', moduleKey: 'JS' },
+    { id: 'js-3', moduleKey: 'JS' },
   ]
 
   it('stays within the module', () => {

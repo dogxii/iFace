@@ -15,9 +15,9 @@ import { DifficultyBars } from '@/components/DifficultyBars'
 import { ModuleDot, ModuleMark } from '@/components/ModuleMark'
 import { dataSource } from '@/data/source'
 import { useQuestions } from '@/hooks/useQuestions'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
+import { type BankGroup, groupByBank } from '@/lib/libraryGroups'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
-import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
+import { useLibraryState } from '@/store/useLibraryStore'
 import { useStudyState } from '@/store/useStudyStore'
 import {
   DIFFICULTY_LABELS,
@@ -48,6 +48,7 @@ import {
   type ListQuery,
   parseListQuery,
   relativeTime,
+  resolveModuleParams,
   runListQuery,
   SORT_OPTIONS,
   type SortValue,
@@ -129,19 +130,13 @@ function Highlight({ text, keyword }: { text: string; keyword: string }) {
   )
 }
 
-interface ModuleEntry {
-  module: string
-  total: number
-  mastered: number
-}
-
 function CategoryPanel({
   groups,
   query,
   counts,
   onSelect,
 }: {
-  groups: { name: string; modules: ModuleEntry[] }[]
+  groups: BankGroup[]
   query: ListQuery
   counts: { all: number; starred: number; notes: number }
   onSelect: (patch: Partial<ListQuery>) => void
@@ -202,7 +197,7 @@ function CategoryPanel({
         const total = group.modules.reduce((sum, m) => sum + m.total, 0)
         const mastered = group.modules.reduce((sum, m) => sum + m.mastered, 0)
         return (
-          <div key={group.name} className="mt-3">
+          <div key={group.bankId} className="mt-3">
             <div className="flex justify-between px-2 pb-1 text-xs text-fg-subtle">
               <span>{group.name}</span>
               <span className="tabular-nums">
@@ -211,9 +206,9 @@ function CategoryPanel({
             </div>
             {group.modules.map((m) =>
               item(
-                m.module,
-                single === m.module,
-                <ModuleMark module={m.module} size="sm" />,
+                m.moduleKey,
+                single === m.moduleKey,
+                <ModuleMark moduleKey={m.moduleKey} size="sm" />,
                 m.module,
                 m.mastered > 0 ? (
                   <>
@@ -222,7 +217,7 @@ function CategoryPanel({
                 ) : (
                   m.total
                 ),
-                () => onSelect({ modules: single === m.module ? [] : [m.module] }),
+                () => onSelect({ modules: single === m.moduleKey ? [] : [m.moduleKey] }),
               ),
             )}
           </div>
@@ -290,7 +285,7 @@ function QuestionRow({
         ) : null}
       </div>
       <span className="hidden min-w-0 items-center gap-2 text-sm text-fg-muted md:flex">
-        <ModuleDot module={question.module} />
+        <ModuleDot moduleKey={question.moduleKey} />
         <span className="truncate">{question.module}</span>
       </span>
       <span className="hidden items-center text-xs text-fg-subtle md:flex">
@@ -372,9 +367,10 @@ export default function QuestionListPage() {
   const query = useMemo(() => parseListQuery(params), [params])
   const { allQuestions, initializing } = useQuestions()
   const records = useStudyState((s) => s.records)
-  const hiddenCategories = useStudyState((s) => s.hiddenCategories)
+  const banks = useLibraryState((s) => s.banks)
+  const libraryModules = useLibraryState((s) => s.modules)
+  const libraryLoaded = useLibraryState((s) => s.loaded)
   const { notes, starred, toggleStar } = useQuestionMeta()
-  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
   const location = useLocation()
   // Remember how many rows were loaded on this history entry, so back from a question restores
   // the same list (and ScrollManager can put you back where you were).
@@ -386,9 +382,14 @@ export default function QuestionListPage() {
   const [searchText, setSearchText] = useState(query.search)
   const searchRef = useRef<HTMLInputElement>(null)
 
+  // Pre-2.0 links name modules (`?module=React`); rewrite them to module keys once loaded.
   useEffect(() => {
-    void getCategoryMap().then(setCategoryMap)
-  }, [])
+    if (!libraryLoaded) return
+    const modules = resolveModuleParams(query.modules, libraryModules)
+    if (modules) {
+      setParams(buildListParams({ ...parseListQuery(params), modules }), { replace: true })
+    }
+  }, [libraryLoaded, libraryModules, query.modules, params, setParams])
 
   const update = useCallback(
     (patch: Partial<ListQuery>) => {
@@ -425,38 +426,13 @@ export default function QuestionListPage() {
     return () => window.removeEventListener('keydown', handler)
   }, [update, query.notesOnly])
 
-  const visibleQuestions = useMemo(
-    () => filterVisibleQuestions(allQuestions, getHiddenModules(categoryMap, hiddenCategories)),
-    [allQuestions, categoryMap, hiddenCategories],
-  )
+  const visibleQuestions = allQuestions
+  const moduleName = (key: string) => libraryModules.get(key)?.name ?? key
 
-  const groups = useMemo(() => {
-    const byModule = new Map<string, ModuleEntry>()
-    for (const q of visibleQuestions) {
-      const entry = byModule.get(q.module) ?? { module: q.module, total: 0, mastered: 0 }
-      entry.total++
-      if (records[q.id]?.status === 'mastered') entry.mastered++
-      byModule.set(q.module, entry)
-    }
-    const used = new Set<string>()
-    const result: { name: string; modules: ModuleEntry[] }[] = []
-    const categories = Object.entries(categoryMap).sort(
-      ([, a], [, b]) => (a.order ?? 99) - (b.order ?? 99),
-    )
-    for (const [name, category] of categories) {
-      if (hiddenCategories.has(name)) continue
-      const modules = category.modules.flatMap((m) => {
-        const entry = byModule.get(m)
-        if (!entry || used.has(m)) return []
-        used.add(m)
-        return [entry]
-      })
-      if (modules.length > 0) result.push({ name: category.name || name, modules })
-    }
-    const rest = [...byModule.values()].filter((m) => !used.has(m.module))
-    if (rest.length > 0) result.push({ name: '其他', modules: rest })
-    return result
-  }, [visibleQuestions, records, categoryMap, hiddenCategories])
+  const groups = useMemo(
+    () => groupByBank(visibleQuestions, banks, records),
+    [visibleQuestions, banks, records],
+  )
 
   const result = useMemo(
     () => runListQuery(visibleQuestions, query, { records, notes, starred }),
@@ -466,7 +442,7 @@ export default function QuestionListPage() {
 
   const scope = useMemo(() => {
     const inScope = visibleQuestions.filter(
-      (q) => query.modules.length === 0 || query.modules.includes(q.module),
+      (q) => query.modules.length === 0 || query.modules.includes(q.moduleKey),
     )
     let mastered = 0
     let review = 0
@@ -480,7 +456,7 @@ export default function QuestionListPage() {
 
   const title =
     query.modules.length === 1
-      ? query.modules[0]
+      ? moduleName(query.modules[0])
       : query.modules.length > 1
         ? `${query.modules.length} 个模块`
         : query.starredOnly
@@ -496,7 +472,13 @@ export default function QuestionListPage() {
 
   const chips: { key: string; label: string; clear: Partial<ListQuery> }[] = [
     ...(query.modules.length > 1
-      ? [{ key: 'm', label: `模块：${query.modules.join('、')}`, clear: { modules: [] } }]
+      ? [
+          {
+            key: 'm',
+            label: `模块：${query.modules.map(moduleName).join('、')}`,
+            clear: { modules: [] },
+          },
+        ]
       : []),
     ...(query.statuses.length > 0
       ? [
@@ -539,7 +521,7 @@ export default function QuestionListPage() {
                 label: '题库',
                 onClick: query.modules.length > 0 ? () => update({ modules: [] }) : undefined,
               },
-              ...(query.modules.length === 1 ? [{ label: query.modules[0] }] : []),
+              ...(query.modules.length === 1 ? [{ label: moduleName(query.modules[0]) }] : []),
             ]}
           />
         }
@@ -571,7 +553,7 @@ export default function QuestionListPage() {
             title={
               query.modules.length === 1 ? (
                 <span className="flex items-center gap-3">
-                  <ModuleMark module={query.modules[0]} size="lg" />
+                  <ModuleMark moduleKey={query.modules[0]} size="lg" />
                   {title}
                 </span>
               ) : (
@@ -624,7 +606,7 @@ export default function QuestionListPage() {
                 options={[
                   { value: 'all', label: '全部' },
                   ...groups.flatMap((g) =>
-                    g.modules.map((m) => ({ value: m.module, label: m.module })),
+                    g.modules.map((m) => ({ value: m.moduleKey, label: m.module })),
                   ),
                 ]}
               />

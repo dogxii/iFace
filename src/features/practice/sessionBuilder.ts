@@ -80,7 +80,7 @@ export function sessionPool(
   const modules = new Set(options.modules)
   return questions.filter(
     (q) =>
-      (modules.size === 0 || modules.has(q.module)) &&
+      (modules.size === 0 || modules.has(q.moduleKey)) &&
       (options.difficulty === 'all' || q.difficulty === options.difficulty) &&
       matchesStatus(q, records, options.status, now),
   )

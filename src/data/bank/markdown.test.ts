@@ -88,11 +88,11 @@ describe('parseMarkdownQuestions', () => {
 
 describe('questionsToMarkdown', () => {
   it('round-trips every official question', () => {
-    const root = join(process.cwd(), 'public/questions')
-    const questions: MarkdownQuestionInput[] = readdirSync(root, { recursive: true })
-      .map(String)
-      .filter((file) => file.endsWith('.json'))
-      .flatMap((file) => JSON.parse(readFileSync(join(root, file), 'utf8')))
+    const root = join(process.cwd(), 'public/banks')
+    const questions: MarkdownQuestionInput[] = readdirSync(root)
+      .filter((file) => file.startsWith('iface.') && file.endsWith('.json'))
+      .flatMap((file) => JSON.parse(readFileSync(join(root, file), 'utf8')).modules)
+      .flatMap((mod: { questions: MarkdownQuestionInput[] }) => mod.questions)
       .map(({ id, difficulty, question, answer, tags, source }) => ({
         id,
         difficulty,

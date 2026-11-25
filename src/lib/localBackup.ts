@@ -1,8 +1,17 @@
+/**
+ * Backup files (设置 → 数据管理). Format v9 (2.0):
+ *
+ * - `banks`: local banks as `iface-bank@1` snapshots (official and installed banks are not
+ *   copied; `bankStates` only keeps whether they were enabled and their order)
+ * - study data keyed by bank-scoped question ids (`iface.frontend:js-001`)
+ *
+ * Older backups (1.x, format ≤ 8) are upgraded on import by `compat/legacy15`.
+ */
+import { hasLegacyIds, isLegacyQuestion, upgradeLegacyData } from '../compat/legacy15/data'
 import type { AIMessage, AISession } from '../store/useAIStore'
 import type {
   JdMatchReport,
   MockInterviewSession,
-  Question,
   QuestionAnswerAnnotation,
   QuestionAnswerOverride,
   QuestionFlag,
@@ -10,13 +19,19 @@ import type {
   StudyRecord,
   StudyStatus,
 } from '../types'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP } from './db'
+import { type BankSnapshot, isBankSnapshot } from './banks/package'
 
-export interface ImportPreview {
-  fileName: string
-  formatVersion?: number
-  exportedAt?: string
-  questions: Question[]
+export const BACKUP_FORMAT_VERSION = 9
+
+export interface BankState {
+  id: string
+  enabled: boolean
+  order: number
+}
+
+export interface BackupData {
+  banks: BankSnapshot[]
+  bankStates: BankState[]
   studyRecords: StudyRecord[]
   questionNotes: QuestionNote[]
   questionAnswerAnnotations: QuestionAnswerAnnotation[]
@@ -25,22 +40,34 @@ export interface ImportPreview {
   aiSessions: AISession[]
   mockInterviews: MockInterviewSession[]
   jdMatchReports: JdMatchReport[]
-  customSources: string[]
-  customCategories: CategoryMap
+}
+
+export interface BackupFile extends BackupData {
+  formatVersion: typeof BACKUP_FORMAT_VERSION
+  exportedAt: string
+}
+
+export interface ImportPreview extends BackupData {
+  fileName: string
+  formatVersion?: number
+  exportedAt?: string
+  /** Converted from a pre-2.0 backup. */
+  upgraded: boolean
   impact: ImportImpact
 }
 
-export interface ImportImpact {
-  questions: ImportImpactItem
-  studyRecords: ImportImpactItem
-  questionNotes: ImportImpactItem
-  questionAnswerAnnotations: ImportImpactItem
-  questionAnswerOverrides: ImportImpactItem
-  questionFlags: ImportImpactItem
-  aiSessions: ImportImpactItem
-  mockInterviews: ImportImpactItem
-  jdMatchReports: ImportImpactItem
-}
+export type ImportImpact = Record<
+  | 'banks'
+  | 'studyRecords'
+  | 'questionNotes'
+  | 'questionAnswerAnnotations'
+  | 'questionAnswerOverrides'
+  | 'questionFlags'
+  | 'aiSessions'
+  | 'mockInterviews'
+  | 'jdMatchReports',
+  ImportImpactItem
+>
 
 export interface ImportImpactItem {
   created: number
@@ -53,20 +80,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isStudyStatus(value: unknown): value is StudyStatus {
   return value === 'unlearned' || value === 'mastered' || value === 'review'
-}
-
-function isQuestion(value: unknown): value is Question {
-  return (
-    isRecord(value) &&
-    typeof value.id === 'string' &&
-    typeof value.module === 'string' &&
-    (value.difficulty === 1 || value.difficulty === 2 || value.difficulty === 3) &&
-    typeof value.question === 'string' &&
-    typeof value.answer === 'string' &&
-    Array.isArray(value.tags) &&
-    value.tags.every((tag) => typeof tag === 'string') &&
-    (value.source === undefined || typeof value.source === 'string')
-  )
 }
 
 function isStudyRecord(value: unknown): value is StudyRecord {
@@ -132,17 +145,6 @@ function isQuestionFlag(value: unknown): value is QuestionFlag {
     typeof value.starred === 'boolean' &&
     typeof value.createdAt === 'number' &&
     typeof value.updatedAt === 'number'
-  )
-}
-
-function isCategoryEntry(value: unknown): value is CategoryMap[string] {
-  return (
-    isRecord(value) &&
-    typeof value.name === 'string' &&
-    Array.isArray(value.modules) &&
-    value.modules.every((moduleName) => typeof moduleName === 'string') &&
-    typeof value.builtin === 'boolean' &&
-    typeof value.order === 'number'
   )
 }
 
@@ -252,18 +254,22 @@ function isJdMatchReport(value: unknown): value is JdMatchReport {
   )
 }
 
+type ArrayKey =
+  | 'questions'
+  | 'banks'
+  | 'bankStates'
+  | 'studyRecords'
+  | 'questionNotes'
+  | 'questionAnswerAnnotations'
+  | 'questionAnswerOverrides'
+  | 'questionFlags'
+  | 'aiSessions'
+  | 'mockInterviews'
+  | 'jdMatchReports'
+
 function parseImportArray<T>(
   data: Record<string, unknown>,
-  key:
-    | 'questions'
-    | 'studyRecords'
-    | 'questionNotes'
-    | 'questionAnswerAnnotations'
-    | 'questionAnswerOverrides'
-    | 'questionFlags'
-    | 'aiSessions'
-    | 'mockInterviews'
-    | 'jdMatchReports',
+  key: ArrayKey,
   guard: (value: unknown) => value is T,
   label: string,
 ): T[] {
@@ -279,87 +285,28 @@ function parseImportArray<T>(
   return value
 }
 
-function parseStringArray(data: Record<string, unknown>, key: string, label: string): string[] {
-  const value = data[key]
-  if (value === undefined) return []
-  if (!Array.isArray(value) || !value.every((item) => typeof item === 'string')) {
-    throw new Error(`${label} 必须是字符串数组`)
-  }
-  return value
-}
-
-function parseCustomCategories(data: Record<string, unknown>): CategoryMap {
-  const value = data.customCategories
-  if (value === undefined) return {}
-  if (!isRecord(value) || Array.isArray(value)) throw new Error('自定义分类必须是对象')
-
-  const categories: CategoryMap = {}
-  for (const [key, entry] of Object.entries(value)) {
-    if (!isCategoryEntry(entry)) throw new Error(`自定义分类 ${key} 格式无效`)
-    if (!entry.builtin) categories[key] = entry
-  }
-  return categories
-}
-
-function deriveCategoryName(sourceName: string): string {
-  const normalized = sourceName
-    .replace(/\.(json|md)$/i, '')
-    .replace(/[-_]/g, ' ')
-    .trim()
-  return normalized ? normalized.replace(/\b\w/g, (char) => char.toUpperCase()) : '自定义题库'
-}
-
-function deriveCustomSources(questions: Question[]): string[] {
-  return [
-    ...new Set(
-      questions
-        .filter((question) => question.id.startsWith('custom_') && question.source?.trim())
-        .map((question) => question.source?.trim() ?? ''),
-    ),
-  ]
-}
-
-function deriveCustomCategories(questions: Question[]): CategoryMap {
-  const groups = new Map<string, Set<string>>()
-
-  for (const question of questions) {
-    if (!question.id.startsWith('custom_') || !question.source?.trim()) continue
-    const categoryName = deriveCategoryName(question.source)
-    if (!groups.has(categoryName)) groups.set(categoryName, new Set())
-    groups.get(categoryName)?.add(question.module)
-  }
-
-  return Object.fromEntries(
-    [...groups.entries()].map(([name, modules], index) => [
-      name,
-      {
-        name,
-        modules: [...modules],
-        builtin: false,
-        order: Object.keys(DEFAULT_CATEGORY_MAP).length + index,
-      },
-    ]),
+function isBankState(value: unknown): value is BankState {
+  return (
+    isRecord(value) &&
+    typeof value.id === 'string' &&
+    typeof value.enabled === 'boolean' &&
+    typeof value.order === 'number'
   )
 }
 
-export function mergeCategoryMaps(base: CategoryMap, incoming: CategoryMap): CategoryMap {
-  const merged: CategoryMap = { ...base }
+const isAnything = (_value: unknown): _value is unknown => true
 
-  for (const [key, incomingEntry] of Object.entries(incoming)) {
-    const current = merged[key]
-    if (!current) {
-      merged[key] = incomingEntry
-      continue
-    }
+const EMPTY_IMPACT: ImportImpactItem = { created: 0, overwritten: 0 }
 
-    const modules = [...new Set([...current.modules, ...incomingEntry.modules])]
-    merged[key] = { ...current, ...incomingEntry, modules, builtin: current.builtin }
-  }
-
-  return merged
-}
-
-export function parseImportPreview(fileName: string, rawText: string): ImportPreview {
+/**
+ * Parses a backup file. `officialKeys` (old official id → new key) is needed to upgrade
+ * pre-2.0 backups; see `officialKeysByLegacyId`.
+ */
+export function parseImportPreview(
+  fileName: string,
+  rawText: string,
+  officialKeys: ReadonlyMap<string, string> = new Map(),
+): ImportPreview {
   let parsed: unknown
   try {
     parsed = JSON.parse(rawText)
@@ -367,85 +314,102 @@ export function parseImportPreview(fileName: string, rawText: string): ImportPre
     throw new Error('文件不是有效 JSON')
   }
 
-  if (!isRecord(parsed)) throw new Error('文件格式无效')
+  if (!isRecord(parsed) || Array.isArray(parsed)) throw new Error('文件格式无效')
 
-  const questions = parseImportArray(parsed, 'questions', isQuestion, '题目')
-  const studyRecords = parseImportArray(parsed, 'studyRecords', isStudyRecord, '学习记录')
-  const questionNotes = parseImportArray(parsed, 'questionNotes', isQuestionNote, '题目笔记')
-  const questionAnswerAnnotations = parseImportArray(
-    parsed,
-    'questionAnswerAnnotations',
-    isQuestionAnswerAnnotation,
-    '答案标注',
+  const formatVersion = typeof parsed.formatVersion === 'number' ? parsed.formatVersion : undefined
+  if (formatVersion !== undefined && formatVersion > BACKUP_FORMAT_VERSION) {
+    throw new Error('备份来自更新版本的 iFace，请先更新应用')
+  }
+
+  let data: BackupData = {
+    banks: parseImportArray(parsed, 'banks', isBankSnapshot, '题库'),
+    bankStates: parseImportArray(parsed, 'bankStates', isBankState, '题库状态'),
+    studyRecords: parseImportArray(parsed, 'studyRecords', isStudyRecord, '学习记录'),
+    questionNotes: parseImportArray(parsed, 'questionNotes', isQuestionNote, '题目笔记'),
+    questionAnswerAnnotations: parseImportArray(
+      parsed,
+      'questionAnswerAnnotations',
+      isQuestionAnswerAnnotation,
+      '答案标注',
+    ),
+    questionAnswerOverrides: parseImportArray(
+      parsed,
+      'questionAnswerOverrides',
+      isQuestionAnswerOverride,
+      '自定义答案',
+    ),
+    questionFlags: parseImportArray(parsed, 'questionFlags', isQuestionFlag, '题目标记'),
+    aiSessions: parseImportArray(parsed, 'aiSessions', isAISession, 'AI 会话'),
+    mockInterviews: parseImportArray(parsed, 'mockInterviews', isMockInterviewSession, '模拟面试'),
+    jdMatchReports: parseImportArray(parsed, 'jdMatchReports', isJdMatchReport, 'JD 诊断'),
+  }
+
+  // COMPAT: remove after 2027-06-30 — pre-2.0 backups carry question objects and unprefixed ids.
+  const legacyQuestions = parseImportArray(parsed, 'questions', isAnything, '题目').filter(
+    isLegacyQuestion,
   )
-  const questionAnswerOverrides = parseImportArray(
-    parsed,
-    'questionAnswerOverrides',
-    isQuestionAnswerOverride,
-    '自定义答案',
-  )
-  const questionFlags = parseImportArray(parsed, 'questionFlags', isQuestionFlag, '题目标记')
-  const aiSessions = parseImportArray(parsed, 'aiSessions', isAISession, 'AI 会话')
-  const mockInterviews = parseImportArray(
-    parsed,
-    'mockInterviews',
-    isMockInterviewSession,
-    '模拟面试',
-  )
-  const jdMatchReports = parseImportArray(parsed, 'jdMatchReports', isJdMatchReport, 'JD 诊断')
-  const customSources = [
-    ...new Set([
-      ...parseStringArray(parsed, 'customSources', '自定义来源'),
-      ...deriveCustomSources(questions),
-    ]),
-  ]
-  const customCategories = mergeCategoryMaps(
-    deriveCustomCategories(questions),
-    parseCustomCategories(parsed),
-  )
+  const upgraded =
+    (formatVersion ?? 0) < BACKUP_FORMAT_VERSION &&
+    hasLegacyIds({ questions: legacyQuestions, studyRecords: data.studyRecords })
+  if (upgraded) {
+    const exportedAt = typeof parsed.exportedAt === 'string' ? Date.parse(parsed.exportedAt) : NaN
+    data = {
+      ...upgradeLegacyData(
+        { ...data, questions: legacyQuestions },
+        officialKeys,
+        Number.isNaN(exportedAt) ? Date.now() : exportedAt,
+      ),
+      bankStates: [],
+      jdMatchReports: data.jdMatchReports,
+    }
+  }
 
   if (
-    questions.length +
-      studyRecords.length +
-      questionNotes.length +
-      questionAnswerAnnotations.length +
-      questionAnswerOverrides.length +
-      questionFlags.length +
-      aiSessions.length +
-      mockInterviews.length +
-      jdMatchReports.length ===
+    data.banks.length +
+      data.studyRecords.length +
+      data.questionNotes.length +
+      data.questionAnswerAnnotations.length +
+      data.questionAnswerOverrides.length +
+      data.questionFlags.length +
+      data.aiSessions.length +
+      data.mockInterviews.length +
+      data.jdMatchReports.length ===
     0
   ) {
     throw new Error('备份中没有可导入的数据')
   }
 
   return {
+    ...data,
     fileName,
-    formatVersion: typeof parsed.formatVersion === 'number' ? parsed.formatVersion : undefined,
+    formatVersion,
     exportedAt: typeof parsed.exportedAt === 'string' ? parsed.exportedAt : undefined,
-    questions,
-    studyRecords,
-    questionNotes,
-    questionAnswerAnnotations,
-    questionAnswerOverrides,
-    questionFlags,
-    aiSessions,
-    mockInterviews,
-    jdMatchReports,
-    customSources,
-    customCategories,
+    upgraded,
     impact: {
-      questions: { created: 0, overwritten: 0 },
-      studyRecords: { created: 0, overwritten: 0 },
-      questionNotes: { created: 0, overwritten: 0 },
-      questionAnswerAnnotations: { created: 0, overwritten: 0 },
-      questionAnswerOverrides: { created: 0, overwritten: 0 },
-      questionFlags: { created: 0, overwritten: 0 },
-      aiSessions: { created: 0, overwritten: 0 },
-      mockInterviews: { created: 0, overwritten: 0 },
-      jdMatchReports: { created: 0, overwritten: 0 },
+      banks: EMPTY_IMPACT,
+      studyRecords: EMPTY_IMPACT,
+      questionNotes: EMPTY_IMPACT,
+      questionAnswerAnnotations: EMPTY_IMPACT,
+      questionAnswerOverrides: EMPTY_IMPACT,
+      questionFlags: EMPTY_IMPACT,
+      aiSessions: EMPTY_IMPACT,
+      mockInterviews: EMPTY_IMPACT,
+      jdMatchReports: EMPTY_IMPACT,
     },
   }
+}
+
+/** Number of questions in the local banks of a backup. */
+export function backupQuestionCount(banks: readonly BankSnapshot[]): number {
+  return banks.reduce(
+    (sum, bank) =>
+      sum +
+      bank.package.modules.reduce(
+        (count, mod) => count + (Array.isArray(mod.questions) ? mod.questions.length : 0),
+        0,
+      ),
+    0,
+  )
 }
 
 export function countMergedAISessions(

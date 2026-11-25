@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { CategoryMap } from '@/lib/db'
 import type { Question, StudyRecordMap } from '@/types'
 import {
   activityCalendar,
   greeting,
-  idsInModuleOrder,
   lastStudiedQuestion,
   moduleProgress,
   progressCounts,
@@ -12,7 +10,10 @@ import {
 
 const q = (id: string, module: string): Question => ({
   id,
+  bankId: 'b',
+  moduleKey: `b/${module.toLowerCase()}`,
   module,
+  position: 0,
   difficulty: 1,
   question: id,
   answer: '',
@@ -30,11 +31,6 @@ const records: StudyRecordMap = {
 }
 
 describe('dashboard data', () => {
-  it('orders daily candidates by module display order, keeping order within a module', () => {
-    const mixed = [q('agent-1', 'Agent'), q('js-2', 'JS'), q('js-1', 'JS'), q('x', 'Custom')]
-    expect(idsInModuleOrder(mixed, ['JS', 'Agent'])).toEqual(['js-2', 'js-1', 'agent-1', 'x'])
-  })
-
   it('counts progress over visible questions only', () => {
     expect(progressCounts(questions, records, NOW)).toEqual({
       total: 4,
@@ -45,15 +41,16 @@ describe('dashboard data', () => {
     })
   })
 
-  it('orders modules by category order and skips hidden categories', () => {
-    const categories = {
-      Go: { name: 'Go', modules: ['Go'], builtin: true, order: 2 },
-      前端: { name: '前端', modules: ['React'], builtin: true, order: 1 },
-      Java: { name: 'Java', modules: ['Spring'], builtin: true, order: 3 },
-    } as CategoryMap
-    const result = moduleProgress(questions, records, categories, new Set(['Java']))
+  it('reports per-module progress in question order', () => {
+    const result = moduleProgress(questions, records)
     expect(result.map((m) => m.module)).toEqual(['React', 'Go', 'Custom'])
-    expect(result[0]).toEqual({ module: 'React', total: 2, mastered: 1, review: 1 })
+    expect(result[0]).toEqual({
+      moduleKey: 'b/react',
+      module: 'React',
+      total: 2,
+      mastered: 1,
+      review: 1,
+    })
   })
 
   it('finds the most recently studied visible question', () => {

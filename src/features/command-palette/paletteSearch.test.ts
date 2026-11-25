@@ -22,6 +22,11 @@ describe('searchQuestions', () => {
     expect(searchQuestions(BANK, 'react-001')[0].id).toBe('react-001')
   })
 
+  it('matches the id inside a bank-scoped key', () => {
+    const scoped = [q('iface.frontend:js-001', '什么是闭包？'), q('iface.frontend:js-0011', '别的')]
+    expect(searchQuestions(scoped, 'js-001')[0].id).toBe('iface.frontend:js-001')
+  })
+
   it('prefers title prefix over substring, then shorter titles', () => {
     const ids = searchQuestions(BANK, '闭包').map((x) => x.id)
     expect(ids).toEqual(['js-002', 'js-001'])

@@ -1,5 +1,4 @@
 import { toDateKey } from '@/lib/date'
-import type { CategoryMap } from '@/lib/db'
 import type { Question, QuestionNote, StudyRecordMap } from '@/types'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -40,72 +39,38 @@ export function progressCounts(
 }
 
 export interface ModuleProgress {
+  moduleKey: string
+  /** Display name. */
   module: string
   total: number
   mastered: number
   review: number
 }
 
-/** Per-module progress, ordered by category order and then by first appearance. */
-export function moduleProgress(
-  questions: Question[],
-  records: StudyRecordMap,
-  categoryMap: CategoryMap,
-  hiddenCategories: ReadonlySet<string>,
-): ModuleProgress[] {
-  const order: string[] = []
-  const seen = new Set<string>()
-  const categories = Object.entries(categoryMap).sort(
-    ([, a], [, b]) => (a.order ?? 99) - (b.order ?? 99),
-  )
-  for (const [name, category] of categories) {
-    if (hiddenCategories.has(name)) continue
-    for (const module of category.modules) {
-      if (!seen.has(module)) {
-        seen.add(module)
-        order.push(module)
-      }
-    }
-  }
-
+/**
+ * Per-module progress in the order the questions come in. The library already sorts
+ * questions by bank and module order, so this is the order modules are shown everywhere.
+ */
+export function moduleProgress(questions: Question[], records: StudyRecordMap): ModuleProgress[] {
   const stats = new Map<string, ModuleProgress>()
   for (const question of questions) {
-    if (!seen.has(question.module)) {
-      seen.add(question.module)
-      order.push(question.module)
-    }
-    let entry = stats.get(question.module)
+    let entry = stats.get(question.moduleKey)
     if (!entry) {
-      entry = { module: question.module, total: 0, mastered: 0, review: 0 }
-      stats.set(question.module, entry)
+      entry = {
+        moduleKey: question.moduleKey,
+        module: question.module,
+        total: 0,
+        mastered: 0,
+        review: 0,
+      }
+      stats.set(question.moduleKey, entry)
     }
     entry.total++
     const status = records[question.id]?.status
     if (status === 'mastered') entry.mastered++
     else if (status === 'review') entry.review++
   }
-
-  return order.flatMap((module) => {
-    const entry = stats.get(module)
-    return entry ? [entry] : []
-  })
-}
-
-/**
- * Question ids in the order modules are shown (category order, then module order), keeping
- * each module's own order. Daily picks walk this list, so a new user starts at the first
- * module of the first bank instead of whichever id sorts first.
- */
-export function idsInModuleOrder(questions: Question[], moduleOrder: string[]): string[] {
-  const rank = new Map(moduleOrder.map((module, index) => [module, index]))
-  return questions
-    .map((question, index) => ({ question, index }))
-    .sort(
-      (a, b) =>
-        (rank.get(a.question.module) ?? moduleOrder.length) -
-          (rank.get(b.question.module) ?? moduleOrder.length) || a.index - b.index,
-    )
-    .map(({ question }) => question.id)
+  return [...stats.values()]
 }
 
 /** The question the user touched most recently, if it is still visible. */

@@ -625,6 +625,11 @@ export const useAIState = create<AIState & AIActions>()((set, get) => ({
   getQuickActions: getAIQuickActions,
 }))
 
+/** Re-reads chats from storage after something else rewrote them (the 2.0 id migration). */
+export function reloadAISessions(): void {
+  useAIState.setState({ sessions: loadSessions() })
+}
+
 // Persist config and sessions whenever they change.
 useAIState.subscribe((state, prev) => {
   if (state.config !== prev.config) writeJSON(STORAGE_KEYS.aiConfig, state.config)

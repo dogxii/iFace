@@ -6,7 +6,15 @@ const DAY = 86_400_000
 const NOW = 100 * DAY
 
 function q(id: string, module: string, difficulty: 1 | 2 | 3): Question {
-  return { id, module, difficulty, question: id, answer: '', tags: [] } as unknown as Question
+  return {
+    id,
+    moduleKey: `b/${module}`,
+    module,
+    difficulty,
+    question: id,
+    answer: '',
+    tags: [],
+  } as unknown as Question
 }
 
 const questions = [q('a', 'React', 1), q('b', 'React', 3), q('c', 'CSS', 2), q('d', 'CSS', 1)]
@@ -28,8 +36,8 @@ describe('weak points', () => {
 
   it('counts modules by size', () => {
     expect(countByModule(items)).toEqual([
-      { module: 'React', count: 2 },
-      { module: 'CSS', count: 1 },
+      { moduleKey: 'b/React', module: 'React', count: 2 },
+      { moduleKey: 'b/CSS', module: 'CSS', count: 1 },
     ])
   })
 

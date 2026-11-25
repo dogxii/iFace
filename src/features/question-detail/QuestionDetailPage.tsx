@@ -137,8 +137,8 @@ export default function QuestionDetail() {
 
   const moduleAdjacent = useMemo(
     () =>
-      id ? adjacentInModule(allQuestions, id, question?.module) : adjacentInModule([], '', ''),
-    [id, allQuestions, question?.module],
+      id ? adjacentInModule(allQuestions, id, question?.moduleKey) : adjacentInModule([], '', ''),
+    [id, allQuestions, question?.moduleKey],
   )
   const { prevId, nextId } = resolveAdjacent(
     sessionIds,
@@ -149,7 +149,7 @@ export default function QuestionDetail() {
   const sessionCurrent = sessionIds.indexOf(questionId) + 1
   const sessionStats = useMemo(() => summarizeSession(sessionIds, records), [records, sessionIds])
   const currentModuleQuestions = useMemo(
-    () => (question ? allQuestions.filter((item) => item.module === question.module) : []),
+    () => (question ? allQuestions.filter((item) => item.moduleKey === question.moduleKey) : []),
     [allQuestions, question],
   )
 
@@ -475,6 +475,7 @@ export default function QuestionDetail() {
       <PageHeader
         title={
           <DetailBreadcrumb
+            moduleKey={question.moduleKey}
             module={question.module}
             position={modulePosition}
             moduleOpen={panelLayout.moduleDocked || moduleSheetOpen}
@@ -745,7 +746,7 @@ export default function QuestionDetail() {
                 to={
                   isInSession
                     ? '/practice'
-                    : `/questions?module=${encodeURIComponent(question.module)}`
+                    : `/questions?module=${encodeURIComponent(question.moduleKey)}`
                 }
               >
                 返回列表

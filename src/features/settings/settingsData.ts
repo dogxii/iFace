@@ -1,11 +1,11 @@
 import {
+  getAllBanks,
   getAllJdMatchReports,
   getAllMockInterviews,
   getAllQuestionAnswerAnnotations,
   getAllQuestionAnswerOverrides,
   getAllQuestionFlags,
   getAllQuestionNotes,
-  getAllQuestions,
   getAllStudyRecords,
 } from '@/lib/db'
 import type { SyncResult } from '@/lib/gistSync'
@@ -38,7 +38,7 @@ export const EMPTY_DATA_STATS: DataStats = {
 
 function loadAllLocalData() {
   return Promise.all([
-    getAllQuestions(),
+    getAllBanks(),
     getAllStudyRecords(),
     getAllQuestionNotes(),
     getAllQuestionAnswerAnnotations(),
@@ -50,10 +50,10 @@ function loadAllLocalData() {
 }
 
 export async function loadDataStats(aiSessionCount: number): Promise<DataStats> {
-  const [questions, records, notes, annotations, overrides, flags, interviews, reports] =
+  const [banks, records, notes, annotations, overrides, flags, interviews, reports] =
     await loadAllLocalData()
   return {
-    questions: questions.length,
+    questions: banks.reduce((sum, bank) => sum + bank.questionCount, 0),
     records: records.length,
     notes: notes.length,
     answerAnnotations: annotations.length,
@@ -83,17 +83,17 @@ export async function withImportImpact(
   preview: ImportPreview,
   existingAISessions: Record<string, AISession>,
 ): Promise<ImportPreview> {
-  const [questions, records, notes, annotations, overrides, flags, interviews, reports] =
+  const [banks, records, notes, annotations, overrides, flags, interviews, reports] =
     await loadAllLocalData()
   const ids = <T>(items: T[], getId: (item: T) => string) => new Set(items.map(getId))
 
   return {
     ...preview,
     impact: {
-      questions: countImportImpact(
-        preview.questions,
-        ids(questions, (q) => q.id),
-        (q) => q.id,
+      banks: countImportImpact(
+        preview.banks,
+        ids(banks, (bank) => bank.id),
+        (bank) => bank.id,
       ),
       studyRecords: countImportImpact(
         preview.studyRecords,
@@ -159,9 +159,7 @@ export function formatRemoteMergeSummary(result: SyncResult): string {
     [result.mergedRemoteAnswerAnnotationCount, '个答案标注'],
     [result.mergedRemoteQuestionFlagCount, '个重点标记'],
     [result.mergedRemoteAISessionCount, '个 AI 会话'],
-    [result.mergedRemoteQuestionCount, '道自定义题'],
-    [result.mergedRemoteSourceCount, '个来源'],
-    [result.mergedRemoteCategoryCount, '个分类'],
+    [result.mergedRemoteBankCount, '个本地题库'],
   ]
     .filter(([count]) => Boolean(count))
     .map(([count, unit]) => `${(count as number).toLocaleString()} ${unit}`)
@@ -171,5 +169,8 @@ export function formatRemoteMergeSummary(result: SyncResult): string {
 
 /** "已备份 3 条学习记录、…" style summary for a successful push or pull. */
 export function formatSyncSummary(verb: string, result: SyncResult): string {
-  return `${verb} ${result.recordCount ?? 0} 条学习记录、${result.questionCount ?? 0} 道自定义题目、${result.noteCount ?? 0} 条笔记、${result.answerAnnotationCount ?? 0} 个答案标注、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}`
+  const failed = result.failedBanks?.length
+    ? `；有 ${result.failedBanks.length} 个云端题库无法恢复：${result.failedBanks.join('；')}`
+    : ''
+  return `${verb} ${result.recordCount ?? 0} 条学习记录、${result.bankCount ?? 0} 个本地题库、${result.noteCount ?? 0} 条笔记、${result.answerAnnotationCount ?? 0} 个答案标注、${result.questionFlagCount ?? 0} 个重点题、${result.aiSessionCount ?? 0} 个 AI 会话${formatRemoteMergeSummary(result)}${failed}`
 }

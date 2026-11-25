@@ -97,6 +97,29 @@ export function noteSnippet(content: string, keyword: string): string {
   return `${start > 0 ? '…' : ''}${text.slice(start, end)}${end < text.length ? '…' : ''}`
 }
 
+/**
+ * `?module=` holds module keys (`iface.frontend/react`). Links from before 2.0 used the module
+ * name (`?module=React`): map a name to the key of the first module with that name, and drop
+ * values that match nothing. Returns `null` when the values are already keys.
+ */
+export function resolveModuleParams(
+  values: readonly string[],
+  modules: ReadonlyMap<string, { name: string }>,
+): string[] | null {
+  if (values.every((value) => modules.has(value))) return null
+  const byName = new Map<string, string>()
+  for (const [key, mod] of modules) if (!byName.has(mod.name)) byName.set(mod.name, key)
+  return [
+    ...new Set(
+      values.flatMap((value) => {
+        if (modules.has(value)) return [value]
+        const key = byName.get(value)
+        return key ? [key] : []
+      }),
+    ),
+  ]
+}
+
 export interface ListResult {
   questions: Question[]
   /** Question id → note excerpt, for questions matched through their note. */
@@ -119,7 +142,7 @@ export function runListQuery(
   const noteHits = new Map<string, string>()
 
   const filtered = questions.filter((q) => {
-    if (modules.size > 0 && !modules.has(q.module)) return false
+    if (modules.size > 0 && !modules.has(q.moduleKey)) return false
     if (difficulties.size > 0 && !difficulties.has(q.difficulty)) return false
     if (statuses.size > 0 && !statuses.has(ctx.records[q.id]?.status ?? 'unlearned')) return false
     if (query.starredOnly && !ctx.starred.has(q.id)) return false
@@ -146,7 +169,7 @@ export function runListQuery(
       sorted.sort((a, b) => b.difficulty - a.difficulty)
       break
     case 'module':
-      sorted.sort((a, b) => a.module.localeCompare(b.module))
+      sorted.sort((a, b) => a.module.localeCompare(b.module, 'zh-CN'))
       break
     case 'note-updated':
       sorted.sort(

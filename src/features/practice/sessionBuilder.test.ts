@@ -11,7 +11,10 @@ const DAY = 86_400_000
 const NOW = 100 * DAY
 const q = (id: string, module: string, difficulty: 1 | 2 | 3 = 1): Question => ({
   id,
+  bankId: 'b',
+  moduleKey: module,
   module,
+  position: 0,
   difficulty,
   question: id,
   answer: '',

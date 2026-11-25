@@ -1,26 +1,13 @@
 import { Download, FileJson, TriangleAlert, Upload } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { invalidateQuestionsCache } from '@/hooks/useQuestions'
+import { officialKeysByLegacyId } from '@/compat/legacy15/run'
+import { syncOfficialBanks } from '@/lib/banks/official'
 import { toDateKey } from '@/lib/date'
-import {
-  bulkPutJdMatchReports,
-  bulkPutMockInterviews,
-  bulkPutQuestionAnswerAnnotations,
-  bulkPutQuestionAnswerOverrides,
-  bulkPutQuestionFlags,
-  bulkPutQuestionNotes,
-  bulkPutQuestions,
-  bulkPutStudyRecords,
-  exportAllData,
-  getCategoryMap,
-  getCustomSources,
-  META_KEYS,
-  resetDatabase,
-  saveCategoryMap,
-  setMeta,
-} from '@/lib/db'
-import { type ImportPreview, mergeCategoryMaps, parseImportPreview } from '@/lib/localBackup'
+import { resetDatabase } from '@/lib/db'
+import { backupQuestionCount, type ImportPreview, parseImportPreview } from '@/lib/localBackup'
+import { applyBackup, createBackup } from '@/lib/localBackupIO'
 import { useAIStore } from '@/store/useAIStore'
+import { libraryChanged } from '@/store/useLibraryStore'
 import { useStudyStore } from '@/store/useStudyStore'
 import { Box, Button, Callout, cn, Skeleton, toast } from '@/ui'
 import { SettingsBody, SettingsRow, SettingsSection } from './parts'
@@ -78,11 +65,10 @@ export function DataSettings() {
   const handleExport = async () => {
     setExporting(true)
     try {
-      const data = await exportAllData()
-      const aiSessions = Object.values(sessions)
-      downloadJson({ ...data, aiSessions }, `iface-backup-${toDateKey()}.json`)
+      const data = await createBackup(Object.values(sessions))
+      downloadJson(data, `iface-backup-${toDateKey()}.json`)
       toast.success(
-        `已导出 ${data.questions.length} 题、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记等全部数据`,
+        `已导出 ${data.banks.length} 个本地题库、${data.studyRecords.length} 条记录、${data.questionNotes.length} 条笔记等全部数据`,
       )
     } catch {
       toast.error('导出失败，请重试')
@@ -95,7 +81,11 @@ export function DataSettings() {
     setImporting(true)
     setPreview(null)
     try {
-      const parsed = parseImportPreview(file.name, await file.text())
+      const parsed = parseImportPreview(
+        file.name,
+        await file.text(),
+        await officialKeysByLegacyId(),
+      )
       setPreview(await withImportImpact(parsed, sessions))
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '文件解析失败')
@@ -109,37 +99,13 @@ export function DataSettings() {
     if (!preview) return
     setImporting(true)
     try {
-      const sourceCount = preview.customSources.length
-      const categoryCount = Object.keys(preview.customCategories).length
-      if (preview.questions.length > 0) {
-        await bulkPutQuestions(preview.questions)
-        invalidateQuestionsCache()
-      }
-      if (sourceCount > 0) {
-        const current = await getCustomSources()
-        await setMeta(META_KEYS.CUSTOM_SOURCES, [
-          ...new Set([...current, ...preview.customSources]),
-        ])
-      }
-      if (categoryCount > 0) {
-        await saveCategoryMap(mergeCategoryMaps(await getCategoryMap(), preview.customCategories))
-      }
-      if (preview.studyRecords.length > 0) await bulkPutStudyRecords(preview.studyRecords)
-      if (preview.questionNotes.length > 0) await bulkPutQuestionNotes(preview.questionNotes)
-      if (preview.questionAnswerAnnotations.length > 0) {
-        await bulkPutQuestionAnswerAnnotations(preview.questionAnswerAnnotations)
-      }
-      if (preview.questionAnswerOverrides.length > 0) {
-        await bulkPutQuestionAnswerOverrides(preview.questionAnswerOverrides)
-      }
-      if (preview.questionFlags.length > 0) await bulkPutQuestionFlags(preview.questionFlags)
-      if (preview.aiSessions.length > 0) upsertSessions(preview.aiSessions)
-      if (preview.mockInterviews.length > 0) await bulkPutMockInterviews(preview.mockInterviews)
-      if (preview.jdMatchReports.length > 0) await bulkPutJdMatchReports(preview.jdMatchReports)
-
+      const { restored, failed } = await applyBackup(preview, upsertSessions)
       toast.success(
-        `导入成功：${preview.questions.length} 题、${preview.studyRecords.length} 条记录、${preview.questionNotes.length} 条笔记、${sourceCount} 个来源、${categoryCount} 个分类`,
+        `导入成功：${restored} 个本地题库、${preview.studyRecords.length} 条记录、${preview.questionNotes.length} 条笔记`,
       )
+      if (failed.length > 0) {
+        toast.error(`有 ${failed.length} 个题库没有导入`, { description: failed.join('\n') })
+      }
       setPreview(null)
       refreshStats()
     } catch (err) {
@@ -159,6 +125,9 @@ export function DataSettings() {
         await resetDatabase()
         await resetAll()
         clearAllSessions()
+        // Everything is gone, including the official banks: install them again.
+        await syncOfficialBanks().catch(() => {})
+        await libraryChanged()
         setStats(EMPTY_DATA_STATS)
         toast('所有数据已重置')
       }
@@ -172,7 +141,7 @@ export function DataSettings() {
 
   const previewItems = preview
     ? [
-        { label: '题目', value: preview.questions.length, impact: preview.impact.questions },
+        { label: '题库', value: preview.banks.length, impact: preview.impact.banks },
         { label: '记录', value: preview.studyRecords.length, impact: preview.impact.studyRecords },
         {
           label: '笔记',
@@ -299,10 +268,10 @@ export function DataSettings() {
             <div className="flex flex-col gap-3 border-t border-line px-4 py-3">
               <p className="text-xs leading-relaxed text-fg-muted">
                 确认后才会写入本地数据；标记为覆盖的同 ID 条目会被备份内容替换。
-                {preview.customSources.length > 0 ||
-                Object.keys(preview.customCategories).length > 0
-                  ? ` 还会恢复 ${preview.customSources.length} 个自定义来源和 ${Object.keys(preview.customCategories).length} 个自定义分类。`
+                {preview.banks.length > 0
+                  ? ` 本地题库共 ${backupQuestionCount(preview.banks).toLocaleString()} 道题，同名题库会被替换。`
                   : ''}
+                {preview.upgraded ? ' 这是 2.0 之前的备份，导入时会自动转换为新的题库格式。' : ''}
               </p>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setPreview(null)}>

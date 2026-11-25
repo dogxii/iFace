@@ -1,16 +1,17 @@
 import { ChevronDown, FileCode2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { REPO_URL } from '@/features/settings/about'
 import { Box, SegmentedControl } from '@/ui'
 
 const FIELDS: [field: string, type: string, required: boolean, description: string][] = [
-  ['id', 'string', true, '唯一标识，导入时会加上来源前缀'],
-  ['module', 'string', true, '模块，如 React、Go基础；新模块会自动归类'],
-  ['difficulty', '1 | 2 | 3', true, '初级 / 中级 / 高级'],
-  ['question', 'string', true, '题目'],
+  ['question', 'string', true, '题目，最长 2000 字'],
   ['answer', 'string', true, '参考答案，支持 Markdown'],
-  ['tags', 'string[]', true, '标签，可以为空数组'],
-  ['source', 'string', false, '来源标注，导入时会被来源名称覆盖'],
+  ['module', 'string', false, '模块名，同名的题会放进同一个模块；不填则用题库名'],
+  ['difficulty', '1 | 2 | 3', false, '初级 / 中级 / 高级，默认 2'],
+  ['tags', 'string[]', false, '标签，最多 10 个'],
+  ['id', 'string', false, '同一题库里 id 相同的题会被覆盖更新；不填则按题目内容去重'],
+  ['source', 'string', false, '出处标注，如「高频」或公司名'],
 ]
 
 const JSON_EXAMPLE = `[
@@ -95,7 +96,17 @@ export function SchemaGuide() {
             <Link to="/prompt" className="text-accent hover:underline">
               出题
             </Link>{' '}
-            页复制 Prompt，让任意 AI 按这个格式批量生成题目。
+            页复制 Prompt，让任意 AI 按这个格式批量生成题目。想分享整套题库，可以把题库导出为
+            iface-bank 题库包（
+            <a
+              href={`${REPO_URL}/blob/main/docs/bank-format.md`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-accent hover:underline"
+            >
+              格式说明
+            </a>
+            ），放进带 iface-bank 话题的 GitHub 仓库。
           </p>
         </div>
       </details>

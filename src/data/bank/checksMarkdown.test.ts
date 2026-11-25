@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { checksToMarkdown, parseChecksMarkdown } from './checksMarkdown'
+import { type ChecksMarkdownInput, checksToMarkdown, parseChecksMarkdown } from './checksMarkdown'
 import { BANK_FORMAT } from './schema'
 import { resolveBank } from './validate'
 
@@ -74,11 +74,16 @@ describe('parseChecksMarkdown', () => {
   })
 
   it('round-trips every official learning check', () => {
-    const root = join(process.cwd(), 'public/learning-checks')
-    const groups = readdirSync(root, { recursive: true })
-      .map(String)
-      .filter((file) => file.endsWith('.json'))
-      .flatMap((file) => JSON.parse(readFileSync(join(root, file), 'utf8')))
+    const root = join(process.cwd(), 'public/banks')
+    const groups = readdirSync(root)
+      .filter((file) => file.startsWith('iface.') && file.endsWith('.json'))
+      .flatMap((file) => JSON.parse(readFileSync(join(root, file), 'utf8')).modules)
+      .flatMap((mod: { questions: { id: string; checks?: unknown[] }[] }) => mod.questions)
+      .filter((question) => question.checks?.length)
+      .map((question) => ({
+        questionId: question.id,
+        checks: question.checks as ChecksMarkdownInput['checks'],
+      }))
     expect(groups.length).toBeGreaterThan(300)
 
     const { byQuestion, issues } = parseChecksMarkdown(checksToMarkdown(groups))

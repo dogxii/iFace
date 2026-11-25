@@ -39,11 +39,11 @@ export interface AdjacentIds {
 
 /** Previous / next question within the same module, in list order. */
 export function adjacentInModule(
-  questions: readonly { id: string; module: string }[],
+  questions: readonly { id: string; moduleKey: string }[],
   id: string,
-  module: string | undefined,
+  moduleKey: string | undefined,
 ): AdjacentIds {
-  const scope = module ? questions.filter((q) => q.module === module) : questions
+  const scope = moduleKey ? questions.filter((q) => q.moduleKey === moduleKey) : questions
   const index = scope.findIndex((q) => q.id === id)
   if (index === -1) return { prevId: null, nextId: null }
   return {

@@ -1,14 +1,16 @@
 import { Analytics } from '@vercel/analytics/react'
 import { lazy, Suspense, useEffect } from 'react'
-import { BrowserRouter, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import { AppErrorBoundary } from '@/app/AppErrorBoundary'
 import { AppShell } from '@/app/AppShell'
 import { PWAUpdatePrompt } from '@/app/PWAUpdatePrompt'
 import { ScrollManager } from '@/app/ScrollManager'
+import { legacyQuestionKey } from '@/compat/legacy15/url'
 import { OnboardingDialog } from '@/features/onboarding/OnboardingDialog'
 import { useDelayedFlag } from '@/hooks/useDelayedFlag'
 import { installAppRecoveryHandlers } from '@/lib/appRecovery'
 import { routeLoaders } from '@/lib/routePreload'
+import { useLibraryState } from '@/store/useLibraryStore'
 import { Spinner, Toaster, TooltipProvider } from '@/ui'
 
 const Dashboard = lazy(routeLoaders.dashboard)
@@ -66,6 +68,12 @@ function AppRecoveryHandlers() {
 
 function QuestionDetailRoute() {
   const { id } = useParams()
+  const location = useLocation()
+  // COMPAT: remove after 2027-06-30 — pre-2.0 links like /questions/js-001.
+  const legacyKey = useLibraryState((state) =>
+    state.loaded && id && !state.byId.has(id) ? legacyQuestionKey(id, state.byId.keys()) : null,
+  )
+  if (legacyKey) return <Navigate replace to={`/questions/${legacyKey}${location.search}`} />
   return <QuestionDetail key={id ?? 'question'} />
 }
 

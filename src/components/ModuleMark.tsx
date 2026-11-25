@@ -22,6 +22,8 @@ import {
   Palette,
   PenLine,
   Server,
+  Shield,
+  Smartphone,
   Sparkles,
   Split,
   Terminal,
@@ -29,39 +31,43 @@ import {
   Workflow,
   Wrench,
 } from 'lucide-react'
+import type { BankModuleIcon } from '@/data/bank/schema'
 import { type ModuleHue, moduleHue } from '@/lib/moduleHue'
+import { type LibraryModule, useLibraryState } from '@/store/useLibraryStore'
 import { cn } from '@/ui'
 
-const ICONS: Record<string, LucideIcon> = {
-  JS基础: Braces,
-  React: Atom,
-  Vue: Triangle,
-  CSS: Palette,
-  TypeScript: FileCode,
-  性能优化: Gauge,
-  网络: Globe,
-  手写题: PenLine,
-  项目深挖: FolderSearch,
-  Go基础: Terminal,
-  并发编程: Split,
-  工程化: Wrench,
-  内存与GC: MemoryStick,
-  Web开发: Server,
-  Java基础: Coffee,
-  Java并发: Split,
-  JVM: Cpu,
-  MySQL: Database,
-  计算机网络: Network,
-  Redis: DatabaseZap,
-  Spring框架: Leaf,
-  LLM基础: Brain,
-  Prompt工程: MessageSquareText,
-  Agent架构: Bot,
-  RAG与知识库: Library,
-  工具调用与工作流: Workflow,
-  评测与线上优化: ChartLine,
-  AI工程化: Cog,
-  AI应用实践: Sparkles,
+/** Lucide components for the icon names a bank may request (`BANK_MODULE_ICONS`). */
+const ICONS: Record<BankModuleIcon, LucideIcon> = {
+  atom: Atom,
+  bot: Bot,
+  braces: Braces,
+  brain: Brain,
+  'chart-line': ChartLine,
+  coffee: Coffee,
+  cog: Cog,
+  cpu: Cpu,
+  database: Database,
+  'database-zap': DatabaseZap,
+  'file-code': FileCode,
+  'folder-search': FolderSearch,
+  gauge: Gauge,
+  globe: Globe,
+  leaf: Leaf,
+  library: Library,
+  'memory-stick': MemoryStick,
+  'message-square-text': MessageSquareText,
+  network: Network,
+  palette: Palette,
+  'pen-line': PenLine,
+  server: Server,
+  shield: Shield,
+  smartphone: Smartphone,
+  sparkles: Sparkles,
+  split: Split,
+  terminal: Terminal,
+  triangle: Triangle,
+  workflow: Workflow,
+  wrench: Wrench,
 }
 
 /** Full class strings so Tailwind can see them. */
@@ -113,8 +119,25 @@ export const HUE_CLASSES: Record<ModuleHue, { mark: string; fill: string; stroke
   },
 }
 
-export function moduleHueClasses(module: string) {
-  return HUE_CLASSES[moduleHue(module)]
+interface ModuleLook {
+  name: string
+  hue: ModuleHue
+  Icon?: LucideIcon
+}
+
+function lookFor(mod: LibraryModule | undefined, moduleKey: string): ModuleLook {
+  const name = mod?.name ?? moduleKey.slice(moduleKey.indexOf('/') + 1)
+  return {
+    name,
+    hue: moduleHue(name, mod?.color),
+    Icon: mod?.icon ? ICONS[mod.icon] : undefined,
+  }
+}
+
+/** Icon and hue of an installed module, by module key. */
+export function useModuleLook(moduleKey: string): ModuleLook {
+  const mod = useLibraryState((state) => state.modules.get(moduleKey))
+  return lookFor(mod, moduleKey)
 }
 
 const SIZES = {
@@ -128,42 +151,43 @@ const SIZES = {
  * Decorative — always render the module name next to it.
  */
 export function ModuleMark({
-  module,
+  moduleKey,
   size = 'md',
   className,
 }: {
-  module: string
+  moduleKey: string
   size?: keyof typeof SIZES
   className?: string
 }) {
-  const Icon = ICONS[module]
+  const { name, hue, Icon } = useModuleLook(moduleKey)
   return (
     <span
       aria-hidden
       className={cn(
         'inline-grid shrink-0 place-items-center font-semibold',
         SIZES[size],
-        moduleHueClasses(module).mark,
+        HUE_CLASSES[hue].mark,
         className,
       )}
     >
       {Icon ? (
         <Icon strokeWidth={2.25} className={cn(Icon === Triangle && 'rotate-180')} />
       ) : (
-        Array.from(module)[0]?.toUpperCase()
+        Array.from(name)[0]?.toUpperCase()
       )}
     </span>
   )
 }
 
 /** A small dot in the module's hue, for dense rows. */
-export function ModuleDot({ module, className }: { module: string; className?: string }) {
+export function ModuleDot({ moduleKey, className }: { moduleKey: string; className?: string }) {
+  const { hue } = useModuleLook(moduleKey)
   return (
     <span
       aria-hidden
       className={cn(
         'inline-block size-1.5 shrink-0 rounded-full',
-        moduleHueClasses(module).fill,
+        HUE_CLASSES[hue].fill,
         className,
       )}
     />

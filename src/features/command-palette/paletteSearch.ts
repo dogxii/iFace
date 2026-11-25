@@ -41,13 +41,14 @@ export function searchQuestions(questions: Question[], query: string, limit = 8)
   for (const question of questions) {
     const title = question.question.toLowerCase()
     const id = question.id.toLowerCase()
+    const localId = id.slice(id.indexOf(':') + 1)
     const tags = question.tags.map((tag) => tag.toLowerCase())
     const module = question.module.toLowerCase()
 
     let score = 0
     let matchedAll = true
     for (const term of terms) {
-      if (id === term) score += 0
+      if (id === term || localId === term) score += 0
       else if (title.startsWith(term)) score += 1
       else if (title.includes(term)) score += 2
       else if (tags.some((tag) => tag.includes(term))) score += 3

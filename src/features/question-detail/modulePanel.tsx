@@ -88,7 +88,7 @@ export function ModuleQuestionPanel({
         }}
       >
         <header className="flex h-13 shrink-0 items-center gap-2.5 border-b border-line pr-2 pl-4">
-          <ModuleMark module={list.question.module} />
+          <ModuleMark moduleKey={list.question.moduleKey} />
           <div className="min-w-0 flex-1 leading-tight">
             <p className="truncate text-sm font-medium text-fg">{list.question.module}</p>
             {position ? (

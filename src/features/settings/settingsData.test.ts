@@ -44,7 +44,7 @@ describe('formatRemoteMergeSummary', () => {
 describe('formatSyncSummary', () => {
   it('defaults missing counts to zero', () => {
     expect(formatSyncSummary('已备份', { ok: true, recordCount: 3 })).toBe(
-      '已备份 3 条学习记录、0 道自定义题目、0 条笔记、0 个答案标注、0 个重点题、0 个 AI 会话',
+      '已备份 3 条学习记录、0 个本地题库、0 条笔记、0 个答案标注、0 个重点题、0 个 AI 会话',
     )
   })
 })

@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { MODULE_HUES, moduleHue } from './moduleHue'
 
 describe('moduleHue', () => {
-  it('uses the hand-picked hue for built-in modules', () => {
-    expect(moduleHue('React')).toBe('cyan')
-    expect(moduleHue('JS基础')).toBe('amber')
+  it('uses the hue the bank asked for', () => {
+    expect(moduleHue('React', 'cyan')).toBe('cyan')
+    expect(moduleHue('React', 'not-a-hue')).toBe(moduleHue('React'))
   })
 
   it('hashes custom modules onto the palette, stably', () => {
@@ -14,7 +14,7 @@ describe('moduleHue', () => {
   })
 
   it('spreads custom modules across more than one hue', () => {
-    const hues = new Set(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(moduleHue))
+    const hues = new Set(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((name) => moduleHue(name)))
     expect(hues.size).toBeGreaterThan(3)
   })
 })

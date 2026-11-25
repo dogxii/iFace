@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { create } from 'zustand'
-import { invalidateQuestionsCache } from '@/hooks/useQuestions'
 import { useAIState } from '@/store/useAIStore'
 import { useAuthState } from '@/store/useAuthStore'
 import { formatSyncSummary } from './settingsData'
@@ -47,7 +46,6 @@ export function useGistAutoSync() {
         const result = await pullFromGist(token, Object.values(sessions))
         if (result === null) return // no backup yet
         if (result.ok) {
-          invalidateQuestionsCache()
           if (result.aiSessions?.length) upsertSessions(result.aiSessions)
           setLastResult({
             ok: true,

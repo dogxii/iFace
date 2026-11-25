@@ -4,11 +4,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { HUE_CLASSES, ModuleMark } from '@/components/ModuleMark'
 import { useDraft } from '@/hooks/useDraft'
 import { useQuestions } from '@/hooks/useQuestions'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
+import { groupByBank, type ModuleStat } from '@/lib/libraryGroups'
 import type { ModuleHue } from '@/lib/moduleHue'
 import { createPracticeSessionPath } from '@/lib/practiceSession'
-import { filterVisibleQuestions, getHiddenModules } from '@/lib/questionVisibility'
 import { dueRecords } from '@/store/studyLogic'
+import { useLibraryState } from '@/store/useLibraryStore'
 import { useStudyState } from '@/store/useStudyStore'
 import { useUIState } from '@/store/useUIStore'
 import { DIFFICULTY_LABELS, type Difficulty, type Question } from '@/types'
@@ -35,12 +35,6 @@ import {
   type StatusFilter,
   sessionPool,
 } from './sessionBuilder'
-
-interface ModuleInfo {
-  module: string
-  total: number
-  mastered: number
-}
 
 function PresetCard({
   icon,
@@ -93,7 +87,7 @@ function ModuleToggle({
   selected,
   onToggle,
 }: {
-  info: ModuleInfo
+  info: ModuleStat
   selected: boolean
   onToggle: () => void
 }) {
@@ -109,7 +103,7 @@ function ModuleToggle({
           : 'border-line text-fg-muted hover:border-line-strong hover:text-fg',
       )}
     >
-      <ModuleMark module={info.module} />
+      <ModuleMark moduleKey={info.moduleKey} />
       <span className="min-w-0 flex-1 truncate">{info.module}</span>
       <span className="text-xs tabular-nums text-fg-subtle max-sm:hidden">
         {info.mastered}/{info.total}
@@ -131,10 +125,9 @@ export default function PracticePage() {
   const [params] = useSearchParams()
   const { allQuestions, initializing } = useQuestions()
   const records = useStudyState((s) => s.records)
-  const hiddenCategories = useStudyState((s) => s.hiddenCategories)
+  const banks = useLibraryState((s) => s.banks)
   const dailyGoal = useStudyState((s) => s.dailyGoal)
   const openSettings = useUIState((s) => s.openSettings)
-  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
   // Remember the last combination so coming back to practice starts where you left off.
   const [options, setOptions] = useDraft<SessionOptions>(
     'practice:options',
@@ -149,47 +142,17 @@ export default function PracticePage() {
     if (ids.length > 0) navigate(createPracticeSessionPath(ids[0], ids), { replace: true })
   }, [params, navigate])
 
-  useEffect(() => {
-    void getCategoryMap().then(setCategoryMap)
-  }, [])
+  const visibleQuestions = allQuestions
 
-  const visibleQuestions = useMemo(
-    () => filterVisibleQuestions(allQuestions, getHiddenModules(categoryMap, hiddenCategories)),
-    [allQuestions, categoryMap, hiddenCategories],
+  const groups = useMemo(
+    () => groupByBank(visibleQuestions, banks, records),
+    [visibleQuestions, banks, records],
   )
 
-  const groups = useMemo(() => {
-    const info = new Map<string, ModuleInfo>()
-    for (const q of visibleQuestions) {
-      const entry = info.get(q.module) ?? { module: q.module, total: 0, mastered: 0 }
-      entry.total++
-      if (records[q.id]?.status === 'mastered') entry.mastered++
-      info.set(q.module, entry)
-    }
-    const used = new Set<string>()
-    const result: { name: string; modules: ModuleInfo[] }[] = []
-    const categories = Object.entries(categoryMap).sort(
-      ([, a], [, b]) => (a.order ?? 99) - (b.order ?? 99),
-    )
-    for (const [key, category] of categories) {
-      if (hiddenCategories.has(key)) continue
-      const modules = category.modules.flatMap((m) => {
-        const entry = info.get(m)
-        if (!entry || used.has(m)) return []
-        used.add(m)
-        return [entry]
-      })
-      if (modules.length > 0) result.push({ name: category.name || key, modules })
-    }
-    const rest = [...info.values()].filter((m) => !used.has(m.module))
-    if (rest.length > 0) result.push({ name: '其他', modules: rest })
-    return result
-  }, [visibleQuestions, records, categoryMap, hiddenCategories])
-
-  // Drop remembered modules that no longer exist (deleted source, hidden category).
+  // Drop remembered modules that no longer exist (removed or disabled bank).
   useEffect(() => {
     if (groups.length === 0) return
-    const available = new Set(groups.flatMap((g) => g.modules.map((m) => m.module)))
+    const available = new Set(groups.flatMap((g) => g.modules.map((m) => m.moduleKey)))
     setOptions((prev) =>
       prev.modules.every((m) => available.has(m))
         ? prev
@@ -234,8 +197,8 @@ export default function PracticePage() {
         ? options.modules.filter((m) => m !== module)
         : [...options.modules, module],
     )
-  const toggleGroup = (modules: ModuleInfo[]) => {
-    const names = modules.map((m) => m.module)
+  const toggleGroup = (modules: ModuleStat[]) => {
+    const names = modules.map((m) => m.moduleKey)
     const all = names.every((m) => options.modules.includes(m))
     set(
       'modules',
@@ -257,11 +220,11 @@ export default function PracticePage() {
             <Skeleton className="h-32 w-full rounded-xl" />
             <Skeleton className="h-72 w-full rounded-xl" />
           </div>
-        ) : allQuestions.length === 0 ? (
+        ) : allQuestions.length === 0 && !banks.some((bank) => !bank.enabled) ? (
           <EmptyState
             icon={<Download />}
             title="题库为空"
-            description="导入内置题库或自定义 JSON 文件后即可开始练习。"
+            description="导入题库文件后即可开始练习。"
             action={
               <Button variant="primary" asChild>
                 <Link to="/import">前往导入</Link>
@@ -272,7 +235,7 @@ export default function PracticePage() {
           <EmptyState
             icon={<EyeOff />}
             title="所有题库都已隐藏"
-            description="在设置的「偏好 → 题库展示」中重新开启需要练习的分类。"
+            description="在设置的「偏好 → 题库」中重新启用需要练习的题库。"
             action={<Button onClick={() => openSettings('study')}>打开设置</Button>}
           />
         ) : (
@@ -348,10 +311,10 @@ export default function PracticePage() {
                 <div className="space-y-6">
                   {groups.map((group) => {
                     const allSelected = group.modules.every((m) =>
-                      options.modules.includes(m.module),
+                      options.modules.includes(m.moduleKey),
                     )
                     return (
-                      <div key={group.name}>
+                      <div key={group.bankId}>
                         <div className="mb-2 flex items-center justify-between text-xs text-fg-subtle">
                           <span>{group.name}</span>
                           <button
@@ -365,10 +328,10 @@ export default function PracticePage() {
                         <div className="grid grid-cols-2 gap-2 xl:grid-cols-3">
                           {group.modules.map((info) => (
                             <ModuleToggle
-                              key={info.module}
+                              key={info.moduleKey}
                               info={info}
-                              selected={options.modules.includes(info.module)}
-                              onToggle={() => toggleModule(info.module)}
+                              selected={options.modules.includes(info.moduleKey)}
+                              onToggle={() => toggleModule(info.moduleKey)}
                             />
                           ))}
                         </div>

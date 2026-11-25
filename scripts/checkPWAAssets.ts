@@ -8,7 +8,7 @@ interface Failure {
 
 const failures: Failure[] = []
 const distDir = 'dist'
-const publicQuestionsDir = 'public/questions'
+const publicBanksDir = 'public/banks'
 
 function addFailure(file: string, message: string): void {
   failures.push({ file, message })
@@ -104,42 +104,41 @@ if (existsSync(join(distDir, 'sw.js'))) {
     addFailure(join(distDir, 'sw.js'), 'Service Worker 应让 /api/ 请求始终走网络（NetworkOnly）')
   }
 
-  const publicQuestionFiles = listFiles(publicQuestionsDir, '.json').map((file) =>
+  const publicBankFiles = listFiles(publicBanksDir, '.json').map((file) =>
     file.replace(/^public\//, ''),
   )
-  const distQuestionFiles = listFiles(join(distDir, 'questions'), '.json').map((file) =>
+  const distBankFiles = listFiles(join(distDir, 'banks'), '.json').map((file) =>
     file.replace(/^dist\//, ''),
   )
 
-  if (publicQuestionFiles.length === 0) {
-    addFailure(publicQuestionsDir, 'public 中缺少内置题库 JSON')
+  if (!publicBankFiles.includes('banks/official.json')) {
+    addFailure(publicBanksDir, 'public 中缺少官方题库索引 official.json')
   }
 
-  if (distQuestionFiles.length === 0) {
-    addFailure(join(distDir, 'questions'), '构建产物缺少内置题库 JSON')
-  }
-
-  const publicSet = new Set(publicQuestionFiles)
-  const distSet = new Set(distQuestionFiles)
-  for (const file of publicQuestionFiles) {
+  const publicSet = new Set(publicBankFiles)
+  const distSet = new Set(distBankFiles)
+  for (const file of publicBankFiles) {
     if (!distSet.has(file)) {
-      addFailure(join(distDir, 'questions'), `构建产物缺少题库文件：${file}`)
+      addFailure(join(distDir, 'banks'), `构建产物缺少题库文件：${file}`)
     }
   }
-  for (const file of distQuestionFiles) {
+  for (const file of distBankFiles) {
     if (!publicSet.has(file)) {
-      addFailure(join(distDir, 'questions'), `构建产物包含未知题库文件：${file}`)
+      addFailure(join(distDir, 'banks'), `构建产物包含未知题库文件：${file}`)
     }
   }
 
-  // Question banks are copied into IndexedDB on first load, so they are runtime-cached
+  // Official banks are copied into IndexedDB on first load, so they are runtime-cached
   // (NetworkFirst) instead of precached.
-  for (const precachePath of publicQuestionFiles) {
+  for (const precachePath of publicBankFiles) {
     if (precacheUrls.includes(precachePath)) {
       addFailure(join(distDir, 'sw.js'), `题库文件不应进入预缓存：${precachePath}`)
     }
   }
-  if (!sw.includes('.pathname.startsWith("/questions/")') || !sw.includes('NetworkFirst')) {
+  if (precacheUrls.some((url) => url.startsWith('schema/'))) {
+    addFailure(join(distDir, 'sw.js'), 'JSON Schema 不应进入预缓存')
+  }
+  if (!sw.includes('.pathname.startsWith("/banks/")') || !sw.includes('NetworkFirst')) {
     addFailure(join(distDir, 'sw.js'), 'Service Worker 缺少题库 JSON 的运行时缓存路由')
   }
 }

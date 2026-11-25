@@ -12,8 +12,9 @@
 import { create } from 'zustand'
 import { useShallow } from 'zustand/react/shallow'
 import { dataSource } from '@/data/source'
+import { dataReady } from '@/lib/banks/boot'
+import { invalidateDailyCache } from '@/lib/dailyRecommendations'
 import { studyRecordEvents } from '@/lib/db'
-import { invalidateDailyCache } from '@/lib/questionLoader'
 import {
   readBoolean,
   readEnum,
@@ -77,7 +78,6 @@ interface Preferences {
   aiFabVisible: boolean
   streak: StreakData
   dailyGoal: number
-  hiddenCategories: Set<string>
 }
 
 const DARK_QUERY = '(prefers-color-scheme: dark)'
@@ -103,14 +103,6 @@ function loadPreferences(): Preferences {
       today,
     ),
     dailyGoal: readInt(STORAGE_KEYS.dailyGoal, DAILY_GOAL_DEFAULT, DAILY_GOAL_MIN, DAILY_GOAL_MAX),
-    hiddenCategories: new Set(
-      readJSON(
-        STORAGE_KEYS.hiddenCategories,
-        (value) =>
-          Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : null,
-        [],
-      ),
-    ),
   }
 }
 
@@ -127,9 +119,6 @@ function persistPreferences(next: Preferences, prev: Preferences): void {
     writeBoolean(STORAGE_KEYS.aiFabVisible, next.aiFabVisible)
   if (next.streak !== prev.streak) writeJSON(STORAGE_KEYS.streak, next.streak)
   if (next.dailyGoal !== prev.dailyGoal) writeString(STORAGE_KEYS.dailyGoal, String(next.dailyGoal))
-  if (next.hiddenCategories !== prev.hiddenCategories) {
-    writeJSON(STORAGE_KEYS.hiddenCategories, [...next.hiddenCategories])
-  }
 }
 
 /** Apply the theme preference to the page, resolving `system` against the OS appearance. */
@@ -146,10 +135,7 @@ type SyncMessage =
   | { type: 'delete-record'; questionId: string }
   | { type: 'reset-records' }
   | { type: 'reload-records' }
-  | {
-      type: 'preferences'
-      patch: Partial<Omit<Preferences, 'hiddenCategories'>> & { hiddenCategories?: string[] }
-    }
+  | { type: 'preferences'; patch: Partial<Preferences> }
 
 let channel: BroadcastChannel | null = null
 try {
@@ -195,9 +181,6 @@ export interface StudyActions {
   setMobileQuestionNavEnabled: (enabled: boolean) => void
   setAiFabVisible: (visible: boolean) => void
   setDailyGoal: (n: number) => void
-  setHiddenCategories: (categoryNames: string[]) => void
-  setCategoryVisibility: (categoryName: string, visible: boolean) => void
-  toggleCategoryVisibility: (categoryName: string) => void
   incrementStreak: () => void
   resetStreak: () => void
   getStatus: (questionId: string) => StudyStatus
@@ -205,7 +188,6 @@ export interface StudyActions {
   getStatusCounts: (questionIds?: string[]) => StatusCounts
   getWeakQuestions: () => StudyRecord[]
   getEstimatedDays: (totalQuestions: number, dailyCount?: number) => number
-  isCategoryHidden: (categoryName: string) => boolean
 }
 
 function withRecords(records: StudyRecordMap) {
@@ -216,13 +198,7 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
   const setPreferences = (patch: Partial<Preferences>, broadcast = true) => {
     set(patch)
     if (patch.theme) syncTheme()
-    if (broadcast) {
-      const { hiddenCategories, ...rest } = patch
-      post({
-        type: 'preferences',
-        patch: hiddenCategories ? { ...rest, hiddenCategories: [...hiddenCategories] } : rest,
-      })
-    }
+    if (broadcast) post({ type: 'preferences', patch })
   }
 
   return {
@@ -287,20 +263,6 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
     setAiFabVisible: (aiFabVisible) => setPreferences({ aiFabVisible }),
     setDailyGoal: (n) => setPreferences({ dailyGoal: clampDailyGoal(n) }),
 
-    setHiddenCategories(categoryNames) {
-      setPreferences({ hiddenCategories: new Set(categoryNames) })
-      void invalidateDailyCache()
-    },
-    setCategoryVisibility(categoryName, visible) {
-      const next = new Set(get().hiddenCategories)
-      if (visible) next.delete(categoryName)
-      else next.add(categoryName)
-      get().setHiddenCategories([...next])
-    },
-    toggleCategoryVisibility(categoryName) {
-      get().setCategoryVisibility(categoryName, get().hiddenCategories.has(categoryName))
-    },
-
     incrementStreak: () =>
       setPreferences({ streak: nextStreakAfterMark(get().streak, toDateKey()) }),
     resetStreak: () => setPreferences({ streak: nextStreakAfterReset(get().streak, toDateKey()) }),
@@ -311,7 +273,6 @@ export const useStudyState = create<StudyState & StudyActions>()((set, get) => {
     getWeakQuestions: () => weakRecords(get().records),
     getEstimatedDays: (totalQuestions, dailyCount) =>
       estimateDaysLeft(get().records, totalQuestions, dailyCount),
-    isCategoryHidden: (categoryName) => get().hiddenCategories.has(categoryName),
   }
 })
 
@@ -355,10 +316,7 @@ export function initStudyStore(): Promise<void> {
         void state.reloadRecords()
         break
       case 'preferences': {
-        const { hiddenCategories, ...rest } = message.patch
-        const patch: Partial<Preferences> = hiddenCategories
-          ? { ...rest, hiddenCategories: new Set(hiddenCategories) }
-          : rest
+        const patch = message.patch
         useStudyState.setState(patch)
         if (patch.theme) syncTheme()
         break
@@ -372,7 +330,8 @@ export function initStudyStore(): Promise<void> {
     post({ type: 'reload-records' })
   })
 
-  initPromise = useStudyState.getState().reloadRecords()
+  // Records are keyed by question id, which the 2.0 migration may still be rewriting.
+  initPromise = dataReady().then(() => useStudyState.getState().reloadRecords())
   return initPromise
 }
 

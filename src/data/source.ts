@@ -2,20 +2,14 @@
  * Data source boundary.
  *
  * Pages and stores should depend on these interfaces rather than on `lib/db` directly, so a
- * future remote backend (the QFace community bank) can sit behind the same API. Today the
- * only implementation is the local IndexedDB one below.
+ * future remote backend can sit behind the same API. Today the only implementation is the
+ * local IndexedDB one below. Questions are read through the library store
+ * (`useLibraryState`), which owns installed banks.
  *
  * Keep the surface small: add methods when a rebuilt page needs them, not ahead of time.
  */
 import * as db from '@/lib/db'
-import type { Question, QuestionFlag, QuestionNote, StudyRecord } from '@/types'
-
-export interface QuestionSource {
-  list(): Promise<Question[]>
-  get(id: string): Promise<Question | undefined>
-  listByModule(module: string): Promise<Question[]>
-  count(): Promise<number>
-}
+import type { QuestionFlag, QuestionNote, StudyRecord } from '@/types'
 
 export interface StudyRecordSource {
   list(): Promise<StudyRecord[]>
@@ -43,7 +37,6 @@ export interface FlagSource {
 export interface DataSource {
   /** Identifies the backend, e.g. for diagnostics or feature gating. */
   readonly kind: 'local' | 'remote'
-  questions: QuestionSource
   records: StudyRecordSource
   notes: NoteSource
   flags: FlagSource
@@ -51,12 +44,6 @@ export interface DataSource {
 
 export const localDataSource: DataSource = {
   kind: 'local',
-  questions: {
-    list: db.getAllQuestions,
-    get: db.getQuestionById,
-    listByModule: db.getQuestionsByModule,
-    count: db.getQuestionCount,
-  },
   records: {
     list: db.getAllStudyRecords,
     get: db.getStudyRecord,

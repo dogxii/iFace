@@ -1,7 +1,6 @@
 import { BookOpenText, Brain, type LucideIcon, PenLine, RotateCcw } from 'lucide-react'
-import { useEffect, useState } from 'react'
 import { ThemeSegmentedControl } from '@/app/themeOptions'
-import { type CategoryMap, DEFAULT_CATEGORY_MAP, getCategoryMap } from '@/lib/db'
+import { useLibraryState } from '@/store/useLibraryStore'
 import {
   type AnswerNavigationMode,
   DAILY_GOAL_DEFAULT,
@@ -10,6 +9,7 @@ import {
   type StudyMode,
   useStudyStore,
 } from '@/store/useStudyStore'
+import type { InstalledBank } from '@/types'
 import { Button, cn, SegmentedControl, Stat, StatGroup, Switch, SwitchRow, Tag, toast } from '@/ui'
 import { SettingsBody, SettingsSection } from './parts'
 
@@ -36,6 +36,13 @@ const STUDY_MODES: { value: StudyMode; label: string; description: string; icon:
 
 const GOAL_PRESETS = [5, 10, 20, 30, 50]
 
+const BANK_ORIGIN_LABEL: Record<InstalledBank['origin']['kind'], string> = {
+  bundled: '官方',
+  github: 'GitHub',
+  url: '链接',
+  local: '本地',
+}
+
 const MILESTONES = [
   { n: 3, label: '3 连击' },
   { n: 5, label: '5 连击' },
@@ -58,18 +65,9 @@ export function StudySettings() {
     resetStreak,
     dailyGoal,
     setDailyGoal,
-    hiddenCategories,
-    toggleCategoryVisibility,
   } = useStudyStore()
-  const [categoryMap, setCategoryMap] = useState<CategoryMap>({ ...DEFAULT_CATEGORY_MAP })
-
-  useEffect(() => {
-    getCategoryMap().then(setCategoryMap)
-  }, [])
-
-  const categories = Object.entries(categoryMap).sort(
-    ([, a], [, b]) => (a.order ?? 99) - (b.order ?? 99),
-  )
+  const banks = useLibraryState((s) => s.banks)
+  const setBankEnabled = useLibraryState((s) => s.setBankEnabled)
 
   return (
     <SettingsBody>
@@ -159,31 +157,32 @@ export function StudySettings() {
       </SettingsSection>
 
       <SettingsSection
-        title="题库展示"
-        description="关闭的题库会从概览、题库和练习中隐藏，学习记录仍会保留。"
+        title="题库"
+        description="停用的题库会从概览、题库和练习中隐藏，学习记录仍会保留。"
       >
-        {categories.length === 0 ? (
+        {banks.length === 0 ? (
           <p className="text-sm text-fg-subtle">暂无题库</p>
         ) : (
           <ul className="divide-y divide-line rounded-xl border border-line">
-            {categories.map(([key, cat]) => {
-              const visible = !hiddenCategories.has(key)
-              const id = `category-visible-${key}`
+            {banks.map((bank) => {
+              const id = `bank-enabled-${bank.id}`
               return (
-                <li key={key} className="flex items-center gap-3 px-3.5 py-2.5">
+                <li key={bank.id} className="flex items-center gap-3 px-3.5 py-2.5">
                   <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
                     <span className="flex items-center gap-2 text-sm font-medium text-fg">
-                      {cat.name}
-                      {cat.builtin ? <Tag variant="soft">内置</Tag> : null}
+                      {bank.name}
+                      <Tag variant="soft">{BANK_ORIGIN_LABEL[bank.origin.kind]}</Tag>
                     </span>
-                    <span className="text-xs text-fg-subtle">{cat.modules.length} 个模块</span>
+                    <span className="text-xs text-fg-subtle">
+                      {bank.modules.length} 个模块 · {bank.questionCount} 题
+                    </span>
                   </label>
                   <Switch
                     id={id}
-                    checked={visible}
-                    onCheckedChange={() => {
-                      toggleCategoryVisibility(key)
-                      toast(visible ? `已隐藏「${cat.name}」` : `已显示「${cat.name}」`)
+                    checked={bank.enabled}
+                    onCheckedChange={(enabled) => {
+                      void setBankEnabled(bank.id, enabled)
+                      toast(enabled ? `已启用「${bank.name}」` : `已停用「${bank.name}」`)
                     }}
                   />
                 </li>

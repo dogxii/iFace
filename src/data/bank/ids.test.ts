@@ -10,6 +10,8 @@ import {
   parseQuestionKey,
   questionKey,
   slugify,
+  toLocalId,
+  uniqueLocalId,
   urlBankId,
 } from './ids'
 
@@ -70,5 +72,20 @@ describe('slugify', () => {
   it('keeps ascii words and drops the rest', () => {
     expect(slugify('Go 后端 Interview!')).toBe('go-interview')
     expect(slugify('前端题')).toBe('')
+  })
+})
+
+describe('toLocalId / uniqueLocalId', () => {
+  it('cleans raw ids and falls back when nothing is left', () => {
+    expect(toLocalId('JS_001', 'x')).toBe('js_001')
+    expect(toLocalId('  Hello World!! ', 'x')).toBe('hello-world')
+    expect(toLocalId('闭包', 'q-1')).toBe('q-1')
+  })
+
+  it('appends a counter until the id is free', () => {
+    const taken = new Set(['a', 'a-2'])
+    expect(uniqueLocalId('a', taken)).toBe('a-3')
+    expect(uniqueLocalId('b', taken)).toBe('b')
+    expect(taken.has('a-3') && taken.has('b')).toBe(true)
   })
 })

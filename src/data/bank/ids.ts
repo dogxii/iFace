@@ -120,3 +120,28 @@ export function slugify(value: string): string {
     .slice(0, 40)
     .replace(/-+$/g, '')
 }
+
+/**
+ * Turns any string into a valid local id (lower-case, `[a-z0-9._-]`, at most 64 characters).
+ * Returns `fallback` when nothing usable is left, e.g. for a Chinese-only title.
+ */
+export function toLocalId(raw: string, fallback: string): string {
+  const cleaned = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/^[^a-z0-9]+/, '')
+    .slice(0, 64)
+    .replace(/[-.]+$/, '')
+  return isLocalId(cleaned) ? cleaned : fallback
+}
+
+/** `base`, or `base-2`, `base-3`… whichever is not in `taken`; adds the result to `taken`. */
+export function uniqueLocalId(base: string, taken: Set<string>): string {
+  let id = base
+  for (let n = 2; taken.has(id); n++) {
+    const suffix = `-${n}`
+    id = `${base.slice(0, 64 - suffix.length)}${suffix}`
+  }
+  taken.add(id)
+  return id
+}
