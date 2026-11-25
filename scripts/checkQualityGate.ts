@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { SMOKE_RESULT_FILE } from './releaseRecord'
+import { RELEASE_NOTES_FILE, SMOKE_RESULT_FILE } from './releaseRecord'
 
 interface Failure {
   file: string
@@ -28,9 +28,8 @@ const requiredScripts = [
   'check:external-records',
   'smoke:external:ai',
   'smoke:external:gist',
-  'check:backup',
+  'check:compat',
   'check:questions',
-  'check:sync',
   'check:ai',
   'build',
   'check:pwa',
@@ -67,9 +66,8 @@ const expectedCheckAll = [
   'bun run check:quality-gate',
   'bun run check:docs',
   'bun run check:external-records',
-  'bun run check:backup',
+  'bun run check:compat',
   'bun run check:questions',
-  'bun run check:sync',
   'bun run check:ai',
   'bun run build',
   'bun run check:pwa',
@@ -91,7 +89,7 @@ if (!releaseScript.includes('bun scripts/checkReleaseReadiness.ts "$VERSION"')) 
   addFailure('scripts/release.sh', '发版脚本必须在发布前执行 checkReleaseReadiness')
 }
 
-const docsWithFullGate = ['docs/RELEASE_NOTES_1.5.md', 'docs/SMOKE_TEST.md']
+const docsWithFullGate = [RELEASE_NOTES_FILE, 'docs/SMOKE_TEST.md']
 for (const file of docsWithFullGate) {
   const content = read(file)
   for (const command of expectedCheckAll) {

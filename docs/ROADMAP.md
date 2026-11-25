@@ -69,7 +69,7 @@ iFace 1.0.0 的目标不是堆更多页面，而是把现有刷题、笔记、AI
    - 其中 `check:release` 在版本切到 `1.0.0` 后要求发版审计无未完成项、外部服务 smoke 有通过证据，且发布说明不再是草稿。
    - 其中 `check:quality-gate` 防止完整门禁、发版脚本或文档门禁列表漏掉关键子检查。
    - 其中 `check:docs` 覆盖 README/docs 本地链接、License 和截图资源。
-   - 其中 `check:backup` 覆盖本地备份导入解析、旧备份兼容推导和错误输入拒绝。
+   - 其中 `check:compat` 要求兼容代码标注删除日期，到期即失败。
    - 其中 `check:ai` 额外覆盖模型预设、AI Prompt、作答反馈上下文和流式解析。
    - 其中 `check:pwa` 在生产构建后覆盖 manifest、Service Worker、Workbox、图标资源和题库 JSON 的运行时缓存策略（1.5.0 起不再预缓存）。
 2. 核心路径人工验证通过：

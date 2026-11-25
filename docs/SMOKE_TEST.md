@@ -23,12 +23,11 @@
   - `bun run check:quality-gate`
   - `bun run check:docs`
   - `bun run check:external-records`
-  - `bun run check:backup`
+  - `bun run check:compat`
   - `bun run check:ai`
   - `bun run smoke:external:ai`
   - `bun run smoke:external:gist`
   - `bun run check:questions`
-  - `bun run check:sync`
   - `bun run build`
   - `bun run check:pwa`
 
@@ -93,11 +92,11 @@
 ### 8. 数据导出、导入与同步
 
 - 导出数据后，确认 JSON 包含题库、学习记录、题目笔记、AI 会话和必要元信息，不包含 API Key。
-- 清空本地数据后导入 `scripts/fixtures/smoke-backup.json`，题库、进度、笔记、重点题标记、AI 会话、自定义来源和自定义分类应恢复，且不会写入 API Key。
-- `bun run check:backup` 应覆盖本地备份 fixture、旧备份来源 / 分类推导、重点题标记、分类合并和错误输入拒绝。
+- 清空本地数据后导入 1.x 备份 `scripts/fixtures/smoke-backup.json`，导入的题目应升级为本地题库，进度、笔记、重点题标记和 AI 会话应对应到新的题目 id，且不会写入 API Key。
+- `bun run test` 中的 `localBackup` / `gistSync` 测试覆盖备份 v9 格式、1.x 备份和 Gist v1–8 的升级、双端合并规则和 mock GitHub API 读写路径。
+- `bun run check:compat` 确认 `src/compat/` 下的兼容代码都标了删除日期且未过期。
 - `bun run check:external-records` 应确认外部 smoke 记录结构正确、版本匹配、7 天内生成，且不含 API Key、GitHub Token 或 Authorization 字段。
-- `bun run check:questions` 应确认题库 JSON、内置题库 registry 和默认分类模块保持一致。
-- `bun run check:sync` 应覆盖旧版本 Gist 备份解析、未来版本拒绝、重点题标记和双端合并规则。
+- `bun run check:questions` 应确认 `banks/official/` 能构建、`public/banks/` 是最新产物，且符合 `iface-bank@1` schema。
 - 配置 Gist 同步后，手动同步应有成功/失败反馈。
 - 云端和本地同时变更后，同步不应让较新的记录、笔记或 AI 会话被旧数据覆盖。
 

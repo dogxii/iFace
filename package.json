@@ -15,9 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "build:learning-checks": "bun scripts/buildLearningChecks.ts",
     "check:ai": "bun scripts/checkAI.ts",
-    "check:backup": "bun scripts/checkBackup.ts",
+    "check:compat": "bun scripts/checkCompatExpiry.ts",
     "check:docs": "bun scripts/checkDocsAssets.ts",
     "check:external": "bun scripts/checkExternalServices.ts",
     "check:external-records": "bun scripts/checkExternalSmokeRecords.ts",
@@ -27,9 +26,8 @@
     "check:quality-gate": "bun scripts/checkQualityGate.ts",
     "check:questions": "bun scripts/checkQuestions.ts",
     "check:release": "bun scripts/checkReleaseReadiness.ts",
-    "check:sync": "bun scripts/checkGistSync.ts",
     "check:version": "bun scripts/checkVersionSync.ts",
-    "check:all": "bun run check && bun run test && bun run check:version && bun run check:release && bun run check:quality-gate && bun run check:docs && bun run check:external-records && bun run check:backup && bun run check:questions && bun run check:sync && bun run check:ai && bun run build && bun run check:pwa"
+    "check:all": "bun run check && bun run test && bun run check:version && bun run check:release && bun run check:quality-gate && bun run check:docs && bun run check:external-records && bun run check:compat && bun run check:questions && bun run check:ai && bun run build && bun run check:pwa"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

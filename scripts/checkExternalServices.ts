@@ -218,11 +218,14 @@ async function githubFetch<T>(token: string, path: string, init: RequestInit = {
   return (await response.json()) as T
 }
 
-function createSmokeBackup(now: number): SyncData {
+const SMOKE_BANK_ID = 'local.external-smoke-0000'
+const SMOKE_QUESTION_ID = `${SMOKE_BANK_ID}:q1`
+
+function createSmokeBackup(now: number, bankName = 'External Smoke'): SyncData {
   return {
     studyRecords: [
       {
-        questionId: 'external-smoke-question',
+        questionId: SMOKE_QUESTION_ID,
         status: 'review',
         lastUpdated: now,
         reviewCount: 2,
@@ -230,7 +233,7 @@ function createSmokeBackup(now: number): SyncData {
     ],
     questionNotes: [
       {
-        questionId: 'external-smoke-question',
+        questionId: SMOKE_QUESTION_ID,
         content: 'External smoke note',
         createdAt: now - 1_000,
         updatedAt: now,
@@ -239,7 +242,7 @@ function createSmokeBackup(now: number): SyncData {
     questionAnswerAnnotations: [
       {
         id: 'external-smoke-annotation',
-        questionId: 'external-smoke-question',
+        questionId: SMOKE_QUESTION_ID,
         answerHash: 'external-smoke-answer',
         kind: 'highlight',
         color: 'yellow',
@@ -253,7 +256,7 @@ function createSmokeBackup(now: number): SyncData {
     ],
     questionAnswerOverrides: [
       {
-        questionId: 'external-smoke-question',
+        questionId: SMOKE_QUESTION_ID,
         content: 'External smoke custom answer',
         createdAt: now - 1_000,
         updatedAt: now,
@@ -261,7 +264,7 @@ function createSmokeBackup(now: number): SyncData {
     ],
     questionFlags: [
       {
-        questionId: 'external-smoke-question',
+        questionId: SMOKE_QUESTION_ID,
         starred: true,
         createdAt: now - 1_000,
         updatedAt: now,
@@ -269,7 +272,7 @@ function createSmokeBackup(now: number): SyncData {
     ],
     aiSessions: [
       {
-        questionId: 'external-smoke-question',
+        questionId: SMOKE_QUESTION_ID,
         messages: [
           { role: 'user', content: 'smoke question' },
           { role: 'assistant', content: 'smoke answer' },
@@ -278,26 +281,36 @@ function createSmokeBackup(now: number): SyncData {
         updatedAt: now,
       },
     ],
-    customQuestions: [
+    banks: [
       {
-        id: 'custom_external-smoke_external-smoke-question',
-        module: 'External Smoke',
-        difficulty: 1,
-        question: 'External smoke question',
-        answer: 'External smoke answer',
-        tags: ['smoke'],
-        source: 'external-smoke',
+        id: SMOKE_BANK_ID,
+        enabled: true,
+        order: 1000,
+        installedAt: now - 2_000,
+        updatedAt: now,
+        package: {
+          format: 'iface-bank@1',
+          name: bankName,
+          version: '1.0.0',
+          license: 'MIT',
+          modules: [
+            {
+              id: 'external-smoke',
+              name: 'External Smoke',
+              questions: [
+                {
+                  id: 'q1',
+                  difficulty: 1,
+                  question: 'External smoke question',
+                  answer: 'External smoke answer',
+                  tags: ['smoke'],
+                },
+              ],
+            },
+          ],
+        },
       },
     ],
-    customCategories: {
-      'External Smoke': {
-        name: 'External Smoke',
-        modules: ['External Smoke'],
-        builtin: false,
-        order: 99,
-      },
-    },
-    customSources: ['external-smoke'],
   }
 }
 
@@ -342,10 +355,10 @@ async function runGistExternalSmoke(): Promise<void> {
     const loaded = await githubFetch<GistResponse>(token, `/gists/${gistId}`)
     const loadedContent = await readGistFile(token, loaded, filename)
     const parsed = parseGistBackupPayload(loadedContent)
-    assert('Gist read payload', parsed.version === 8, '真实 Gist 读取到的备份版本不是 v8')
+    assert('Gist read payload', parsed.version === 9, '真实 Gist 读取到的备份版本不是 v9')
     assert(
       'Gist read data',
-      parsed.questionNotes.some((note) => note.questionId === 'external-smoke-question'),
+      parsed.questionNotes.some((note) => note.questionId === SMOKE_QUESTION_ID),
       '真实 Gist 读取内容缺少题目笔记',
     )
     addEvidence('gist.read', {
@@ -355,14 +368,11 @@ async function runGistExternalSmoke(): Promise<void> {
       answerOverrideCount: parsed.questionAnswerOverrides.length,
       starredCount: parsed.questionFlags.filter((flag) => flag.starred).length,
       aiSessionCount: parsed.aiSessions.length,
-      customQuestionCount: parsed.customQuestions.length,
+      bankCount: parsed.banks.length,
     })
 
     const updatedContent = serializeGistBackup(
-      {
-        ...createSmokeBackup(now + 1_000),
-        customSources: ['external-smoke', 'external-smoke-updated'],
-      },
+      createSmokeBackup(now + 1_000, 'External Smoke Updated'),
       new Date(now + 1_000).toISOString(),
     )
 
@@ -378,12 +388,12 @@ async function runGistExternalSmoke(): Promise<void> {
     const updatedParsed = parseGistBackupPayload(updatedRaw)
     assert(
       'Gist update payload',
-      updatedParsed.customSources.includes('external-smoke-updated'),
+      updatedParsed.banks.some((bank) => bank.package.name === 'External Smoke Updated'),
       '真实 Gist 更新后没有读到新内容',
     )
     addEvidence('gist.update', {
       backupVersion: updatedParsed.version,
-      customSourceCount: updatedParsed.customSources.length,
+      bankCount: updatedParsed.banks.length,
       temporaryGistDeleted: false,
     })
 
