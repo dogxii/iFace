@@ -208,7 +208,7 @@ test('pasted Markdown questions are imported into a new local bank', async ({ pa
   await expect(page.getByText('识别到 1 道题')).toBeVisible()
   await page.getByRole('button', { name: '导入', exact: true }).click()
   await expect(page.getByText('导入 1 道新题')).toBeVisible({ timeout: 10_000 })
-  await expect(page.getByRole('button', { name: '移除 e2e整理' })).toBeVisible()
+  await expect(page.getByRole('listitem').filter({ hasText: 'e2e整理' })).toBeVisible()
 
   await page.goto('/')
   await expect(page.getByText(/共 \d+ 道题/)).toBeVisible({ timeout: 20_000 })
@@ -353,4 +353,83 @@ test('keyboard shortcuts work as soon as a question opens', async ({ page }) => 
   await expect(
     page.getByRole('region', { name: '掌握程度' }).getByRole('button', { name: /完全掌握/ }),
   ).toHaveAttribute('aria-pressed', 'true')
+})
+
+/** Serves a fake GitHub repository `e2e/go-bank` whose default branch points at `sha`. */
+async function mockGithubBank(page: Page, sha: string, version: string, questions: string[]) {
+  const manifest = {
+    format: 'iface-bank@1',
+    name: 'E2E Go',
+    version,
+    license: 'MIT',
+    authors: ['e2e'],
+    modules: [{ id: 'basics', name: 'E2E 基础', questions: 'questions/basics.md' }],
+  }
+  const markdown = questions
+    .map((title, i) => `<!-- id: q${i + 1}; difficulty: 1 -->\n# ${title}\n\n答案 ${i + 1}\n`)
+    .join('\n')
+  await page.unroute('https://api.github.com/**')
+  await page.unroute('https://raw.githubusercontent.com/**')
+  await page.route('https://api.github.com/repos/e2e/go-bank/commits/HEAD', (route) =>
+    route.fulfill({ body: sha }),
+  )
+  await page.route('https://raw.githubusercontent.com/**', (route) => {
+    const url = route.request().url()
+    if (url === `https://raw.githubusercontent.com/e2e/go-bank/${sha}/iface-bank.json`) {
+      return route.fulfill({ body: JSON.stringify(manifest) })
+    }
+    if (url === `https://raw.githubusercontent.com/e2e/go-bank/${sha}/questions/basics.md`) {
+      return route.fulfill({ body: markdown })
+    }
+    return route.fulfill({ status: 404, body: '' })
+  })
+}
+
+test('a GitHub bank installs, updates and is kept in backups', async ({ page }) => {
+  await mockGithubBank(page, 'a'.repeat(40), '1.0.0', ['e2e GitHub 题一'])
+  await page.goto('/banks')
+  await page.getByLabel('添加题库').fill('e2e/go-bank')
+  await page.getByRole('button', { name: '读取' }).click()
+  const install = page.getByRole('dialog', { name: '安装「E2E Go」' })
+  await expect(install.getByText('社区题库')).toBeVisible({ timeout: 20_000 })
+  await expect(install.getByText('e2e GitHub 题一')).toBeVisible()
+  await install.getByRole('button', { name: '安装', exact: true }).click()
+  const row = page
+    .getByRole('list', { name: '已安装的题库' })
+    .getByRole('listitem')
+    .filter({ hasText: 'E2E Go' })
+  await expect(row).toContainText('v1.0.0')
+
+  await page.keyboard.press('Control+k')
+  await page.getByRole('combobox', { name: '搜索题目或命令' }).fill('e2e GitHub 题一')
+  await page.getByRole('option', { name: /e2e GitHub 题一/ }).click()
+  await expect(page).toHaveURL(/\/questions\/gh\.e2e\.go-bank:q1$/)
+
+  // A new commit with a new version shows up as an update with a diff.
+  await mockGithubBank(page, 'b'.repeat(40), '1.1.0', ['e2e GitHub 题一', 'e2e GitHub 题二'])
+  await page.goto('/banks')
+  await page.getByRole('button', { name: '检查更新' }).click()
+  await row.getByRole('button', { name: '更新到 v1.1.0' }).click()
+  const update = page.getByRole('dialog', { name: '更新「E2E Go」' })
+  await expect(update.getByText('新增 1 题')).toBeVisible({ timeout: 20_000 })
+  await update.getByRole('button', { name: '更新', exact: true }).click()
+  await expect(row).toContainText('v1.1.0')
+  await expect(row).toContainText('2 题')
+
+  await page.getByRole('button', { name: '设置' }).first().click()
+  await page
+    .getByRole('navigation', { name: '设置分类' })
+    .getByRole('button', { name: '数据管理' })
+    .click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: '导出 JSON' }).click()
+  const { readFile } = await import('node:fs/promises')
+  const backup = JSON.parse(await readFile(await (await downloadPromise).path(), 'utf8'))
+  expect(backup.bankStates).toContainEqual(
+    expect.objectContaining({
+      id: 'gh.e2e.go-bank',
+      version: '1.1.0',
+      origin: expect.objectContaining({ kind: 'github', sha: 'b'.repeat(40) }),
+    }),
+  )
 })
