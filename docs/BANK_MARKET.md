@@ -1,6 +1,6 @@
 # 题库开放计划（iFace 2.0）
 
-> 状态：方案已定，按阶段实施。分支 `feat/bank-market`。P0（格式规范、校验器、JSON Schema、`llms.txt`）和 P1（数据层、官方题库、1.5 数据迁移、本地题库、备份 v9 / Gist v9）已完成。
+> 状态：方案已定，按阶段实施。分支 `feat/bank-market`。P0（格式规范、校验器、JSON Schema、`llms.txt`）、P1（数据层、官方题库、1.5 数据迁移、本地题库、备份 v9 / Gist v9）和 P2（从 GitHub / 链接安装、更新差异、备份重装）已完成。
 > 兼容代码统一在 2027-06-30 后删除（见「兼容与迁移」）。
 
 ## 目标
@@ -212,7 +212,7 @@ interface Question {
 
 ## 备份与同步
 
-- 备份 v9（已实现）：本地题库存完整内容（`banks`，题库包快照），官方 / GitHub 题库只存启用状态和排序（`bankStates`）。学习数据都按带题库前缀的 ID 保存。恢复本地题库前用同一套校验器检查，不合格的列出来，学习数据照样恢复。P2 起 `bankStates` 再带上来源和版本，恢复时自动重装 GitHub 题库。
+- 备份 v9（已实现）：本地题库存完整内容（`banks`，题库包快照），官方 / GitHub 题库只存启用状态和排序（`bankStates`）。学习数据都按带题库前缀的 ID 保存。恢复本地题库前用同一套校验器检查，不合格的列出来，学习数据照样恢复。GitHub / URL 题库在 `bankStates` 里带上来源和版本，恢复备份时自动重装（GitHub 题库按备份时的 commit 安装）。Gist 同步不自动安装别的设备上的社区题库，避免卸载后又被同步装回来。
 - Gist 同步 v9（已实现）：仍写 `iface-backup.json`，内容是学习数据加本地题库快照。1.x 设备读到 v9 会按「未来版本」拒绝并提示升级，不会把数据写坏；2.0 读到 v1–v8 时自动升级（自定义题变成本地题库，ID 换成新格式）。没有另开新文件，避免两份云端数据分叉。
 
 ## Agent 友好
@@ -270,7 +270,7 @@ interface Question {
 |---|---|---|
 | P0 规范 | 题库包 zod schema、校验器（JSON + Markdown 题目文件）、JSON Schema 生成、`docs/bank-format.md`、`llms.txt` | 单元测试覆盖所有字段和限制 |
 | P1 数据层 ✅ | IndexedDB v9、`banks` store、新 ID、官方题库改造和构建脚本、`compat/legacy15` 迁移、删除分类体系，全站改用题库 / moduleKey；本地题库导入 / 导出 / 卸载、备份 v9、Gist v9、旧链接跳转、`check:compat` | 迁移单元测试；e2e 预置 1.5 数据升级 |
-| P2 安装 | 从 GitHub / URL 安装、更新差异、备份里的 GitHub 题库自动重装 | 单元测试 + e2e（用 Playwright 拦截网络模拟仓库） |
+| P2 安装 ✅ | 「题库管理」页（`/banks`）：从 GitHub / URL 安装、每日检查更新、更新差异、备份里的 GitHub / URL 题库自动重装 | 单元测试 + e2e（用 Playwright 拦截网络模拟仓库） |
 | P3 市场 | `api/market.js`、`curation.json`、市场页、详情页、分享链接、外链图片拦截 | 函数单元测试；e2e 模拟接口 |
 | P4 Agent 工具 | `templates/bank/`、`iface-bank` CLI、发布页 Agent 提示词、AI 出题「交给 Agent」 | CLI 测试；用模板生成一个示例题库跑通校验 |
 | P5 收尾 | 文档、发布说明、截图、smoke 清单 | `check:all` |

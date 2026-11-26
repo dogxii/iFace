@@ -244,6 +244,12 @@ fmt.Println(len("你好"))
 
 不想公开到市场，也可以不加 topic，只把上面的链接发给别人。
 
+任何题库都可以在 iFace 的「题库管理」里直接安装，输入其中一种即可：
+
+- `owner/repo` 或仓库链接（清单在仓库根目录）
+- 仓库里某个目录的链接，例如 `https://github.com/owner/repo/tree/main/go`（一个仓库只能装一个题库）
+- 任意 https 地址上的 `iface-bank.json`（拆分的题目文件按相对路径从同一位置读取）
+
 ## 内容与安全
 
 - 答案按 Markdown 渲染，不支持原始 HTML，`javascript:` 等危险链接会被过滤。

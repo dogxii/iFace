@@ -53,3 +53,4 @@
 - 完整规范：https://github.com/dogxii/iFace/blob/main/docs/bank-format.md
 - JSON Schema：https://face.dogxi.me/schema/iface-bank-1.json
 - 分享安装链接：https://face.dogxi.me/market/gh/<owner>/<repo>
+- 手动安装：在 iFace「题库管理」里输入 `owner/repo`、GitHub 目录链接或清单的 https 链接
