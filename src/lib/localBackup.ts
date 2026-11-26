@@ -1,8 +1,9 @@
 /**
  * Backup files (设置 → 数据管理). Format v9 (2.0):
  *
- * - `banks`: local banks as `iface-bank@1` snapshots (official and installed banks are not
- *   copied; `bankStates` only keeps whether they were enabled and their order)
+ * - `banks`: local banks as `iface-bank@1` snapshots
+ * - `bankStates`: every other bank by reference — enabled, order, and for GitHub / URL banks
+ *   where they came from, so restoring reinstalls them (GitHub ones at the backed-up commit)
  * - study data keyed by bank-scoped question ids (`iface.frontend:js-001`)
  *
  * Older backups (1.x, format ≤ 8) are upgraded on import by `compat/legacy15`.
@@ -27,6 +28,27 @@ export interface BankState {
   id: string
   enabled: boolean
   order: number
+  /** GitHub / URL banks: where to reinstall them from. */
+  origin?: RemoteBankOrigin
+  name?: string
+  version?: string
+}
+
+export type RemoteBankOrigin =
+  | { kind: 'github'; owner: string; repo: string; sha: string; path?: string }
+  | { kind: 'url'; url: string }
+
+function isRemoteOrigin(value: unknown): value is RemoteBankOrigin {
+  if (!isRecord(value)) return false
+  if (value.kind === 'url') return typeof value.url === 'string' && value.url.startsWith('https://')
+  return (
+    value.kind === 'github' &&
+    typeof value.owner === 'string' &&
+    typeof value.repo === 'string' &&
+    typeof value.sha === 'string' &&
+    /^[0-9a-f]{40}$/.test(value.sha) &&
+    (value.path === undefined || typeof value.path === 'string')
+  )
 }
 
 export interface BackupData {
@@ -290,7 +312,8 @@ function isBankState(value: unknown): value is BankState {
     isRecord(value) &&
     typeof value.id === 'string' &&
     typeof value.enabled === 'boolean' &&
-    typeof value.order === 'number'
+    typeof value.order === 'number' &&
+    (value.origin === undefined || isRemoteOrigin(value.origin))
   )
 }
 

@@ -2,8 +2,10 @@
 
 import type { AISession } from '@/store/useAIStore'
 import { libraryChanged } from '@/store/useLibraryStore'
+import { installRemoteBank } from './banks/install'
 import type { BankSnapshot } from './banks/package'
 import { restoreSnapshot, snapshotBank } from './banks/package'
+import { fetchRemoteBank } from './banks/remote'
 import {
   bulkPutJdMatchReports,
   bulkPutMockInterviews,
@@ -45,7 +47,15 @@ export async function collectBanks(): Promise<{ banks: BankSnapshot[]; bankState
       ])
       banks.push(snapshotBank(bank, questions, checks))
     } else {
-      bankStates.push({ id: bank.id, enabled: bank.enabled, order: bank.order })
+      const { origin } = bank
+      bankStates.push({
+        id: bank.id,
+        enabled: bank.enabled,
+        order: bank.order,
+        ...(origin.kind === 'github' || origin.kind === 'url'
+          ? { origin, name: bank.name, version: bank.version }
+          : {}),
+      })
     }
   }
   return { banks, bankStates }
@@ -88,8 +98,9 @@ export async function createBackup(aiSessions: AISession[]): Promise<BackupFile>
 }
 
 /**
- * Writes local bank snapshots (replacing banks with the same id) and applies enabled/order
- * to installed banks. Returns the names of snapshots that did not validate.
+ * Writes local bank snapshots (replacing banks with the same id), reinstalls GitHub / URL banks
+ * that are missing here and applies enabled/order to installed banks. Returns the banks that
+ * could not be restored, with the reason.
  */
 export async function restoreBanks(
   banks: readonly BankSnapshot[],
@@ -105,6 +116,26 @@ export async function restoreBanks(
     }
     await writeBank(result.records.bank, result.records.questions, result.records.checks)
     restored++
+  }
+  const installed = new Set((await getAllBanks()).map((bank) => bank.id))
+  for (const state of bankStates) {
+    if (!state.origin || installed.has(state.id)) continue
+    const label = state.name ?? state.id
+    try {
+      const { origin } = state
+      const remote =
+        origin.kind === 'github'
+          ? await fetchRemoteBank(
+              { kind: 'github', owner: origin.owner, repo: origin.repo, path: origin.path ?? '' },
+              { sha: origin.sha },
+            )
+          : await fetchRemoteBank({ kind: 'url', url: origin.url })
+      if (remote.bankId !== state.id) throw new Error('来源和题库 id 不一致')
+      await installRemoteBank(remote, { notify: false })
+      restored++
+    } catch (error) {
+      failed.push(`${label}：${error instanceof Error ? error.message : String(error)}`)
+    }
   }
   if (bankStates.length > 0) {
     const states = new Map(bankStates.map((state) => [state.id, state]))
