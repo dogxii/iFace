@@ -186,6 +186,26 @@ export async function deleteQuestionUserData(questionIds: string[]): Promise<voi
   }
 }
 
+/** How many of these questions have a study record, note, flag or custom answer. */
+export async function countQuestionsWithUserData(questionIds: readonly string[]): Promise<number> {
+  if (questionIds.length === 0) return 0
+  const db = await getDB()
+  const stores = [
+    STORES.STUDY_RECORDS,
+    STORES.QUESTION_NOTES,
+    STORES.QUESTION_ANSWER_OVERRIDES,
+    STORES.QUESTION_FLAGS,
+  ]
+  const tx = db.transaction(stores, 'readonly')
+  let count = 0
+  for (const id of questionIds) {
+    const keys = await Promise.all(stores.map((store) => tx.objectStore(store).getKey(id)))
+    if (keys.some((key) => key !== undefined)) count++
+  }
+  await tx.done
+  return count
+}
+
 // ─── Banks ────────────────────────────────────────────────────────────────────
 
 export async function getAllBanks(): Promise<InstalledBank[]> {

@@ -34,7 +34,8 @@ async function newLocalBankId(name: string): Promise<string> {
   return id
 }
 
-async function nextOrder(): Promise<number> {
+/** Order for a newly installed bank: after every installed one. */
+export async function nextOrder(): Promise<number> {
   return (await getAllBanks()).reduce((max, bank) => Math.max(max, bank.order), -1) + 1
 }
 
