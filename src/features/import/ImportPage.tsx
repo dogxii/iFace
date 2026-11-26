@@ -3,12 +3,9 @@ import {
   CircleAlert,
   CircleCheck,
   ClipboardPaste,
-  Download,
   FileUp,
   FlaskConical,
   Play,
-  RotateCcw,
-  Trash2,
   TriangleAlert,
   Upload,
   X,
@@ -17,16 +14,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { resolveBank } from '@/data/bank/validate'
 import { useDraft } from '@/hooks/useDraft'
-import {
-  exportBankPackage,
-  type ImportTarget,
-  importQuestions,
-  installLocalPackage,
-  removeBank,
-  restoreOfficialBank,
-} from '@/lib/banks/local'
+import { type ImportTarget, importQuestions, installLocalPackage } from '@/lib/banks/local'
 import type { ImportIssue, ImportQuestion } from '@/lib/banks/localImport'
-import { type OfficialBankEntry, uninstalledOfficialBanks } from '@/lib/banks/official'
 import { readDraft } from '@/lib/storage'
 import { initLibraryStore, useLibraryState } from '@/store/useLibraryStore'
 import type { InstalledBank } from '@/types'
@@ -35,9 +24,6 @@ import {
   Breadcrumb,
   Button,
   cn,
-  Dialog,
-  DialogClose,
-  DialogContent,
   Field,
   Input,
   PageHeader,
@@ -71,24 +57,8 @@ interface ImportResult {
 }
 
 const NEW_BANK = '__new__'
-const ORIGIN_LABEL: Record<InstalledBank['origin']['kind'], string> = {
-  bundled: '官方',
-  github: 'GitHub',
-  url: '链接',
-  local: '本地',
-}
 
 const issueText = (issue: ImportIssue) => `第 ${issue.index + 1} 题：${issue.message}`
-
-function downloadJSON(fileName: string, data: unknown): void {
-  const blob = new Blob([`${JSON.stringify(data, null, 2)}\n`], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = fileName
-  link.click()
-  URL.revokeObjectURL(url)
-}
 
 export default function ImportPage() {
   const navigate = useNavigate()
@@ -277,8 +247,7 @@ export default function ImportPage() {
           </div>
 
           <aside className="flex min-w-0 flex-col gap-5">
-            <InstalledBanks banks={banks} />
-            <RemovedOfficialBanks installedCount={banks.length} />
+            <LocalBanksCard banks={localBanks} />
           </aside>
         </div>
       </div>
@@ -518,166 +487,32 @@ function IssueList({
 
 // ─── Sidebar ────────────────────────────────────────────────────────────────────
 
-function InstalledBanks({ banks }: { banks: InstalledBank[] }) {
-  const [pending, setPending] = useState<InstalledBank | null>(null)
-  const [removing, setRemoving] = useState(false)
-
-  const exportBank = async (bank: InstalledBank) => {
-    const pkg = await exportBankPackage(bank.id)
-    if (!pkg) return
-    downloadJSON(`${bank.id}.iface-bank.json`, pkg)
-    toast.success(`已导出「${bank.name}」`, {
-      description: '可以直接导入，或放进 GitHub 仓库分享。',
-    })
-  }
-
-  const confirm = async () => {
-    if (!pending) return
-    setRemoving(true)
-    try {
-      await removeBank(pending)
-      toast.success(`已移除「${pending.name}」`)
-      setPending(null)
-    } finally {
-      setRemoving(false)
-    }
-  }
-
+function LocalBanksCard({ banks }: { banks: InstalledBank[] }) {
   return (
     <Box>
       <div className="flex items-center justify-between gap-2 border-b border-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-fg">已安装的题库</h2>
+        <h2 className="text-sm font-semibold text-fg">本地题库</h2>
         <span className="text-xs text-fg-subtle tabular-nums">{banks.length}</span>
       </div>
       {banks.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-fg-subtle">还没有题库</p>
+        <p className="px-4 py-5 text-sm text-fg-subtle">导入的题目会放进本地题库。</p>
       ) : (
         <ul className="flex flex-col gap-0.5 p-1.5">
           {banks.map((bank) => (
-            <li
-              key={bank.id}
-              className="group flex items-center gap-2 rounded-lg py-1.5 pr-1 pl-2.5 hover:bg-subtle"
-            >
-              <div className="min-w-0 flex-1">
-                <p className="flex items-center gap-1.5 text-sm text-fg">
-                  <span className="truncate">{bank.name}</span>
-                  <Tag variant="soft" className="shrink-0">
-                    {ORIGIN_LABEL[bank.origin.kind]}
-                  </Tag>
-                </p>
-                <p className="text-xs text-fg-subtle tabular-nums">
-                  {bank.modules.length} 个模块 · {bank.questionCount} 题
-                  {bank.enabled ? '' : ' · 已停用'}
-                </p>
-              </div>
-              <div className="flex shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-sm:opacity-100">
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`导出 ${bank.name}`}
-                  title="导出为题库包"
-                  onClick={() => void exportBank(bank)}
-                >
-                  <Download />
-                </Button>
-                <Button
-                  variant="danger-ghost"
-                  size="icon-sm"
-                  aria-label={`移除 ${bank.name}`}
-                  onClick={() => setPending(bank)}
-                >
-                  <Trash2 />
-                </Button>
-              </div>
+            <li key={bank.id} className="flex items-center gap-2 rounded-lg py-1.5 pr-1 pl-2.5">
+              <span className="min-w-0 flex-1 truncate text-sm text-fg">{bank.name}</span>
+              <span className="shrink-0 text-xs text-fg-subtle tabular-nums">
+                {bank.questionCount} 题
+              </span>
             </li>
           ))}
         </ul>
       )}
-
-      <Dialog open={pending !== null} onOpenChange={(open) => !open && setPending(null)}>
-        <DialogContent
-          size="sm"
-          title="移除这个题库？"
-          description={
-            pending
-              ? pending.origin.kind === 'local'
-                ? `将删除「${pending.name}」的 ${pending.questionCount} 道题。学习记录和笔记会保留，但不会再显示；需要时可以先导出备份。此操作不可撤销。`
-                : `将移除「${pending.name}」。学习记录和笔记会保留，重新安装后恢复显示。`
-              : undefined
-          }
-          footer={
-            <>
-              <DialogClose asChild>
-                <Button variant="secondary" size="sm">
-                  取消
-                </Button>
-              </DialogClose>
-              <Button variant="danger" size="sm" loading={removing} onClick={confirm}>
-                移除
-              </Button>
-            </>
-          }
-        />
-      </Dialog>
-    </Box>
-  )
-}
-
-function RemovedOfficialBanks({ installedCount }: { installedCount: number }) {
-  const [removed, setRemoved] = useState<OfficialBankEntry[]>([])
-  const [restoring, setRestoring] = useState<string | null>(null)
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: re-read when banks are added or removed
-  useEffect(() => {
-    let cancelled = false
-    uninstalledOfficialBanks()
-      .then((list) => !cancelled && setRemoved(list))
-      .catch(() => {})
-    return () => {
-      cancelled = true
-    }
-  }, [installedCount])
-
-  if (removed.length === 0) return null
-
-  const restore = async (entry: OfficialBankEntry) => {
-    setRestoring(entry.id)
-    try {
-      await restoreOfficialBank(entry.id)
-      toast.success(`已重新安装「${entry.name}」`)
-    } catch (error) {
-      toast.error('安装失败', {
-        description: error instanceof Error ? error.message : String(error),
-      })
-    } finally {
-      setRestoring(null)
-    }
-  }
-
-  return (
-    <Box>
-      <div className="border-b border-line px-4 py-3">
-        <h2 className="text-sm font-semibold text-fg">已移除的官方题库</h2>
+      <div className="border-t border-line px-4 py-2.5">
+        <Link to="/banks" className="text-xs text-accent hover:underline">
+          导出、移除或安装 GitHub 题库 →
+        </Link>
       </div>
-      <ul className="flex flex-col gap-0.5 p-1.5">
-        {removed.map((entry) => (
-          <li key={entry.id} className="flex items-center gap-2 rounded-lg py-1.5 pr-1 pl-2.5">
-            <span className="min-w-0 flex-1 truncate text-sm text-fg">{entry.name}</span>
-            <span className="shrink-0 text-xs text-fg-subtle tabular-nums">
-              {entry.questionCount} 题
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              loading={restoring === entry.id}
-              onClick={() => void restore(entry)}
-            >
-              {restoring === entry.id ? null : <RotateCcw />}
-              安装
-            </Button>
-          </li>
-        ))}
-      </ul>
     </Box>
   )
 }

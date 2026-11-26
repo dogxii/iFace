@@ -1,5 +1,7 @@
 import { BookOpenText, Brain, type LucideIcon, PenLine, RotateCcw } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { ThemeSegmentedControl } from '@/app/themeOptions'
+import { ORIGIN_LABEL } from '@/features/banks/bankPage'
 import { useLibraryState } from '@/store/useLibraryStore'
 import {
   type AnswerNavigationMode,
@@ -9,7 +11,7 @@ import {
   type StudyMode,
   useStudyStore,
 } from '@/store/useStudyStore'
-import type { InstalledBank } from '@/types'
+import { useUIState } from '@/store/useUIStore'
 import { Button, cn, SegmentedControl, Stat, StatGroup, Switch, SwitchRow, Tag, toast } from '@/ui'
 import { SettingsBody, SettingsSection } from './parts'
 
@@ -36,13 +38,6 @@ const STUDY_MODES: { value: StudyMode; label: string; description: string; icon:
 
 const GOAL_PRESETS = [5, 10, 20, 30, 50]
 
-const BANK_ORIGIN_LABEL: Record<InstalledBank['origin']['kind'], string> = {
-  bundled: '官方',
-  github: 'GitHub',
-  url: '链接',
-  local: '本地',
-}
-
 const MILESTONES = [
   { n: 3, label: '3 连击' },
   { n: 5, label: '5 连击' },
@@ -68,6 +63,7 @@ export function StudySettings() {
   } = useStudyStore()
   const banks = useLibraryState((s) => s.banks)
   const setBankEnabled = useLibraryState((s) => s.setBankEnabled)
+  const closeSettings = useUIState((s) => s.closeSettings)
 
   return (
     <SettingsBody>
@@ -171,7 +167,7 @@ export function StudySettings() {
                   <label htmlFor={id} className="min-w-0 flex-1 cursor-pointer">
                     <span className="flex items-center gap-2 text-sm font-medium text-fg">
                       {bank.name}
-                      <Tag variant="soft">{BANK_ORIGIN_LABEL[bank.origin.kind]}</Tag>
+                      <Tag variant="soft">{ORIGIN_LABEL[bank.origin.kind]}</Tag>
                     </span>
                     <span className="text-xs text-fg-subtle">
                       {bank.modules.length} 个模块 · {bank.questionCount} 题
@@ -190,6 +186,13 @@ export function StudySettings() {
             })}
           </ul>
         )}
+        <Link
+          to="/banks"
+          onClick={closeSettings}
+          className="mt-3 inline-block text-xs text-accent hover:underline"
+        >
+          安装 GitHub 题库、检查更新或移除题库 →
+        </Link>
       </SettingsSection>
 
       <SettingsSection title="题目页" description="只影响手机等小屏幕。">

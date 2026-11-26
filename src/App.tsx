@@ -23,6 +23,7 @@ const Tools = lazy(routeLoaders.tools)
 const JdMatch = lazy(routeLoaders.jdMatch)
 const AITool = lazy(routeLoaders.aiTool)
 const ImportPage = lazy(routeLoaders.importPage)
+const BanksPage = lazy(routeLoaders.banksPage)
 const PromptPage = lazy(routeLoaders.promptPage)
 // Component showcase — only bundled in development builds.
 const DesignSystem = import.meta.env.DEV ? lazy(() => import('@/pages/DesignSystem')) : null
@@ -98,6 +99,7 @@ function AppRoutes() {
           <Route path="/tools/jd-match" element={<JdMatch />} />
           <Route path="/tools/:toolId" element={<AITool />} />
           <Route path="/import" element={<ImportPage />} />
+          <Route path="/banks" element={<BanksPage />} />
           <Route path="/prompt" element={<PromptPage />} />
         </Routes>
       </Suspense>

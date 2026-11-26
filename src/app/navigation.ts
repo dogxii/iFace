@@ -3,6 +3,7 @@ import {
   Download,
   FlaskConical,
   House,
+  Library,
   type LucideIcon,
   Mic,
   PenLine,
@@ -31,7 +32,8 @@ export const PRIMARY_NAV: NavItem[] = [
 export const TOOL_NAV: NavItem[] = [
   { path: '/tools', label: 'AI 工具箱', icon: Sparkles, match: ['/tools/'] },
   { path: '/prompt', label: '出题', icon: FlaskConical },
-  { path: '/import', label: '导入题库', icon: Download },
+  { path: '/banks', label: '题库管理', icon: Library },
+  { path: '/import', label: '导入题目', icon: Download },
 ]
 
 export function isNavItemActive(item: NavItem, pathname: string): boolean {

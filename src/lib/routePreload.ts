@@ -9,6 +9,7 @@ export const routeLoaders = {
   jdMatch: () => import('@/features/tools/JdMatchPage'),
   aiTool: () => import('@/features/tools/AIToolPage'),
   importPage: () => import('@/features/import/ImportPage'),
+  banksPage: () => import('@/features/banks/BanksPage'),
   promptPage: () => import('@/features/prompt/PromptPage'),
 }
 
@@ -33,6 +34,7 @@ export function getRoutePreloadKey(pathname: string): RoutePreloadKey | null {
   if (pathname === '/mock-interview') return 'mockInterview'
   if (pathname === '/weak') return 'weakPoints'
   if (pathname === '/import') return 'importPage'
+  if (pathname === '/banks') return 'banksPage'
   if (pathname === '/prompt') return 'promptPage'
   if (pathname === '/tools/jd-match') return 'jdMatch'
   if (pathname.startsWith('/tools/')) return 'aiTool'
